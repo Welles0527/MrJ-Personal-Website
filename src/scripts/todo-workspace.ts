@@ -30,7 +30,7 @@ const categories: Array<{ value: TodoCategory; label: string }> = [
   { value: 'work', label: '工作' },
   { value: 'study', label: '学习' },
   { value: 'life', label: '生活' },
-  { value: 'health', label: '健康' },
+  { value: 'health', label: '运动' },
   { value: 'other', label: '其他' }
 ];
 
@@ -545,22 +545,101 @@ export function mountTodoWorkspace(root: HTMLElement) {
   };
 
   const exportBackup = () => {
-    const backup = {
-      schemaVersion: 1,
-      exportedAt: new Date().toISOString(),
-      sourceOrigin: window.location.origin,
-      todos: state.todos
+    const escapeXml = (value: string) => value
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&apos;');
+    const textCell = (column: string, row: number, value: string) =>
+      `<c r="${column}${row}" t="inlineStr"><is><t xml:space="preserve">${escapeXml(value)}</t></is></c>`;
+    const rows = [
+      ['日期', '分类', '待办事项', '重要', '完成状态', '备注', '创建时间', '更新时间'],
+      ...state.todos.map((todo) => [
+        todo.date,
+        categoryLabel(todo.category),
+        todo.title,
+        todo.important ? '是' : '否',
+        todo.completed ? '已完成' : '未完成',
+        todo.note,
+        todo.createdAt,
+        todo.updatedAt
+      ])
+    ];
+    const worksheet = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${rows.map((values, index) => `<row r="${index + 1}">${values.map((value, column) => textCell(String.fromCharCode(65 + column), index + 1, value)).join('')}</row>`).join('')}</sheetData></worksheet>`;
+    const encoder = new TextEncoder();
+    const crc32 = (bytes: Uint8Array) => {
+      let crc = 0xffffffff;
+      for (const byte of bytes) {
+        crc ^= byte;
+        for (let bit = 0; bit < 8; bit += 1) crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1));
+      }
+      return (crc ^ 0xffffffff) >>> 0;
     };
-    const file = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json;charset=utf-8' });
+    const entries = [
+      ['[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>'],
+      ['_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+      ['xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="个人待办" sheetId="1" r:id="rId1"/></sheets></workbook>'],
+      ['xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>'],
+      ['xl/worksheets/sheet1.xml', worksheet]
+    ].map(([name, content]) => ({ name: encoder.encode(name), content: encoder.encode(content) }));
+    const localParts: Uint8Array[] = [];
+    const centralParts: Uint8Array[] = [];
+    let offset = 0;
+    for (const entry of entries) {
+      const crc = crc32(entry.content);
+      const localHeader = new Uint8Array(30 + entry.name.length);
+      const localView = new DataView(localHeader.buffer);
+      localView.setUint32(0, 0x04034b50, true);
+      localView.setUint16(4, 20, true);
+      localView.setUint16(6, 0x0800, true);
+      localView.setUint32(14, crc, true);
+      localView.setUint32(18, entry.content.length, true);
+      localView.setUint32(22, entry.content.length, true);
+      localView.setUint16(26, entry.name.length, true);
+      localHeader.set(entry.name, 30);
+      localParts.push(localHeader, entry.content);
+
+      const centralHeader = new Uint8Array(46 + entry.name.length);
+      const centralView = new DataView(centralHeader.buffer);
+      centralView.setUint32(0, 0x02014b50, true);
+      centralView.setUint16(4, 20, true);
+      centralView.setUint16(6, 20, true);
+      centralView.setUint16(8, 0x0800, true);
+      centralView.setUint32(16, crc, true);
+      centralView.setUint32(20, entry.content.length, true);
+      centralView.setUint32(24, entry.content.length, true);
+      centralView.setUint16(28, entry.name.length, true);
+      centralView.setUint32(42, offset, true);
+      centralHeader.set(entry.name, 46);
+      centralParts.push(centralHeader);
+      offset += localHeader.length + entry.content.length;
+    }
+    const centralSize = centralParts.reduce((total, part) => total + part.length, 0);
+    const endOfCentralDirectory = new Uint8Array(22);
+    const endView = new DataView(endOfCentralDirectory.buffer);
+    endView.setUint32(0, 0x06054b50, true);
+    endView.setUint16(8, entries.length, true);
+    endView.setUint16(10, entries.length, true);
+    endView.setUint32(12, centralSize, true);
+    endView.setUint32(16, offset, true);
+    const parts = [...localParts, ...centralParts, endOfCentralDirectory];
+    const archive = new Uint8Array(parts.reduce((total, part) => total + part.length, 0));
+    let cursor = 0;
+    for (const part of parts) {
+      archive.set(part, cursor);
+      cursor += part.length;
+    }
+    const file = new Blob([archive], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     const url = URL.createObjectURL(file);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `mywebsite-todos-${toDateKey(currentDate)}.json`;
+    link.download = `mywebsite-todos-${toDateKey(currentDate)}.xlsx`;
     document.body.append(link);
     link.click();
     link.remove();
     window.setTimeout(() => URL.revokeObjectURL(url), 0);
-    notify('待办备份已下载。');
+    notify('Excel 待办备份已下载。');
   };
 
   window.addEventListener('message', (event) => {
