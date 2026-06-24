@@ -30,6 +30,10 @@ type CloudUser = {
   email?: string;
 };
 
+type SignInData = {
+  user?: CloudUser | null;
+};
+
 type LoginState = {
   user?: CloudUser | null;
 } | null;
@@ -52,6 +56,7 @@ const sessionFromCurrentUser = (loginState?: LoginState) => {
 };
 
 const assertCloudResult = <T>(result: CloudResult<T>, fallback: string) => {
+  if (!result) throw new Error(fallback);
   if (result.error) throw new Error(result.error.message || fallback);
   return result.data;
 };
@@ -67,8 +72,9 @@ export const signUpWithPassword = async (email: string, password: string) => {
 };
 
 export const signInWithPassword = async (email: string, password: string) => {
-  await auth.signInWithPassword({ email, password });
-  const session = await getCloudSession();
+  const result = await auth.signInWithPassword({ email, password }) as CloudResult<SignInData>;
+  const loginData = assertCloudResult(result, '登录失败。');
+  const session = sessionFromCurrentUser({ user: loginData?.user }) || await getCloudSession();
   if (!session) throw new Error('登录成功，但未取得登录会话。请重试。');
   return session;
 };
