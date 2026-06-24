@@ -1,5 +1,5 @@
 ---
-import { themes } from '../data/site';
+import { themePath, themes } from '../data/site';
 
 interface Props {
   activeTheme?: string;
@@ -10,6 +10,6 @@ const { activeTheme } = Astro.props;
 
 <nav class="bottom-nav" aria-label="移动端主题导航">
   {themes.map((theme) => (
-    <a class:list={{ active: theme.slug === activeTheme }} href={`/topics/${theme.slug}`}>{theme.shortLabel}</a>
+    <a class:list={{ active: theme.slug === activeTheme }} href={themePath(theme)}>{theme.shortLabel}</a>
   ))}
 </nav>

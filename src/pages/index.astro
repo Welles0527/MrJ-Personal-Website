@@ -1,15 +1,15 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import TopicCard from '../components/TopicCard.astro';
-import { themes } from '../data/site';
+import { sitePath, themePath, themes } from '../data/site';
 ---
 
 <BaseLayout title="学问笔记｜J先生AI学习网站">
   <div class="home-topbar" aria-label="首页快捷导航">
     <span>首页</span>
     <nav>
-      {themes.map((theme) => <a href={`/topics/${theme.slug}`}>{theme.shortLabel}</a>)}
-      <a href="/topics/space">关于</a>
+      {themes.map((theme) => <a href={themePath(theme)}>{theme.shortLabel}</a>)}
+      <a href={sitePath('/topics/space')}>关于</a>
     </nav>
     <span class="login-soon home-login" aria-disabled="true">登录即将开放</span>
   </div>
@@ -20,8 +20,8 @@ import { themes } from '../data/site';
       <h1>J先生的AI学习资料馆</h1>
       <p class="lede">从知识到实践，从学习到应用。这里沉淀 AI 知识、实用工具、项目搭建和个人学习记录。</p>
       <div class="hero-actions">
-        <a class="button primary" href="/topics/courses/catalog">开始学习</a>
-        <a class="button secondary" href="/topics/knowledge">浏览知识地图</a>
+        <a class="button primary" href={sitePath('/topics/courses/catalog')}>开始学习</a>
+        <a class="button secondary" href={sitePath('/topics/knowledge')}>浏览知识地图</a>
       </div>
       <dl class="hero-facts" aria-label="网站内容概况">
         <div><dt>6</dt><dd>学习主题</dd></div>
@@ -29,7 +29,7 @@ import { themes } from '../data/site';
         <div><dt>持续</dt><dd>整理更新</dd></div>
       </dl>
     </div>
-    <img class="hero-illustration" src="/images/hero-learning-atlas.png" alt="以书本和六个主题组成的AI学习地图插画" />
+    <img class="hero-illustration" src={sitePath('/images/hero-learning-atlas.png')} alt="以书本和六个主题组成的AI学习地图插画" />
   </section>
 
   <section class="topics-section" aria-labelledby="topics-title">
@@ -39,7 +39,7 @@ import { themes } from '../data/site';
         <h2 id="topics-title">六大学习板块</h2>
         <p>覆盖 AI 学习与实践的完整路径；首页仅展示二级入口。</p>
       </div>
-      <a class="all-topics-link" href="/topics/knowledge">查看全部板块</a>
+      <a class="all-topics-link" href={sitePath('/topics/knowledge')}>查看全部板块</a>
     </div>
     <div class="topic-map" aria-label="六大学习板块">
       {themes.map((theme, index) => <TopicCard theme={theme} index={index} />)}

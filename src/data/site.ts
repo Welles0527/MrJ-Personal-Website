@@ -36,6 +36,15 @@ const detail = (slug: string, title: string, tags: string[], summary?: string): 
   status: 'draft'
 });
 
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+export const sitePath = (path = '/') => {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return `${basePath}${normalizedPath}`;
+};
+
+export const themePath = (theme: Theme) => sitePath(`/topics/${theme.slug}`);
+
 export const themes: Theme[] = [
   {
     slug: 'knowledge',
@@ -43,7 +52,7 @@ export const themes: Theme[] = [
     title: 'AI知识库',
     color: 'olive',
     description: '梳理概念、方法与命令，建立可复用的 AI 基础知识体系。',
-    image: '/images/topic-knowledge.png',
+    image: sitePath('/images/topic-knowledge.png'),
     categories: [
       {
         slug: 'terms',
@@ -67,7 +76,7 @@ export const themes: Theme[] = [
     title: 'AI实用工具',
     color: 'clay',
     description: '筛选并记录真正提升学习、创作和交付效率的实用工具。',
-    image: '/images/topic-tools.png',
+    image: sitePath('/images/topic-tools.png'),
     categories: [
       { slug: 'llm', title: '大模型 LLM', details: [detail('model-guide', '模型选择与使用记录', ['大模型', '入门'])] },
       { slug: 'skills-mcp', title: 'Skills / MCP', details: [detail('skills-mcp-directory', 'Skills / MCP大全', ['MCP', '工具'])] },
@@ -81,7 +90,7 @@ export const themes: Theme[] = [
     title: 'AI项目搭建',
     color: 'violet',
     description: '把 AI 想法落成项目，沉淀配置、流程与持续交付的方法。',
-    image: '/images/topic-build.png',
+    image: sitePath('/images/topic-build.png'),
     categories: [
       { slug: 'vibe-coding', title: 'Vibe Coding', details: [detail('definition', '定义', ['Vibe Coding', '方法']), detail('stages', '1.0野生 / 2.0受控 / 3.0工程化 / 4.0商业化', ['Vibe Coding', '阶段']), detail('launch-flow', '产品发布流程', ['发布', '流程']), detail('complex-projects', '复杂项目配置', ['工程化', '部署'])] },
       { slug: 'opc', title: 'OPC一人公司搭建', details: [detail('md-configuration', 'md配置', ['配置', '文档']), detail('advanced-tools', '高级工具', ['工具', '进阶'])] },
@@ -95,7 +104,7 @@ export const themes: Theme[] = [
     title: 'AI个人应用',
     color: 'clay',
     description: '记录个人可直接使用的 AI 网页、小插件、课件和灵感案例。',
-    image: '/images/topic-applications.png',
+    image: sitePath('/images/topic-applications.png'),
     categories: [
       { slug: 'original-applications', title: '自创应用', details: [detail('web-pages', '网页', ['应用', '网页']), detail('mini-plugins', '小插件', ['应用', '工具']), detail('courseware', '课件', ['应用', '教学'])] },
       { slug: 'inspiration-station', title: 'AI灵感站', details: [detail('theology', '神学', ['灵感', '神学']), detail('office', '办公', ['灵感', '办公']), detail('scenes', '场景应用', ['灵感', '场景']), detail('investment', '投资', ['灵感', '投资']), detail('celebrity', '名人', ['灵感', '人物']), detail('fun', '趣味', ['灵感', '趣味'])] },
@@ -108,7 +117,7 @@ export const themes: Theme[] = [
     title: 'AI课程学习',
     color: 'olive',
     description: '把自学材料整理为可跟随、可复盘的课程路径与视频入口。',
-    image: '/images/topic-courses.png',
+    image: sitePath('/images/topic-courses.png'),
     categories: [
       { slug: 'expert-videos', title: '大神视频', details: [detail('yao-shunyu', '姚顺宇采访视频', ['视频', '访谈']), detail('karpathy', 'Karpathy大神视频', ['视频', '学习'])] },
       { slug: 'academy', title: '课程介绍', details: [detail('academy-intro', 'J先生魔法学院课程介绍', ['课程', '介绍'])] },
@@ -123,7 +132,7 @@ export const themes: Theme[] = [
     title: '个人空间站',
     color: 'sky',
     description: '公开记录效率系统、生活运动、投资观察和旅行足迹。',
-    image: '/images/topic-space.png',
+    image: sitePath('/images/topic-space.png'),
     categories: [
       { slug: 'planning', title: '日历待办', details: [detail('calendar', '个性化日历创建', ['规划', '日历']), detail('todo', '待办事项功能创建', ['规划', '效率'])] },
       { slug: 'lifestyle', title: '生活运动', details: [detail('snooker', '斯诺克', ['生活', '运动']), detail('football', '足球', ['生活', '运动']), detail('coffee', '咖啡', ['生活', '兴趣']), detail('games', '游戏', ['生活', '兴趣'])] },
@@ -139,7 +148,7 @@ export const getCategory = (theme: Theme, slug: string) => theme.categories.find
 
 export const getDetail = (category: Category, slug: string) => category.details.find((item) => item.slug === slug);
 
-export const categoryPath = (theme: Theme, category: Category) => `/topics/${theme.slug}/${category.slug}`;
+export const categoryPath = (theme: Theme, category: Category) => sitePath(`/topics/${theme.slug}/${category.slug}`);
 
 export const categoryFilterPath = (theme: Theme, category: Category, filter: CategoryFilter) => `${categoryPath(theme, category)}?group=${filter.slug}`;
 

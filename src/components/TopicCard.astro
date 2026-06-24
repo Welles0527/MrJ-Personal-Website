@@ -1,5 +1,5 @@
 ---
-import { categoryFilterPath, categoryPath, type Theme } from '../data/site';
+import { categoryFilterPath, categoryPath, themePath, type Theme } from '../data/site';
 
 interface Props {
   theme: Theme;
@@ -14,7 +14,7 @@ const featuredCategories = theme.categories.slice(0, 4);
   <div class="topic-card-copy">
     <div class="topic-heading">
       <span class="topic-index">{String(index + 1).padStart(2, '0')}</span>
-      <h2><a href={`/topics/${theme.slug}`}>{theme.title}</a></h2>
+      <h2><a href={themePath(theme)}>{theme.title}</a></h2>
     </div>
     <p>{theme.description}</p>
     <ul class="category-links" aria-label={`${theme.title}分类`}>
@@ -29,7 +29,7 @@ const featuredCategories = theme.categories.slice(0, 4);
         </li>
       ))}
     </ul>
-    <a class="topic-action" href={`/topics/${theme.slug}`}>进入板块</a>
+    <a class="topic-action" href={themePath(theme)}>进入板块</a>
   </div>
   <img class="topic-illustration" src={theme.image} alt={`${theme.title}线稿插画`} loading="lazy" />
 </article>

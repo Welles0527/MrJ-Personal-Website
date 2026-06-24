@@ -1,5 +1,5 @@
 ---
-import { categoryFilterPath, categoryPath, detailPath, themes } from '../data/site';
+import { categoryFilterPath, categoryPath, detailPath, sitePath, themes } from '../data/site';
 
 interface Props {
   activeTheme?: string;
@@ -9,7 +9,7 @@ const { activeTheme } = Astro.props;
 ---
 
 <aside class="sidebar" aria-label="网站目录">
-  <a class="brand" href="/">
+  <a class="brand" href={sitePath('/')}>
     <span class="brand-title">学习导航</span>
     <span class="brand-subtitle">J先生AI学习网站</span>
   </a>
