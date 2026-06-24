@@ -1,0 +1,199 @@
+---
+import { aiTermGroups, aiTerms } from '../data/aiTerms';
+
+const groupCounts = new Map(aiTermGroups.map(({ slug }) => [slug, aiTerms.filter((term) => term.group === slug).length]));
+const requiredCount = aiTerms.filter((term) => term.isRequired).length;
+const columns = [
+  { key: 'order', label: '序号', type: 'number' },
+  { key: 'term', label: '中文术语', type: 'text' },
+  { key: 'english', label: '英文 / 缩写', type: 'text' },
+  { key: 'briefDefinition', label: '精简定义', type: 'text' },
+  { key: 'detailedDefinition', label: '详细定义', type: 'text' },
+  { key: 'value', label: '价值作用', type: 'text' },
+  { key: 'useCase', label: '使用场景', type: 'text' }
+] as const;
+---
+
+<section class="terms-browser" data-terms-browser aria-label="AI术语资料表">
+  <div class="terms-toolbar">
+    <label class="term-search">
+      <span>搜索术语</span>
+      <input data-term-search type="search" placeholder="搜索中文、英文、定义或使用场景" autocomplete="off" aria-controls="terms-table" />
+    </label>
+    <div class="term-filters" role="group" aria-label="术语分类筛选">
+      <button class="term-filter active" type="button" data-term-filter="all" aria-pressed="true">全部 <span>{aiTerms.length}</span></button>
+      {aiTermGroups.map((group) => (
+        <button class="term-filter" type="button" data-term-filter={group.slug} aria-pressed="false">
+          {group.label} <span>{groupCounts.get(group.slug)}</span>
+        </button>
+      ))}
+    </div>
+    <div class="study-filters" role="group" aria-label="学习优先级筛选">
+      <span class="filter-label">学习优先级</span>
+      <button class="term-filter study-filter active" type="button" data-study-filter="all" aria-pressed="true">全部 <span>{aiTerms.length}</span></button>
+      <button class="term-filter study-filter" type="button" data-study-filter="required" aria-pressed="false">必学 <span>{requiredCount}</span></button>
+      <button class="term-filter study-filter" type="button" data-study-filter="optional" aria-pressed="false">选学 <span>{aiTerms.length - requiredCount}</span></button>
+    </div>
+  </div>
+
+  <p class="terms-result" aria-live="polite"><strong data-term-count>{aiTerms.length}</strong> 条术语</p>
+
+  <div class="terms-table-scroll" tabindex="0" aria-label="术语表格，可横向滚动">
+    <table id="terms-table" class="terms-table">
+      <thead>
+        <tr>
+          {columns.map((column) => (
+            <th scope="col" data-sort-header={column.key} aria-sort={column.key === 'order' ? 'ascending' : 'none'}>
+              <button type="button" data-term-sort={column.key} data-sort-type={column.type}>
+                {column.label}<span class="sort-indicator" data-sort-icon={column.key} aria-hidden="true">{column.key === 'order' ? '↑' : '↕'}</span>
+              </button>
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody data-terms-body>
+        {aiTerms.map((term) => (
+          <tr
+            data-term-row
+            data-group={term.group}
+            data-required={String(term.isRequired)}
+            data-search={`${term.term} ${term.english} ${term.briefDefinition} ${term.detailedDefinition} ${term.value} ${term.useCase}`}
+            data-order={term.order}
+            data-term={term.term}
+            data-english={term.english}
+            data-brief-definition={term.briefDefinition}
+            data-detailed-definition={term.detailedDefinition}
+            data-value={term.value}
+            data-use-case={term.useCase}
+          >
+            <td>{term.order}</td>
+            <td class="term-name">{term.term}{term.isRequired && <span class="required-marker" title="必学词汇" aria-label="必学词汇">必</span>}</td>
+            <td>{term.english}</td>
+            <td>{term.briefDefinition}</td>
+            <td>{term.detailedDefinition}</td>
+            <td>{term.value}</td>
+            <td>{term.useCase}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  <p class="terms-empty" data-term-empty hidden>没有找到匹配的 AI术语，请更换关键词或分类。</p>
+</section>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-terms-browser]');
+
+  if (root) {
+    const input = root.querySelector<HTMLInputElement>('[data-term-search]');
+    const body = root.querySelector<HTMLTableSectionElement>('[data-terms-body]');
+    const count = root.querySelector<HTMLElement>('[data-term-count]');
+    const empty = root.querySelector<HTMLElement>('[data-term-empty]');
+    const filterButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-term-filter]')];
+    const studyButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-study-filter]')];
+    const sortButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-term-sort]')];
+    const rows = body ? [...body.querySelectorAll<HTMLTableRowElement>('[data-term-row]')] : [];
+    const collator = new Intl.Collator('zh-CN', { numeric: true, sensitivity: 'base' });
+    const validGroups = new Set(filterButtons.map((button) => button.dataset.termFilter));
+    const queryGroup = new URLSearchParams(window.location.search).get('group');
+    let activeGroup = queryGroup && validGroups.has(queryGroup) ? queryGroup : 'all';
+    let activeStudy = 'all';
+    let sortKey = 'order';
+    let sortDirection: 'ascending' | 'descending' = 'ascending';
+
+    const getSortValue = (row: HTMLTableRowElement, key: string) => row.dataset[key] ?? '';
+
+    const updateSortIndicators = () => {
+      sortButtons.forEach((button) => {
+        const key = button.dataset.termSort ?? '';
+        const header = root.querySelector<HTMLElement>(`[data-sort-header="${key}"]`);
+        const icon = root.querySelector<HTMLElement>(`[data-sort-icon="${key}"]`);
+        const active = key === sortKey;
+
+        header?.setAttribute('aria-sort', active ? sortDirection : 'none');
+        if (icon) icon.textContent = active ? (sortDirection === 'ascending' ? '↑' : '↓') : '↕';
+      });
+    };
+
+    const updateFilters = () => {
+      filterButtons.forEach((button) => {
+        const active = button.dataset.termFilter === activeGroup;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', String(active));
+      });
+    };
+
+    const updateStudyFilters = () => {
+      studyButtons.forEach((button) => {
+        const active = button.dataset.studyFilter === activeStudy;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', String(active));
+      });
+    };
+
+    const renderRows = () => {
+      const keyword = input?.value.trim().toLocaleLowerCase() ?? '';
+      const direction = sortDirection === 'ascending' ? 1 : -1;
+      const type = root.querySelector<HTMLButtonElement>(`[data-term-sort="${sortKey}"]`)?.dataset.sortType;
+
+      rows.sort((left, right) => {
+        const leftValue = getSortValue(left, sortKey);
+        const rightValue = getSortValue(right, sortKey);
+        const comparison = type === 'number'
+          ? Number(leftValue) - Number(rightValue)
+          : collator.compare(leftValue, rightValue);
+        return comparison * direction;
+      });
+
+      let visibleCount = 0;
+      rows.forEach((row) => {
+        const matchesGroup = activeGroup === 'all' || row.dataset.group === activeGroup;
+        const matchesStudy = activeStudy === 'all'
+          || (activeStudy === 'required' && row.dataset.required === 'true')
+          || (activeStudy === 'optional' && row.dataset.required === 'false');
+        const matchesSearch = !keyword || row.dataset.search?.toLocaleLowerCase().includes(keyword);
+        const visible = matchesGroup && matchesStudy && matchesSearch;
+
+        row.hidden = !visible;
+        body?.append(row);
+        if (visible) visibleCount += 1;
+      });
+
+      if (count) count.textContent = String(visibleCount);
+      if (empty) empty.hidden = visibleCount !== 0;
+    };
+
+    const setGroup = (group: string, updateUrl = false) => {
+      activeGroup = validGroups.has(group) ? group : 'all';
+      updateFilters();
+      renderRows();
+
+      if (updateUrl) {
+        const url = new URL(window.location.href);
+        if (activeGroup === 'all') url.searchParams.delete('group');
+        else url.searchParams.set('group', activeGroup);
+        window.history.replaceState({}, '', url);
+      }
+    };
+
+    input?.addEventListener('input', renderRows);
+    filterButtons.forEach((button) => button.addEventListener('click', () => setGroup(button.dataset.termFilter ?? 'all', true)));
+    studyButtons.forEach((button) => button.addEventListener('click', () => {
+      activeStudy = button.dataset.studyFilter ?? 'all';
+      updateStudyFilters();
+      renderRows();
+    }));
+    sortButtons.forEach((button) => button.addEventListener('click', () => {
+      const nextKey = button.dataset.termSort ?? 'order';
+      sortDirection = nextKey === sortKey && sortDirection === 'ascending' ? 'descending' : 'ascending';
+      sortKey = nextKey;
+      updateSortIndicators();
+      renderRows();
+    }));
+
+    setGroup(activeGroup);
+    updateStudyFilters();
+    updateSortIndicators();
+  }
+</script>

@@ -1,0 +1,202 @@
+---
+import { cliCommandGroups, cliCommands } from '../data/cliCommands';
+
+const groupCounts = new Map(cliCommandGroups.map(({ slug }) => [slug, cliCommands.filter((command) => command.group === slug).length]));
+const requiredCount = cliCommands.filter((command) => command.isRequired).length;
+const columns = [
+  { key: 'order', label: '序号', type: 'number' },
+  { key: 'study', label: '必学', type: 'text' },
+  { key: 'claudeCommand', label: 'CC 命令', type: 'text' },
+  { key: 'codexCommand', label: 'Codex 命令', type: 'text' },
+  { key: 'naturalLanguage', label: '自然语言 / 功能', type: 'text' },
+  { key: 'memory', label: '一句话记忆', type: 'text' },
+  { key: 'description', label: '完整解释说明', type: 'text' }
+] as const;
+---
+
+<section class="cli-browser" data-cli-browser aria-label="CLI 命令资料表">
+  <div class="cli-toolbar">
+    <label class="cli-search">
+      <span>搜索命令</span>
+      <input data-cli-search type="search" placeholder="搜索命令、功能、说明或使用场景" autocomplete="off" aria-controls="cli-table" />
+    </label>
+    <div class="cli-filters" role="group" aria-label="CLI 命令分类筛选">
+      <button class="term-filter active" type="button" data-cli-filter="all" aria-pressed="true">全部 <span>{cliCommands.length}</span></button>
+      {cliCommandGroups.map((group) => (
+        <button class="term-filter" type="button" data-cli-filter={group.slug} aria-pressed="false">
+          {group.label} <span>{groupCounts.get(group.slug)}</span>
+        </button>
+      ))}
+    </div>
+    <div class="cli-study-filters" role="group" aria-label="学习优先级筛选">
+      <span class="filter-label">学习优先级</span>
+      <button class="term-filter study-filter active" type="button" data-cli-study-filter="all" aria-pressed="true">全部 <span>{cliCommands.length}</span></button>
+      <button class="term-filter study-filter" type="button" data-cli-study-filter="required" aria-pressed="false">必学 <span>{requiredCount}</span></button>
+      <button class="term-filter study-filter" type="button" data-cli-study-filter="optional" aria-pressed="false">选学 <span>{cliCommands.length - requiredCount}</span></button>
+    </div>
+  </div>
+
+  <p class="cli-result" aria-live="polite"><strong data-cli-count>{cliCommands.length}</strong> 条命令</p>
+
+  <div class="cli-table-scroll" tabindex="0" aria-label="CLI 命令表格，可横向滚动">
+    <table id="cli-table" class="cli-table">
+      <thead>
+        <tr>
+          {columns.map((column) => (
+            <th scope="col" data-cli-sort-header={column.key} aria-sort={column.key === 'order' ? 'ascending' : 'none'}>
+              <button type="button" data-cli-sort={column.key} data-sort-type={column.type}>
+                {column.label}<span class="sort-indicator" data-cli-sort-icon={column.key} aria-hidden="true">{column.key === 'order' ? '↑' : '↕'}</span>
+              </button>
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody data-cli-body>
+        {cliCommands.map((command) => (
+          <tr
+            data-cli-row
+            data-group={command.group}
+            data-required={String(command.isRequired)}
+            data-search={`${command.category} ${command.claudeCommand} ${command.codexCommand} ${command.naturalLanguage} ${command.isRequired ? '必学' : '选学'} ${command.memory} ${command.description} ${command.whenToUse} ${command.notes}`}
+            data-order={command.order}
+            data-category={command.category}
+            data-claude-command={command.claudeCommand}
+            data-codex-command={command.codexCommand}
+            data-natural-language={command.naturalLanguage}
+            data-study={command.isRequired ? '必学' : '选学'}
+            data-memory={command.memory}
+            data-description={command.description}
+            data-when-to-use={command.whenToUse}
+            data-notes={command.notes}
+          >
+            <td>{command.order}</td>
+            <td><span class:list={['cli-study-status', { required: command.isRequired }]}>{command.isRequired ? '必学' : '选学'}</span></td>
+            <td class="cli-command">{command.claudeCommand || '—'}</td>
+            <td class="cli-command">{command.codexCommand || '—'}</td>
+            <td>{command.naturalLanguage || '—'}</td>
+            <td>{command.memory || '—'}</td>
+            <td>{command.description || '—'}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  <p class="cli-empty" data-cli-empty hidden>没有找到匹配的 CLI 命令，请更换关键词或分类。</p>
+</section>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-cli-browser]');
+
+  if (root) {
+    const input = root.querySelector<HTMLInputElement>('[data-cli-search]');
+    const body = root.querySelector<HTMLTableSectionElement>('[data-cli-body]');
+    const count = root.querySelector<HTMLElement>('[data-cli-count]');
+    const empty = root.querySelector<HTMLElement>('[data-cli-empty]');
+    const filterButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-cli-filter]')];
+    const studyButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-cli-study-filter]')];
+    const sortButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-cli-sort]')];
+    const rows = body ? [...body.querySelectorAll<HTMLTableRowElement>('[data-cli-row]')] : [];
+    const collator = new Intl.Collator('zh-CN', { numeric: true, sensitivity: 'base' });
+    const validGroups = new Set(filterButtons.map((button) => button.dataset.cliFilter));
+    const queryGroup = new URLSearchParams(window.location.search).get('group');
+    let activeGroup = queryGroup && validGroups.has(queryGroup) ? queryGroup : 'all';
+    let activeStudy = 'all';
+    let sortKey = 'order';
+    let sortDirection: 'ascending' | 'descending' = 'ascending';
+
+    const getSortValue = (row: HTMLTableRowElement, key: string) => row.dataset[key] ?? '';
+
+    const updateSortIndicators = () => {
+      sortButtons.forEach((button) => {
+        const key = button.dataset.cliSort ?? '';
+        const header = root.querySelector<HTMLElement>(`[data-cli-sort-header="${key}"]`);
+        const icon = root.querySelector<HTMLElement>(`[data-cli-sort-icon="${key}"]`);
+        const active = key === sortKey;
+
+        header?.setAttribute('aria-sort', active ? sortDirection : 'none');
+        if (icon) icon.textContent = active ? (sortDirection === 'ascending' ? '↑' : '↓') : '↕';
+      });
+    };
+
+    const updateFilters = () => {
+      filterButtons.forEach((button) => {
+        const active = button.dataset.cliFilter === activeGroup;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', String(active));
+      });
+    };
+
+    const updateStudyFilters = () => {
+      studyButtons.forEach((button) => {
+        const active = button.dataset.cliStudyFilter === activeStudy;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', String(active));
+      });
+    };
+
+    const renderRows = () => {
+      const keyword = input?.value.trim().toLocaleLowerCase() ?? '';
+      const direction = sortDirection === 'ascending' ? 1 : -1;
+      const type = root.querySelector<HTMLButtonElement>(`[data-cli-sort="${sortKey}"]`)?.dataset.sortType;
+
+      rows.sort((left, right) => {
+        const leftValue = getSortValue(left, sortKey);
+        const rightValue = getSortValue(right, sortKey);
+        const comparison = type === 'number'
+          ? Number(leftValue) - Number(rightValue)
+          : collator.compare(leftValue, rightValue);
+        return comparison * direction;
+      });
+
+      let visibleCount = 0;
+      rows.forEach((row) => {
+        const matchesGroup = activeGroup === 'all' || row.dataset.group === activeGroup;
+        const matchesStudy = activeStudy === 'all'
+          || (activeStudy === 'required' && row.dataset.required === 'true')
+          || (activeStudy === 'optional' && row.dataset.required === 'false');
+        const matchesSearch = !keyword || row.dataset.search?.toLocaleLowerCase().includes(keyword);
+        const visible = matchesGroup && matchesStudy && matchesSearch;
+
+        row.hidden = !visible;
+        body?.append(row);
+        if (visible) visibleCount += 1;
+      });
+
+      if (count) count.textContent = String(visibleCount);
+      if (empty) empty.hidden = visibleCount !== 0;
+    };
+
+    const setGroup = (group: string, updateUrl = false) => {
+      activeGroup = validGroups.has(group) ? group : 'all';
+      updateFilters();
+      renderRows();
+
+      if (updateUrl) {
+        const url = new URL(window.location.href);
+        if (activeGroup === 'all') url.searchParams.delete('group');
+        else url.searchParams.set('group', activeGroup);
+        window.history.replaceState({}, '', url);
+      }
+    };
+
+    input?.addEventListener('input', renderRows);
+    filterButtons.forEach((button) => button.addEventListener('click', () => setGroup(button.dataset.cliFilter ?? 'all', true)));
+    studyButtons.forEach((button) => button.addEventListener('click', () => {
+      activeStudy = button.dataset.cliStudyFilter ?? 'all';
+      updateStudyFilters();
+      renderRows();
+    }));
+    sortButtons.forEach((button) => button.addEventListener('click', () => {
+      const nextKey = button.dataset.cliSort ?? 'order';
+      sortDirection = nextKey === sortKey && sortDirection === 'ascending' ? 'descending' : 'ascending';
+      sortKey = nextKey;
+      updateSortIndicators();
+      renderRows();
+    }));
+
+    setGroup(activeGroup);
+    updateStudyFilters();
+    updateSortIndicators();
+  }
+</script>

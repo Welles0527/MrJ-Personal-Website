@@ -1,0 +1,41 @@
+---
+import { categoryFilterPath, categoryPath, detailPath, themes } from '../data/site';
+
+interface Props {
+  activeTheme?: string;
+}
+
+const { activeTheme } = Astro.props;
+---
+
+<aside class="sidebar" aria-label="网站目录">
+  <a class="brand" href="/">
+    <span class="brand-title">学习导航</span>
+    <span class="brand-subtitle">J先生AI学习网站</span>
+  </a>
+
+  <nav class="sidebar-nav">
+    {themes.map((theme, index) => (
+      <details class:list={['nav-theme', `tone-${theme.color}`]} open={theme.slug === activeTheme}>
+        <summary>
+          <span class="nav-index">{String(index + 1).padStart(2, '0')}</span>
+          <span>{theme.title}</span>
+        </summary>
+        <div class="nav-tree">
+          {theme.categories.map((category) => (
+            <section class="nav-category">
+              <a href={categoryPath(theme, category)}>{category.title}</a>
+              <ul>
+                {category.filters?.length
+                  ? category.filters.map((filter) => <li><a href={categoryFilterPath(theme, category, filter)}>{filter.title}</a></li>)
+                  : category.details.map((item) => <li><a href={detailPath(theme, category, item)}>{item.title}</a></li>)}
+              </ul>
+            </section>
+          ))}
+        </div>
+      </details>
+    ))}
+  </nav>
+
+  <span class="login-soon" aria-disabled="true">登录即将开放</span>
+</aside>

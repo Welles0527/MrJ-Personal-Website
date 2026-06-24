@@ -1,0 +1,63 @@
+---
+import AiTermsTable from '../../../../components/AiTermsTable.astro';
+import CliCommandsTable from '../../../../components/CliCommandsTable.astro';
+import SkillsMcpTable from '../../../../components/SkillsMcpTable.astro';
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import { detailPath, themes } from '../../../../data/site';
+
+export function getStaticPaths() {
+  return themes.flatMap((theme) => theme.categories.map((category) => ({ params: { theme: theme.slug, category: category.slug }, props: { theme, category } })));
+}
+
+const { theme, category } = Astro.props;
+const isTermsPage = theme.slug === 'knowledge' && category.slug === 'terms';
+const isCliPage = theme.slug === 'knowledge' && category.slug === 'cli';
+const isSkillsMcpPage = theme.slug === 'tools' && category.slug === 'skills-mcp';
+---
+
+<BaseLayout title={`${category.title}｜${theme.title}｜学习导航`} activeTheme={theme.slug}>
+  <section class:list={['section-intro', { 'terms-intro': isTermsPage || isCliPage || isSkillsMcpPage }]}>
+    <p class={`eyebrow tone-${theme.color}`}>{theme.title}</p>
+    <h1>{category.title}</h1>
+    <p class="lede">{isTermsPage ? '按分类检索、筛选和排序，建立可复用的 AI 与软件术语基础。' : isCliPage ? '按分类、学习优先级和关键词检索 CC 与 Codex 命令。' : isSkillsMcpPage ? '按功能、应用类型、推荐级别和测试状态筛选实用资源。' : '通过标签和关键词找到已发布与正在整理的内容。'}</p>
+  </section>
+
+  {isTermsPage ? (
+    <AiTermsTable />
+  ) : isCliPage ? (
+    <CliCommandsTable />
+  ) : isSkillsMcpPage ? (
+    <SkillsMcpTable />
+  ) : (
+    <>
+      <label class="search-box">
+        <span>搜索本分类</span>
+        <input id="content-search" type="search" placeholder="输入关键词或标签" autocomplete="off" />
+      </label>
+
+      <section class="detail-list" id="detail-list">
+        {category.details.map((item) => (
+          <article class="detail-row" data-search={`${item.title} ${item.tags.join(' ')}`}>
+            <div>
+              <div class="tag-list">{item.tags.map((tag) => <span>{tag}</span>)}</div>
+              <h2>{item.title}</h2>
+              <p>{item.summary ?? '内容目录已建立，正文正在整理中。'}</p>
+            </div>
+            <a href={detailPath(theme, category, item)}>{item.status === 'draft' ? '整理中' : '查看内容'}</a>
+          </article>
+        ))}
+      </section>
+
+      <script>
+        const input = document.querySelector<HTMLInputElement>('#content-search');
+        const rows = [...document.querySelectorAll<HTMLElement>('.detail-row')];
+        input?.addEventListener('input', () => {
+          const keyword = input.value.trim().toLocaleLowerCase();
+          rows.forEach((row) => {
+            row.hidden = Boolean(keyword) && !row.dataset.search?.toLocaleLowerCase().includes(keyword);
+          });
+        });
+      </script>
+    </>
+  )}
+</BaseLayout>

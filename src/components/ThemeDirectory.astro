@@ -1,0 +1,25 @@
+---
+import { categoryFilterPath, categoryPath, detailPath, type Theme } from '../data/site';
+
+interface Props {
+  theme: Theme;
+}
+
+const { theme } = Astro.props;
+---
+
+<details class="mobile-directory">
+  <summary>查看「{theme.title}」完整目录</summary>
+  <div>
+    {theme.categories.map((category) => (
+      <section>
+        <a href={categoryPath(theme, category)}>{category.title}</a>
+        <ul>
+          {category.filters?.length
+            ? category.filters.map((filter) => <li><a href={categoryFilterPath(theme, category, filter)}>{filter.title}</a></li>)
+            : category.details.map((item) => <li><a href={detailPath(theme, category, item)}>{item.title}</a></li>)}
+        </ul>
+      </section>
+    ))}
+  </div>
+</details>

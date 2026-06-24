@@ -1,0 +1,36 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ThemeDirectory from '../../../components/ThemeDirectory.astro';
+import { categoryPath, themes } from '../../../data/site';
+
+export function getStaticPaths() {
+  return themes.map((theme) => ({ params: { theme: theme.slug }, props: { theme } }));
+}
+
+const { theme } = Astro.props;
+---
+
+<BaseLayout title={`${theme.title}｜学问笔记`} activeTheme={theme.slug}>
+  <section class="section-intro">
+    <p class={`eyebrow tone-${theme.color}`}>主题 {String(themes.findIndex((item) => item.slug === theme.slug) + 1).padStart(2, '0')}</p>
+    <h1>{theme.title}</h1>
+    <p class="lede">{theme.description}</p>
+  </section>
+
+  <ThemeDirectory theme={theme} />
+
+  <section class="category-overview">
+    {theme.categories.map((category) => (
+      <article class="category-panel">
+        <div>
+          <h2>{category.title}</h2>
+          <p>{category.filters?.length ?? category.details.length} {category.filters ? '个术语分类' : '项内容'} · 未完成内容会持续整理发布</p>
+        </div>
+        <ul>
+          {(category.filters ?? category.details).slice(0, 4).map((item) => <li>{item.title}</li>)}
+        </ul>
+        <a href={categoryPath(theme, category)}>进入分类 →</a>
+      </article>
+    ))}
+  </section>
+</BaseLayout>

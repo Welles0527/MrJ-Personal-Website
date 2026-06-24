@@ -1,0 +1,45 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import TodoPage from '../../../../components/TodoPage.astro';
+import { getCategory, getDetail, isInvestment, themes } from '../../../../data/site';
+
+export function getStaticPaths() {
+  return themes.flatMap((theme) => theme.categories.flatMap((category) => category.details.map((item) => ({
+    params: { theme: theme.slug, category: category.slug, page: item.slug },
+    props: { theme, category, item }
+  }))));
+}
+
+const { theme, category, item } = Astro.props;
+const investmentNote = isInvestment(theme, category);
+const previousCategory = getCategory(theme, category.slug);
+const currentItem = previousCategory ? getDetail(previousCategory, item.slug) : item;
+const isTodoPage = theme.slug === 'space' && category.slug === 'planning' && item.slug === 'todo';
+---
+
+{isTodoPage ? (
+  <TodoPage />
+) : (
+<BaseLayout title={`${item.title}｜学问笔记`} activeTheme={theme.slug}>
+  <article class="article-page">
+    <p class={`eyebrow tone-${theme.color}`}>{theme.title} / {category.title}</p>
+    <h1>{item.title}</h1>
+    <div class="tag-list">{item.tags.map((tag) => <span>{tag}</span>)}</div>
+    <p class="article-summary">{currentItem?.summary ?? '该页面已建立，内容会依据 J先生的原始目录持续整理发布。'}</p>
+
+    {investmentNote && <p class="disclaimer">仅为个人记录，不构成投资建议。</p>}
+
+    {category.slug === 'videos' ? (
+      <section class="video-channel">
+        <h2>视频号课程入口</h2>
+        <p>视频将通过视频号入口或二维码提供。二维码素材准备完成后会在此处更新。</p>
+      </section>
+    ) : (
+      <section class="draft-panel">
+        <span>整理中</span>
+        <p>目录与访问路径已上线；正文正在依据原始 Markdown 内容整理，完成后会直接在此页发布。</p>
+      </section>
+    )}
+  </article>
+</BaseLayout>
+)}

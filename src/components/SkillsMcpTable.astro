@@ -1,0 +1,246 @@
+---
+import {
+  skillsMcpApplicationTypes,
+  skillsMcpEntries,
+  skillsMcpFunctionTypes,
+  skillsMcpRecommendationLevels,
+  skillsMcpTestStatuses
+} from '../data/skillsMcp';
+
+const countBy = (key: keyof typeof skillsMcpEntries[number]) => new Map(
+  [...new Set(skillsMcpEntries.map((entry) => String(entry[key])))].map((value) => [
+    value,
+    skillsMcpEntries.filter((entry) => String(entry[key]) === value).length
+  ])
+);
+const functionCounts = countBy('functionType');
+const recommendationCounts = countBy('recommendation');
+const testedCounts = countBy('tested');
+const visibleRecommendationLevels = skillsMcpRecommendationLevels.filter((level) => recommendationCounts.has(level));
+const columns = [
+  { key: 'functionType', label: '功能类型', type: 'text' },
+  { key: 'applicationType', label: '应用类型', type: 'text' },
+  { key: 'recommendation', label: '推荐级别', type: 'text' },
+  { key: 'name', label: '名称', type: 'text' },
+  { key: 'purpose', label: '作用', type: 'text' },
+  { key: 'claudeCode', label: 'Claude Code', type: 'text' },
+  { key: 'codex', label: 'Codex', type: 'text' },
+  { key: 'linkPath', label: '链接 / 安装路径', type: 'text' }
+] as const;
+const isExternalLink = (value: string) => /^https?:\/\//i.test(value);
+---
+
+<section class="skills-browser" data-skills-browser aria-label="Skills 与 MCP 目录表">
+  <div class="skills-toolbar">
+    <label class="skills-search">
+      <span>搜索资源</span>
+      <input data-skills-search type="search" placeholder="搜索名称、作用、产品或安装路径" autocomplete="off" aria-controls="skills-table" />
+    </label>
+
+    <div class="skills-filter-block" role="group" aria-label="功能类型筛选">
+      <span class="skills-filter-label">功能类型</span>
+      <div class="skills-filter-buttons">
+        <button class="term-filter active" type="button" data-skills-function-filter="all" aria-pressed="true">全部 <span>{skillsMcpEntries.length}</span></button>
+        {skillsMcpFunctionTypes.map((type) => (
+          <button class="term-filter" type="button" data-skills-function-filter={type} aria-pressed="false">
+            {type} <span>{functionCounts.get(type)}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+
+    <label class="skills-select">
+      <span class="skills-filter-label">应用类型</span>
+      <select data-skills-application-filter aria-label="应用类型筛选">
+        <option value="all">全部应用类型（{skillsMcpApplicationTypes.length}）</option>
+        {skillsMcpApplicationTypes.map((type) => <option value={type}>{type}</option>)}
+      </select>
+    </label>
+
+    <div class="skills-filter-block" role="group" aria-label="推荐级别筛选">
+      <span class="skills-filter-label">推荐级别</span>
+      <div class="skills-filter-buttons">
+        <button class="term-filter active" type="button" data-skills-recommendation-filter="all" aria-pressed="true">全部 <span>{skillsMcpEntries.length}</span></button>
+        {visibleRecommendationLevels.map((level) => (
+          <button class="term-filter" type="button" data-skills-recommendation-filter={level} aria-pressed="false">
+            {level} <span>{recommendationCounts.get(level)}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+
+    <div class="skills-filter-block" role="group" aria-label="测试状态筛选">
+      <span class="skills-filter-label">是否已测试</span>
+      <div class="skills-filter-buttons">
+        <button class="term-filter active" type="button" data-skills-tested-filter="all" aria-pressed="true">全部 <span>{skillsMcpEntries.length}</span></button>
+        {skillsMcpTestStatuses.map((status) => (
+          <button class="term-filter" type="button" data-skills-tested-filter={status} aria-pressed="false">
+            {status} <span>{testedCounts.get(status)}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  <p class="skills-result" aria-live="polite"><strong data-skills-count>{skillsMcpEntries.length}</strong> 条资源</p>
+
+  <div class="skills-table-scroll" tabindex="0" aria-label="Skills 与 MCP 目录表格，可横向滚动">
+    <table id="skills-table" class="skills-table">
+      <thead>
+        <tr>
+          {columns.map((column) => (
+            <th scope="col" data-skills-sort-header={column.key} aria-sort="none">
+              <button type="button" data-skills-sort={column.key} data-sort-type={column.type}>
+                {column.label}<span class="sort-indicator" data-skills-sort-icon={column.key} aria-hidden="true">↕</span>
+              </button>
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody data-skills-body>
+        {skillsMcpEntries.map((entry) => (
+          <tr
+            data-skills-row
+            data-order={entry.order}
+            data-function-type={entry.functionType}
+            data-application-type={entry.applicationType}
+            data-recommendation={entry.recommendation}
+            data-tested={entry.tested}
+            data-name={entry.name}
+            data-purpose={entry.purpose}
+            data-claude-code={entry.claudeCode}
+            data-codex={entry.codex}
+            data-link-path={entry.linkPath}
+            data-search={`${entry.functionType} ${entry.applicationType} ${entry.recommendation} ${entry.tested} ${entry.name} ${entry.purpose} ${entry.claudeCode} ${entry.codex} ${entry.linkPath}`}
+          >
+            <td>{entry.functionType}</td>
+            <td>{entry.applicationType}</td>
+            <td class="skills-rating">{entry.recommendation}</td>
+            <td class="skills-name">{entry.name}</td>
+            <td>{entry.purpose}</td>
+            <td>{entry.claudeCode || '—'}</td>
+            <td>{entry.codex || '—'}</td>
+            <td class="skills-link-path">
+              {isExternalLink(entry.linkPath) ? (
+                <a href={entry.linkPath} target="_blank" rel="noreferrer">{entry.linkPath}</a>
+              ) : entry.linkPath}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  <p class="skills-empty" data-skills-empty hidden>没有找到匹配的 Skills / MCP 资源，请更换筛选条件或关键词。</p>
+</section>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-skills-browser]');
+
+  if (root) {
+    const input = root.querySelector<HTMLInputElement>('[data-skills-search]');
+    const applicationSelect = root.querySelector<HTMLSelectElement>('[data-skills-application-filter]');
+    const body = root.querySelector<HTMLTableSectionElement>('[data-skills-body]');
+    const count = root.querySelector<HTMLElement>('[data-skills-count]');
+    const empty = root.querySelector<HTMLElement>('[data-skills-empty]');
+    const functionButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-skills-function-filter]')];
+    const recommendationButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-skills-recommendation-filter]')];
+    const testedButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-skills-tested-filter]')];
+    const sortButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-skills-sort]')];
+    const rows = body ? [...body.querySelectorAll<HTMLTableRowElement>('[data-skills-row]')] : [];
+    const collator = new Intl.Collator('zh-CN', { numeric: true, sensitivity: 'base' });
+    let activeFunction = 'all';
+    let activeApplication = 'all';
+    let activeRecommendation = 'all';
+    let activeTested = 'all';
+    let sortKey = 'order';
+    let sortDirection: 'ascending' | 'descending' = 'ascending';
+
+    const getSortValue = (row: HTMLTableRowElement, key: string) => row.dataset[key] ?? '';
+
+    const updateButtonGroup = (buttons: HTMLButtonElement[], activeValue: string, attribute: 'skillsFunctionFilter' | 'skillsRecommendationFilter' | 'skillsTestedFilter') => {
+      buttons.forEach((button) => {
+        const active = button.dataset[attribute] === activeValue;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', String(active));
+      });
+    };
+
+    const updateSortIndicators = () => {
+      sortButtons.forEach((button) => {
+        const key = button.dataset.skillsSort ?? '';
+        const header = root.querySelector<HTMLElement>(`[data-skills-sort-header="${key}"]`);
+        const icon = root.querySelector<HTMLElement>(`[data-skills-sort-icon="${key}"]`);
+        const active = key === sortKey;
+
+        header?.setAttribute('aria-sort', active ? sortDirection : 'none');
+        if (icon) icon.textContent = active ? (sortDirection === 'ascending' ? '↑' : '↓') : '↕';
+      });
+    };
+
+    const renderRows = () => {
+      const keyword = input?.value.trim().toLocaleLowerCase() ?? '';
+      const direction = sortDirection === 'ascending' ? 1 : -1;
+      const type = sortKey === 'order'
+        ? 'number'
+        : root.querySelector<HTMLButtonElement>(`[data-skills-sort="${sortKey}"]`)?.dataset.sortType;
+
+      rows.sort((left, right) => {
+        const leftValue = getSortValue(left, sortKey);
+        const rightValue = getSortValue(right, sortKey);
+        const comparison = type === 'number'
+          ? Number(leftValue) - Number(rightValue)
+          : collator.compare(leftValue, rightValue);
+        return comparison * direction;
+      });
+
+      let visibleCount = 0;
+      rows.forEach((row) => {
+        const matchesFunction = activeFunction === 'all' || row.dataset.functionType === activeFunction;
+        const matchesApplication = activeApplication === 'all' || row.dataset.applicationType === activeApplication;
+        const matchesRecommendation = activeRecommendation === 'all' || row.dataset.recommendation === activeRecommendation;
+        const matchesTested = activeTested === 'all' || row.dataset.tested === activeTested;
+        const matchesSearch = !keyword || row.dataset.search?.toLocaleLowerCase().includes(keyword);
+        const visible = matchesFunction && matchesApplication && matchesRecommendation && matchesTested && matchesSearch;
+
+        row.hidden = !visible;
+        body?.append(row);
+        if (visible) visibleCount += 1;
+      });
+
+      if (count) count.textContent = String(visibleCount);
+      if (empty) empty.hidden = visibleCount !== 0;
+    };
+
+    input?.addEventListener('input', renderRows);
+    applicationSelect?.addEventListener('change', () => {
+      activeApplication = applicationSelect.value;
+      renderRows();
+    });
+    functionButtons.forEach((button) => button.addEventListener('click', () => {
+      activeFunction = button.dataset.skillsFunctionFilter ?? 'all';
+      updateButtonGroup(functionButtons, activeFunction, 'skillsFunctionFilter');
+      renderRows();
+    }));
+    recommendationButtons.forEach((button) => button.addEventListener('click', () => {
+      activeRecommendation = button.dataset.skillsRecommendationFilter ?? 'all';
+      updateButtonGroup(recommendationButtons, activeRecommendation, 'skillsRecommendationFilter');
+      renderRows();
+    }));
+    testedButtons.forEach((button) => button.addEventListener('click', () => {
+      activeTested = button.dataset.skillsTestedFilter ?? 'all';
+      updateButtonGroup(testedButtons, activeTested, 'skillsTestedFilter');
+      renderRows();
+    }));
+    sortButtons.forEach((button) => button.addEventListener('click', () => {
+      const nextKey = button.dataset.skillsSort ?? 'order';
+      sortDirection = nextKey === sortKey && sortDirection === 'ascending' ? 'descending' : 'ascending';
+      sortKey = nextKey;
+      updateSortIndicators();
+      renderRows();
+    }));
+
+    updateSortIndicators();
+    renderRows();
+  }
+</script>
