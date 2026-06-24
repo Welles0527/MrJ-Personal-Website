@@ -34,6 +34,10 @@ type SignInData = {
   user?: CloudUser | null;
 };
 
+type SignUpData = {
+  verifyOtp?: (params: { token: string }) => Promise<CloudResult<SignInData>>;
+};
+
 type LoginState = {
   user?: CloudUser | null;
 } | null;
@@ -66,9 +70,19 @@ export const getCloudSession = async () => {
   return sessionFromCurrentUser(loginState);
 };
 
-export const signUpWithPassword = async (email: string, password: string) => {
-  const result = await auth.signUp({ email, password }) as CloudResult<unknown>;
-  assertCloudResult(result, '注册失败。');
+export const startEmailSignUp = async (email: string, password: string) => {
+  const result = await auth.signUp({ email, password }) as CloudResult<SignUpData>;
+  const signUpData = assertCloudResult(result, '无法发送邮箱验证码。');
+  const verifyOtp = signUpData?.verifyOtp;
+  if (!verifyOtp) throw new Error('无法发送邮箱验证码，请稍后重试。');
+
+  return async (verificationCode: string) => {
+    const verifyResult = await verifyOtp({ token: verificationCode });
+    const verificationData = assertCloudResult(verifyResult, '邮箱验证码无效或已过期。');
+    const session = sessionFromCurrentUser({ user: verificationData?.user }) || await getCloudSession();
+    if (!session) throw new Error('验证成功，但未取得登录会话。请重新登录。');
+    return session;
+  };
 };
 
 export const signInWithPassword = async (email: string, password: string) => {

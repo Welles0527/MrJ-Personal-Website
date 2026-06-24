@@ -191,6 +191,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
   const authStatus = getElement<HTMLElement>('[data-auth-status]');
   const signOutButton = getElement<HTMLButtonElement>('[data-sign-out]');
   const loginMessage = getElement<HTMLElement>('[data-login-message]');
+  const verificationField = getElement<HTMLElement>('[data-verification-field]');
   const toast = getElement<HTMLElement>('[data-toast]');
   const titleInput = todoForm.elements.namedItem('title') as HTMLInputElement;
   const dateInput = todoForm.elements.namedItem('date') as HTMLInputElement;
@@ -199,6 +200,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
   const noteInput = todoForm.elements.namedItem('note') as HTMLTextAreaElement;
   const loginEmailInput = loginForm.elements.namedItem('email') as HTMLInputElement;
   const loginPasswordInput = loginForm.elements.namedItem('password') as HTMLInputElement;
+  const verificationCodeInput = loginForm.elements.namedItem('verificationCode') as HTMLInputElement;
   const compactQuery = window.matchMedia('(max-width: 760px)');
   const currentDate = atNoon(new Date());
   let toastTimer: number | undefined;
@@ -206,6 +208,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
   let migrationFrame: HTMLIFrameElement | null = null;
   let migrationTimer: number | undefined;
   let cloudSession: CloudSession | null = null;
+  let completeEmailSignUp: ((verificationCode: string) => Promise<CloudSession>) | null = null;
   const localMigrationOrigin = LOCAL_MIGRATION_ORIGIN;
 
   const persist = (todos: Todo[]) => {
@@ -436,6 +439,13 @@ export function mountTodoWorkspace(root: HTMLElement) {
     authStatus.textContent = '未登录';
     signOutButton.hidden = true;
     if (!loginModal.open) loginModal.showModal();
+  };
+
+  const resetEmailSignUp = () => {
+    completeEmailSignUp = null;
+    verificationField.hidden = true;
+    verificationCodeInput.value = '';
+    signUpButton.textContent = '创建账号';
   };
 
   const activateSession = async (session: CloudSession, successMessage?: string) => {
@@ -738,6 +748,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
   const setLoginPending = (pending: boolean) => {
     loginEmailInput.disabled = pending;
     loginPasswordInput.disabled = pending;
+    verificationCodeInput.disabled = pending;
     signUpButton.disabled = pending;
     const submitButton = loginForm.querySelector<HTMLButtonElement>('button[type="submit"]');
     if (submitButton) submitButton.disabled = pending;
@@ -765,13 +776,25 @@ export function mountTodoWorkspace(root: HTMLElement) {
 
   signUpButton.addEventListener('click', async () => {
     try {
-      const { email, password } = loginCredentials();
       setLoginPending(true);
-      loginMessage.textContent = '正在创建账号…';
-      await (await getCloudApi()).signUpWithPassword(email, password);
-      await login();
+      if (completeEmailSignUp) {
+        const verificationCode = verificationCodeInput.value.trim();
+        if (!verificationCode) throw new Error('请输入邮箱收到的验证码。');
+        loginMessage.textContent = '正在验证邮箱并创建账号…';
+        await activateSession(await completeEmailSignUp(verificationCode), '账号创建成功，已连接云端待办。');
+        resetEmailSignUp();
+      } else {
+        const { email, password } = loginCredentials();
+        loginMessage.textContent = '正在发送邮箱验证码…';
+        completeEmailSignUp = await (await getCloudApi()).startEmailSignUp(email, password);
+        verificationField.hidden = false;
+        signUpButton.textContent = '完成注册';
+        loginMessage.textContent = '验证码已发送到邮箱，请输入后点击“完成注册”。';
+        verificationCodeInput.focus();
+      }
     } catch (error) {
       loginMessage.textContent = error instanceof Error ? error.message : '创建账号失败，请重试。';
+      if (completeEmailSignUp) resetEmailSignUp();
     } finally {
       setLoginPending(false);
     }

@@ -194,6 +194,10 @@
         <span>密码</span>
         <input name="password" type="password" autocomplete="current-password" minlength="8" placeholder="请输入私有密码" required />
       </label>
+      <label class="todo-field todo-field-wide" data-verification-field hidden>
+        <span>邮箱验证码</span>
+        <input name="verificationCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="输入邮箱收到的验证码" />
+      </label>
       <p class="todo-login-message" data-login-message aria-live="polite"></p>
       <div class="todo-modal-actions">
         <button class="todo-secondary-button" type="button" data-action="sign-up">创建账号</button>
@@ -373,6 +377,7 @@
   .todo-modal h2 { font-size: 1.65rem; }
   .todo-dialog-close { display: grid; width: 2rem; height: 2rem; place-items: center; border: 0; border-radius: 50%; background: #f3f2ed; color: #6f6d67; font-size: 1.2rem; }
   .todo-field { display: grid; gap: 0.42rem; color: #53544f; font-size: 0.78rem; font-weight: 800; }
+  .todo-field[hidden] { display: none; }
   .todo-field b { color: #c4624e; }
   .todo-field input, .todo-field select, .todo-field textarea { width: 100%; border: 1px solid var(--line); border-radius: 0.62rem; padding: 0.68rem 0.75rem; background: #fff; color: var(--slate); font-weight: 500; outline-color: var(--sky); }
   .todo-field textarea { resize: vertical; line-height: 1.55; }
