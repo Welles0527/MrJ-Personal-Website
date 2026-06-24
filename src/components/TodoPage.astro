@@ -51,6 +51,8 @@
         </div>
       </div>
       <div class="todo-header-actions">
+        <span class="todo-account" data-auth-status>正在检查登录状态…</span>
+        <button class="todo-account-button" type="button" data-action="sign-out" data-sign-out hidden>退出登录</button>
         <span class="todo-utility" aria-label="搜索（暂未启用）" title="搜索（暂未启用）">⌕</span>
         <span class="todo-utility" aria-label="通知（暂未启用）" title="通知（暂未启用）">◌</span>
         <button class="todo-primary-button" type="button" data-action="open-create">新增待办</button>
@@ -175,6 +177,31 @@
     </div>
   </dialog>
 
+  <dialog class="todo-modal todo-login-modal" aria-labelledby="todo-login-title" data-login-modal>
+    <form class="todo-form" data-login-form novalidate>
+      <div class="todo-modal-header">
+        <div>
+          <p class="todo-kicker">云端待办</p>
+          <h2 id="todo-login-title">登录我的待办</h2>
+        </div>
+      </div>
+      <p class="todo-login-copy">使用同一账号登录后，可在任意设备查看和管理自己的待办。</p>
+      <label class="todo-field todo-field-wide">
+        <span>邮箱</span>
+        <input name="email" type="email" autocomplete="email" placeholder="输入常用邮箱" required />
+      </label>
+      <label class="todo-field todo-field-wide">
+        <span>密码</span>
+        <input name="password" type="password" autocomplete="current-password" minlength="8" placeholder="请输入私有密码" required />
+      </label>
+      <p class="todo-login-message" data-login-message aria-live="polite"></p>
+      <div class="todo-modal-actions">
+        <button class="todo-secondary-button" type="button" data-action="sign-up">创建账号</button>
+        <button class="todo-primary-button" type="submit">登录并同步</button>
+      </div>
+    </form>
+  </dialog>
+
   <p class="todo-toast" role="status" aria-live="polite" data-toast hidden></p>
 </div>
 
@@ -249,6 +276,10 @@
   .todo-primary-button:hover { background: #5a7e9f; }
   .todo-secondary-button { border: 1px solid var(--line); background: #fff; color: #555750; }
   .todo-danger-button { border: 1px solid #c65f4a; background: #cf6a55; color: #fff; }
+  .todo-account { max-width: 10rem; overflow: hidden; color: var(--muted); font-size: 0.74rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+  .todo-account-button { min-height: 2.2rem; border: 1px solid var(--line); border-radius: 999px; padding: 0.4rem 0.7rem; background: #fffefd; color: #5a635f; font-size: 0.72rem; font-weight: 800; }
+  .todo-login-copy, .todo-login-message { margin: 0 0 1rem; color: var(--muted); font-size: 0.82rem; line-height: 1.65; }
+  .todo-login-message { min-height: 1.4rem; margin: 0; color: #b45d47; }
 
   .todo-filter-section { margin-bottom: 1.2rem; }
   .todo-filter-list { display: flex; gap: 0.55rem; overflow-x: auto; padding: 0.15rem 0 0.45rem; scrollbar-width: thin; }

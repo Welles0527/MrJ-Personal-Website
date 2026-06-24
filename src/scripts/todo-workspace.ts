@@ -1,17 +1,14 @@
-type TodoCategory = 'work' | 'study' | 'life' | 'health' | 'other';
-type TodoFilter = 'all' | TodoCategory;
+import type { CloudSession, CloudTodo, CloudTodoCategory } from './todo-cloud';
 
-type Todo = {
-  id: string;
-  title: string;
-  date: string;
-  category: TodoCategory;
-  important: boolean;
-  completed: boolean;
-  note: string;
-  createdAt: string;
-  updatedAt: string;
+let cloudApi: Promise<typeof import('./todo-cloud')> | null = null;
+const getCloudApi = () => {
+  cloudApi ??= import('./todo-cloud');
+  return cloudApi;
 };
+
+type TodoCategory = CloudTodoCategory;
+type TodoFilter = 'all' | TodoCategory;
+type Todo = CloudTodo;
 
 type TodoState = {
   todos: Todo[];
@@ -26,6 +23,9 @@ type TodoState = {
 };
 
 const STORAGE_KEY = 'mywebsite.weekly-todos.v1';
+const LOCAL_MIGRATION_ORIGIN = 'http://localhost:4321';
+const LOCAL_MIGRATION_PATH = '/officialwebsite/topics/space/planning/todo';
+const OFFICIAL_WEBSITE_ORIGIN = 'https://www.magicj.cn';
 const categories: Array<{ value: TodoCategory; label: string }> = [
   { value: 'work', label: '工作' },
   { value: 'study', label: '学习' },
@@ -141,7 +141,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
   if (migrationParams.get('todo-migration-source') === '1' && window.parent !== window && migrationTarget) {
     try {
       const target = new URL(migrationTarget);
-      if (target.protocol === window.location.protocol && target.hostname === '127.0.0.1' && target.port === window.location.port) {
+      if (target.origin === OFFICIAL_WEBSITE_ORIGIN) {
         let raw: string | null = null;
         let error = false;
         try {
@@ -179,25 +179,34 @@ export function mountTodoWorkspace(root: HTMLElement) {
   const todoModal = getElement<HTMLDialogElement>('[data-todo-modal]');
   const deleteModal = getElement<HTMLDialogElement>('[data-delete-modal]');
   const migrationModal = getElement<HTMLDialogElement>('[data-migration-modal]');
+  const loginModal = getElement<HTMLDialogElement>('[data-login-modal]');
   const todoForm = getElement<HTMLFormElement>('[data-todo-form]');
+  const loginForm = getElement<HTMLFormElement>('[data-login-form]');
   const formTitle = getElement<HTMLElement>('[data-form-title]');
   const titleError = getElement<HTMLElement>('[data-title-error]');
   const deleteMessage = getElement<HTMLElement>('[data-delete-message]');
   const migrationStatus = getElement<HTMLElement>('[data-migration-status]');
   const migrationConfirm = getElement<HTMLButtonElement>('[data-action="confirm-migration"]');
+  const signUpButton = getElement<HTMLButtonElement>('[data-action="sign-up"]');
+  const authStatus = getElement<HTMLElement>('[data-auth-status]');
+  const signOutButton = getElement<HTMLButtonElement>('[data-sign-out]');
+  const loginMessage = getElement<HTMLElement>('[data-login-message]');
   const toast = getElement<HTMLElement>('[data-toast]');
   const titleInput = todoForm.elements.namedItem('title') as HTMLInputElement;
   const dateInput = todoForm.elements.namedItem('date') as HTMLInputElement;
   const categoryInput = todoForm.elements.namedItem('category') as HTMLSelectElement;
   const importantInput = todoForm.elements.namedItem('important') as HTMLInputElement;
   const noteInput = todoForm.elements.namedItem('note') as HTMLTextAreaElement;
+  const loginEmailInput = loginForm.elements.namedItem('email') as HTMLInputElement;
+  const loginPasswordInput = loginForm.elements.namedItem('password') as HTMLInputElement;
   const compactQuery = window.matchMedia('(max-width: 760px)');
   const currentDate = atNoon(new Date());
   let toastTimer: number | undefined;
   let pendingMigrationTodos: Todo[] | null = null;
   let migrationFrame: HTMLIFrameElement | null = null;
   let migrationTimer: number | undefined;
-  const localhostOrigin = `${window.location.protocol}//localhost${window.location.port ? `:${window.location.port}` : ''}`;
+  let cloudSession: CloudSession | null = null;
+  const localMigrationOrigin = LOCAL_MIGRATION_ORIGIN;
 
   const persist = (todos: Todo[]) => {
     try {
@@ -422,6 +431,40 @@ export function mountTodoWorkspace(root: HTMLElement) {
     notify(saved ? successMessage : `${successMessage} 浏览器存储不可用，当前会话已更新。`);
   };
 
+  const showLogin = (message = '') => {
+    loginMessage.textContent = message;
+    authStatus.textContent = '未登录';
+    signOutButton.hidden = true;
+    if (!loginModal.open) loginModal.showModal();
+  };
+
+  const activateSession = async (session: CloudSession, successMessage?: string) => {
+    cloudSession = session;
+    authStatus.textContent = `已登录：${session.account}`;
+    signOutButton.hidden = false;
+    state.todos = await (await getCloudApi()).loadCloudTodos(session.uid);
+    render();
+    if (loginModal.open) loginModal.close();
+    notify(successMessage || '已连接云端待办。');
+  };
+
+  const saveCloudTodo = async (todo: Todo, successMessage: string) => {
+    if (!cloudSession) {
+      showLogin('请先登录后再保存待办。');
+      return false;
+    }
+    await (await getCloudApi()).upsertCloudTodo(cloudSession.uid, todo);
+    state.todos = state.todos.some((item) => item.id === todo.id)
+      ? state.todos.map((item) => item.id === todo.id ? todo : item)
+      : [...state.todos, todo];
+    saveState(successMessage);
+    return true;
+  };
+
+  const showCloudError = (error: unknown, fallback: string) => {
+    notify(error instanceof Error ? error.message : fallback);
+  };
+
   const clearMigrationProbe = () => {
     window.clearTimeout(migrationTimer);
     migrationFrame?.remove();
@@ -446,9 +489,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
     if (!migrationModal.open) migrationModal.showModal();
 
     clearMigrationProbe();
-    const sourceUrl = new URL(window.location.href);
-    sourceUrl.hostname = 'localhost';
-    sourceUrl.search = '';
+    const sourceUrl = new URL(LOCAL_MIGRATION_PATH, LOCAL_MIGRATION_ORIGIN);
     sourceUrl.searchParams.set('todo-migration-source', '1');
     sourceUrl.searchParams.set('todo-migration-target', window.location.origin);
 
@@ -464,8 +505,12 @@ export function mountTodoWorkspace(root: HTMLElement) {
     }, 5000);
   };
 
-  const importMigration = () => {
+  const importMigration = async () => {
     if (!pendingMigrationTodos?.length) return;
+    if (!cloudSession) {
+      showLogin('请先登录后再导入待办。');
+      return;
+    }
     const merged = new Map(state.todos.map((todo) => [todo.id, todo]));
     let added = 0;
     let updated = 0;
@@ -482,7 +527,9 @@ export function mountTodoWorkspace(root: HTMLElement) {
         kept += 1;
       }
     });
-    state.todos = [...merged.values()].sort((first, second) => first.date.localeCompare(second.date) || first.createdAt.localeCompare(second.createdAt));
+    const nextTodos = [...merged.values()].sort((first, second) => first.date.localeCompare(second.date) || first.createdAt.localeCompare(second.createdAt));
+    for (const todo of nextTodos) await (await getCloudApi()).upsertCloudTodo(cloudSession.uid, todo);
+    state.todos = nextTodos;
     closeMigrationDialog();
     saveState(`旧数据已合并：新增 ${added} 项，更新 ${updated} 项，保留当前 ${kept} 项。`);
   };
@@ -507,7 +554,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
   };
 
   window.addEventListener('message', (event) => {
-    if (event.origin !== localhostOrigin || !event.data || event.data.type !== 'todo-localhost-migration') return;
+    if (event.origin !== localMigrationOrigin || !event.data || event.data.type !== 'todo-localhost-migration') return;
     clearMigrationProbe();
     if (event.data.error) {
       showMigrationResult('读取 localhost 旧数据失败。请确认没有使用隐私窗口或被浏览器禁止站点存储。');
@@ -533,7 +580,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
     }
   });
 
-  root.addEventListener('click', (event) => {
+  root.addEventListener('click', async (event) => {
     const target = event.target;
     if (!(target instanceof Element)) return;
     const trigger = target.closest<HTMLElement>('[data-action]');
@@ -559,15 +606,24 @@ export function mountTodoWorkspace(root: HTMLElement) {
     }
     if (action === 'start-migration') startMigration();
     if (action === 'cancel-migration') closeMigrationDialog();
-    if (action === 'confirm-migration') importMigration();
+    if (action === 'confirm-migration') {
+      try {
+        await importMigration();
+      } catch (error) {
+        showCloudError(error, '导入云端待办失败。');
+      }
+    }
     if (action === 'export-backup') exportBackup();
     if (action === 'close-form') closeForm();
     if (action === 'toggle-complete') {
       const todo = state.todos.find((item) => item.id === trigger.dataset.todoId);
       if (todo) {
-        todo.completed = !todo.completed;
-        todo.updatedAt = new Date().toISOString();
-        saveState(todo.completed ? '待办已完成。' : '已恢复为未完成。');
+        const nextTodo = { ...todo, completed: !todo.completed, updatedAt: new Date().toISOString() };
+        try {
+          await saveCloudTodo(nextTodo, nextTodo.completed ? '待办已完成并同步到云端。' : '待办已恢复并同步到云端。');
+        } catch (error) {
+          showCloudError(error, '更新云端待办失败。');
+        }
       }
     }
     if (action === 'edit-todo') {
@@ -583,10 +639,30 @@ export function mountTodoWorkspace(root: HTMLElement) {
       if (deleteModal.open) deleteModal.close();
     }
     if (action === 'confirm-delete' && state.pendingDeleteId) {
-      state.todos = state.todos.filter((todo) => todo.id !== state.pendingDeleteId);
-      state.pendingDeleteId = null;
-      if (deleteModal.open) deleteModal.close();
-      saveState('待办已删除。');
+      if (!cloudSession) {
+        showLogin('请先登录后再删除待办。');
+        return;
+      }
+      try {
+        await (await getCloudApi()).removeCloudTodo(state.pendingDeleteId);
+        state.todos = state.todos.filter((todo) => todo.id !== state.pendingDeleteId);
+        state.pendingDeleteId = null;
+        if (deleteModal.open) deleteModal.close();
+        saveState('待办已从云端删除。');
+      } catch (error) {
+        showCloudError(error, '删除云端待办失败。');
+      }
+    }
+    if (action === 'sign-out') {
+      try {
+        await (await getCloudApi()).signOut();
+        cloudSession = null;
+        state.todos = [];
+        render();
+        showLogin('已退出登录。');
+      } catch (error) {
+        showCloudError(error, '退出登录失败。');
+      }
     }
   });
 
@@ -613,7 +689,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
     clearMigrationProbe();
   });
 
-  todoForm.addEventListener('submit', (event) => {
+  todoForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     const title = titleInput.value.trim();
     const date = parseDateKey(dateInput.value);
@@ -640,13 +716,84 @@ export function mountTodoWorkspace(root: HTMLElement) {
       createdAt: existing?.createdAt ?? now,
       updatedAt: now
     };
-    state.todos = existing ? state.todos.map((todo) => todo.id === existing.id ? nextTodo : todo) : [...state.todos, nextTodo];
-    selectDate(date);
-    closeForm();
-    saveState(existing ? '待办已更新。' : '待办已添加。');
+    try {
+      const saved = await saveCloudTodo(nextTodo, existing ? '待办已更新并同步到云端。' : '待办已添加并同步到云端。');
+      if (!saved) return;
+      selectDate(date);
+      render();
+      closeForm();
+    } catch (error) {
+      showCloudError(error, '保存云端待办失败。');
+    }
   });
+
+  const loginCredentials = () => {
+    const email = loginEmailInput.value.trim();
+    const password = loginPasswordInput.value;
+    if (!/^\S+@\S+\.\S+$/.test(email)) throw new Error('请输入有效邮箱地址。');
+    if (password.length < 8) throw new Error('密码至少需要 8 位。');
+    return { email, password };
+  };
+
+  const setLoginPending = (pending: boolean) => {
+    loginEmailInput.disabled = pending;
+    loginPasswordInput.disabled = pending;
+    signUpButton.disabled = pending;
+    const submitButton = loginForm.querySelector<HTMLButtonElement>('button[type="submit"]');
+    if (submitButton) submitButton.disabled = pending;
+  };
+
+  const login = async () => {
+    const { email, password } = loginCredentials();
+    setLoginPending(true);
+    loginMessage.textContent = '正在登录并读取云端待办…';
+    try {
+      await activateSession(await (await getCloudApi()).signInWithPassword(email, password), '登录成功，已读取云端待办。');
+    } finally {
+      setLoginPending(false);
+    }
+  };
+
+  loginForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    try {
+      await login();
+    } catch (error) {
+      loginMessage.textContent = error instanceof Error ? error.message : '登录失败，请重试。';
+    }
+  });
+
+  signUpButton.addEventListener('click', async () => {
+    try {
+      const { email, password } = loginCredentials();
+      setLoginPending(true);
+      loginMessage.textContent = '正在创建账号…';
+      await (await getCloudApi()).signUpWithPassword(email, password);
+      await login();
+    } catch (error) {
+      loginMessage.textContent = error instanceof Error ? error.message : '创建账号失败，请重试。';
+    } finally {
+      setLoginPending(false);
+    }
+  });
+
+  loginModal.addEventListener('cancel', (event) => event.preventDefault());
+
+  const initialiseCloud = async () => {
+    try {
+      const session = await (await getCloudApi()).getCloudSession();
+      if (session) {
+        await activateSession(session);
+      } else {
+        showLogin('首次使用请创建账号；之后在其他设备登录同一账号即可同步。');
+      }
+    } catch (error) {
+      showLogin(error instanceof Error ? error.message : '无法连接云端服务，请检查网络后重试。');
+    }
+  };
 
   compactQuery.addEventListener('change', render);
   render();
   if (state.storageMessage) notify(state.storageMessage);
+  void initialiseCloud();
 }
