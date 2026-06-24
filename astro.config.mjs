@@ -1,9 +1,9 @@
 import { defineConfig } from 'astro/config';
 
-export default defineConfig(({ command }) => ({
+export default defineConfig({
   output: 'static',
-  base: command === 'build' ? '/officialwebsite' : '/',
+  base: '/officialwebsite',
   server: {
     host: '127.0.0.1'
   }
-}));
+});
