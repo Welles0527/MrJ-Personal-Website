@@ -1227,11 +1227,23 @@ export const skillsMcpEntries: SkillsMcpEntry[] = [
     "claudeCode": "/",
     "codex": "/",
     "linkPath": "https://github.com/tradecatlabs/vibe-coding-cn"
+  },
+  {
+    "order": 99,
+    "functionType": "Skills",
+    "applicationType": "系统控制",
+    "recommendation": "⭐⭐⭐⭐⭐",
+    "tested": "已测试",
+    "name": "agent-browser",
+    "purpose": "Agent操控浏览器（自动化CLI）",
+    "claudeCode": "☑️",
+    "codex": "☑️",
+    "linkPath": "https://github.com/vercel-labs/agent-browser"
   }
 ].map((entry) => entry.tested === '待测试' ? { ...entry, recommendation: '待测试' } : entry);
 
 const dataIssues = [
-  ...(skillsMcpEntries.length === 98 ? [] : ['Skills / MCP entry count is incorrect']),
+  ...(skillsMcpEntries.length === 99 ? [] : ['Skills / MCP entry count is incorrect']),
   ...(new Set(skillsMcpEntries.map((entry) => entry.order)).size === skillsMcpEntries.length ? [] : ['Skills / MCP order is duplicated']),
   ...skillsMcpEntries.flatMap((entry) => entry.name && entry.linkPath ? [] : [`Skills / MCP entry ${entry.order} is incomplete`])
 ];
