@@ -23,6 +23,8 @@ type TodoState = {
 };
 
 const STORAGE_KEY = 'mywebsite.weekly-todos.v1';
+const PENDING_UPSERT_KEY = 'mywebsite.weekly-todo-upserts.v1';
+const PENDING_DELETE_KEY = 'mywebsite.weekly-todo-deletes.v1';
 const LOCAL_MIGRATION_ORIGIN = 'http://localhost:4321';
 const LOCAL_MIGRATION_PATH = '/officialwebsite/topics/space/planning/todo';
 const OFFICIAL_WEBSITE_ORIGIN = 'https://www.magicj.cn';
@@ -220,6 +222,37 @@ export function mountTodoWorkspace(root: HTMLElement) {
     }
   };
 
+  const loadIdQueue = (key: string) => {
+    try {
+      const stored = window.localStorage.getItem(key);
+      if (!stored) return new Set<string>();
+      const parsed: unknown = JSON.parse(stored);
+      return new Set(Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : []);
+    } catch {
+      return new Set<string>();
+    }
+  };
+
+  const persistIdQueue = (key: string, ids: Set<string>) => {
+    try {
+      window.localStorage.setItem(key, JSON.stringify([...ids]));
+    } catch {
+      // The visible todo data is still saved separately; queue persistence is best-effort.
+    }
+  };
+
+  const enqueueId = (key: string, id: string) => {
+    const ids = loadIdQueue(key);
+    ids.add(id);
+    persistIdQueue(key, ids);
+  };
+
+  const removeQueuedId = (key: string, id: string) => {
+    const ids = loadIdQueue(key);
+    ids.delete(id);
+    persistIdQueue(key, ids);
+  };
+
   const loadTodos = () => {
     try {
       const stored = window.localStorage.getItem(STORAGE_KEY);
@@ -237,6 +270,32 @@ export function mountTodoWorkspace(root: HTMLElement) {
       const examples = createExamples(currentDate);
       return { todos: examples, storageMessage: '无法读取本地待办数据，已使用临时示例数据。' };
     }
+  };
+
+  const timestamp = (value: string) => {
+    const parsed = Date.parse(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  };
+
+  const localUpdatesForExistingCloudTodos = (localTodos: Todo[], cloudTodos: Todo[]) => {
+    const cloudById = new Map(cloudTodos.map((todo) => [todo.id, todo]));
+    return localTodos.filter((todo) => {
+      const cloudTodo = cloudById.get(todo.id);
+      return cloudTodo ? timestamp(todo.updatedAt) > timestamp(cloudTodo.updatedAt) : false;
+    });
+  };
+
+  const mergeCloudTodosWithLocalUpdates = (localTodos: Todo[], cloudTodos: Todo[], forceLocalIds = new Set<string>()) => {
+    const localById = new Map(localTodos.map((todo) => [todo.id, todo]));
+    const cloudIds = new Set(cloudTodos.map((todo) => todo.id));
+    const merged = cloudTodos.map((cloudTodo) => {
+      const localTodo = localById.get(cloudTodo.id);
+      return localTodo && (forceLocalIds.has(localTodo.id) || timestamp(localTodo.updatedAt) > timestamp(cloudTodo.updatedAt)) ? localTodo : cloudTodo;
+    });
+    localTodos.forEach((localTodo) => {
+      if (forceLocalIds.has(localTodo.id) && !cloudIds.has(localTodo.id)) merged.push(localTodo);
+    });
+    return merged.sort((first, second) => first.date.localeCompare(second.date) || first.createdAt.localeCompare(second.createdAt));
   };
 
   const loaded = loadTodos();
@@ -428,10 +487,17 @@ export function mountTodoWorkspace(root: HTMLElement) {
     if (!deleteModal.open) deleteModal.showModal();
   };
 
+  const upsertTodoInState = (todo: Todo) => {
+    state.todos = state.todos.some((item) => item.id === todo.id)
+      ? state.todos.map((item) => item.id === todo.id ? todo : item)
+      : [...state.todos, todo];
+  };
+
   const saveState = (successMessage: string) => {
     const saved = persist(state.todos);
     render();
     notify(saved ? successMessage : `${successMessage} 浏览器存储不可用，当前会话已更新。`);
+    return saved;
   };
 
   const showLogin = (message = '') => {
@@ -452,22 +518,57 @@ export function mountTodoWorkspace(root: HTMLElement) {
     cloudSession = session;
     authStatus.textContent = `已登录：${session.account}`;
     signOutButton.hidden = false;
-    state.todos = await (await getCloudApi()).loadCloudTodos(session.uid);
+    const api = await getCloudApi();
+    const localTodos = state.todos;
+    const pendingUpsertIds = loadIdQueue(PENDING_UPSERT_KEY);
+    const pendingDeleteIds = loadIdQueue(PENDING_DELETE_KEY);
+    const cloudTodos = await api.loadCloudTodos(session.uid);
+    const cloudTodoIds = new Set(cloudTodos.map((todo) => todo.id));
+    const visibleCloudTodos = cloudTodos.filter((todo) => !pendingDeleteIds.has(todo.id));
+    const localUpdates = localUpdatesForExistingCloudTodos(localTodos, visibleCloudTodos);
+    const pendingUpserts = localTodos.filter((todo) => pendingUpsertIds.has(todo.id));
+    const syncUpserts = [...new Map([...localUpdates, ...pendingUpserts].map((todo) => [todo.id, todo])).values()];
+    state.todos = mergeCloudTodosWithLocalUpdates(localTodos, visibleCloudTodos, pendingUpsertIds);
+    persist(state.todos);
     render();
     if (loginModal.open) loginModal.close();
     notify(successMessage || '已连接云端待办。');
+    if (syncUpserts.length) await Promise.allSettled(syncUpserts.map(async (todo) => {
+      await api.upsertCloudTodo(session.uid, todo);
+      removeQueuedId(PENDING_UPSERT_KEY, todo.id);
+    }));
+    const syncDeleteIds = [...pendingDeleteIds].filter((todoId) => {
+      if (cloudTodoIds.has(todoId)) return true;
+      removeQueuedId(PENDING_DELETE_KEY, todoId);
+      return false;
+    });
+    if (syncDeleteIds.length) await Promise.allSettled(syncDeleteIds.map(async (todoId) => {
+      await api.removeCloudTodo(todoId);
+      removeQueuedId(PENDING_DELETE_KEY, todoId);
+    }));
   };
 
-  const saveCloudTodo = async (todo: Todo, successMessage: string) => {
+  const saveCloudTodo = async (todo: Todo, successMessage: string, options: { optimistic?: boolean } = {}) => {
     if (!cloudSession) {
       showLogin('请先登录后再保存待办。');
       return false;
     }
-    await (await getCloudApi()).upsertCloudTodo(cloudSession.uid, todo);
-    state.todos = state.todos.some((item) => item.id === todo.id)
-      ? state.todos.map((item) => item.id === todo.id ? todo : item)
-      : [...state.todos, todo];
-    saveState(successMessage);
+    if (options.optimistic) {
+      upsertTodoInState(todo);
+      persist(state.todos);
+      render();
+      enqueueId(PENDING_UPSERT_KEY, todo.id);
+      notify('已保存到本地，正在同步云端。');
+    }
+    try {
+      await (await getCloudApi()).upsertCloudTodo(cloudSession.uid, todo);
+      removeQueuedId(PENDING_UPSERT_KEY, todo.id);
+      if (!options.optimistic) upsertTodoInState(todo);
+      saveState(successMessage);
+    } catch (error) {
+      if (!options.optimistic) throw error;
+      notify('已保存到本地；云端暂未同步，刷新后会继续保留。');
+    }
     return true;
   };
 
@@ -709,7 +810,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
       if (todo) {
         const nextTodo = { ...todo, completed: !todo.completed, updatedAt: new Date().toISOString() };
         try {
-          await saveCloudTodo(nextTodo, nextTodo.completed ? '待办已完成并同步到云端。' : '待办已恢复并同步到云端。');
+          await saveCloudTodo(nextTodo, nextTodo.completed ? '待办已完成并同步到云端。' : '待办已恢复并同步到云端。', { optimistic: true });
         } catch (error) {
           showCloudError(error, '更新云端待办失败。');
         }
@@ -732,14 +833,19 @@ export function mountTodoWorkspace(root: HTMLElement) {
         showLogin('请先登录后再删除待办。');
         return;
       }
+      const deletingId = state.pendingDeleteId;
+      state.todos = state.todos.filter((todo) => todo.id !== deletingId);
+      state.pendingDeleteId = null;
+      enqueueId(PENDING_DELETE_KEY, deletingId);
+      removeQueuedId(PENDING_UPSERT_KEY, deletingId);
+      if (deleteModal.open) deleteModal.close();
+      saveState('待办已从本地删除，正在同步云端。');
       try {
-        await (await getCloudApi()).removeCloudTodo(state.pendingDeleteId);
-        state.todos = state.todos.filter((todo) => todo.id !== state.pendingDeleteId);
-        state.pendingDeleteId = null;
-        if (deleteModal.open) deleteModal.close();
+        await (await getCloudApi()).removeCloudTodo(deletingId);
+        removeQueuedId(PENDING_DELETE_KEY, deletingId);
         saveState('待办已从云端删除。');
-      } catch (error) {
-        showCloudError(error, '删除云端待办失败。');
+      } catch {
+        notify('已从本地删除；云端暂未同步，刷新后会继续隐藏。');
       }
     }
     if (action === 'sign-out') {
@@ -806,7 +912,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
       updatedAt: now
     };
     try {
-      const saved = await saveCloudTodo(nextTodo, existing ? '待办已更新并同步到云端。' : '待办已添加并同步到云端。');
+      const saved = await saveCloudTodo(nextTodo, existing ? '待办已更新并同步到云端。' : '待办已添加并同步到云端。', { optimistic: true });
       if (!saved) return;
       selectDate(date);
       render();
