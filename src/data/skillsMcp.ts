@@ -18,37 +18,25 @@ export const skillsMcpFunctionTypes = [
 ];
 
 export const skillsMcpApplicationTypes = [
-  "框架",
-  "插件",
-  "PPT",
-  "日历",
-  "教学",
-  "爬虫",
   "设计",
+  "插件",
+  "视频",
   "搜索",
-  "投资",
+  "规则",
+  "PPT",
+  "办公",
+  "爬虫",
   "图片",
   "文案",
-  "动画",
-  "视频",
-  "封面",
-  "风控",
-  "运维",
-  "配音",
-  "分镜",
-  "音乐",
-  "系统控制",
-  "知识库",
-  "邮箱",
-  "流程图",
-  "扫描",
-  "PDF",
-  "SEO",
+  "教学",
   "工具",
-  "大全",
-  "技能",
+  "配音",
+  "系统控制",
   "排名",
-  "学习"
+  "应用",
+  "投资",
+  "部署",
+  "音乐"
 ];
 
 export const skillsMcpRecommendationLevels = [
@@ -67,7 +55,7 @@ export const skillsMcpEntries: SkillsMcpEntry[] = [
   {
     "order": 1,
     "functionType": "Skills",
-    "applicationType": "框架",
+    "applicationType": "规则",
     "recommendation": "⭐⭐⭐⭐⭐",
     "tested": "已测试",
     "name": "claude-code-setup",
@@ -79,7 +67,7 @@ export const skillsMcpEntries: SkillsMcpEntry[] = [
   {
     "order": 2,
     "functionType": "Skills",
-    "applicationType": "框架",
+    "applicationType": "规则",
     "recommendation": "⭐⭐⭐⭐⭐",
     "tested": "已测试",
     "name": "ECC（Everything Claude Code）",
@@ -91,7 +79,7 @@ export const skillsMcpEntries: SkillsMcpEntry[] = [
   {
     "order": 3,
     "functionType": "Skills",
-    "applicationType": "框架",
+    "applicationType": "规则",
     "recommendation": "⭐⭐⭐⭐⭐",
     "tested": "已测试",
     "name": "superpowers",
@@ -103,7 +91,7 @@ export const skillsMcpEntries: SkillsMcpEntry[] = [
   {
     "order": 4,
     "functionType": "Skills",
-    "applicationType": "框架",
+    "applicationType": "规则",
     "recommendation": "⭐⭐⭐⭐⭐",
     "tested": "已测试",
     "name": "andrej-karpathy-skills",
@@ -115,7 +103,7 @@ export const skillsMcpEntries: SkillsMcpEntry[] = [
   {
     "order": 5,
     "functionType": "Skills",
-    "applicationType": "框架",
+    "applicationType": "规则",
     "recommendation": "⭐⭐⭐⭐⭐",
     "tested": "已测试",
     "name": "setup-matt-pocock-skills",
@@ -127,7 +115,7 @@ export const skillsMcpEntries: SkillsMcpEntry[] = [
   {
     "order": 6,
     "functionType": "Skills",
-    "applicationType": "框架",
+    "applicationType": "规则",
     "recommendation": "⭐⭐⭐⭐⭐",
     "tested": "已测试",
     "name": "light-brainstorming",
@@ -283,7 +271,7 @@ export const skillsMcpEntries: SkillsMcpEntry[] = [
   {
     "order": 19,
     "functionType": "Skills",
-    "applicationType": "日历",
+    "applicationType": "工具",
     "recommendation": "待测试",
     "tested": "已测试",
     "name": "TOAST UI Calendar",
@@ -583,7 +571,7 @@ export const skillsMcpEntries: SkillsMcpEntry[] = [
   {
     "order": 44,
     "functionType": "Skills",
-    "applicationType": "动画",
+    "applicationType": "视频",
     "recommendation": "⭐⭐⭐⭐",
     "tested": "已测试",
     "name": "hatch-pet",
@@ -607,7 +595,7 @@ export const skillsMcpEntries: SkillsMcpEntry[] = [
   {
     "order": 46,
     "functionType": "Skills",
-    "applicationType": "封面",
+    "applicationType": "图片",
     "recommendation": "待测试",
     "tested": "待测试",
     "name": "xiaohongshu-cover-generator",
@@ -619,7 +607,7 @@ export const skillsMcpEntries: SkillsMcpEntry[] = [
   {
     "order": 47,
     "functionType": "Skills",
-    "applicationType": "风控",
+    "applicationType": "文案",
     "recommendation": "待测试",
     "tested": "待测试",
     "name": "content-risk-detector",
@@ -643,7 +631,7 @@ export const skillsMcpEntries: SkillsMcpEntry[] = [
   {
     "order": 49,
     "functionType": "Skills",
-    "applicationType": "运维",
+    "applicationType": "部署",
     "recommendation": "待测试",
     "tested": "待测试",
     "name": "certbot-ssl",
@@ -715,7 +703,7 @@ export const skillsMcpEntries: SkillsMcpEntry[] = [
   {
     "order": 55,
     "functionType": "Skills",
-    "applicationType": "分镜",
+    "applicationType": "视频",
     "recommendation": "⭐⭐⭐⭐⭐",
     "tested": "待测试",
     "name": "Shots (by LTX)",
@@ -895,7 +883,7 @@ export const skillsMcpEntries: SkillsMcpEntry[] = [
   {
     "order": 70,
     "functionType": "MCP",
-    "applicationType": "知识库",
+    "applicationType": "应用",
     "recommendation": "⭐⭐⭐⭐⭐",
     "tested": "已测试",
     "name": "Notion",
@@ -907,7 +895,7 @@ export const skillsMcpEntries: SkillsMcpEntry[] = [
   {
     "order": 71,
     "functionType": "MCP",
-    "applicationType": "邮箱",
+    "applicationType": "应用",
     "recommendation": "⭐⭐⭐⭐⭐",
     "tested": "已测试",
     "name": "Gmail",
@@ -931,7 +919,7 @@ export const skillsMcpEntries: SkillsMcpEntry[] = [
   {
     "order": 73,
     "functionType": "MCP",
-    "applicationType": "流程图",
+    "applicationType": "办公",
     "recommendation": "待测试",
     "tested": "待测试",
     "name": "Whimsical",
@@ -943,7 +931,7 @@ export const skillsMcpEntries: SkillsMcpEntry[] = [
   {
     "order": 74,
     "functionType": "MCP",
-    "applicationType": "扫描",
+    "applicationType": "办公",
     "recommendation": "待测试",
     "tested": "待测试",
     "name": "iScanner",
@@ -955,7 +943,7 @@ export const skillsMcpEntries: SkillsMcpEntry[] = [
   {
     "order": 75,
     "functionType": "MCP",
-    "applicationType": "PDF",
+    "applicationType": "办公",
     "recommendation": "待测试",
     "tested": "待测试",
     "name": "AnyPDF",
@@ -967,7 +955,7 @@ export const skillsMcpEntries: SkillsMcpEntry[] = [
   {
     "order": 76,
     "functionType": "MCP",
-    "applicationType": "PDF",
+    "applicationType": "办公",
     "recommendation": "待测试",
     "tested": "待测试",
     "name": "Smallpdf",
@@ -979,7 +967,7 @@ export const skillsMcpEntries: SkillsMcpEntry[] = [
   {
     "order": 77,
     "functionType": "MCP",
-    "applicationType": "SEO",
+    "applicationType": "办公",
     "recommendation": "待测试",
     "tested": "待测试",
     "name": "Semrush",
@@ -1003,7 +991,7 @@ export const skillsMcpEntries: SkillsMcpEntry[] = [
   {
     "order": 79,
     "functionType": "MCP",
-    "applicationType": "SEO",
+    "applicationType": "办公",
     "recommendation": "待测试",
     "tested": "待测试",
     "name": "Serpstat",
@@ -1063,7 +1051,7 @@ export const skillsMcpEntries: SkillsMcpEntry[] = [
   {
     "order": 84,
     "functionType": "网站",
-    "applicationType": "大全",
+    "applicationType": "排名",
     "recommendation": "⭐⭐⭐⭐⭐",
     "tested": "待测试",
     "name": "Tooify",
@@ -1183,7 +1171,7 @@ export const skillsMcpEntries: SkillsMcpEntry[] = [
   {
     "order": 94,
     "functionType": "网站",
-    "applicationType": "技能",
+    "applicationType": "工具",
     "recommendation": "待测试",
     "tested": "待测试",
     "name": "Hello Github",
@@ -1231,7 +1219,7 @@ export const skillsMcpEntries: SkillsMcpEntry[] = [
   {
     "order": 98,
     "functionType": "网站",
-    "applicationType": "学习",
+    "applicationType": "教学",
     "recommendation": "⭐⭐⭐⭐",
     "tested": "已测试",
     "name": "vibe-coding-cn",

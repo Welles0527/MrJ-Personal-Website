@@ -3,7 +3,6 @@ import {
   skillsMcpApplicationTypes,
   skillsMcpEntries,
   skillsMcpFunctionTypes,
-  skillsMcpRecommendationLevels,
   skillsMcpTestStatuses
 } from '../data/skillsMcp';
 
@@ -14,12 +13,10 @@ const countBy = (key: keyof typeof skillsMcpEntries[number]) => new Map(
   ])
 );
 const functionCounts = countBy('functionType');
-const recommendationCounts = countBy('recommendation');
+const applicationCounts = countBy('applicationType');
 const testedCounts = countBy('tested');
-const visibleRecommendationLevels = skillsMcpRecommendationLevels.filter((level) => recommendationCounts.has(level));
 const columns = [
   { key: 'functionType', label: '功能类型', type: 'text' },
-  { key: 'applicationType', label: '应用类型', type: 'text' },
   { key: 'recommendation', label: '推荐级别', type: 'text' },
   { key: 'name', label: '名称', type: 'text' },
   { key: 'purpose', label: '作用', type: 'text' },
@@ -32,11 +29,6 @@ const isExternalLink = (value: string) => /^https?:\/\//i.test(value);
 
 <section class="skills-browser" data-skills-browser aria-label="Skills 与 MCP 目录表">
   <div class="skills-toolbar">
-    <label class="skills-search">
-      <span>搜索资源</span>
-      <input data-skills-search type="search" placeholder="搜索名称、作用、产品或安装路径" autocomplete="off" aria-controls="skills-table" />
-    </label>
-
     <div class="skills-filter-block" role="group" aria-label="功能类型筛选">
       <span class="skills-filter-label">功能类型</span>
       <div class="skills-filter-buttons">
@@ -49,21 +41,18 @@ const isExternalLink = (value: string) => /^https?:\/\//i.test(value);
       </div>
     </div>
 
-    <label class="skills-select">
-      <span class="skills-filter-label">应用类型</span>
-      <select data-skills-application-filter aria-label="应用类型筛选">
-        <option value="all">全部应用类型（{skillsMcpApplicationTypes.length}）</option>
-        {skillsMcpApplicationTypes.map((type) => <option value={type}>{type}</option>)}
-      </select>
+    <label class="skills-search">
+      <span>搜索资源</span>
+      <input data-skills-search type="search" placeholder="搜索名称、作用、产品或安装路径" autocomplete="off" aria-controls="skills-table" />
     </label>
 
-    <div class="skills-filter-block" role="group" aria-label="推荐级别筛选">
-      <span class="skills-filter-label">推荐级别</span>
-      <div class="skills-filter-buttons">
-        <button class="term-filter active" type="button" data-skills-recommendation-filter="all" aria-pressed="true">全部 <span>{skillsMcpEntries.length}</span></button>
-        {visibleRecommendationLevels.map((level) => (
-          <button class="term-filter" type="button" data-skills-recommendation-filter={level} aria-pressed="false">
-            {level} <span>{recommendationCounts.get(level)}</span>
+    <div class="skills-filter-block skills-application-panel" role="group" aria-label="应用类型筛选">
+      <span class="skills-filter-label">应用类型</span>
+      <div class="skills-application-grid">
+        <button class="term-filter active" type="button" data-skills-application-filter="all" aria-pressed="true">全部 <span>{skillsMcpEntries.length}</span></button>
+        {skillsMcpApplicationTypes.map((type) => (
+          <button class="term-filter" type="button" data-skills-application-filter={type} aria-pressed="false">
+            {type} <span>{applicationCounts.get(type)}</span>
           </button>
         ))}
       </div>
@@ -114,12 +103,11 @@ const isExternalLink = (value: string) => /^https?:\/\//i.test(value);
             data-search={`${entry.functionType} ${entry.applicationType} ${entry.recommendation} ${entry.tested} ${entry.name} ${entry.purpose} ${entry.claudeCode} ${entry.codex} ${entry.linkPath}`}
           >
             <td>{entry.functionType}</td>
-            <td>{entry.applicationType}</td>
             <td class="skills-rating">{entry.recommendation}</td>
             <td class="skills-name">{entry.name}</td>
-            <td>{entry.purpose}</td>
-            <td>{entry.claudeCode || '—'}</td>
-            <td>{entry.codex || '—'}</td>
+            <td class="skills-purpose">{entry.purpose}</td>
+            <td class="skills-check">{entry.claudeCode || '—'}</td>
+            <td class="skills-check">{entry.codex || '—'}</td>
             <td class="skills-link-path">
               {isExternalLink(entry.linkPath) ? (
                 <a href={entry.linkPath} target="_blank" rel="noreferrer">{entry.linkPath}</a>
@@ -139,26 +127,24 @@ const isExternalLink = (value: string) => /^https?:\/\//i.test(value);
 
   if (root) {
     const input = root.querySelector<HTMLInputElement>('[data-skills-search]');
-    const applicationSelect = root.querySelector<HTMLSelectElement>('[data-skills-application-filter]');
     const body = root.querySelector<HTMLTableSectionElement>('[data-skills-body]');
     const count = root.querySelector<HTMLElement>('[data-skills-count]');
     const empty = root.querySelector<HTMLElement>('[data-skills-empty]');
     const functionButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-skills-function-filter]')];
-    const recommendationButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-skills-recommendation-filter]')];
+    const applicationButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-skills-application-filter]')];
     const testedButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-skills-tested-filter]')];
     const sortButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-skills-sort]')];
     const rows = body ? [...body.querySelectorAll<HTMLTableRowElement>('[data-skills-row]')] : [];
     const collator = new Intl.Collator('zh-CN', { numeric: true, sensitivity: 'base' });
     let activeFunction = 'all';
     let activeApplication = 'all';
-    let activeRecommendation = 'all';
     let activeTested = 'all';
     let sortKey = 'order';
     let sortDirection: 'ascending' | 'descending' = 'ascending';
 
     const getSortValue = (row: HTMLTableRowElement, key: string) => row.dataset[key] ?? '';
 
-    const updateButtonGroup = (buttons: HTMLButtonElement[], activeValue: string, attribute: 'skillsFunctionFilter' | 'skillsRecommendationFilter' | 'skillsTestedFilter') => {
+    const updateButtonGroup = (buttons: HTMLButtonElement[], activeValue: string, attribute: 'skillsFunctionFilter' | 'skillsApplicationFilter' | 'skillsTestedFilter') => {
       buttons.forEach((button) => {
         const active = button.dataset[attribute] === activeValue;
         button.classList.toggle('active', active);
@@ -198,10 +184,9 @@ const isExternalLink = (value: string) => /^https?:\/\//i.test(value);
       rows.forEach((row) => {
         const matchesFunction = activeFunction === 'all' || row.dataset.functionType === activeFunction;
         const matchesApplication = activeApplication === 'all' || row.dataset.applicationType === activeApplication;
-        const matchesRecommendation = activeRecommendation === 'all' || row.dataset.recommendation === activeRecommendation;
         const matchesTested = activeTested === 'all' || row.dataset.tested === activeTested;
         const matchesSearch = !keyword || row.dataset.search?.toLocaleLowerCase().includes(keyword);
-        const visible = matchesFunction && matchesApplication && matchesRecommendation && matchesTested && matchesSearch;
+        const visible = matchesFunction && matchesApplication && matchesTested && matchesSearch;
 
         row.hidden = !visible;
         body?.append(row);
@@ -213,18 +198,14 @@ const isExternalLink = (value: string) => /^https?:\/\//i.test(value);
     };
 
     input?.addEventListener('input', renderRows);
-    applicationSelect?.addEventListener('change', () => {
-      activeApplication = applicationSelect.value;
+    applicationButtons.forEach((button) => button.addEventListener('click', () => {
+      activeApplication = button.dataset.skillsApplicationFilter ?? 'all';
+      updateButtonGroup(applicationButtons, activeApplication, 'skillsApplicationFilter');
       renderRows();
-    });
+    }));
     functionButtons.forEach((button) => button.addEventListener('click', () => {
       activeFunction = button.dataset.skillsFunctionFilter ?? 'all';
       updateButtonGroup(functionButtons, activeFunction, 'skillsFunctionFilter');
-      renderRows();
-    }));
-    recommendationButtons.forEach((button) => button.addEventListener('click', () => {
-      activeRecommendation = button.dataset.skillsRecommendationFilter ?? 'all';
-      updateButtonGroup(recommendationButtons, activeRecommendation, 'skillsRecommendationFilter');
       renderRows();
     }));
     testedButtons.forEach((button) => button.addEventListener('click', () => {

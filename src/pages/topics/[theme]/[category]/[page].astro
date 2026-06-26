@@ -1,6 +1,8 @@
 ---
 import BaseLayout from '../../../../layouts/BaseLayout.astro';
 import TodoPage from '../../../../components/TodoPage.astro';
+import SkillsMcpTable from '../../../../components/SkillsMcpTable.astro';
+import OriginalWebToolsTable from '../../../../components/OriginalWebToolsTable.astro';
 import { getCategory, getDetail, isInvestment, themes } from '../../../../data/site';
 
 export function getStaticPaths() {
@@ -15,10 +17,30 @@ const investmentNote = isInvestment(theme, category);
 const previousCategory = getCategory(theme, category.slug);
 const currentItem = previousCategory ? getDetail(previousCategory, item.slug) : item;
 const isTodoPage = theme.slug === 'space' && category.slug === 'planning' && item.slug === 'todo';
+const isSkillsMcpDirectoryPage = theme.slug === 'tools' && category.slug === 'skills-mcp' && item.slug === 'skills-mcp-directory';
+const isOriginalWebToolsPage = theme.slug === 'applications' && category.slug === 'original-applications' && item.slug === 'web-pages';
 ---
 
 {isTodoPage ? (
   <TodoPage />
+) : isSkillsMcpDirectoryPage ? (
+<BaseLayout title={`${item.title}｜学问笔记`} activeTheme={theme.slug}>
+  <section class="section-intro terms-intro">
+    <p class={`eyebrow tone-${theme.color}`}>{theme.title} / {category.title}</p>
+    <h1>{item.title}</h1>
+    <p class="lede">按功能、应用类型、推荐级别和测试状态筛选实用资源。</p>
+  </section>
+  <SkillsMcpTable />
+</BaseLayout>
+) : isOriginalWebToolsPage ? (
+<BaseLayout title={`${item.title}｜学问笔记`} activeTheme={theme.slug}>
+  <section class="section-intro terms-intro">
+    <p class={`eyebrow tone-${theme.color}`}>{theme.title} / {category.title}</p>
+    <h1>{item.title}</h1>
+    <p class="lede">集中管理已经完成和准备发布的自创网页工具，后续产品发布后直接补充链接。</p>
+  </section>
+  <OriginalWebToolsTable />
+</BaseLayout>
 ) : (
 <BaseLayout title={`${item.title}｜学问笔记`} activeTheme={theme.slug}>
   <article class="article-page">

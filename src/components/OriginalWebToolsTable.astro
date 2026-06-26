@@ -1,0 +1,38 @@
+---
+import { originalWebTools } from '../data/originalWebTools';
+---
+
+<section class="original-tools-panel" aria-label="自创网页工具列表">
+  <div class="original-tools-heading">
+    <p>把已经完成或准备发布的网页产品集中放在这里，后续只需要补充工具条目和真实链接。</p>
+  </div>
+
+  <div class="original-tools-scroll">
+    <table class="original-tools-table">
+      <thead>
+        <tr>
+          <th scope="col">工具名称</th>
+          <th scope="col">类别</th>
+          <th scope="col">用途</th>
+          <th scope="col">链接</th>
+        </tr>
+      </thead>
+      <tbody>
+        {originalWebTools.map((tool) => (
+          <tr>
+            <td data-label="工具名称" class="original-tool-name">{tool.name}</td>
+            <td data-label="类别"><span class="original-tool-category">{tool.category}</span></td>
+            <td data-label="用途">{tool.purpose}</td>
+            <td data-label="链接" class="original-tool-link">
+              {tool.link ? (
+                <a href={tool.link} target="_blank" rel="noreferrer">打开工具</a>
+              ) : (
+                <span class="original-tool-pending">待发布</span>
+              )}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</section>
