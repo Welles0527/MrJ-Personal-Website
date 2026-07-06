@@ -1,41 +1,47 @@
-# 周视图待办页视觉验收记录
+# 待办页原布局咖啡风格 QA
 
-- Source visual truth: `C:/Users/huawei/AppData/Local/Temp/codex-clipboard-7790c113-1769-4bee-ace9-e096f3d663cb.png`
-- Implementation: `http://127.0.0.1:4322/topics/space/planning/todo`
-- Implementation screenshot: in-session Puppeteer capture `todo-qa-desktop` at `1440×900`.
-- Comparison state: current week with default sample data; source and implementation were opened in the same comparison pass.
+- Source layout truth: `C:/Users/huawei/AppData/Local/Temp/codex-clipboard-f3c33240-c690-439a-98ab-efcd507ba850.png`
+- Style reference: `C:/Users/huawei/AppData/Local/Temp/codex-clipboard-2c0d7b4b-ff56-4e0c-8ea9-222a9007cac9.png`
+- Implementation: `http://127.0.0.1:4321/officialwebsite/topics/space/planning/todo`
+- Desktop screenshot: in-session Puppeteer capture `todo-original-layout-coffee-1440x900-pass1` at `1440x900`.
+- Mobile screenshot: in-session Puppeteer capture `todo-original-layout-coffee-mobile-390x844` at `390x844`.
+- State: login dialog closed for layout comparison; current week sample tasks visible.
 
 **Findings**
 
-- No actionable P0, P1, or P2 findings.
-- [P3] The source mock uses a denser blue-purple product palette and icon set; the implementation intentionally uses the existing site’s clay/olive/sky/oat/slate palette and restrained decorative utility marks, as requested.
-- [P3] The source mock shows a fuller week of sample tasks. The implementation seeds one realistic task per day because persistent user-created data should not start overly populated.
+- No actionable P0, P1, or P2 findings remain.
+- [P3] The source layout uses a cleaner blue accent system; the implementation intentionally keeps the coffee-paper palette and brown controls from the newer style reference.
+- [P3] The source screenshot is logged in. The implementation keeps the existing auth behavior, so anonymous sessions may see the login dialog first.
 
 **Required Fidelity Surfaces**
 
-- Fonts and typography: the hierarchy, title scale, compact labels, and completed-state treatment are clear. The serif display heading is an intentional reuse of the site’s existing typography rather than a source mismatch.
-- Spacing and layout rhythm: fixed desktop navigation, card spacing, month/overview split, and seven-column board fit at `1440×900`; modal spacing is balanced without clipping.
-- Colors and visual tokens: category colors are soft and distinct; the selected day and primary actions use `sky`, while the surrounding canvas uses the project’s warm oat paper tone.
-- Image and icon fidelity: this page intentionally has no product imagery. The source’s generic utility icons are non-interactive in scope; no placeholder images or distorted raster assets were introduced.
-- Copy and content: Chinese labels use the confirmed `工作、学习、生活、健康、其他` taxonomy and dynamic dates rather than hard-coded screenshot copy.
-
-**Responsive Evidence**
-
-- `390×844`: mobile drawer opens and closes, filters and day controls remain horizontally scrollable, and the task board renders one selected date column without overlap.
+- Fonts and typography: the original wide hierarchy is restored with the coffee-style handwritten heading and unified day-card UI text.
+- Spacing and layout rhythm: desktop is back to top filters, data tools, full-width planner, and seven-column weekly board. The today clipboard is hidden from this layout.
+- Navigation: desktop keeps the coffee leather left sidebar; mobile keeps it as a slide-out drawer with no exposed edge when closed.
+- Colors and visual tokens: beige paper background, coffee-brown primary actions, soft category pills, and warm card shadows carry the current coffee feeling.
+- Image quality and asset fidelity: no raster assets were introduced. Existing decorative coffee marks are restrained so they do not obscure controls.
+- Copy and content: Chinese labels, category names, date ranges, add/edit/delete, export, completion, and stats remain dynamic.
 
 **Patches Made Since Previous QA Pass**
 
-- Made page CSS global so client-rendered calendar, board, filters, and task cards inherit the designed styles.
-- Adjusted task-card actions to a second row and removed the desktop board’s unnecessary minimum width so all seven columns fit at `1440×900`.
+- Restored the original desktop information layout.
+- Restored the desktop left navigation sidebar.
+- Re-added the data tools/export row.
+- Hid the desktop today clipboard so the seven-day board is primary again.
+- Preserved the coffee visual system through color, paper texture, rounded panels, and brown controls.
+- Verified daily-card plus button hit areas and mobile drawer behavior.
 
 **Implementation Checklist**
 
-- [x] Compare source and implementation at desktop viewport.
-- [x] Inspect modal, board, controls, and mobile layout.
-- [x] Verify date selection, CRUD, filtering, completion state, statistics, and localStorage persistence.
+- [x] Compare desktop layout at `1440x900`.
+- [x] Check mobile layout at `390x844`.
+- [x] Verify no horizontal overflow in checked viewports.
+- [x] Verify daily-card `+` opens the add modal.
+- [x] Run `npm run lint`.
+- [x] Run `npm run build`.
 
 **Follow-up Polish**
 
-- Replace decorative utility marks with project-approved icon assets if an icon set is later added to the site.
+- If the final direction keeps this layout, the next polish pass can tune exact column heights and paper texture intensity against the current production viewport.
 
 final result: passed
