@@ -282,6 +282,14 @@ const navItems: NavItem[] = [
         --line: rgba(111, 63, 23, 0.16);
         --muted: #7a5939;
         --shadow: 0 16px 38px rgba(74, 34, 6, 0.14);
+        --category-all: #7a3f16;
+        --category-work: #7a5ab8;
+        --category-study: #d94f38;
+        --category-life: #2f6fae;
+        --category-health: #3d7b4f;
+        --category-other: #d28a1e;
+        --important-star: #e03131;
+        --important-text: #3f2613;
         position: relative;
         display: grid;
         min-height: 100vh;
@@ -595,19 +603,24 @@ const navItems: NavItem[] = [
       }
 
       .todo-filter {
-        border: 1px solid rgba(108, 63, 22, 0.11);
-        color: #593616;
-        box-shadow: 0 7px 14px rgba(77, 36, 7, 0.05);
+        --filter-color: var(--category-all);
+        border: 1px solid color-mix(in srgb, var(--filter-color) 28%, rgba(108, 63, 22, 0.11));
+        background: color-mix(in srgb, var(--filter-color) 14%, #fff7e8);
+        color: var(--filter-color);
+        box-shadow: 0 7px 14px color-mix(in srgb, var(--filter-color) 10%, transparent);
       }
 
-      .todo-filter[data-category="all"] { background: linear-gradient(#a4642e, #814719); color: #fff4d8; }
-      .todo-filter[data-category="work"] { background: #f4d9cc; color: #a04d31; }
-      .todo-filter[data-category="study"] { background: #e1eccf; color: #4e6f35; }
-      .todo-filter[data-category="life"] { background: #f7deb0; color: #936020; }
-      .todo-filter[data-category="health"] { background: #f2d2ca; color: #a9493d; }
-      .todo-filter[data-category="other"] { background: #e6d9ef; color: #6d5582; }
+      .todo-filter[data-category="all"] { --filter-color: var(--category-all); }
+      .todo-filter[data-category="work"] { --filter-color: var(--category-work); }
+      .todo-filter[data-category="study"] { --filter-color: var(--category-study); }
+      .todo-filter[data-category="life"] { --filter-color: var(--category-life); }
+      .todo-filter[data-category="health"] { --filter-color: var(--category-health); }
+      .todo-filter[data-category="other"] { --filter-color: var(--category-other); }
       .todo-filter.is-active {
-        outline: 1px solid rgba(91, 50, 15, 0.18);
+        border-color: var(--filter-color);
+        background: var(--filter-color);
+        color: #fff8eb;
+        outline: 1px solid color-mix(in srgb, var(--filter-color) 36%, rgba(91, 50, 15, 0.18));
         outline-offset: 2px;
         transform: translateY(-1px);
       }
@@ -931,13 +944,24 @@ const navItems: NavItem[] = [
         font-weight: 900;
       }
 
-      .todo-tag.work { background: #edd0bd; color: #a14c2e; }
-      .todo-tag.study { background: #dbe7c6; color: #536d32; }
-      .todo-tag.life { background: #f2d8a2; color: #94601d; }
-      .todo-tag.health { background: #edcdc6; color: #a8483b; }
-      .todo-tag.other { background: #ded0e7; color: #6f5482; }
+      .todo-tag.work { background: color-mix(in srgb, var(--category-work) 16%, #fff3e1); color: var(--category-work); }
+      .todo-tag.study { background: color-mix(in srgb, var(--category-study) 15%, #fff3e1); color: var(--category-study); }
+      .todo-tag.life { background: color-mix(in srgb, var(--category-life) 15%, #fff3e1); color: var(--category-life); }
+      .todo-tag.health { background: color-mix(in srgb, var(--category-health) 15%, #fff3e1); color: var(--category-health); }
+      .todo-tag.other { background: color-mix(in srgb, var(--category-other) 18%, #fff3e1); color: var(--category-other); }
       .todo-tag.done { background: #d7e5c4; color: #4c6b30; }
-      .todo-tag.important { background: #eed2bd; color: #a04c2c; }
+      .todo-tag.important {
+        gap: 0.16rem;
+        border: 1px solid color-mix(in srgb, var(--important-star) 22%, transparent);
+        background: rgba(122, 63, 22, 0.06);
+        color: var(--important-text);
+      }
+
+      .todo-important-star {
+        color: var(--important-star);
+        font-size: 0.7rem;
+        line-height: 1;
+      }
 
       .todo-item-actions {
         display: flex;

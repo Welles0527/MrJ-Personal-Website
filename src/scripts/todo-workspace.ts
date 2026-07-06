@@ -433,7 +433,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
   const renderTodo = (todo: Todo) => {
     const tags = [
       `<span class="todo-tag ${todo.category}">${categoryLabel(todo.category)}</span>`,
-      todo.important ? '<span class="todo-tag important">重要</span>' : '',
+      todo.important ? '<span class="todo-tag important"><span class="todo-important-star" aria-hidden="true">★</span>重要</span>' : '',
       todo.completed ? '<span class="todo-tag done">已完成</span>' : ''
     ].join('');
     return `<li class="todo-item ${todo.completed ? 'is-completed' : ''}">
@@ -506,7 +506,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
                 <p class="todo-focus-title-row">
                   <span class="todo-focus-title">${escapeHtml(todo.title)}</span>
                   <span class="todo-tag ${todo.category}">${categoryLabel(todo.category)}</span>
-                  ${todo.important ? '<span class="todo-tag important">重要</span>' : ''}
+                  ${todo.important ? '<span class="todo-tag important"><span class="todo-important-star" aria-hidden="true">★</span>重要</span>' : ''}
                   ${todo.completed ? '<span class="todo-tag done">已完成</span>' : ''}
                 </p>
                 <p class="todo-focus-note">${escapeHtml(todo.note || group.fallback)}</p>
