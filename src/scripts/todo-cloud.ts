@@ -1,12 +1,14 @@
 import cloudbase from '@cloudbase/js-sdk';
 
 export type CloudTodoCategory = 'work' | 'study' | 'life' | 'health' | 'other';
+export type CloudTodoPlacement = 'upcoming' | 'ai';
 
 export type CloudTodo = {
   id: string;
   title: string;
   date: string;
   category: CloudTodoCategory;
+  placement?: CloudTodoPlacement;
   important: boolean;
   completed: boolean;
   note: string;
@@ -99,7 +101,7 @@ export const loadCloudTodos = async (ownerId: string): Promise<CloudTodo[]> => {
   const result = await db.collection(TODO_COLLECTION).where({ ownerId }).get() as CloudResult<CloudTodo[]>;
   return (assertCloudResult(result, '读取云端待办失败。') || [])
     .filter((todo) => todo && typeof todo.id === 'string')
-    .sort((first, second) => first.date.localeCompare(second.date) || first.createdAt.localeCompare(second.createdAt));
+    .sort((first, second) => String(first.date || '').localeCompare(String(second.date || '')) || String(first.createdAt || '').localeCompare(String(second.createdAt || '')));
 };
 
 export const upsertCloudTodo = async (ownerId: string, todo: CloudTodo) => {

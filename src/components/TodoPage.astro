@@ -21,10 +21,10 @@ const navItems: NavItem[] = [
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="按周规划、记录和完成个人待办事项。" />
+    <meta name="description" content="按周规划、记录和完成 To-Do-List。" />
     <link rel="icon" type="image/svg+xml" href={`${basePath}favicon.svg`} />
     <link rel="shortcut icon" type="image/svg+xml" href={`${basePath}favicon.svg`} />
-    <title>个人待办事项</title>
+    <title>To-Do-List</title>
   </head>
   <body>
     <div class="todo-shell" data-todo-app>
@@ -74,7 +74,7 @@ const navItems: NavItem[] = [
             <button class="todo-menu-button" type="button" aria-label="打开导航菜单" data-action="open-sidebar">☰</button>
             <div>
               <p class="todo-kicker" data-today-label>今天</p>
-              <h1>个人待办事项 <span class="todo-title-cup" aria-hidden="true">☕</span></h1>
+              <h1>To-Do-List <span class="todo-title-cup" aria-hidden="true">☕</span></h1>
             </div>
           </div>
 
@@ -131,6 +131,7 @@ const navItems: NavItem[] = [
             <div class="todo-week-overview-scroll">
               <div class="todo-week-overview" data-week-overview></div>
             </div>
+            <div class="todo-overview-lanes" data-overview-lanes></div>
           </div>
         </section>
 
@@ -162,12 +163,16 @@ const navItems: NavItem[] = [
           </label>
           <div class="todo-form-grid">
             <label class="todo-field">
-              <span>日期 <b>*</b></span>
-              <input name="date" type="date" required />
+              <span>日期</span>
+              <input name="date" type="date" />
             </label>
             <label class="todo-field">
               <span>分类 <b>*</b></span>
               <select name="category" required></select>
+            </label>
+            <label class="todo-field">
+              <span>展示栏目</span>
+              <select name="placement" required></select>
             </label>
           </div>
           <label class="todo-important-toggle">
@@ -634,8 +639,8 @@ const navItems: NavItem[] = [
 
       .todo-planner-card {
         display: grid;
-        grid-template-columns: minmax(350px, 0.33fr) minmax(0, 0.67fr);
-        min-height: 15.75rem;
+        grid-template-columns: minmax(330px, 0.32fr) minmax(0, 0.68fr);
+        min-height: 15rem;
         overflow: hidden;
         border: 1px solid rgba(111, 63, 23, 0.13);
         border-radius: 0.78rem;
@@ -646,7 +651,9 @@ const navItems: NavItem[] = [
       }
 
       .todo-calendar-panel {
-        padding: 1.12rem 1.28rem 1.1rem;
+        display: flex;
+        flex-direction: column;
+        padding: 0.9rem 1.08rem 0.94rem;
         border-right: 1px solid rgba(111, 63, 23, 0.1);
       }
 
@@ -654,7 +661,7 @@ const navItems: NavItem[] = [
         display: grid;
         grid-template-columns: 1fr 0.74fr 1.35fr;
         gap: 0.42rem;
-        margin-bottom: 0.72rem;
+        margin-bottom: 0.55rem;
       }
 
       .todo-select-row select {
@@ -677,7 +684,7 @@ const navItems: NavItem[] = [
       }
 
       .todo-weekday-row {
-        margin-bottom: 0.28rem;
+        margin-bottom: 0.2rem;
         color: #8b6746;
         font-size: 0.74rem;
         font-weight: 900;
@@ -685,7 +692,9 @@ const navItems: NavItem[] = [
 
       .todo-month-day {
         position: relative;
-        min-height: 2.14rem;
+        display: grid;
+        min-height: 2.07rem;
+        place-items: center;
         border: 0;
         border-radius: 999px;
         background: transparent;
@@ -700,7 +709,7 @@ const navItems: NavItem[] = [
       .todo-month-day.is-in-week::before {
         position: absolute;
         z-index: 0;
-        inset: 0.3rem 0.03rem;
+        inset: 0.26rem 0.03rem;
         border-radius: 0.22rem;
         background: rgba(195, 134, 68, 0.14);
         content: "";
@@ -710,8 +719,8 @@ const navItems: NavItem[] = [
         position: relative;
         z-index: 1;
         display: inline-grid;
-        width: 1.5rem;
-        height: 1.5rem;
+        width: 1.56rem;
+        height: 1.56rem;
         place-items: center;
       }
 
@@ -722,18 +731,33 @@ const navItems: NavItem[] = [
         box-shadow: 0 4px 9px rgba(68, 28, 3, 0.24);
       }
 
+      .todo-month-star {
+        position: absolute;
+        z-index: 2;
+        right: 0.16rem;
+        top: 0.14rem;
+        color: #d73a1d;
+        font-size: 0.58rem;
+        font-style: normal;
+        line-height: 1;
+      }
+
       .todo-week-overview-panel {
+        display: flex;
+        flex-direction: column;
         min-width: 0;
-        padding: 1.12rem 1.32rem 1.08rem;
+        padding: 0.94rem 1.6rem 0.98rem;
       }
 
       .todo-section-label {
+        position: relative;
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        justify-content: center;
         gap: 0.8rem;
-        margin-bottom: 0.72rem;
+        margin-bottom: 0.67rem;
         color: #4d2c13;
+        text-align: center;
       }
 
       .todo-section-label span {
@@ -743,28 +767,36 @@ const navItems: NavItem[] = [
       }
 
       .todo-section-label small {
+        position: absolute;
+        right: 0;
         color: #7d5737;
         font-size: 0.82rem;
         font-weight: 900;
       }
 
-      .todo-week-overview-scroll { overflow-x: auto; padding-bottom: 0.16rem; }
+      .todo-week-overview-scroll {
+        flex: 0 0 auto;
+        overflow-x: auto;
+        padding-bottom: 0.24rem;
+      }
 
       .todo-week-overview {
         display: grid;
-        min-width: 720px;
-        grid-template-columns: repeat(7, minmax(82px, 1fr));
-        gap: 0.42rem;
+        width: min(100%, 760px);
+        min-width: 0;
+        grid-template-columns: repeat(7, minmax(64px, 1fr));
+        gap: clamp(0.7rem, 1vw, 1rem);
+        margin: 0 auto;
       }
 
       .todo-day-overview {
         display: grid;
-        min-height: 8.12rem;
+        min-height: 7.35rem;
         align-content: start;
         gap: 0.34rem;
         border: 1px solid transparent;
         border-radius: 0.52rem;
-        padding: 0.72rem 0.68rem;
+        padding: 0.6rem 0.55rem;
         background: transparent;
         color: #3b2413;
         text-align: left;
@@ -784,9 +816,136 @@ const navItems: NavItem[] = [
 
       .todo-day-name { color: #69472a; font-size: 0.78rem; font-weight: 900; }
       .todo-day-overview.is-weekend .todo-day-name { color: #a24a2a; }
-      .todo-day-date { font-size: 1.1rem; font-weight: 900; }
+      .todo-day-date { font-size: 1rem; font-weight: 900; }
       .todo-day-count { color: #8d6b4d; font-size: 0.7rem; }
       .todo-day-dot { width: 0.42rem; height: 0.42rem; border-radius: 50%; background: var(--coffee); }
+
+      .todo-overview-lanes {
+        display: grid;
+        flex: 1 1 auto;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.58rem;
+        min-height: 0;
+        margin-top: 0.58rem;
+      }
+
+      .todo-overview-lane {
+        display: flex;
+        min-width: 0;
+        min-height: 0;
+        flex-direction: column;
+        border: 1px solid rgba(111, 63, 23, 0.1);
+        border-radius: 0.62rem;
+        padding: 0.52rem;
+        background: rgba(255, 247, 232, 0.55);
+      }
+
+      .todo-overview-lane-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.42rem;
+        margin-bottom: 0.36rem;
+      }
+
+      .todo-overview-lane-title {
+        margin: 0;
+        color: #3e240f;
+        font-size: 0.82rem;
+        font-weight: 900;
+      }
+
+      .todo-overview-lane-count {
+        color: #8b6746;
+        font-size: 0.66rem;
+        font-weight: 900;
+      }
+
+      .todo-overview-list {
+        display: grid;
+        gap: 0.28rem;
+        min-height: 0;
+        max-height: 10.6rem;
+        margin: 0;
+        overflow-y: auto;
+        padding: 0 0.05rem 0 0;
+        list-style: none;
+        scrollbar-color: rgba(122, 76, 34, 0.32) transparent;
+        scrollbar-width: thin;
+      }
+
+      .todo-overview-list::-webkit-scrollbar { width: 0.36rem; }
+      .todo-overview-list::-webkit-scrollbar-thumb {
+        border-radius: 999px;
+        background: rgba(122, 76, 34, 0.28);
+      }
+
+      .todo-overview-item {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 0.36rem;
+        align-items: start;
+        border: 1px solid rgba(111, 63, 23, 0.1);
+        border-radius: 0.48rem;
+        padding: 0.36rem 0.42rem;
+        background: rgba(255, 252, 244, 0.72);
+      }
+
+      .todo-overview-item-main { min-width: 0; }
+
+      .todo-overview-title {
+        margin: 0;
+        color: #2f1a0c;
+        font-size: 0.74rem;
+        font-weight: 900;
+        line-height: 1.25;
+      }
+
+      .todo-overview-note {
+        margin: 0.16rem 0 0;
+        color: #7b5a3c;
+        font-size: 0.64rem;
+        line-height: 1.28;
+      }
+
+      .todo-overview-actions {
+        display: flex;
+        gap: 0.14rem;
+      }
+
+      .todo-overview-actions button,
+      .todo-lane-add {
+        display: grid;
+        place-items: center;
+        border: 1px solid rgba(122, 76, 34, 0.13);
+        border-radius: 0.38rem;
+        background: rgba(255, 244, 225, 0.62);
+        color: #70451f;
+        font-weight: 900;
+      }
+
+      .todo-overview-actions button {
+        width: 1.34rem;
+        height: 1.34rem;
+        font-size: 0.64rem;
+      }
+
+      .todo-lane-add {
+        width: 1.56rem;
+        height: 1.56rem;
+        font-size: 0.92rem;
+      }
+
+      .todo-overview-empty {
+        margin: 0;
+        border: 1px dashed rgba(122, 76, 34, 0.16);
+        border-radius: 0.48rem;
+        padding: 0.5rem;
+        color: #8a6848;
+        font-size: 0.7rem;
+        font-weight: 800;
+        line-height: 1.3;
+      }
 
       .todo-mobile-days { display: none; }
 
@@ -821,6 +980,14 @@ const navItems: NavItem[] = [
           linear-gradient(180deg, rgba(255,255,255,0.58), rgba(255,244,225,0.68)),
           #f6e2bf;
         box-shadow: 0 12px 25px rgba(83, 40, 7, 0.1);
+      }
+
+      .todo-day-column.is-drop-target,
+      .todo-overview-lane.is-drop-target {
+        border-color: rgba(170, 91, 24, 0.58);
+        background: linear-gradient(180deg, rgba(255,255,255,0.72), rgba(255,231,190,0.82)), #f8e2bc;
+        outline: 2px dashed rgba(151, 77, 18, 0.34);
+        outline-offset: -0.28rem;
       }
 
       .todo-day-column.is-selected {
@@ -860,7 +1027,7 @@ const navItems: NavItem[] = [
 
       .todo-list {
         display: grid;
-        gap: 0.62rem;
+        gap: 0.42rem;
         margin: 0;
         padding: 0;
         list-style: none;
@@ -887,32 +1054,62 @@ const navItems: NavItem[] = [
 
       .todo-item {
         display: grid;
-        grid-template-columns: auto minmax(0, 1fr);
-        gap: 0.45rem;
-        align-items: start;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        gap: 0.34rem;
+        align-items: center;
         border: 1px solid rgba(124, 76, 32, 0.12);
-        border-radius: 0.58rem;
-        padding: 0.7rem;
+        border-radius: 0.48rem;
+        padding: 0.42rem;
         background: rgba(255, 250, 243, 0.78);
       }
 
+      .todo-item[draggable="true"],
+      .todo-overview-item[draggable="true"] {
+        cursor: grab;
+      }
+
+      .todo-item.is-dragging,
+      .todo-overview-item.is-dragging {
+        opacity: 0.48;
+      }
+
       .todo-checkbox {
-        width: 1rem;
-        height: 1rem;
-        grid-row: span 2;
-        margin: 0.14rem 0 0;
+        width: 0.9rem;
+        height: 0.9rem;
+        margin: 0;
         accent-color: #90602e;
       }
 
       .todo-item-main { min-width: 0; }
 
+      .todo-item-title-row {
+        display: flex;
+        align-items: center;
+        gap: 0.18rem;
+        min-width: 0;
+        margin: 0;
+      }
+
+      .todo-item-star {
+        flex: 0 0 auto;
+        color: #d73a1d;
+        font-size: 0.64rem;
+        line-height: 1;
+      }
+
       .todo-item-title {
+        flex: 1 1 auto;
+        min-width: 0;
         margin: 0;
         color: #2f2115;
-        font-size: 0.82rem;
+        font-size: 0.74rem;
         font-weight: 900;
-        line-height: 1.45;
+        line-height: 1.24;
+        display: -webkit-box;
+        overflow: hidden;
         overflow-wrap: anywhere;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
       }
 
       .todo-item.is-completed .todo-item-title {
@@ -931,16 +1128,17 @@ const navItems: NavItem[] = [
       .todo-tags {
         display: flex;
         flex-wrap: wrap;
-        gap: 0.28rem;
-        margin-top: 0.48rem;
+        flex: 0 0 auto;
+        gap: 0.18rem;
+        margin: 0;
       }
 
       .todo-tag {
         display: inline-flex;
         align-items: center;
         border-radius: 999px;
-        padding: 0.14rem 0.42rem;
-        font-size: 0.62rem;
+        padding: 0.1rem 0.32rem;
+        font-size: 0.56rem;
         font-weight: 900;
       }
 
@@ -965,19 +1163,18 @@ const navItems: NavItem[] = [
 
       .todo-item-actions {
         display: flex;
-        grid-column: 2;
         justify-content: flex-end;
         gap: 0.16rem;
       }
 
       .todo-item-actions button {
-        min-width: 1.45rem;
-        height: 1.45rem;
+        min-width: 1.22rem;
+        height: 1.22rem;
         border: 0;
         border-radius: 0.32rem;
         background: transparent;
         color: #8d6d4f;
-        font-size: 0.68rem;
+        font-size: 0.62rem;
         font-weight: 900;
       }
 
@@ -1229,6 +1426,22 @@ const navItems: NavItem[] = [
         .todo-item { padding: 0.58rem; }
       }
 
+      @media (min-width: 981px) {
+        .todo-calendar-panel {
+          align-self: start;
+          aspect-ratio: 1 / 1;
+        }
+
+        .todo-month-grid {
+          flex: 1 1 auto;
+          grid-auto-rows: minmax(0, 1fr);
+        }
+
+        .todo-month-day {
+          min-height: 0;
+        }
+      }
+
       @media (max-width: 980px) {
         .todo-shell { grid-template-columns: 210px minmax(0, 1fr); }
         .todo-header { grid-template-columns: 1fr; }
@@ -1299,6 +1512,7 @@ const navItems: NavItem[] = [
         .todo-select-row { grid-template-columns: 1fr 0.8fr 1.22fr; gap: 0.34rem; }
         .todo-select-row select { font-size: 0.78rem; }
         .todo-week-overview { min-width: 560px; }
+        .todo-overview-lanes { grid-template-columns: 1fr; }
         .todo-mobile-days {
           display: flex;
           gap: 0.42rem;

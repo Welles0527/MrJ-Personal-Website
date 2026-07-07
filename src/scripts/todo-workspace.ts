@@ -1,4 +1,4 @@
-import type { CloudSession, CloudTodo, CloudTodoCategory } from './todo-cloud';
+import type { CloudSession, CloudTodo, CloudTodoCategory, CloudTodoPlacement } from './todo-cloud';
 
 let cloudApi: Promise<typeof import('./todo-cloud')> | null = null;
 const getCloudApi = () => {
@@ -7,8 +7,9 @@ const getCloudApi = () => {
 };
 
 type TodoCategory = CloudTodoCategory;
+type TodoPlacement = CloudTodoPlacement;
 type TodoFilter = 'all' | TodoCategory;
-type Todo = CloudTodo;
+type Todo = Omit<CloudTodo, 'placement'> & { placement: TodoPlacement };
 type TrashTodo = Todo & { deletedAt: string };
 
 type TodoState = {
@@ -37,6 +38,10 @@ const categories: Array<{ value: TodoCategory; label: string }> = [
   { value: 'life', label: '生活' },
   { value: 'health', label: '运动' },
   { value: 'other', label: '其他' }
+];
+const placements: Array<{ value: TodoPlacement; label: string }> = [
+  { value: 'upcoming', label: '近期待办' },
+  { value: 'ai', label: 'AI灵感' }
 ];
 
 const weekdayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
@@ -85,23 +90,48 @@ const createId = () => typeof crypto !== 'undefined' && 'randomUUID' in crypto
   : `todo-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
 const isCategory = (value: unknown): value is TodoCategory => categories.some((category) => category.value === value);
+const isPlacement = (value: unknown): value is TodoPlacement => placements.some((placement) => placement.value === value);
 
-const isTodo = (value: unknown): value is Todo => {
-  if (!value || typeof value !== 'object') return false;
+const normalizeTodo = (value: unknown): Todo | null => {
+  if (!value || typeof value !== 'object') return null;
   const item = value as Record<string, unknown>;
-  return typeof item.id === 'string'
-    && typeof item.title === 'string'
-    && Boolean(parseDateKey(String(item.date)))
-    && isCategory(item.category)
-    && typeof item.important === 'boolean'
-    && typeof item.completed === 'boolean'
-    && typeof item.note === 'string'
-    && typeof item.createdAt === 'string'
-    && typeof item.updatedAt === 'string';
+  const date = typeof item.date === 'string' ? item.date : '';
+  if (date && !parseDateKey(date)) return null;
+  if (typeof item.id !== 'string'
+    || typeof item.title !== 'string'
+    || !isCategory(item.category)
+    || typeof item.important !== 'boolean'
+    || typeof item.completed !== 'boolean'
+    || typeof item.note !== 'string'
+    || typeof item.createdAt !== 'string'
+    || typeof item.updatedAt !== 'string') {
+    return null;
+  }
+
+  return {
+    id: item.id,
+    title: item.title,
+    date,
+    category: item.category,
+    placement: isPlacement(item.placement) ? item.placement : 'upcoming',
+    important: item.important,
+    completed: item.completed,
+    note: item.note,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt
+  };
 };
 
-const isTrashTodo = (value: unknown): value is TrashTodo =>
-  isTodo(value) && typeof (value as Record<string, unknown>).deletedAt === 'string';
+const normalizeTodoList = (value: unknown) => Array.isArray(value)
+  ? value.map(normalizeTodo).filter((todo): todo is Todo => Boolean(todo))
+  : null;
+
+const normalizeTrashTodo = (value: unknown): TrashTodo | null => {
+  const todo = normalizeTodo(value);
+  if (!todo || !value || typeof value !== 'object') return null;
+  const deletedAt = (value as Record<string, unknown>).deletedAt;
+  return typeof deletedAt === 'string' ? { ...todo, deletedAt } : null;
+};
 
 const createExamples = (anchor: Date): Todo[] => {
   const monday = startOfWeek(anchor);
@@ -120,6 +150,7 @@ const createExamples = (anchor: Date): Todo[] => {
     title: example.title,
     date: toDateKey(addDays(monday, example.offset)),
     category: example.category,
+    placement: 'upcoming',
     important: example.important,
     completed: example.completed,
     note: example.note,
@@ -136,9 +167,14 @@ const escapeHtml = (value: string) => value
   .replaceAll("'", '&#039;');
 
 const categoryLabel = (category: TodoCategory) => categories.find((item) => item.value === category)?.label ?? '其他';
+const placementLabel = (placement: TodoPlacement) => placements.find((item) => item.value === placement)?.label ?? '近期待办';
 const monthDay = (date: Date) => `${date.getMonth() + 1}/${date.getDate()}`;
 const longDate = (date: Date) => `${date.getMonth() + 1}月${date.getDate()}日`;
 const dateDescription = (date: Date) => `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+const todoDateLabel = (todo: Todo) => todo.date || '未排期';
+const compareTodos = (first: Todo, second: Todo) =>
+  (first.date || '9999-12-31').localeCompare(second.date || '9999-12-31')
+  || first.createdAt.localeCompare(second.createdAt);
 
 export function mountTodoWorkspace(root: HTMLElement) {
   const migrationParams = new URLSearchParams(window.location.search);
@@ -174,6 +210,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
   const filterContainer = getElement<HTMLElement>('[data-category-filters]');
   const monthCalendar = getElement<HTMLElement>('[data-month-calendar]');
   const weekOverview = getElement<HTMLElement>('[data-week-overview]');
+  const overviewLanes = getElement<HTMLElement>('[data-overview-lanes]');
   const mobileDays = getElement<HTMLElement>('[data-mobile-days]');
   const board = getElement<HTMLElement>('[data-weekly-board]');
   const todayPanel = root.querySelector<HTMLElement>('[data-today-panel]');
@@ -207,6 +244,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
   const titleInput = todoForm.elements.namedItem('title') as HTMLInputElement;
   const dateInput = todoForm.elements.namedItem('date') as HTMLInputElement;
   const categoryInput = todoForm.elements.namedItem('category') as HTMLSelectElement;
+  const placementInput = todoForm.elements.namedItem('placement') as HTMLSelectElement;
   const importantInput = todoForm.elements.namedItem('important') as HTMLInputElement;
   const noteInput = todoForm.elements.namedItem('note') as HTMLTextAreaElement;
   const loginEmailInput = loginForm.elements.namedItem('email') as HTMLInputElement;
@@ -220,6 +258,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
   let migrationTimer: number | undefined;
   let cloudSession: CloudSession | null = null;
   let completeEmailSignUp: ((verificationCode: string) => Promise<CloudSession>) | null = null;
+  let draggedTodoId: string | null = null;
   const localMigrationOrigin = LOCAL_MIGRATION_ORIGIN;
 
   const persist = (todos: Todo[]) => {
@@ -270,11 +309,13 @@ export function mountTodoWorkspace(root: HTMLElement) {
         return { todos: examples, storageMessage: persist(examples) ? null : '浏览器存储不可用，示例数据仅保留到本次会话。' };
       }
       const parsed: unknown = JSON.parse(stored);
-      if (!Array.isArray(parsed) || !parsed.every(isTodo)) {
+      if (!Array.isArray(parsed)) {
         const examples = createExamples(currentDate);
         return { todos: examples, storageMessage: persist(examples) ? '本地待办数据异常，已安全恢复为示例数据。' : '本地待办数据异常，已使用临时示例数据。' };
       }
-      return { todos: parsed, storageMessage: null };
+      const todos = normalizeTodoList(parsed) ?? [];
+      const storageMessage = todos.length === parsed.length ? null : '部分本地待办数据格式异常，已跳过无法识别的项目。';
+      return { todos, storageMessage };
     } catch {
       const examples = createExamples(currentDate);
       return { todos: examples, storageMessage: '无法读取本地待办数据，已使用临时示例数据。' };
@@ -286,7 +327,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
       const stored = window.localStorage.getItem(TRASH_KEY);
       if (!stored) return [];
       const parsed: unknown = JSON.parse(stored);
-      return Array.isArray(parsed) ? parsed.filter(isTrashTodo) : [];
+      return Array.isArray(parsed) ? parsed.map(normalizeTrashTodo).filter((todo): todo is TrashTodo => Boolean(todo)) : [];
     } catch {
       return [];
     }
@@ -324,7 +365,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
     localTodos.forEach((localTodo) => {
       if (forceLocalIds.has(localTodo.id) && !cloudIds.has(localTodo.id)) merged.push(localTodo);
     });
-    return merged.sort((first, second) => first.date.localeCompare(second.date) || first.createdAt.localeCompare(second.createdAt));
+    return merged.sort(compareTodos);
   };
 
   const loaded = loadTodos();
@@ -401,13 +442,44 @@ export function mountTodoWorkspace(root: HTMLElement) {
     const selectedWeekKeys = new Set(getSelectedWeek().map(toDateKey));
     monthCalendar.innerHTML = getWeeks().flat().map((date) => {
       const dateKey = toDateKey(date);
+      const hasImportant = state.todos.some((todo) => todo.date === dateKey && todo.important);
       const classes = [
         'todo-month-day',
         date.getMonth() !== state.viewMonth ? 'is-outside' : '',
         selectedWeekKeys.has(dateKey) ? 'is-in-week' : '',
-        sameDate(date, state.selectedDate) ? 'is-selected' : ''
+        sameDate(date, state.selectedDate) ? 'is-selected' : '',
+        hasImportant ? 'has-important' : ''
       ].filter(Boolean).join(' ');
-      return `<button class="${classes}" type="button" data-action="select-date" data-date="${dateKey}" aria-label="${dateDescription(date)}"><span>${date.getDate()}</span></button>`;
+      return `<button class="${classes}" type="button" data-action="select-date" data-date="${dateKey}" aria-label="${dateDescription(date)}${hasImportant ? '，有重要待办' : ''}"><span>${date.getDate()}</span>${hasImportant ? '<i class="todo-month-star" aria-hidden="true">★</i>' : ''}</button>`;
+    }).join('');
+  };
+
+  const renderOverviewTodo = (todo: Todo) => `
+    <li class="todo-overview-item ${todo.completed ? 'is-completed' : ''}" draggable="true" data-todo-id="${todo.id}">
+      <div class="todo-overview-item-main">
+        <p class="todo-overview-title">${escapeHtml(todo.title)}</p>
+        ${todo.note ? `<p class="todo-overview-note">${escapeHtml(todo.note)}</p>` : ''}
+      </div>
+      <div class="todo-overview-actions">
+        <button type="button" data-action="edit-todo" data-todo-id="${todo.id}" aria-label="编辑：${escapeHtml(todo.title)}" title="编辑">编</button>
+        <button type="button" data-action="ask-delete" data-todo-id="${todo.id}" aria-label="删除：${escapeHtml(todo.title)}" title="删除">删</button>
+      </div>
+    </li>`;
+
+  const renderOverviewLanes = () => {
+    const undatedTodos = filterTodos(state.todos.filter((todo) => !todo.date)).sort(compareTodos);
+    overviewLanes.innerHTML = placements.map((placement) => {
+      const todos = undatedTodos.filter((todo) => todo.placement === placement.value);
+      return `<section class="todo-overview-lane" aria-label="${placement.label}" data-drop-placement="${placement.value}">
+        <header class="todo-overview-lane-header">
+          <div>
+            <h3 class="todo-overview-lane-title">${placement.label}</h3>
+            <span class="todo-overview-lane-count">${todos.length} 项</span>
+          </div>
+          <button class="todo-lane-add" type="button" data-action="open-create" data-placement="${placement.value}" aria-label="新增${placement.label}待办">＋</button>
+        </header>
+        ${todos.length ? `<ul class="todo-overview-list">${todos.map(renderOverviewTodo).join('')}</ul>` : '<p class="todo-overview-empty">暂无待办</p>'}
+      </section>`;
     }).join('');
   };
 
@@ -424,6 +496,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
         <i class="todo-day-dot" aria-hidden="true"></i>
       </button>`;
     }).join('');
+    renderOverviewLanes();
   };
 
   const renderMobileDays = () => {
@@ -431,17 +504,13 @@ export function mountTodoWorkspace(root: HTMLElement) {
   };
 
   const renderTodo = (todo: Todo) => {
-    const tags = [
-      `<span class="todo-tag ${todo.category}">${categoryLabel(todo.category)}</span>`,
-      todo.important ? '<span class="todo-tag important"><span class="todo-important-star" aria-hidden="true">★</span>重要</span>' : '',
-      todo.completed ? '<span class="todo-tag done">已完成</span>' : ''
-    ].join('');
-    return `<li class="todo-item ${todo.completed ? 'is-completed' : ''}">
+    return `<li class="todo-item ${todo.completed ? 'is-completed' : ''}" draggable="true" data-todo-id="${todo.id}">
       <input class="todo-checkbox" type="checkbox" ${todo.completed ? 'checked' : ''} data-action="toggle-complete" data-todo-id="${todo.id}" aria-label="${todo.completed ? '取消完成' : '完成'}：${escapeHtml(todo.title)}" />
       <div class="todo-item-main">
-        <p class="todo-item-title">${escapeHtml(todo.title)}</p>
-        ${todo.note ? `<p class="todo-item-note">${escapeHtml(todo.note)}</p>` : ''}
-        <div class="todo-tags">${tags}</div>
+        <p class="todo-item-title-row">
+          ${todo.important ? '<span class="todo-item-star" aria-hidden="true">★</span>' : ''}
+          <span class="todo-item-title">${escapeHtml(todo.title)}</span>
+        </p>
       </div>
       <div class="todo-item-actions">
         <button type="button" data-action="edit-todo" data-todo-id="${todo.id}" aria-label="编辑：${escapeHtml(todo.title)}" title="编辑">编</button>
@@ -458,7 +527,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
       const originalIndex = selectedWeek.findIndex((item) => sameDate(item, date));
       const todos = todosForDate(date);
       const dateKey = toDateKey(date);
-      return `<article class="todo-day-column ${sameDate(date, state.selectedDate) ? 'is-selected' : ''} ${sameDate(date, currentDate) ? 'is-today' : ''} ${originalIndex > 4 ? 'is-weekend' : ''}">
+      return `<article class="todo-day-column ${sameDate(date, state.selectedDate) ? 'is-selected' : ''} ${sameDate(date, currentDate) ? 'is-today' : ''} ${originalIndex > 4 ? 'is-weekend' : ''}" data-drop-date="${dateKey}">
         <header class="todo-column-header">
           <div>
             <h2 class="todo-column-name">${weekdayNames[originalIndex]}</h2>
@@ -542,13 +611,15 @@ export function mountTodoWorkspace(root: HTMLElement) {
     renderStats();
   };
 
-  const openForm = (date = state.selectedDate, todo?: Todo) => {
+  const openForm = (date?: Date, todo?: Todo, placement: TodoPlacement = 'upcoming') => {
     state.editingId = todo?.id ?? null;
     formTitle.textContent = todo ? '编辑待办' : '新增待办';
     titleInput.value = todo?.title ?? '';
-    dateInput.value = todo?.date ?? toDateKey(date);
+    dateInput.value = todo?.date ?? (date ? toDateKey(date) : '');
     categoryInput.innerHTML = categories.map((category) => `<option value="${category.value}">${category.label}</option>`).join('');
+    placementInput.innerHTML = placements.map((item) => `<option value="${item.value}">${item.label}</option>`).join('');
     categoryInput.value = todo?.category ?? 'work';
+    placementInput.value = todo?.placement ?? placement;
     importantInput.checked = todo?.important ?? false;
     noteInput.value = todo?.note ?? '';
     titleError.textContent = '';
@@ -588,7 +659,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
     }
     trashList.innerHTML = state.trash.map((todo) => `<section class="todo-trash-item">
       <p class="todo-trash-title">${escapeHtml(todo.title)}</p>
-      <p class="todo-trash-meta">${todo.date} · ${categoryLabel(todo.category)} · 删除于 ${trashTimeLabel(todo.deletedAt)}</p>
+      <p class="todo-trash-meta">${todoDateLabel(todo)} · ${categoryLabel(todo.category)} · 删除于 ${trashTimeLabel(todo.deletedAt)}</p>
       <div class="todo-trash-actions">
         <button class="todo-secondary-button" type="button" data-action="restore-trash" data-todo-id="${todo.id}">恢复</button>
         <button class="todo-danger-button" type="button" data-action="delete-trash" data-todo-id="${todo.id}">彻底删除</button>
@@ -636,7 +707,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
     const localTodos = state.todos;
     const pendingUpsertIds = loadIdQueue(PENDING_UPSERT_KEY);
     const pendingDeleteIds = loadIdQueue(PENDING_DELETE_KEY);
-    const cloudTodos = await api.loadCloudTodos(session.uid);
+    const cloudTodos = normalizeTodoList(await api.loadCloudTodos(session.uid)) ?? [];
     const cloudTodoIds = new Set(cloudTodos.map((todo) => todo.id));
     const visibleCloudTodos = cloudTodos.filter((todo) => !pendingDeleteIds.has(todo.id));
     const localUpdates = localUpdatesForExistingCloudTodos(localTodos, visibleCloudTodos);
@@ -684,6 +755,43 @@ export function mountTodoWorkspace(root: HTMLElement) {
       notify('已保存到本地；云端暂未同步，刷新后会继续保留。');
     }
     return true;
+  };
+
+  const clearDropTargets = () => {
+    root.querySelectorAll('.is-drop-target, .is-dragging').forEach((element) => {
+      element.classList.remove('is-drop-target', 'is-dragging');
+    });
+  };
+
+  const moveTodoToDate = async (todoId: string, dateKey: string) => {
+    const date = parseDateKey(dateKey);
+    const todo = state.todos.find((item) => item.id === todoId);
+    if (!date || !todo || todo.date === dateKey) return;
+    const nextTodo: Todo = { ...todo, date: dateKey, updatedAt: new Date().toISOString() };
+    if (cloudSession) {
+      const saved = await saveCloudTodo(nextTodo, '待办已移动并同步到云端。', { optimistic: true });
+      if (!saved) return;
+    } else {
+      upsertTodoInState(nextTodo);
+      enqueueId(PENDING_UPSERT_KEY, nextTodo.id);
+      saveState('待办已移动到本地，登录后会继续同步。');
+    }
+    selectDate(date);
+    render();
+  };
+
+  const moveTodoToPlacement = async (todoId: string, placement: TodoPlacement) => {
+    const todo = state.todos.find((item) => item.id === todoId);
+    if (!todo || (!todo.date && todo.placement === placement)) return;
+    const nextTodo: Todo = { ...todo, date: '', placement, updatedAt: new Date().toISOString() };
+    if (cloudSession) {
+      const saved = await saveCloudTodo(nextTodo, '待办已移动并同步到云端。', { optimistic: true });
+      if (saved) render();
+      return;
+    }
+    upsertTodoInState(nextTodo);
+    enqueueId(PENDING_UPSERT_KEY, nextTodo.id);
+    saveState('待办已移动到本地，登录后会继续同步。');
   };
 
   const showCloudError = (error: unknown, fallback: string) => {
@@ -752,7 +860,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
         kept += 1;
       }
     });
-    const nextTodos = [...merged.values()].sort((first, second) => first.date.localeCompare(second.date) || first.createdAt.localeCompare(second.createdAt));
+    const nextTodos = [...merged.values()].sort(compareTodos);
     for (const todo of nextTodos) await (await getCloudApi()).upsertCloudTodo(cloudSession.uid, todo);
     state.todos = nextTodos;
     closeMigrationDialog();
@@ -769,9 +877,10 @@ export function mountTodoWorkspace(root: HTMLElement) {
     const textCell = (column: string, row: number, value: string) =>
       `<c r="${column}${row}" t="inlineStr"><is><t xml:space="preserve">${escapeXml(value)}</t></is></c>`;
     const rows = [
-      ['日期', '分类', '待办事项', '重要', '完成状态', '备注', '创建时间', '更新时间'],
+      ['日期', '展示栏目', '分类', '待办事项', '重要', '完成状态', '备注', '创建时间', '更新时间'],
       ...state.todos.map((todo) => [
-        todo.date,
+        todoDateLabel(todo),
+        placementLabel(todo.placement),
         categoryLabel(todo.category),
         todo.title,
         todo.important ? '是' : '否',
@@ -870,17 +979,79 @@ export function mountTodoWorkspace(root: HTMLElement) {
     }
     try {
       const parsed: unknown = JSON.parse(event.data.raw);
-      if (!Array.isArray(parsed) || !parsed.every(isTodo)) {
+      const todos = normalizeTodoList(parsed);
+      if (!todos) {
         showMigrationResult('localhost 中的待办数据格式无法识别，未导入任何内容。');
         return;
       }
-      if (!parsed.length) {
+      if (!todos.length) {
         showMigrationResult('localhost 中的待办列表为空，没有需要导入的内容。');
         return;
       }
-      showMigrationResult(`找到 ${parsed.length} 项旧待办。导入会与当前数据合并；同一 ID 时保留更新时间较新的版本。`, parsed);
+      showMigrationResult(`找到 ${todos.length} 项旧待办。导入会与当前数据合并；同一 ID 时保留更新时间较新的版本。`, todos);
     } catch {
       showMigrationResult('localhost 中的待办数据无法解析，未导入任何内容。');
+    }
+  });
+
+  root.addEventListener('dragstart', (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const todoItem = target.closest<HTMLElement>('[data-todo-id][draggable="true"]');
+    if (!todoItem?.dataset.todoId || !event.dataTransfer) return;
+    draggedTodoId = todoItem.dataset.todoId;
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', draggedTodoId);
+    todoItem.classList.add('is-dragging');
+  });
+
+  root.addEventListener('dragend', () => {
+    draggedTodoId = null;
+    clearDropTargets();
+  });
+
+  root.addEventListener('dragover', (event) => {
+    if (!draggedTodoId) return;
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const dropTarget = target.closest<HTMLElement>('[data-drop-date], [data-drop-placement]');
+    if (!dropTarget) return;
+    event.preventDefault();
+    event.dataTransfer!.dropEffect = 'move';
+    root.querySelectorAll('.is-drop-target').forEach((element) => {
+      if (element !== dropTarget) element.classList.remove('is-drop-target');
+    });
+    dropTarget.classList.add('is-drop-target');
+  });
+
+  root.addEventListener('dragleave', (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const dropTarget = target.closest<HTMLElement>('[data-drop-date], [data-drop-placement]');
+    if (!dropTarget || (event.relatedTarget instanceof Node && dropTarget.contains(event.relatedTarget))) return;
+    dropTarget.classList.remove('is-drop-target');
+  });
+
+  root.addEventListener('drop', async (event) => {
+    if (!draggedTodoId) return;
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const dropTarget = target.closest<HTMLElement>('[data-drop-date], [data-drop-placement]');
+    if (!dropTarget) return;
+    event.preventDefault();
+    const todoId = event.dataTransfer?.getData('text/plain') || draggedTodoId;
+    clearDropTargets();
+    draggedTodoId = null;
+    try {
+      if (dropTarget.dataset.dropDate) {
+        await moveTodoToDate(todoId, dropTarget.dataset.dropDate);
+        return;
+      }
+      if (isPlacement(dropTarget.dataset.dropPlacement)) {
+        await moveTodoToPlacement(todoId, dropTarget.dataset.dropPlacement);
+      }
+    } catch (error) {
+      showCloudError(error, '移动待办失败。');
     }
   });
 
@@ -908,6 +1079,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
         title: trashTodo.title,
         date: trashTodo.date,
         category: trashTodo.category,
+        placement: trashTodo.placement,
         important: trashTodo.important,
         completed: trashTodo.completed,
         note: trashTodo.note,
@@ -918,7 +1090,8 @@ export function mountTodoWorkspace(root: HTMLElement) {
       persistTrash(state.trash);
       upsertTodoInState(restoredTodo);
       enqueueId(PENDING_UPSERT_KEY, restoredTodo.id);
-      selectDate(parseDateKey(restoredTodo.date) ?? state.selectedDate);
+      const restoredDate = parseDateKey(restoredTodo.date);
+      if (restoredDate) selectDate(restoredDate);
       saveState('待办已从回收站恢复。');
       renderTrashList();
       if (cloudSession) {
@@ -950,8 +1123,9 @@ export function mountTodoWorkspace(root: HTMLElement) {
       }
     }
     if (action === 'open-create') {
-      const date = parseDateKey(trigger.dataset.date ?? '') ?? state.selectedDate;
-      openForm(date);
+      const date = parseDateKey(trigger.dataset.date ?? '');
+      const placement = isPlacement(trigger.dataset.placement) ? trigger.dataset.placement : 'upcoming';
+      openForm(date ?? undefined, undefined, placement);
     }
     if (action === 'start-migration') startMigration();
     if (action === 'cancel-migration') closeMigrationDialog();
@@ -1005,7 +1179,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
     }
     if (action === 'edit-todo') {
       const todo = state.todos.find((item) => item.id === trigger.dataset.todoId);
-      if (todo) openForm(parseDateKey(todo.date) ?? state.selectedDate, todo);
+      if (todo) openForm(parseDateKey(todo.date) ?? undefined, todo);
     }
     if (action === 'ask-delete') {
       const todo = state.todos.find((item) => item.id === trigger.dataset.todoId);
@@ -1076,14 +1250,15 @@ export function mountTodoWorkspace(root: HTMLElement) {
   todoForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     const title = titleInput.value.trim();
-    const date = parseDateKey(dateInput.value);
+    const dateValue = dateInput.value.trim();
+    const date = dateValue ? parseDateKey(dateValue) : null;
     if (!title) {
       titleError.textContent = '请填写待办标题。';
       titleInput.focus();
       return;
     }
-    if (!date || !isCategory(categoryInput.value)) {
-      titleError.textContent = '请填写有效的日期与分类。';
+    if ((dateValue && !date) || !isCategory(categoryInput.value) || !isPlacement(placementInput.value)) {
+      titleError.textContent = '请填写有效的待办信息。';
       return;
     }
 
@@ -1092,8 +1267,9 @@ export function mountTodoWorkspace(root: HTMLElement) {
     const nextTodo: Todo = {
       id: existing?.id ?? createId(),
       title,
-      date: toDateKey(date),
+      date: date ? toDateKey(date) : '',
       category: categoryInput.value,
+      placement: placementInput.value,
       important: importantInput.checked,
       completed: existing?.completed ?? false,
       note: noteInput.value.trim(),
@@ -1103,7 +1279,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
     try {
       const saved = await saveCloudTodo(nextTodo, existing ? '待办已更新并同步到云端。' : '待办已添加并同步到云端。', { optimistic: true });
       if (!saved) return;
-      selectDate(date);
+      if (date) selectDate(date);
       render();
       closeForm();
     } catch (error) {
