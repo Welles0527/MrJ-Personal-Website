@@ -34,7 +34,7 @@ const navItems: NavItem[] = [
         <div class="todo-brand">
           <span class="todo-brand-mark" aria-hidden="true">☕</span>
           <div>
-            <strong>待办事项</strong>
+            <strong>J-Space</strong>
             <span>WEEKLY FOCUS</span>
           </div>
           <button class="todo-sidebar-close" type="button" aria-label="关闭导航菜单" data-action="close-sidebar">×</button>
@@ -59,11 +59,7 @@ const navItems: NavItem[] = [
           ))}
         </nav>
 
-        <div class="todo-sidebar-note">
-          <strong>本周专注</strong>
-          <span>专注当下，收获未来的自己。</span>
-          <i aria-hidden="true">— COCE'S COFFEE —</i>
-        </div>
+        <div class="todo-sidebar-lanes" data-sidebar-lanes></div>
 
         <div class="todo-sidebar-mail" aria-hidden="true">✉</div>
       </aside>
@@ -79,8 +75,6 @@ const navItems: NavItem[] = [
           </div>
 
           <div class="todo-header-actions" aria-label="页面操作">
-            <span class="todo-account" data-auth-status>正在检查登录状态…</span>
-            <button class="todo-account-button" type="button" data-action="sign-out" data-sign-out hidden>退出登录</button>
             <span class="todo-utility" aria-label="搜索（视觉图标）" title="搜索">⌕</span>
             <span class="todo-utility" aria-label="设置（视觉图标）" title="设置">⚙</span>
             <span class="todo-utility" aria-label="提醒（视觉图标）" title="提醒">♧</span>
@@ -225,35 +219,6 @@ const navItems: NavItem[] = [
         </div>
       </dialog>
 
-      <dialog class="todo-modal todo-login-modal" aria-labelledby="todo-login-title" data-login-modal>
-        <form class="todo-form" data-login-form novalidate>
-          <div class="todo-modal-header">
-            <div>
-              <p class="todo-kicker">云端待办</p>
-              <h2 id="todo-login-title">登录我的待办</h2>
-            </div>
-          </div>
-          <p class="todo-login-copy">使用同一账号登录后，可在任意设备查看和管理自己的待办。</p>
-          <label class="todo-field todo-field-wide">
-            <span>邮箱</span>
-            <input name="email" type="email" autocomplete="email" placeholder="输入常用邮箱" required />
-          </label>
-          <label class="todo-field todo-field-wide">
-            <span>密码</span>
-            <input name="password" type="password" autocomplete="current-password" minlength="8" placeholder="请输入私有密码" required />
-          </label>
-          <label class="todo-field todo-field-wide" data-verification-field hidden>
-            <span>邮箱验证码</span>
-            <input name="verificationCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="输入邮箱收到的验证码" />
-          </label>
-          <p class="todo-login-message" data-login-message aria-live="polite"></p>
-          <div class="todo-modal-actions">
-            <button class="todo-secondary-button" type="button" data-action="sign-up">创建账号</button>
-            <button class="todo-primary-button" type="submit">登录并同步</button>
-          </div>
-        </form>
-      </dialog>
-
       <p class="todo-toast" role="status" aria-live="polite" data-toast hidden></p>
     </div>
 
@@ -298,7 +263,7 @@ const navItems: NavItem[] = [
         position: relative;
         display: grid;
         min-height: 100vh;
-        grid-template-columns: 244px minmax(0, 1fr);
+        grid-template-columns: 312px minmax(0, 1fr);
         overflow-x: hidden;
         background:
           radial-gradient(circle at 78% 4%, rgba(255,255,255,0.42), transparent 18rem),
@@ -332,6 +297,7 @@ const navItems: NavItem[] = [
         height: calc(100vh - 1rem);
         flex-direction: column;
         gap: 1.25rem;
+        overflow-y: auto;
         margin: 0.5rem 0 0.5rem 0.5rem;
         padding: 1.45rem 0.95rem 1rem;
         border: 1px solid rgba(234, 174, 96, 0.2);
@@ -388,6 +354,12 @@ const navItems: NavItem[] = [
 
       .todo-sidebar-close { display: none; }
 
+      .todo-sidebar::-webkit-scrollbar { width: 0.36rem; }
+      .todo-sidebar::-webkit-scrollbar-thumb {
+        border-radius: 999px;
+        background: rgba(255, 214, 144, 0.22);
+      }
+
       .todo-nav {
         display: grid;
         gap: 0.42rem;
@@ -426,23 +398,43 @@ const navItems: NavItem[] = [
         color: #e2a042;
       }
 
-      .todo-sidebar-note {
+      .todo-sidebar-lanes {
         display: grid;
-        gap: 0.5rem;
-        margin-top: auto;
-        padding: 1rem;
-        border: 1px solid rgba(255, 214, 144, 0.16);
-        border-radius: 0.62rem;
-        background:
-          radial-gradient(circle at 84% 60%, rgba(255, 217, 150, 0.16), transparent 4.8rem),
-          rgba(95, 52, 18, 0.34);
+        gap: 0.66rem;
+        min-height: 0;
       }
 
-      .todo-sidebar-note strong { color: #fff0cb; font-size: 0.92rem; }
-      .todo-sidebar-note span { color: #f2d8a9; font-size: 0.8rem; line-height: 1.6; }
-      .todo-sidebar-note i { color: rgba(255, 224, 170, 0.7); font-size: 0.66rem; font-style: normal; }
+      .todo-sidebar-lanes .todo-overview-lane {
+        border-color: rgba(255, 214, 144, 0.16);
+        padding: 0.58rem;
+        background: rgba(96, 52, 18, 0.34);
+      }
+
+      .todo-sidebar-lanes .todo-overview-lane-title { color: #fff0cb; }
+      .todo-sidebar-lanes .todo-overview-lane-count,
+      .todo-sidebar-lanes .todo-overview-empty { color: #f2d8a9; }
+
+      .todo-sidebar-lanes .todo-overview-list {
+        max-height: 22.5rem;
+      }
+
+      .todo-sidebar-lanes .todo-overview-item {
+        border-color: rgba(255, 214, 144, 0.14);
+        background: rgba(255, 247, 232, 0.08);
+      }
+
+      .todo-sidebar-lanes .todo-overview-title { color: #fff7e2; }
+      .todo-sidebar-lanes .todo-overview-note { color: #e4c79b; }
+
+      .todo-sidebar-lanes .todo-overview-actions button,
+      .todo-sidebar-lanes .todo-lane-add {
+        border-color: rgba(255, 214, 144, 0.18);
+        background: rgba(255, 232, 186, 0.1);
+        color: #f5d59b;
+      }
 
       .todo-sidebar-mail {
+        margin-top: auto;
         align-self: center;
         display: grid;
         width: 3.2rem;
@@ -509,31 +501,12 @@ const navItems: NavItem[] = [
         padding-top: 0.38rem;
       }
 
-      .todo-account {
-        max-width: 16rem;
-        overflow: hidden;
-        color: #5f3c20;
-        font-size: 0.82rem;
-        font-weight: 800;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      .todo-account-button,
       .todo-utility,
       .todo-data-button {
         border: 1px solid rgba(116, 69, 27, 0.14);
         background: rgba(255, 246, 231, 0.72);
         color: #5b3518;
         box-shadow: 0 8px 18px rgba(78, 37, 7, 0.06);
-      }
-
-      .todo-account-button {
-        min-height: 2.28rem;
-        border-radius: 999px;
-        padding: 0.36rem 0.78rem;
-        font-size: 0.76rem;
-        font-weight: 900;
       }
 
       .todo-utility {
@@ -823,7 +796,7 @@ const navItems: NavItem[] = [
       .todo-overview-lanes {
         display: grid;
         flex: 1 1 auto;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: 1fr;
         gap: 0.58rem;
         min-height: 0;
         margin-top: 0.58rem;
@@ -906,6 +879,13 @@ const navItems: NavItem[] = [
         color: #7b5a3c;
         font-size: 0.64rem;
         line-height: 1.28;
+      }
+
+      .todo-overview-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.2rem;
+        margin-top: 0.22rem;
       }
 
       .todo-overview-actions {
@@ -1065,9 +1045,9 @@ const navItems: NavItem[] = [
 
       .todo-item {
         display: grid;
-        grid-template-columns: auto minmax(0, 1fr) auto;
+        grid-template-columns: auto minmax(0, 1fr);
         gap: 0.34rem;
-        align-items: center;
+        align-items: start;
         border: 1px solid rgba(124, 76, 32, 0.12);
         border-radius: 0.48rem;
         padding: 0.42rem;
@@ -1174,6 +1154,7 @@ const navItems: NavItem[] = [
 
       .todo-item-actions {
         display: flex;
+        grid-column: 2;
         justify-content: flex-end;
         gap: 0.16rem;
       }
@@ -1338,17 +1319,12 @@ const navItems: NavItem[] = [
         box-shadow: none;
       }
 
-      .todo-delete-content > p:not(.todo-kicker),
-      .todo-login-copy,
-      .todo-login-message {
+      .todo-delete-content > p:not(.todo-kicker) {
         margin: 0.6rem 0 0;
         color: var(--muted);
         font-size: 0.86rem;
         line-height: 1.6;
       }
-
-      .todo-login-copy { margin: 0 0 1rem; }
-      .todo-login-message { min-height: 1.4rem; color: #a24a2a; }
 
       .todo-trash-list {
         display: grid;
@@ -1454,7 +1430,7 @@ const navItems: NavItem[] = [
       }
 
       @media (max-width: 980px) {
-        .todo-shell { grid-template-columns: 210px minmax(0, 1fr); }
+        .todo-shell { grid-template-columns: 260px minmax(0, 1fr); }
         .todo-header { grid-template-columns: 1fr; }
         .todo-header-actions { justify-content: flex-start; flex-wrap: wrap; }
         .todo-planner-card { grid-template-columns: 1fr; }
@@ -1469,7 +1445,7 @@ const navItems: NavItem[] = [
         .todo-sidebar {
           position: fixed;
           z-index: 30;
-          width: min(82vw, 310px);
+          width: min(88vw, 340px);
           height: 100vh;
           margin: 0;
           border-radius: 0 1rem 1rem 0;
@@ -1512,7 +1488,6 @@ const navItems: NavItem[] = [
           font-size: 1rem;
         }
         .todo-header-actions { gap: 0.42rem; }
-        .todo-account { flex-basis: 100%; max-width: 100%; }
         .todo-utility { width: 2.35rem; height: 2.35rem; }
         .todo-filter-section { align-items: stretch; flex-direction: column; gap: 0.44rem; }
         .todo-filter-list { width: 100%; }
