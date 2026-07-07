@@ -9,6 +9,7 @@ export type CloudTodo = {
   date: string;
   category: CloudTodoCategory;
   placement?: CloudTodoPlacement;
+  sortOrder?: number;
   important: boolean;
   completed: boolean;
   note: string;

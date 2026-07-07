@@ -114,6 +114,7 @@ const normalizeTodo = (value: unknown): Todo | null => {
     date,
     category: item.category,
     placement: isPlacement(item.placement) ? item.placement : 'upcoming',
+    sortOrder: typeof item.sortOrder === 'number' ? item.sortOrder : timeValue(item.createdAt),
     important: item.important,
     completed: item.completed,
     note: item.note,
@@ -151,6 +152,7 @@ const createExamples = (anchor: Date): Todo[] => {
     date: toDateKey(addDays(monday, example.offset)),
     category: example.category,
     placement: 'upcoming',
+    sortOrder: Date.parse(now) + example.offset,
     important: example.important,
     completed: example.completed,
     note: example.note,
@@ -172,8 +174,17 @@ const monthDay = (date: Date) => `${date.getMonth() + 1}/${date.getDate()}`;
 const longDate = (date: Date) => `${date.getMonth() + 1}月${date.getDate()}日`;
 const dateDescription = (date: Date) => `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
 const todoDateLabel = (todo: Todo) => todo.date || '未排期';
+const timeValue = (value: string) => {
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
+const sortOrderValue = (todo: Todo) => typeof todo.sortOrder === 'number' ? todo.sortOrder : timeValue(todo.createdAt);
 const compareTodos = (first: Todo, second: Todo) =>
   (first.date || '9999-12-31').localeCompare(second.date || '9999-12-31')
+  || sortOrderValue(first) - sortOrderValue(second)
+  || first.createdAt.localeCompare(second.createdAt);
+const comparePlacementTodos = (first: Todo, second: Todo) =>
+  sortOrderValue(first) - sortOrderValue(second)
   || first.createdAt.localeCompare(second.createdAt);
 
 export function mountTodoWorkspace(root: HTMLElement) {
@@ -386,6 +397,12 @@ export function mountTodoWorkspace(root: HTMLElement) {
   const getSelectedWeek = () => getWeeks()[Math.min(state.weekIndex, getWeeks().length - 1)];
   const filterTodos = (todos: Todo[]) => state.filter === 'all' ? todos : todos.filter((todo) => todo.category === state.filter);
   const todosForDate = (date: Date) => filterTodos(state.todos.filter((todo) => todo.date === toDateKey(date)));
+  const allTodosForPlacement = (placement: TodoPlacement) =>
+    state.todos.filter((todo) => !todo.date && todo.placement === placement).sort(comparePlacementTodos);
+  const nextSortOrder = (placement: TodoPlacement) => {
+    const orders = allTodosForPlacement(placement).map(sortOrderValue);
+    return (orders.length ? Math.max(...orders) : Date.now()) + 1000;
+  };
   const notify = (message: string) => {
     toast.textContent = message;
     toast.hidden = false;
@@ -454,22 +471,23 @@ export function mountTodoWorkspace(root: HTMLElement) {
     }).join('');
   };
 
-  const renderOverviewTodo = (todo: Todo) => `
-    <li class="todo-overview-item ${todo.completed ? 'is-completed' : ''}" draggable="true" data-todo-id="${todo.id}">
+  const renderOverviewTodo = (todo: Todo, index: number, total: number) => `
+    <li class="todo-overview-item ${todo.completed ? 'is-completed' : ''}" draggable="true" data-todo-id="${todo.id}" data-overview-drop-id="${todo.id}">
       <div class="todo-overview-item-main">
         <p class="todo-overview-title">${escapeHtml(todo.title)}</p>
         ${todo.note ? `<p class="todo-overview-note">${escapeHtml(todo.note)}</p>` : ''}
       </div>
       <div class="todo-overview-actions">
+        <button type="button" data-action="move-overview-up" data-todo-id="${todo.id}" aria-label="上移：${escapeHtml(todo.title)}" title="上移" ${index === 0 ? 'disabled' : ''}>↑</button>
+        <button type="button" data-action="move-overview-down" data-todo-id="${todo.id}" aria-label="下移：${escapeHtml(todo.title)}" title="下移" ${index === total - 1 ? 'disabled' : ''}>↓</button>
         <button type="button" data-action="edit-todo" data-todo-id="${todo.id}" aria-label="编辑：${escapeHtml(todo.title)}" title="编辑">编</button>
         <button type="button" data-action="ask-delete" data-todo-id="${todo.id}" aria-label="删除：${escapeHtml(todo.title)}" title="删除">删</button>
       </div>
     </li>`;
 
   const renderOverviewLanes = () => {
-    const undatedTodos = filterTodos(state.todos.filter((todo) => !todo.date)).sort(compareTodos);
     overviewLanes.innerHTML = placements.map((placement) => {
-      const todos = undatedTodos.filter((todo) => todo.placement === placement.value);
+      const todos = filterTodos(allTodosForPlacement(placement.value));
       return `<section class="todo-overview-lane" aria-label="${placement.label}" data-drop-placement="${placement.value}">
         <header class="todo-overview-lane-header">
           <div>
@@ -478,7 +496,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
           </div>
           <button class="todo-lane-add" type="button" data-action="open-create" data-placement="${placement.value}" aria-label="新增${placement.label}待办">＋</button>
         </header>
-        ${todos.length ? `<ul class="todo-overview-list">${todos.map(renderOverviewTodo).join('')}</ul>` : '<p class="todo-overview-empty">暂无待办</p>'}
+        ${todos.length ? `<ul class="todo-overview-list">${todos.map((todo, index) => renderOverviewTodo(todo, index, todos.length)).join('')}</ul>` : '<p class="todo-overview-empty">暂无待办</p>'}
       </section>`;
     }).join('');
   };
@@ -783,7 +801,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
   const moveTodoToPlacement = async (todoId: string, placement: TodoPlacement) => {
     const todo = state.todos.find((item) => item.id === todoId);
     if (!todo || (!todo.date && todo.placement === placement)) return;
-    const nextTodo: Todo = { ...todo, date: '', placement, updatedAt: new Date().toISOString() };
+    const nextTodo: Todo = { ...todo, date: '', placement, sortOrder: nextSortOrder(placement), updatedAt: new Date().toISOString() };
     if (cloudSession) {
       const saved = await saveCloudTodo(nextTodo, '待办已移动并同步到云端。', { optimistic: true });
       if (saved) render();
@@ -792,6 +810,62 @@ export function mountTodoWorkspace(root: HTMLElement) {
     upsertTodoInState(nextTodo);
     enqueueId(PENDING_UPSERT_KEY, nextTodo.id);
     saveState('待办已移动到本地，登录后会继续同步。');
+  };
+
+  const persistReorderedPlacement = async (orderedTodos: Todo[]) => {
+    const now = new Date().toISOString();
+    const reorderedTodos = orderedTodos.map((todo, index) => ({
+      ...todo,
+      sortOrder: (index + 1) * 1000,
+      updatedAt: now
+    }));
+    const reorderedById = new Map(reorderedTodos.map((todo) => [todo.id, todo]));
+    state.todos = state.todos.map((todo) => reorderedById.get(todo.id) ?? todo);
+    persist(state.todos);
+    reorderedTodos.forEach((todo) => enqueueId(PENDING_UPSERT_KEY, todo.id));
+    render();
+    notify('待办顺序已更新。');
+
+    if (!cloudSession) return;
+    const session = cloudSession;
+    try {
+      const api = await getCloudApi();
+      await Promise.all(reorderedTodos.map((todo) => api.upsertCloudTodo(session.uid, todo)));
+      reorderedTodos.forEach((todo) => removeQueuedId(PENDING_UPSERT_KEY, todo.id));
+      notify('待办顺序已同步到云端。');
+    } catch {
+      notify('顺序已保存到本地；云端暂未同步。');
+    }
+  };
+
+  const moveOverviewTodo = async (todoId: string, direction: -1 | 1) => {
+    const todo = state.todos.find((item) => item.id === todoId);
+    if (!todo || todo.date) return;
+    const todos = allTodosForPlacement(todo.placement);
+    const index = todos.findIndex((item) => item.id === todo.id);
+    const nextIndex = index + direction;
+    if (index < 0 || nextIndex < 0 || nextIndex >= todos.length) return;
+    const reorderedTodos = [...todos];
+    [reorderedTodos[index], reorderedTodos[nextIndex]] = [reorderedTodos[nextIndex], reorderedTodos[index]];
+    await persistReorderedPlacement(reorderedTodos);
+  };
+
+  const moveTodoNearOverviewTodo = async (todoId: string, targetId: string, insertAfter: boolean) => {
+    const sourceTodo = state.todos.find((item) => item.id === todoId);
+    const targetTodo = state.todos.find((item) => item.id === targetId && !item.date);
+    if (!sourceTodo || !targetTodo || sourceTodo.id === targetTodo.id) return;
+    const targetPlacement = targetTodo.placement;
+    const todos = allTodosForPlacement(targetPlacement).filter((todo) => todo.id !== sourceTodo.id);
+    const targetIndex = todos.findIndex((todo) => todo.id === targetTodo.id);
+    if (targetIndex < 0) return;
+    const nextTodo: Todo = { ...sourceTodo, date: '', placement: targetPlacement };
+    const insertIndex = targetIndex + (insertAfter ? 1 : 0);
+    const reorderedTodos = [
+      ...todos.slice(0, insertIndex),
+      nextTodo,
+      ...todos.slice(insertIndex)
+    ];
+    await persistReorderedPlacement(reorderedTodos);
   };
 
   const showCloudError = (error: unknown, fallback: string) => {
@@ -1014,7 +1088,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
     if (!draggedTodoId) return;
     const target = event.target;
     if (!(target instanceof Element)) return;
-    const dropTarget = target.closest<HTMLElement>('[data-drop-date], [data-drop-placement]');
+    const dropTarget = target.closest<HTMLElement>('[data-overview-drop-id], [data-drop-date], [data-drop-placement]');
     if (!dropTarget) return;
     event.preventDefault();
     event.dataTransfer!.dropEffect = 'move';
@@ -1027,7 +1101,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
   root.addEventListener('dragleave', (event) => {
     const target = event.target;
     if (!(target instanceof Element)) return;
-    const dropTarget = target.closest<HTMLElement>('[data-drop-date], [data-drop-placement]');
+    const dropTarget = target.closest<HTMLElement>('[data-overview-drop-id], [data-drop-date], [data-drop-placement]');
     if (!dropTarget || (event.relatedTarget instanceof Node && dropTarget.contains(event.relatedTarget))) return;
     dropTarget.classList.remove('is-drop-target');
   });
@@ -1036,13 +1110,18 @@ export function mountTodoWorkspace(root: HTMLElement) {
     if (!draggedTodoId) return;
     const target = event.target;
     if (!(target instanceof Element)) return;
-    const dropTarget = target.closest<HTMLElement>('[data-drop-date], [data-drop-placement]');
+    const dropTarget = target.closest<HTMLElement>('[data-overview-drop-id], [data-drop-date], [data-drop-placement]');
     if (!dropTarget) return;
     event.preventDefault();
     const todoId = event.dataTransfer?.getData('text/plain') || draggedTodoId;
     clearDropTargets();
     draggedTodoId = null;
     try {
+      if (dropTarget.dataset.overviewDropId) {
+        const rect = dropTarget.getBoundingClientRect();
+        await moveTodoNearOverviewTodo(todoId, dropTarget.dataset.overviewDropId, event.clientY > rect.top + rect.height / 2);
+        return;
+      }
       if (dropTarget.dataset.dropDate) {
         await moveTodoToDate(todoId, dropTarget.dataset.dropDate);
         return;
@@ -1120,6 +1199,16 @@ export function mountTodoWorkspace(root: HTMLElement) {
       if (date) {
         selectDate(date);
         render();
+      }
+    }
+    if (action === 'move-overview-up' || action === 'move-overview-down') {
+      const todoId = trigger.dataset.todoId;
+      if (todoId) {
+        try {
+          await moveOverviewTodo(todoId, action === 'move-overview-up' ? -1 : 1);
+        } catch (error) {
+          showCloudError(error, '调整待办顺序失败。');
+        }
       }
     }
     if (action === 'open-create') {
@@ -1264,12 +1353,16 @@ export function mountTodoWorkspace(root: HTMLElement) {
 
     const now = new Date().toISOString();
     const existing = state.editingId ? state.todos.find((todo) => todo.id === state.editingId) : undefined;
+    const nextDate = date ? toDateKey(date) : '';
+    const nextPlacement = placementInput.value as TodoPlacement;
+    const shouldAppendToPlacement = !nextDate && (!existing || Boolean(existing.date) || existing.placement !== nextPlacement);
     const nextTodo: Todo = {
       id: existing?.id ?? createId(),
       title,
-      date: date ? toDateKey(date) : '',
+      date: nextDate,
       category: categoryInput.value,
-      placement: placementInput.value,
+      placement: nextPlacement,
+      sortOrder: shouldAppendToPlacement ? nextSortOrder(nextPlacement) : existing?.sortOrder ?? Date.now(),
       important: importantInput.checked,
       completed: existing?.completed ?? false,
       note: noteInput.value.trim(),

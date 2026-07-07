@@ -925,9 +925,14 @@ const navItems: NavItem[] = [
       }
 
       .todo-overview-actions button {
-        width: 1.34rem;
-        height: 1.34rem;
-        font-size: 0.64rem;
+        width: 1.24rem;
+        height: 1.24rem;
+        font-size: 0.6rem;
+      }
+
+      .todo-overview-actions button:disabled {
+        cursor: not-allowed;
+        opacity: 0.36;
       }
 
       .todo-lane-add {
@@ -988,6 +993,12 @@ const navItems: NavItem[] = [
         background: linear-gradient(180deg, rgba(255,255,255,0.72), rgba(255,231,190,0.82)), #f8e2bc;
         outline: 2px dashed rgba(151, 77, 18, 0.34);
         outline-offset: -0.28rem;
+      }
+
+      .todo-overview-item.is-drop-target {
+        border-color: rgba(170, 91, 24, 0.48);
+        outline: 2px dashed rgba(151, 77, 18, 0.28);
+        outline-offset: -0.18rem;
       }
 
       .todo-day-column.is-selected {
