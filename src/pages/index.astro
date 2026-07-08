@@ -11,7 +11,11 @@ import { sitePath, themePath, themes } from '../data/site';
       {themes.map((theme) => <a href={themePath(theme)}>{theme.shortLabel}</a>)}
       <a href={sitePath('/topics/space')}>关于</a>
     </nav>
-    <span class="login-soon home-login" aria-disabled="true">登录即将开放</span>
+    <div class="site-auth-card home-login" data-site-auth>
+      <span data-site-auth-status>正在检查登录状态…</span>
+      <a href={sitePath('/topics/space/planning/todo')} data-site-auth-login>登录</a>
+      <button type="button" data-site-auth-sign-out hidden>退出登录</button>
+    </div>
   </div>
 
   <section class="hero-panel">

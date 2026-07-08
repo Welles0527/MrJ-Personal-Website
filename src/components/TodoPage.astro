@@ -75,6 +75,9 @@ const navItems: NavItem[] = [
           </div>
 
           <div class="todo-header-actions" aria-label="页面操作">
+            <span class="todo-account" data-auth-status>正在检查登录状态…</span>
+            <button class="todo-account-button" type="button" data-action="open-login" data-login-open hidden>登录</button>
+            <button class="todo-account-button" type="button" data-action="sign-out" data-sign-out hidden>退出登录</button>
             <span class="todo-utility" aria-label="搜索（视觉图标）" title="搜索">⌕</span>
             <span class="todo-utility" aria-label="设置（视觉图标）" title="设置">⚙</span>
             <span class="todo-utility" aria-label="提醒（视觉图标）" title="提醒">♧</span>
@@ -217,6 +220,35 @@ const navItems: NavItem[] = [
             <button class="todo-primary-button" type="button" data-action="confirm-migration" disabled>合并导入</button>
           </div>
         </div>
+      </dialog>
+
+      <dialog class="todo-modal todo-login-modal" aria-labelledby="todo-login-title" data-login-modal>
+        <form class="todo-form" data-login-form novalidate>
+          <div class="todo-modal-header">
+            <div>
+              <p class="todo-kicker">云端待办</p>
+              <h2 id="todo-login-title">登录我的待办</h2>
+            </div>
+          </div>
+          <p class="todo-login-copy">使用同一账号登录后，可在 magicj.cn 下的页面共享登录状态；登录成功后默认 3 天内无需重复登录。</p>
+          <label class="todo-field todo-field-wide">
+            <span>邮箱</span>
+            <input name="email" type="email" autocomplete="email" placeholder="输入常用邮箱" required />
+          </label>
+          <label class="todo-field todo-field-wide">
+            <span>密码</span>
+            <input name="password" type="password" autocomplete="current-password" minlength="8" placeholder="请输入私有密码" required />
+          </label>
+          <label class="todo-field todo-field-wide" data-verification-field hidden>
+            <span>邮箱验证码</span>
+            <input name="verificationCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="输入邮箱收到的验证码" />
+          </label>
+          <p class="todo-login-message" data-login-message aria-live="polite"></p>
+          <div class="todo-modal-actions">
+            <button class="todo-secondary-button" type="button" data-action="sign-up">创建账号</button>
+            <button class="todo-primary-button" type="submit">登录并同步</button>
+          </div>
+        </form>
       </dialog>
 
       <p class="todo-toast" role="status" aria-live="polite" data-toast hidden></p>
@@ -501,12 +533,31 @@ const navItems: NavItem[] = [
         padding-top: 0.38rem;
       }
 
+      .todo-account {
+        max-width: 16rem;
+        overflow: hidden;
+        color: #5f3c20;
+        font-size: 0.82rem;
+        font-weight: 800;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .todo-account-button,
       .todo-utility,
       .todo-data-button {
         border: 1px solid rgba(116, 69, 27, 0.14);
         background: rgba(255, 246, 231, 0.72);
         color: #5b3518;
         box-shadow: 0 8px 18px rgba(78, 37, 7, 0.06);
+      }
+
+      .todo-account-button {
+        min-height: 2.28rem;
+        border-radius: 999px;
+        padding: 0.36rem 0.78rem;
+        font-size: 0.76rem;
+        font-weight: 900;
       }
 
       .todo-utility {
@@ -1319,12 +1370,17 @@ const navItems: NavItem[] = [
         box-shadow: none;
       }
 
-      .todo-delete-content > p:not(.todo-kicker) {
+      .todo-delete-content > p:not(.todo-kicker),
+      .todo-login-copy,
+      .todo-login-message {
         margin: 0.6rem 0 0;
         color: var(--muted);
         font-size: 0.86rem;
         line-height: 1.6;
       }
+
+      .todo-login-copy { margin: 0 0 1rem; }
+      .todo-login-message { min-height: 1.4rem; color: #a24a2a; }
 
       .todo-trash-list {
         display: grid;
@@ -1488,6 +1544,7 @@ const navItems: NavItem[] = [
           font-size: 1rem;
         }
         .todo-header-actions { gap: 0.42rem; }
+        .todo-account { flex-basis: 100%; max-width: 100%; }
         .todo-utility { width: 2.35rem; height: 2.35rem; }
         .todo-filter-section { align-items: stretch; flex-direction: column; gap: 0.44rem; }
         .todo-filter-list { width: 100%; }

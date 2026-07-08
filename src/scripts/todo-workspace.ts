@@ -1,4 +1,10 @@
-import type { CloudTodo, CloudTodoCategory, CloudTodoPlacement } from './todo-cloud';
+import type { CloudSession, CloudTodo, CloudTodoCategory, CloudTodoPlacement } from './todo-cloud';
+
+let cloudApi: Promise<typeof import('./todo-cloud')> | null = null;
+const getCloudApi = () => {
+  cloudApi ??= import('./todo-cloud');
+  return cloudApi;
+};
 
 type TodoCategory = CloudTodoCategory;
 type TodoPlacement = CloudTodoPlacement;
@@ -21,6 +27,8 @@ type TodoState = {
 
 const STORAGE_KEY = 'mywebsite.weekly-todos.v1';
 const TRASH_KEY = 'mywebsite.weekly-todos-trash.v1';
+const PENDING_UPSERT_KEY = 'mywebsite.weekly-todo-upserts.v1';
+const PENDING_DELETE_KEY = 'mywebsite.weekly-todo-deletes.v1';
 const LOCAL_MIGRATION_ORIGIN = 'http://localhost:4321';
 const LOCAL_MIGRATION_PATH = '/officialwebsite/topics/space/planning/todo';
 const OFFICIAL_WEBSITE_ORIGIN = 'https://www.magicj.cn';
@@ -230,13 +238,21 @@ export function mountTodoWorkspace(root: HTMLElement) {
   const deleteModal = getElement<HTMLDialogElement>('[data-delete-modal]');
   const trashModal = getElement<HTMLDialogElement>('[data-trash-modal]');
   const migrationModal = getElement<HTMLDialogElement>('[data-migration-modal]');
+  const loginModal = getElement<HTMLDialogElement>('[data-login-modal]');
   const todoForm = getElement<HTMLFormElement>('[data-todo-form]');
+  const loginForm = getElement<HTMLFormElement>('[data-login-form]');
   const formTitle = getElement<HTMLElement>('[data-form-title]');
   const titleError = getElement<HTMLElement>('[data-title-error]');
   const deleteMessage = getElement<HTMLElement>('[data-delete-message]');
   const trashList = getElement<HTMLElement>('[data-trash-list]');
   const migrationStatus = getElement<HTMLElement>('[data-migration-status]');
   const migrationConfirm = getElement<HTMLButtonElement>('[data-action="confirm-migration"]');
+  const signUpButton = getElement<HTMLButtonElement>('[data-action="sign-up"]');
+  const authStatus = getElement<HTMLElement>('[data-auth-status]');
+  const loginButton = getElement<HTMLButtonElement>('[data-login-open]');
+  const signOutButton = getElement<HTMLButtonElement>('[data-sign-out]');
+  const loginMessage = getElement<HTMLElement>('[data-login-message]');
+  const verificationField = getElement<HTMLElement>('[data-verification-field]');
   const toast = getElement<HTMLElement>('[data-toast]');
   const titleInput = todoForm.elements.namedItem('title') as HTMLInputElement;
   const dateInput = todoForm.elements.namedItem('date') as HTMLInputElement;
@@ -244,12 +260,17 @@ export function mountTodoWorkspace(root: HTMLElement) {
   const placementInput = todoForm.elements.namedItem('placement') as HTMLSelectElement;
   const importantInput = todoForm.elements.namedItem('important') as HTMLInputElement;
   const noteInput = todoForm.elements.namedItem('note') as HTMLTextAreaElement;
+  const loginEmailInput = loginForm.elements.namedItem('email') as HTMLInputElement;
+  const loginPasswordInput = loginForm.elements.namedItem('password') as HTMLInputElement;
+  const verificationCodeInput = loginForm.elements.namedItem('verificationCode') as HTMLInputElement;
   const compactQuery = window.matchMedia('(max-width: 760px)');
   const currentDate = atNoon(new Date());
   let toastTimer: number | undefined;
   let pendingMigrationTodos: Todo[] | null = null;
   let migrationFrame: HTMLIFrameElement | null = null;
   let migrationTimer: number | undefined;
+  let cloudSession: CloudSession | null = null;
+  let completeEmailSignUp: ((verificationCode: string) => Promise<CloudSession>) | null = null;
   let draggedTodoId: string | null = null;
   const localMigrationOrigin = LOCAL_MIGRATION_ORIGIN;
 
@@ -260,6 +281,37 @@ export function mountTodoWorkspace(root: HTMLElement) {
     } catch {
       return false;
     }
+  };
+
+  const loadIdQueue = (key: string) => {
+    try {
+      const stored = window.localStorage.getItem(key);
+      if (!stored) return new Set<string>();
+      const parsed: unknown = JSON.parse(stored);
+      return new Set(Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : []);
+    } catch {
+      return new Set<string>();
+    }
+  };
+
+  const persistIdQueue = (key: string, ids: Set<string>) => {
+    try {
+      window.localStorage.setItem(key, JSON.stringify([...ids]));
+    } catch {
+      // Visible todo data is saved separately; sync queue persistence is best-effort.
+    }
+  };
+
+  const enqueueId = (key: string, id: string) => {
+    const ids = loadIdQueue(key);
+    ids.add(id);
+    persistIdQueue(key, ids);
+  };
+
+  const removeQueuedId = (key: string, id: string) => {
+    const ids = loadIdQueue(key);
+    ids.delete(id);
+    persistIdQueue(key, ids);
   };
 
   const loadTodos = () => {
@@ -301,6 +353,32 @@ export function mountTodoWorkspace(root: HTMLElement) {
     } catch {
       return false;
     }
+  };
+
+  const timestamp = (value: string) => {
+    const parsed = Date.parse(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  };
+
+  const localUpdatesForExistingCloudTodos = (localTodos: Todo[], cloudTodos: Todo[]) => {
+    const cloudById = new Map(cloudTodos.map((todo) => [todo.id, todo]));
+    return localTodos.filter((todo) => {
+      const cloudTodo = cloudById.get(todo.id);
+      return cloudTodo ? timestamp(todo.updatedAt) > timestamp(cloudTodo.updatedAt) : false;
+    });
+  };
+
+  const mergeCloudTodosWithLocalUpdates = (localTodos: Todo[], cloudTodos: Todo[], forceLocalIds = new Set<string>()) => {
+    const localById = new Map(localTodos.map((todo) => [todo.id, todo]));
+    const cloudIds = new Set(cloudTodos.map((todo) => todo.id));
+    const merged = cloudTodos.map((cloudTodo) => {
+      const localTodo = localById.get(cloudTodo.id);
+      return localTodo && (forceLocalIds.has(localTodo.id) || timestamp(localTodo.updatedAt) > timestamp(cloudTodo.updatedAt)) ? localTodo : cloudTodo;
+    });
+    localTodos.forEach((localTodo) => {
+      if (forceLocalIds.has(localTodo.id) && !cloudIds.has(localTodo.id)) merged.push(localTodo);
+    });
+    return merged.sort(compareTodos);
   };
 
   const loaded = loadTodos();
@@ -654,9 +732,83 @@ export function mountTodoWorkspace(root: HTMLElement) {
     return saved;
   };
 
-  const saveTodo = (todo: Todo, successMessage: string) => {
-    upsertTodoInState(todo);
-    saveState(successMessage);
+  const showLogin = (message = '', options: { open?: boolean } = {}) => {
+    loginMessage.textContent = message;
+    authStatus.textContent = '未登录';
+    loginButton.hidden = false;
+    signOutButton.hidden = true;
+    if (options.open !== false && !loginModal.open) loginModal.showModal();
+  };
+
+  const resetEmailSignUp = () => {
+    completeEmailSignUp = null;
+    verificationField.hidden = true;
+    verificationCodeInput.value = '';
+    signUpButton.textContent = '创建账号';
+  };
+
+  const activateSession = async (session: CloudSession, successMessage?: string) => {
+    cloudSession = session;
+    authStatus.textContent = `已登录：${session.account}`;
+    loginButton.hidden = true;
+    signOutButton.hidden = false;
+    const api = await getCloudApi();
+    const localTodos = state.todos;
+    const pendingUpsertIds = loadIdQueue(PENDING_UPSERT_KEY);
+    const pendingDeleteIds = loadIdQueue(PENDING_DELETE_KEY);
+    const cloudTodos = normalizeTodoList(await api.loadCloudTodos(session.uid)) ?? [];
+    const cloudTodoIds = new Set(cloudTodos.map((todo) => todo.id));
+    const visibleCloudTodos = cloudTodos.filter((todo) => !pendingDeleteIds.has(todo.id));
+    const localUpdates = localUpdatesForExistingCloudTodos(localTodos, visibleCloudTodos);
+    const pendingUpserts = localTodos.filter((todo) => pendingUpsertIds.has(todo.id));
+    const syncUpserts = [...new Map([...localUpdates, ...pendingUpserts].map((todo) => [todo.id, todo])).values()];
+    state.todos = mergeCloudTodosWithLocalUpdates(localTodos, visibleCloudTodos, pendingUpsertIds);
+    persist(state.todos);
+    render();
+    if (loginModal.open) loginModal.close();
+    notify(successMessage || '已连接云端待办。');
+    if (syncUpserts.length) await Promise.allSettled(syncUpserts.map(async (todo) => {
+      await api.upsertCloudTodo(session.uid, todo);
+      removeQueuedId(PENDING_UPSERT_KEY, todo.id);
+    }));
+    const syncDeleteIds = [...pendingDeleteIds].filter((todoId) => {
+      if (cloudTodoIds.has(todoId)) return true;
+      removeQueuedId(PENDING_DELETE_KEY, todoId);
+      return false;
+    });
+    if (syncDeleteIds.length) await Promise.allSettled(syncDeleteIds.map(async (todoId) => {
+      await api.removeCloudTodo(todoId);
+      removeQueuedId(PENDING_DELETE_KEY, todoId);
+    }));
+  };
+
+  const saveCloudTodo = async (todo: Todo, successMessage: string, options: { optimistic?: boolean } = {}) => {
+    if (!cloudSession) {
+      showLogin('请先登录后再保存待办。');
+      return false;
+    }
+    if (options.optimistic) {
+      upsertTodoInState(todo);
+      persist(state.todos);
+      render();
+      enqueueId(PENDING_UPSERT_KEY, todo.id);
+      notify('已保存到本地，正在同步云端。');
+    }
+    try {
+      await (await getCloudApi()).upsertCloudTodo(cloudSession.uid, todo);
+      removeQueuedId(PENDING_UPSERT_KEY, todo.id);
+      if (!options.optimistic) upsertTodoInState(todo);
+      if (options.optimistic) {
+        notify(successMessage);
+      } else {
+        saveState(successMessage);
+      }
+      return true;
+    } catch (error) {
+      if (!options.optimistic) throw error;
+      notify('已保存到本地；云端暂未同步，刷新后会继续保留。');
+      return true;
+    }
   };
 
   const clearDropTargets = () => {
@@ -670,15 +822,17 @@ export function mountTodoWorkspace(root: HTMLElement) {
     const todo = state.todos.find((item) => item.id === todoId);
     if (!date || !todo || todo.date === dateKey) return;
     const nextTodo: Todo = { ...todo, date: dateKey, sortOrder: nextDateSortOrder(dateKey), updatedAt: new Date().toISOString() };
+    const saved = await saveCloudTodo(nextTodo, '待办已移动并同步到云端。', { optimistic: true });
+    if (!saved) return;
     selectDate(date);
-    saveTodo(nextTodo, '待办已移动。');
+    render();
   };
 
   const moveTodoToPlacement = async (todoId: string, placement: TodoPlacement) => {
     const todo = state.todos.find((item) => item.id === todoId);
     if (!todo || (!todo.date && todo.placement === placement)) return;
     const nextTodo: Todo = { ...todo, date: '', placement, sortOrder: nextSortOrder(placement), updatedAt: new Date().toISOString() };
-    saveTodo(nextTodo, '待办已移动。');
+    await saveCloudTodo(nextTodo, '待办已移动并同步到云端。', { optimistic: true });
   };
 
   const persistReorderedTodos = async (orderedTodos: Todo[]) => {
@@ -691,8 +845,20 @@ export function mountTodoWorkspace(root: HTMLElement) {
     const reorderedById = new Map(reorderedTodos.map((todo) => [todo.id, todo]));
     state.todos = state.todos.map((todo) => reorderedById.get(todo.id) ?? todo);
     persist(state.todos);
+    reorderedTodos.forEach((todo) => enqueueId(PENDING_UPSERT_KEY, todo.id));
     render();
     notify('待办顺序已更新。');
+
+    if (!cloudSession) return;
+    const session = cloudSession;
+    try {
+      const api = await getCloudApi();
+      await Promise.all(reorderedTodos.map((todo) => api.upsertCloudTodo(session.uid, todo)));
+      reorderedTodos.forEach((todo) => removeQueuedId(PENDING_UPSERT_KEY, todo.id));
+      notify('待办顺序已同步到云端。');
+    } catch {
+      notify('顺序已保存到本地；云端暂未同步。');
+    }
   };
 
   const moveOverviewTodo = async (todoId: string, direction: -1 | 1) => {
@@ -773,6 +939,11 @@ export function mountTodoWorkspace(root: HTMLElement) {
 
   const importMigration = async () => {
     if (!pendingMigrationTodos?.length) return;
+    if (!cloudSession) {
+      showLogin('请先登录后再导入待办。');
+      return;
+    }
+    const session = cloudSession;
     const merged = new Map(state.todos.map((todo) => [todo.id, todo]));
     let added = 0;
     let updated = 0;
@@ -790,6 +961,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
       }
     });
     const nextTodos = [...merged.values()].sort(compareTodos);
+    for (const todo of nextTodos) await (await getCloudApi()).upsertCloudTodo(session.uid, todo);
     state.todos = nextTodos;
     closeMigrationDialog();
     saveState(`旧数据已合并：新增 ${added} 项，更新 ${updated} 项，保留当前 ${kept} 项。`);
@@ -1033,10 +1205,19 @@ export function mountTodoWorkspace(root: HTMLElement) {
       state.trash = state.trash.filter((item) => item.id !== trashTodo.id);
       persistTrash(state.trash);
       upsertTodoInState(restoredTodo);
+      enqueueId(PENDING_UPSERT_KEY, restoredTodo.id);
       const restoredDate = parseDateKey(restoredTodo.date);
       if (restoredDate) selectDate(restoredDate);
       saveState('待办已从回收站恢复。');
       renderTrashList();
+      if (cloudSession) {
+        try {
+          await (await getCloudApi()).upsertCloudTodo(cloudSession.uid, restoredTodo);
+          removeQueuedId(PENDING_UPSERT_KEY, restoredTodo.id);
+        } catch {
+          notify('待办已本地恢复；云端暂未同步。');
+        }
+      }
     }
     if (action === 'delete-trash') {
       const trashTodo = state.trash.find((item) => item.id === trigger.dataset.todoId);
@@ -1078,7 +1259,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
       try {
         await importMigration();
       } catch (error) {
-        showCloudError(error, '导入本地待办失败。');
+        showCloudError(error, '导入云端待办失败。');
       }
     }
     if (action === 'export-backup') exportBackup();
@@ -1087,7 +1268,11 @@ export function mountTodoWorkspace(root: HTMLElement) {
       const todo = state.todos.find((item) => item.id === trigger.dataset.todoId);
       if (todo) {
         const nextTodo = { ...todo, completed: !todo.completed, updatedAt: new Date().toISOString() };
-        saveTodo(nextTodo, nextTodo.completed ? '待办已完成。' : '待办已恢复。');
+        try {
+          await saveCloudTodo(nextTodo, nextTodo.completed ? '待办已完成并同步到云端。' : '待办已恢复并同步到云端。', { optimistic: true });
+        } catch (error) {
+          showCloudError(error, '更新云端待办失败。');
+        }
       }
     }
     if (action === 'complete-selected-day') {
@@ -1096,13 +1281,27 @@ export function mountTodoWorkspace(root: HTMLElement) {
       if (!pendingTodos.length) return;
       const now = new Date().toISOString();
       const pendingIds = new Set(pendingTodos.map((todo) => todo.id));
+      const completedTodos = pendingTodos.map((todo) => ({ ...todo, completed: true, updatedAt: now }));
 
       state.todos = state.todos.map((todo) => pendingIds.has(todo.id)
         ? { ...todo, completed: true, updatedAt: now }
         : todo);
       persist(state.todos);
+      completedTodos.forEach((todo) => enqueueId(PENDING_UPSERT_KEY, todo.id));
       render();
       notify('今天的可见待办已全部完成。');
+
+      if (cloudSession) {
+        const session = cloudSession;
+        try {
+          const api = await getCloudApi();
+          await Promise.all(completedTodos.map((todo) => api.upsertCloudTodo(session.uid, todo)));
+          completedTodos.forEach((todo) => removeQueuedId(PENDING_UPSERT_KEY, todo.id));
+          saveState('今天的待办已同步完成。');
+        } catch {
+          notify('已保存到本地；云端暂未同步，刷新后会继续保留。');
+        }
+      }
     }
     if (action === 'edit-todo') {
       const todo = state.todos.find((item) => item.id === trigger.dataset.todoId);
@@ -1117,13 +1316,40 @@ export function mountTodoWorkspace(root: HTMLElement) {
       if (deleteModal.open) deleteModal.close();
     }
     if (action === 'confirm-delete' && state.pendingDeleteId) {
+      if (!cloudSession) {
+        showLogin('请先登录后再删除待办。');
+        return;
+      }
       const deletingId = state.pendingDeleteId;
       const deletingTodo = state.todos.find((todo) => todo.id === deletingId);
       const trashSaved = deletingTodo ? moveTodoToTrash(deletingTodo) : true;
       state.todos = state.todos.filter((todo) => todo.id !== deletingId);
       state.pendingDeleteId = null;
+      enqueueId(PENDING_DELETE_KEY, deletingId);
+      removeQueuedId(PENDING_UPSERT_KEY, deletingId);
       if (deleteModal.open) deleteModal.close();
-      saveState(trashSaved ? '待办已移入回收站。' : '待办已移入本次会话回收站；浏览器存储不可用。');
+      saveState(trashSaved ? '待办已移入回收站，正在同步云端。' : '待办已移入本次会话回收站；浏览器存储不可用。');
+      try {
+        await (await getCloudApi()).removeCloudTodo(deletingId);
+        removeQueuedId(PENDING_DELETE_KEY, deletingId);
+        saveState('待办已移入回收站，云端已同步删除。');
+      } catch {
+        notify('待办已进入回收站；云端暂未同步，刷新后会继续隐藏。');
+      }
+    }
+    if (action === 'open-login') {
+      showLogin('请输入账号登录后同步待办。');
+    }
+    if (action === 'sign-out') {
+      try {
+        await (await getCloudApi()).signOut();
+        cloudSession = null;
+        state.todos = [];
+        render();
+        showLogin('已退出登录。');
+      } catch (error) {
+        showCloudError(error, '退出登录失败。');
+      }
     }
   });
 
@@ -1186,13 +1412,97 @@ export function mountTodoWorkspace(root: HTMLElement) {
       createdAt: existing?.createdAt ?? now,
       updatedAt: now
     };
-    saveTodo(nextTodo, existing ? '待办已更新。' : '待办已添加。');
-    if (date) selectDate(date);
-    render();
-    closeForm();
+    try {
+      const saved = await saveCloudTodo(nextTodo, existing ? '待办已更新并同步到云端。' : '待办已添加并同步到云端。', { optimistic: true });
+      if (!saved) return;
+      if (date) selectDate(date);
+      render();
+      closeForm();
+    } catch (error) {
+      showCloudError(error, '保存云端待办失败。');
+    }
   });
+
+  const loginCredentials = () => {
+    const email = loginEmailInput.value.trim();
+    const password = loginPasswordInput.value;
+    if (!/^\S+@\S+\.\S+$/.test(email)) throw new Error('请输入有效邮箱地址。');
+    if (password.length < 8) throw new Error('密码至少需要 8 位。');
+    return { email, password };
+  };
+
+  const setLoginPending = (pending: boolean) => {
+    loginEmailInput.disabled = pending;
+    loginPasswordInput.disabled = pending;
+    verificationCodeInput.disabled = pending;
+    signUpButton.disabled = pending;
+    const submitButton = loginForm.querySelector<HTMLButtonElement>('button[type="submit"]');
+    if (submitButton) submitButton.disabled = pending;
+  };
+
+  const login = async () => {
+    const { email, password } = loginCredentials();
+    setLoginPending(true);
+    loginMessage.textContent = '正在登录并读取云端待办…';
+    try {
+      await activateSession(await (await getCloudApi()).signInWithPassword(email, password), '登录成功，已读取云端待办。');
+    } finally {
+      setLoginPending(false);
+    }
+  };
+
+  loginForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    try {
+      await login();
+    } catch (error) {
+      loginMessage.textContent = error instanceof Error ? error.message : '登录失败，请重试。';
+    }
+  });
+
+  signUpButton.addEventListener('click', async () => {
+    try {
+      setLoginPending(true);
+      if (completeEmailSignUp) {
+        const verificationCode = verificationCodeInput.value.trim();
+        if (!verificationCode) throw new Error('请输入邮箱收到的验证码。');
+        loginMessage.textContent = '正在验证邮箱并创建账号…';
+        await activateSession(await completeEmailSignUp(verificationCode), '账号创建成功，已连接云端待办。');
+        resetEmailSignUp();
+      } else {
+        const { email, password } = loginCredentials();
+        loginMessage.textContent = '正在发送邮箱验证码…';
+        completeEmailSignUp = await (await getCloudApi()).startEmailSignUp(email, password);
+        verificationField.hidden = false;
+        signUpButton.textContent = '完成注册';
+        loginMessage.textContent = '验证码已发送到邮箱，请输入后点击“完成注册”。';
+        verificationCodeInput.focus();
+      }
+    } catch (error) {
+      loginMessage.textContent = error instanceof Error ? error.message : '创建账号失败，请重试。';
+      if (completeEmailSignUp) resetEmailSignUp();
+    } finally {
+      setLoginPending(false);
+    }
+  });
+
+  loginModal.addEventListener('cancel', (event) => event.preventDefault());
+
+  const initialiseCloud = async () => {
+    try {
+      const session = await (await getCloudApi()).getCloudSession();
+      if (session) {
+        await activateSession(session);
+      } else {
+        showLogin('首次使用请创建账号；之后在手机和电脑登录同一账号即可同步。');
+      }
+    } catch (error) {
+      showLogin(error instanceof Error ? error.message : '无法连接云端服务，请检查网络后重试。');
+    }
+  };
 
   compactQuery.addEventListener('change', render);
   render();
   if (state.storageMessage) notify(state.storageMessage);
+  void initialiseCloud();
 }

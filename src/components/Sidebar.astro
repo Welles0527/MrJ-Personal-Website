@@ -37,5 +37,9 @@ const { activeTheme } = Astro.props;
     ))}
   </nav>
 
-  <span class="login-soon" aria-disabled="true">登录即将开放</span>
+  <div class="site-auth-card" data-site-auth>
+    <span data-site-auth-status>正在检查登录状态…</span>
+    <a href={sitePath('/topics/space/planning/todo')} data-site-auth-login>登录</a>
+    <button type="button" data-site-auth-sign-out hidden>退出登录</button>
+  </div>
 </aside>

@@ -1,3 +1,6 @@
+import { getCloudDb, getCloudSession, signInWithPassword, startEmailSignUp } from './site-auth';
+import type { CloudSession } from './site-auth';
+
 type BibleBook = {
   slug: string;
   title: string;
@@ -81,15 +84,9 @@ type ReaderState = {
   updatedAt: string;
 };
 
-type CloudSession = {
-  uid: string;
-  account: string;
-};
-
 const STORAGE_KEY = 'mywebsite.bible-reader.v1';
 const DAILY_PLAN_KEY = 'mywebsite.bible-daily-plan.v1';
 const READ_VERSES_KEY = 'mywebsite.bible-read-verses.v1';
-const ENV_ID = 'magicj-web-d5g9yvowj6862f7a2';
 const COLLECTION = 'officialWebsiteBibleReaderState';
 
 const nowIso = () => new Date().toISOString();
@@ -239,7 +236,6 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   let state = readLocalState(fallbackState);
   let readVerses = readReadVerses();
   let session: CloudSession | null = null;
-  let cloudContext: { auth: any; db: any } | null = null;
   let verifySignUp: ((verificationCode: string) => Promise<CloudSession>) | null = null;
   let toastTimer: number | undefined;
   let syncTimer: number | undefined;
@@ -683,28 +679,9 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     trigger.setAttribute('aria-pressed', String(nextRead));
   };
 
-  const initCloud = async () => {
-    if (cloudContext) return cloudContext;
-    const cloudbase = (await import('@cloudbase/js-sdk')).default;
-    const app = cloudbase.init({ env: ENV_ID });
-    cloudContext = { auth: app.auth(), db: app.database() };
-    return cloudContext;
-  };
-
-  const sessionFromUser = (user: any): CloudSession | null => {
-    if (!user?.uid) return null;
-    return { uid: user.uid, account: user.email || user.username || '我的账号' };
-  };
-
-  const getCloudSession = async () => {
-    const cloud = await initCloud();
-    const loginState = await cloud.auth.getLoginState();
-    return sessionFromUser(loginState?.user ?? cloud.auth.currentUser);
-  };
-
   const loadCloudState = async (ownerId: string): Promise<ReaderState | null> => {
-    const cloud = await initCloud();
-    const result = await cloud.db.collection(COLLECTION).where({ ownerId }).get();
+    const db = getCloudDb();
+    const result = await db.collection(COLLECTION).where({ ownerId }).get();
     const item = result?.data?.[0];
     if (!item?.lastRead) return null;
     return {
@@ -717,12 +694,12 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
 
   const syncCloudState = async () => {
     if (!session) return;
-    const cloud = await initCloud();
+    const db = getCloudDb();
     const payload = { ...state, ownerId: session.uid };
-    const result = await cloud.db.collection(COLLECTION).where({ ownerId: session.uid }).get();
+    const result = await db.collection(COLLECTION).where({ ownerId: session.uid }).get();
     const existing = result?.data?.[0];
-    if (existing?._id) await cloud.db.collection(COLLECTION).doc(existing._id).set(payload);
-    else await cloud.db.collection(COLLECTION).add(payload);
+    if (existing?._id) await db.collection(COLLECTION).doc(existing._id).set(payload);
+    else await db.collection(COLLECTION).add(payload);
   };
 
   const finishLogin = async (nextSession: CloudSession) => {
@@ -745,16 +722,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       return;
     }
     try {
-      const cloud = await initCloud();
-      const result = await cloud.auth.signUp({ email, password });
-      const verifyOtp = result?.data?.verifyOtp;
-      if (!verifyOtp) throw new Error('无法发送邮箱验证码。');
-      verifySignUp = async (verificationCode: string) => {
-        const verifyResult = await verifyOtp({ token: verificationCode });
-        const nextSession = sessionFromUser(verifyResult?.data?.user) || await getCloudSession();
-        if (!nextSession) throw new Error('验证成功，但没有取得登录会话。');
-        return nextSession;
-      };
+      verifySignUp = await startEmailSignUp(email, password);
       verifyField.hidden = false;
       loginStatus.textContent = '验证码已发送，请输入验证码后点击登录。';
     } catch (error) {
@@ -778,11 +746,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
         verifySignUp = null;
         return;
       }
-      const cloud = await initCloud();
-      const result = await cloud.auth.signInWithPassword({ email, password });
-      const nextSession = sessionFromUser(result?.data?.user) || await getCloudSession();
-      if (!nextSession) throw new Error('登录成功，但没有取得登录会话。');
-      await finishLogin(nextSession);
+      await finishLogin(await signInWithPassword(email, password));
     } catch (error) {
       loginStatus.textContent = error instanceof Error ? error.message : '登录失败，请检查邮箱和密码。';
     }
