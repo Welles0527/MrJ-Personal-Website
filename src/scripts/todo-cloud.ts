@@ -1,4 +1,4 @@
-import { cloudErrorMessage, getCloudDb, getCloudSession, signInWithPassword, signOut, startEmailSignUp } from './site-auth';
+import { cloudErrorMessage, getCloudDb, getCloudSession, getRememberedSession, signInWithPassword, signOut, startEmailSignUp } from './site-auth';
 import type { CloudSession } from './site-auth';
 
 export type CloudTodoCategory = 'work' | 'study' | 'life' | 'health' | 'other';
@@ -32,7 +32,7 @@ const assertCloudResult = <T>(result: CloudResult<T>, fallback: string) => {
   return result.data;
 };
 
-export { getCloudSession, signInWithPassword, signOut, startEmailSignUp };
+export { getCloudSession, getRememberedSession, signInWithPassword, signOut, startEmailSignUp };
 export type { CloudSession };
 
 export const loadCloudTodos = async (ownerId: string): Promise<CloudTodo[]> => {

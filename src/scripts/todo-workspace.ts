@@ -740,6 +740,13 @@ export function mountTodoWorkspace(root: HTMLElement) {
     if (options.open !== false && !loginModal.open) loginModal.showModal();
   };
 
+  const setAuthenticatedHeader = (session: CloudSession) => {
+    cloudSession = session;
+    authStatus.textContent = `已登录：${session.account}`;
+    loginButton.hidden = true;
+    signOutButton.hidden = false;
+  };
+
   const resetEmailSignUp = () => {
     completeEmailSignUp = null;
     verificationField.hidden = true;
@@ -748,10 +755,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
   };
 
   const activateSession = async (session: CloudSession, successMessage?: string) => {
-    cloudSession = session;
-    authStatus.textContent = `已登录：${session.account}`;
-    loginButton.hidden = true;
-    signOutButton.hidden = false;
+    setAuthenticatedHeader(session);
     const api = await getCloudApi();
     const localTodos = state.todos;
     const pendingUpsertIds = loadIdQueue(PENDING_UPSERT_KEY);
@@ -1490,13 +1494,20 @@ export function mountTodoWorkspace(root: HTMLElement) {
 
   const initialiseCloud = async () => {
     try {
-      const session = await (await getCloudApi()).getCloudSession();
+      const api = await getCloudApi();
+      const remembered = api.getRememberedSession();
+      if (remembered) setAuthenticatedHeader(remembered);
+      const session = await api.getCloudSession();
       if (session) {
         await activateSession(session);
-      } else {
+      } else if (!remembered) {
         showLogin('首次使用请创建账号；之后在手机和电脑登录同一账号即可同步。');
       }
     } catch (error) {
+      if (cloudSession) {
+        notify('已读取当前登录状态；云端同步暂不可用，请稍后刷新重试。');
+        return;
+      }
       showLogin(error instanceof Error ? error.message : '无法连接云端服务，请检查网络后重试。');
     }
   };

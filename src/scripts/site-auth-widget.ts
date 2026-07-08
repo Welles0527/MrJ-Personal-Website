@@ -1,4 +1,5 @@
-import { getCloudSession, signOut } from './site-auth';
+import { getCloudSession, getRememberedSession, signOut } from './site-auth';
+import type { CloudSession } from './site-auth';
 
 type AuthBlock = {
   root: HTMLElement;
@@ -29,21 +30,32 @@ const renderBlock = (block: AuthBlock, account: string | null) => {
   if (block.signOut) block.signOut.hidden = !account;
 };
 
+const renderBlocks = (blocks: AuthBlock[], session: CloudSession | null) => {
+  blocks.forEach((block) => renderBlock(block, session?.account ?? null));
+};
+
 export const mountSiteAuthStatus = async (root: ParentNode = document) => {
   const blocks = findBlocks(root);
   if (!blocks.length) return;
 
+  const remembered = getRememberedSession();
   blocks.forEach((block) => {
-    block.status.textContent = '正在检查登录状态…';
+    block.status.textContent = remembered ? `已登录：${remembered.account}` : '正在检查登录状态…';
     if (block.login instanceof HTMLAnchorElement) block.login.href = todoLoginUrl;
   });
+  if (remembered) renderBlocks(blocks, remembered);
 
   try {
     const session = await getCloudSession();
-    blocks.forEach((block) => renderBlock(block, session?.account ?? null));
+    renderBlocks(blocks, session);
   } catch {
-    blocks.forEach((block) => renderBlock(block, null));
+    renderBlocks(blocks, remembered);
   }
+
+  window.addEventListener('site-auth-change', (event) => {
+    const session = event instanceof CustomEvent ? event.detail as CloudSession | null : null;
+    renderBlocks(blocks, session);
+  });
 
   blocks.forEach((block) => {
     block.signOut?.addEventListener('click', async () => {

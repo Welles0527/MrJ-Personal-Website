@@ -1,4 +1,4 @@
-import { getCloudDb, getCloudSession, signInWithPassword, startEmailSignUp } from './site-auth';
+import { getCloudDb, getCloudSession, getRememberedSession, signInWithPassword, startEmailSignUp } from './site-auth';
 import type { CloudSession } from './site-auth';
 
 type BibleBook = {
@@ -211,6 +211,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   const loginForm = get<HTMLFormElement>('[data-login-form]');
   const verifyField = get<HTMLElement>('[data-verify-field]');
   const loginStatus = get<HTMLElement>('[data-login-status]');
+  const cloudLoginButton = root.querySelector<HTMLButtonElement>('[data-action="cloud-login"]');
   const toast = get<HTMLElement>('[data-bible-toast]');
   const groupGuide = root.querySelector<HTMLElement>('[data-group-guide]');
   const dailySteps = [...root.querySelectorAll<HTMLInputElement>('[data-daily-step]')];
@@ -240,6 +241,17 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   let toastTimer: number | undefined;
   let syncTimer: number | undefined;
   let fullTextStatus: 'loading' | 'ready' | 'failed' = data.fullTextUrl ? 'loading' : 'ready';
+
+  const renderLoginState = (nextSession: CloudSession | null) => {
+    loginStatus.textContent = nextSession ? `已登录：${nextSession.account}` : '未登录时会先保存到本机浏览器。';
+    if (cloudLoginButton) cloudLoginButton.textContent = nextSession ? '已登录同步' : '登录同步';
+  };
+
+  const rememberedSession = getRememberedSession();
+  if (rememberedSession) {
+    session = rememberedSession;
+    renderLoginState(session);
+  }
 
   if (!params.get('book') && state.lastRead.book) {
     currentBook = state.lastRead.book;
@@ -704,7 +716,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
 
   const finishLogin = async (nextSession: CloudSession) => {
     session = nextSession;
-    loginStatus.textContent = `已登录：${session.account}`;
+    renderLoginState(session);
     const cloudState = await loadCloudState(session.uid);
     if (cloudState) state = mergeState(state, cloudState);
     persist('已登录并同步阅读数据。');
@@ -790,7 +802,21 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     }
     if (trigger.dataset.action === 'toggle-directory') directory.classList.toggle('is-open');
     if (trigger.dataset.action === 'toggle-reader-bookmarks') toggleReaderBookmarks();
-    if (trigger.dataset.action === 'cloud-login') loginModal.showModal();
+    if (trigger.dataset.action === 'cloud-login') {
+      const activeSession = session;
+      if (activeSession) {
+        syncCloudState()
+          .then(() => {
+            renderLoginState(activeSession);
+            notify('已使用当前登录同步阅读数据。');
+          })
+          .catch(() => {
+            loginStatus.textContent = `已登录：${activeSession.account}；云同步暂不可用。`;
+          });
+      } else {
+        loginModal.showModal();
+      }
+    }
     if (trigger.dataset.action === 'close-login') loginModal.close();
     if (trigger.dataset.action === 'start-signup') startSignUp();
     if (trigger.dataset.action === 'copy-group-guide') {
@@ -831,9 +857,12 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
 
   getCloudSession()
     .then(async (nextSession) => {
-      if (!nextSession) return;
+      if (!nextSession) {
+        renderLoginState(session);
+        return;
+      }
       session = nextSession;
-      loginStatus.textContent = `已登录：${session.account}`;
+      renderLoginState(session);
       const cloudState = await loadCloudState(session.uid);
       if (cloudState) {
         state = mergeState(state, cloudState);
@@ -844,7 +873,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       }
     })
     .catch(() => {
-      loginStatus.textContent = '云同步暂不可用；当前使用本机保存。';
+      loginStatus.textContent = session ? `已登录：${session.account}；云同步暂不可用。` : '云同步暂不可用；当前使用本机保存。';
     });
 
   renderDailyPlan();
