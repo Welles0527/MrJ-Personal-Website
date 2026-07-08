@@ -1,0 +1,1819 @@
+---
+const basePath = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
+
+const featurePages = [
+  {
+    id: 'reader',
+    title: '微读圣经',
+    eyebrow: 'READ',
+    quote: '你的话是我脚前的灯，是我路上的光。',
+    reference: '诗篇 119:105',
+    summary: '从经卷、章节、关键词和经文引用快速进入阅读。',
+    action: '进入阅读',
+    href: '#bible-reader',
+    status: '已上线',
+    artA: '#0e1722',
+    artB: '#d8b35f',
+    artC: '#ece1c2'
+  },
+  {
+    id: 'bookmarks',
+    title: '经文收藏',
+    eyebrow: 'SAVE',
+    quote: '我将你的话藏在心里，免得我得罪你。',
+    reference: '诗篇 119:11',
+    summary: '把触动你的经文和阅读进度保存起来。',
+    action: '查看收藏',
+    href: '#bible-bookmarks',
+    status: '已上线',
+    artA: '#17110b',
+    artB: '#8c5a2f',
+    artC: '#f0d7a2'
+  },
+  {
+    id: 'videos',
+    title: '圣经视频',
+    eyebrow: 'WATCH',
+    quote: '你们要休息，要知道我是神。',
+    reference: '诗篇 46:10',
+    summary: '整理经卷导读、人物短片和主题视频的观看入口。',
+    action: '进入视频',
+    href: '#bible-videos',
+    status: '导读库',
+    artA: '#071a21',
+    artB: '#1d6f78',
+    artC: '#dbb46c'
+  },
+  {
+    id: 'people',
+    title: '圣经人物',
+    eyebrow: 'PEOPLE',
+    quote: '信就是所望之事的实底，是未见之事的确据。',
+    reference: '希伯来书 11:1',
+    summary: '用人物线索进入故事、信心、失败与蒙召。',
+    action: '进入人物',
+    href: '#bible-people',
+    status: '人物库',
+    artA: '#20130f',
+    artB: '#7c2d22',
+    artC: '#e7bc78'
+  },
+  {
+    id: 'daily',
+    title: '每日读经',
+    eyebrow: 'DAILY',
+    quote: '早晨我必向你陈明我的心意，并要警醒。',
+    reference: '诗篇 5:3',
+    summary: '按每日章节、灵修问题和进度提醒安排读经。',
+    action: '进入计划',
+    href: '#bible-daily',
+    status: '7日计划',
+    artA: '#122119',
+    artB: '#6c8f49',
+    artC: '#f2d06c'
+  },
+  {
+    id: 'groups',
+    title: '小组聚会',
+    eyebrow: 'GROUP',
+    quote: '因为无论在哪里，有两三个人奉我的名聚会。',
+    reference: '马太福音 18:20',
+    summary: '提供查经提纲、讨论问题和小组记录模板。',
+    action: '进入小组',
+    href: '#bible-groups',
+    status: '带领模板',
+    artA: '#101624',
+    artB: '#3c5f91',
+    artC: '#e7d3a8'
+  },
+  {
+    id: 'hymns',
+    title: '赞美诗歌',
+    eyebrow: 'HYMN',
+    quote: '你们要向耶和华唱新歌。',
+    reference: '诗篇 96:1',
+    summary: '整理诗歌主题、使用场景和聚会搭配建议。',
+    action: '进入诗歌',
+    href: '#bible-hymns',
+    status: '主题索引',
+    artA: '#1d1222',
+    artB: '#7f4e95',
+    artC: '#e5bd63'
+  }
+];
+
+const bookGroups = [
+  {
+    label: '旧约',
+    books: [
+      ['gen', '创世记', '创', 50], ['exo', '出埃及记', '出', 40], ['lev', '利未记', '利', 27], ['num', '民数记', '民', 36], ['deu', '申命记', '申', 34],
+      ['jos', '约书亚记', '书', 24], ['jdg', '士师记', '士', 21], ['rut', '路得记', '得', 4], ['1sa', '撒母耳记上', '撒上', 31], ['2sa', '撒母耳记下', '撒下', 24],
+      ['1ki', '列王纪上', '王上', 22], ['2ki', '列王纪下', '王下', 25], ['1ch', '历代志上', '代上', 29], ['2ch', '历代志下', '代下', 36], ['ezr', '以斯拉记', '拉', 10],
+      ['neh', '尼希米记', '尼', 13], ['est', '以斯帖记', '斯', 10], ['job', '约伯记', '伯', 42], ['psa', '诗篇', '诗', 150], ['pro', '箴言', '箴', 31],
+      ['ecc', '传道书', '传', 12], ['sng', '雅歌', '歌', 8], ['isa', '以赛亚书', '赛', 66], ['jer', '耶利米书', '耶', 52], ['lam', '耶利米哀歌', '哀', 5],
+      ['ezk', '以西结书', '结', 48], ['dan', '但以理书', '但', 12], ['hos', '何西阿书', '何', 14], ['jol', '约珥书', '珥', 3], ['amo', '阿摩司书', '摩', 9],
+      ['oba', '俄巴底亚书', '俄', 1], ['jon', '约拿书', '拿', 4], ['mic', '弥迦书', '弥', 7], ['nam', '那鸿书', '鸿', 3], ['hab', '哈巴谷书', '哈', 3],
+      ['zep', '西番雅书', '番', 3], ['hag', '哈该书', '该', 2], ['zec', '撒迦利亚书', '亚', 14], ['mal', '玛拉基书', '玛', 4]
+    ]
+  },
+  {
+    label: '新约',
+    books: [
+      ['mat', '马太福音', '太', 28], ['mrk', '马可福音', '可', 16], ['luk', '路加福音', '路', 24], ['jhn', '约翰福音', '约', 21], ['act', '使徒行传', '徒', 28],
+      ['rom', '罗马书', '罗', 16], ['1co', '哥林多前书', '林前', 16], ['2co', '哥林多后书', '林后', 13], ['gal', '加拉太书', '加', 6], ['eph', '以弗所书', '弗', 6],
+      ['php', '腓立比书', '腓', 4], ['col', '歌罗西书', '西', 4], ['1th', '帖撒罗尼迦前书', '帖前', 5], ['2th', '帖撒罗尼迦后书', '帖后', 3], ['1ti', '提摩太前书', '提前', 6],
+      ['2ti', '提摩太后书', '提后', 4], ['tit', '提多书', '多', 3], ['phm', '腓利门书', '门', 1], ['heb', '希伯来书', '来', 13], ['jas', '雅各书', '雅', 5],
+      ['1pe', '彼得前书', '彼前', 5], ['2pe', '彼得后书', '彼后', 3], ['1jn', '约翰一书', '约一', 5], ['2jn', '约翰二书', '约二', 1], ['3jn', '约翰三书', '约三', 1],
+      ['jud', '犹大书', '犹', 1], ['rev', '启示录', '启', 22]
+    ]
+  }
+];
+
+const bibleBooks = bookGroups.flatMap((group) => group.books.map(([slug, title, shortName, chapters]) => ({
+  slug,
+  title,
+  shortName,
+  chapters,
+  testament: group.label
+})));
+
+const chapterSamples = {
+  'gen-1': {
+    book: 'gen',
+    chapter: 1,
+    title: '创世记 1',
+    verses: [
+      '起初，神创造天地。', '地是空虚混沌，渊面黑暗；神的灵运行在水面上。', '神说：“要有光”，就有了光。', '神看光是好的，就把光暗分开了。', '神称光为昼，称暗为夜。有晚上，有早晨，这是头一日。',
+      '神说：“诸水之间要有空气，将水分为上下。”', '神就造出空气，将空气以下的水、空气以上的水分开了。事就这样成了。', '神称空气为天。有晚上，有早晨，是第二日。', '神说：“天下的水要聚在一处，使旱地露出来。”事就这样成了。', '神称旱地为地，称水的聚处为海。神看着是好的。',
+      '神说：“地要发生青草和结种子的菜蔬，并结果子的树木，各从其类，果子都包着核。”事就这样成了。', '于是地发生了青草和结种子的菜蔬，各从其类；并结果子的树木，各从其类，果子都包着核。神看着是好的。', '有晚上，有早晨，是第三日。', '神说：“天上要有光体，可以分昼夜，作记号，定节令、日子、年岁，', '并要发光在天空，普照在地上。”事就这样成了。',
+      '于是神造了两个大光，大的管昼，小的管夜，又造众星，', '就把这些光摆列在天空，普照在地上，', '管理昼夜，分别明暗。神看着是好的。', '有晚上，有早晨，是第四日。', '神说：“水要多多滋生有生命的物；要有雀鸟飞在地面以上，天空之中。”',
+      '神就造出大鱼和水中所滋生各样有生命的动物，各从其类；又造出各样飞鸟，各从其类。神看着是好的。', '神就赐福给这一切，说：“滋生繁多，充满海中的水；雀鸟也要多生在地上。”', '有晚上，有早晨，是第五日。', '神说：“地要生出活物来，各从其类；牲畜、昆虫、野兽，各从其类。”事就这样成了。', '于是神造出野兽，各从其类；牲畜，各从其类；地上一切昆虫，各从其类。神看着是好的。',
+      '神说：“我们要照着我们的形像、按着我们的样式造人，使他们管理海里的鱼、空中的鸟、地上的牲畜和全地，并地上所爬的一切昆虫。”', '神就照着自己的形像造人，乃是照着他的形像造男造女。', '神就赐福给他们，又对他们说：“要生养众多，遍满地面，治理这地；也要管理海里的鱼、空中的鸟和地上各样行动的活物。”', '神说：“看哪，我将遍地上一切结种子的菜蔬和一切树上所结有核的果子全赐给你们作食物。', '至于地上的走兽和空中的飞鸟，并各样爬在地上有生命的物，我将青草赐给它们作食物。”事就这样成了。',
+      '神看着一切所造的都甚好。有晚上，有早晨，是第六日。'
+    ]
+  },
+  'psa-23': {
+    book: 'psa',
+    chapter: 23,
+    title: '诗篇 23',
+    verses: [
+      '耶和华是我的牧者，我必不至缺乏。',
+      '他使我躺卧在青草地上，领我在可安歇的水边。',
+      '他使我的灵魂苏醒，为自己的名引导我走义路。',
+      '我虽然行过死荫的幽谷，也不怕遭害，因为你与我同在；你的杖，你的竿，都安慰我。',
+      '在我敌人面前，你为我摆设筵席；你用油膏了我的头，使我的福杯满溢。',
+      '我一生一世必有恩惠慈爱随着我；我且要住在耶和华的殿中，直到永远。'
+    ]
+  },
+  'jhn-3': {
+    book: 'jhn',
+    chapter: 3,
+    title: '约翰福音 3',
+    verses: [
+      '有一个法利赛人，名叫尼哥底母，是犹太人的官。', '这人夜里来见耶稣，说：“拉比，我们知道你是由神那里来作师傅的；因为你所行的神迹，若没有神同在，无人能行。”', '耶稣回答说：“我实实在在地告诉你：人若不重生，就不能见神的国。”', '尼哥底母说：“人已经老了，如何能重生呢？岂能再进母腹生出来吗？”', '耶稣说：“我实实在在地告诉你：人若不是从水和圣灵生的，就不能进神的国。',
+      '从肉身生的就是肉身；从灵生的就是灵。', '我说：‘你们必须重生’，你不要以为希奇。', '风随着意思吹，你听见风的响声，却不晓得从哪里来，往哪里去；凡从圣灵生的，也是如此。”', '尼哥底母问他说：“怎能有这事呢？”', '耶稣回答说：“你是以色列人的先生，还不明白这事吗？',
+      '我实实在在地告诉你：我们所说的是我们知道的；我们所见证的是我们见过的；你们却不领受我们的见证。', '我对你们说地上的事，你们尚且不信，若说天上的事，如何能信呢？', '除了从天降下、仍旧在天的人子，没有人升过天。', '摩西在旷野怎样举蛇，人子也必照样被举起来，', '叫一切信他的都得永生。',
+      '神爱世人，甚至将他的独生子赐给他们，叫一切信他的，不至灭亡，反得永生。', '因为神差他的儿子降世，不是要定世人的罪，乃是要叫世人因他得救。', '信他的人，不被定罪；不信的人，罪已经定了，因为他不信神独生子的名。', '光来到世间，世人因自己的行为是恶的，不爱光倒爱黑暗，定他们的罪就是在此。', '凡作恶的便恨光，并不来就光，恐怕他的行为受责备。',
+      '但行真理的必来就光，要显明他所行的是靠神而行。”', '这事以后，耶稣和门徒到了犹太地，在那里居住，施洗。', '约翰在靠近撒冷的哀嫩也施洗；因为那里水多，众人都去受洗。', '那时约翰还没有下在监里。', '约翰的门徒和一个犹太人辩论洁净的礼，',
+      '就来见约翰，说：“拉比，从前同你在约但河外、你所见证的那位，现在施洗，众人都往他那里去了。”', '约翰说：“若不是从天上赐的，人就不能得什么。', '我曾说：‘我不是基督，是奉差遣在他前面的’，你们自己可以给我作见证。', '娶新妇的就是新郎；新郎的朋友站着，听见新郎的声音就甚喜乐。故此，我这喜乐满足了。', '他必兴旺，我必衰微。',
+      '从天上来的，是在万有之上；从地上来的，是属乎地，他所说的也是属乎地。从天上来的，是在万有之上。', '他将所见所闻的见证出来，只是没有人领受他的见证。', '那领受他见证的，就印上印，证明神是真的。', '神所差来的就说神的话，因为神赐圣灵给他是没有限量的。', '父爱子，已将万有交在他手里。',
+      '信子的人有永生；不信子的人得不着永生，神的震怒常在他身上。'
+    ]
+  }
+};
+
+const bibleData = {
+  books: bibleBooks,
+  samples: chapterSamples,
+  features: featurePages,
+  fullTextUrl: `${basePath}data/bible/chi-cuv-simp.json`,
+  versionLabel: '和合本（公开领域简体）'
+};
+
+const videoModules = [
+  { title: '创世记导读', meta: '经卷导读 · 8-12 分钟', text: '从创造、堕落、应许和族长故事建立旧约入口。', href: '?book=gen&chapter=1#bible-reader', guide: '先读创世记 1，标记“神说”“神看为好”“有晚上，有早晨”。' },
+  { title: '诗篇祷告路径', meta: '主题导读 · 6-10 分钟', text: '用赞美、哀歌、信靠和感恩整理诗篇的祷告语言。', href: '?book=psa&chapter=23#bible-reader', guide: '先读诗篇 23，再把“供应、引导、同在、盼望”写成祷告。' },
+  { title: '约翰福音核心', meta: '福音导读 · 10-15 分钟', text: '围绕光、生命、信与爱进入约翰福音的主线。', href: '?book=jhn&chapter=3#bible-reader', guide: '先读约翰福音 3，观察“重生、信、永生、光”的关系。' }
+];
+
+const peopleCards = [
+  { name: '亚伯拉罕', role: '信心与应许', text: '从蒙召、等候、失败和信心行动观察应许之路。', refs: '创 12 / 创 15 / 来 11', question: '我正在等候什么应许？', href: '?book=gen&chapter=1#bible-reader' },
+  { name: '摩西', role: '呼召与带领', text: '从旷野、出埃及和律法看领袖如何在软弱中被差遣。', refs: '出 3 / 出 14 / 民 12', question: '我最常用什么理由推辞呼召？', href: '#bible-groups' },
+  { name: '大卫', role: '敬拜与悔改', text: '把勇气、王权、失败和悔改放在同一条生命线中阅读。', refs: '撒上 17 / 撒下 12 / 诗 51', question: '我怎样把失败带到神面前？', href: '?book=psa&chapter=23#bible-reader' },
+  { name: '彼得', role: '跌倒与恢复', text: '从跟随、否认、恢复和传道看门徒生命的重建。', refs: '路 22 / 约 21 / 徒 2', question: '我需要在哪个关系中重新回应主？', href: '#bible-groups' },
+  { name: '保罗', role: '使命与教会', text: '从转变、宣教旅程和书信进入初代教会的扩展。', refs: '徒 9 / 徒 16 / 腓 3', question: '我的恩赐可以怎样服事群体？', href: '#bible-daily' },
+  { name: '马利亚', role: '顺服与见证', text: '从领受、等候和见证看信心如何进入日常生命。', refs: '路 1 / 约 2 / 徒 1', question: '我今天可以在哪件小事上顺服？', href: '#bible-daily' }
+];
+
+const dailyPlan = [
+  { day: 'D1', title: '创造与光', passage: '创世记 1', prompt: '今天观察“神说”出现在哪里。' },
+  { day: 'D2', title: '供应与安息', passage: '诗篇 23', prompt: '写下一处你需要被牧养的地方。' },
+  { day: 'D3', title: '重生与信', passage: '约翰福音 3', prompt: '把“信”与“永生”的关系写成一句话。' },
+  { day: 'D4', title: '应许与等候', passage: '创世记 12', prompt: '记录一个正在等候的应许或方向。' },
+  { day: 'D5', title: '旷野与带领', passage: '出埃及记 3', prompt: '思考神如何回应人的推辞。' },
+  { day: 'D6', title: '悔改与更新', passage: '诗篇 51', prompt: '用一段祷告回应经文。' },
+  { day: 'D7', title: '使命与同行', passage: '马太福音 28', prompt: '写下本周一个可执行的顺服行动。' }
+];
+
+const groupQuestions = [
+  '这段经文中最直接触动你的词句是什么？',
+  '经文显明了神怎样的属性或作为？',
+  '这段经文怎样纠正我们的想法、选择或关系？',
+  '本周小组可以彼此代祷和跟进的一件事是什么？'
+];
+
+const hymnCards = [
+  { title: '奇异恩典', theme: '恩典 / 悔改 / 见证', use: '适合福音信息、受洗见证、回应祷告。', scripture: '以弗所书 2:8-9', flow: '见证分享后使用，接 2 分钟安静祷告。' },
+  { title: '圣哉三一歌', theme: '敬拜 / 圣洁 / 三一神', use: '适合主日开始、敬拜宣召、圣餐前后。', scripture: '以赛亚书 6:3', flow: '聚会开场使用，接认信或宣召经文。' },
+  { title: '坚固保障', theme: '信靠 / 争战 / 安慰', use: '适合困难主题、小组祷告、信心回应。', scripture: '诗篇 46:1', flow: '代祷前使用，帮助小组把惧怕转成信靠。' },
+  { title: '我知谁掌管明天', theme: '盼望 / 交托 / 等候', use: '适合每日灵修、病中探访、安慰场景。', scripture: '马太福音 6:34', flow: '结束前使用，接个人交托祷告。' }
+];
+---
+
+<section class="bible-app" data-bible-app>
+  <section class="bible-stage" aria-label="J-Space">
+    <div class="bible-stage-copy">
+      <p>J-Space</p>
+    </div>
+
+    <div class="bible-book-shell" data-feature-book aria-live="polite">
+      <div class="bible-book-shadow" aria-hidden="true"></div>
+      <div class="bible-book">
+        <div class="bible-book-spine" aria-hidden="true"></div>
+        <div class="bible-page bible-left-page">
+          <p class="bible-page-kicker" data-feature-eyebrow>{featurePages[0].eyebrow}</p>
+          <h2 data-feature-title>{featurePages[0].title}</h2>
+          <blockquote>
+            <span data-feature-quote>{featurePages[0].quote}</span>
+            <cite data-feature-reference>{featurePages[0].reference}</cite>
+          </blockquote>
+          <p data-feature-summary>{featurePages[0].summary}</p>
+          <a class="bible-page-action" data-feature-action href={featurePages[0].href}>{featurePages[0].action}</a>
+        </div>
+        <div class="bible-page bible-right-page">
+          <div class="bible-page-art" data-feature-art style={`--art-a:${featurePages[0].artA};--art-b:${featurePages[0].artB};--art-c:${featurePages[0].artC};`}>
+            <img src={`${basePath}images/bible-theology/open-bible-light.png`} alt="" loading="eager" />
+            <span data-feature-status>{featurePages[0].status}</span>
+          </div>
+        </div>
+        <div class="bible-turn-page" aria-hidden="true"></div>
+      </div>
+    </div>
+
+    <div class="bible-book-controls" aria-label="翻页控制">
+      <button type="button" data-feature-prev>上一页</button>
+      <span data-feature-count>1 / {featurePages.length}</span>
+      <button type="button" data-feature-next>下一页</button>
+    </div>
+
+    <nav class="bible-top-nav" aria-label="圣经网站板块导航">
+      <a class="bible-home-link" href={`${basePath}topics/applications/inspiration-station`}>AI灵感站</a>
+      <div class="bible-nav-scroll">
+        {featurePages.map((page, index) => (
+          <button type="button" data-feature-target={String(index)} class={index === 0 ? 'is-active' : ''}>{page.title}</button>
+        ))}
+      </div>
+    </nav>
+  </section>
+
+  <section class="bible-reader-section" id="bible-reader" aria-labelledby="bible-reader-title">
+    <div class="bible-reader-shell">
+      <aside class="bible-reader-sidebar" data-bible-directory>
+        <div class="bible-reader-brand">
+          <div>
+            <p>WEI READ</p>
+            <h2 id="bible-reader-title">微读圣经</h2>
+          </div>
+          <button class="bible-directory-close" type="button" data-action="toggle-directory" aria-label="关闭目录">×</button>
+        </div>
+
+        <div class="bible-reader-tools">
+          <label>
+            <span>搜索经文或输入引用</span>
+            <input data-bible-search type="search" placeholder="例如：创-1-2 / 创世-1-2 / 约3:16" autocomplete="off" />
+          </label>
+          <p data-bible-search-status>已导入创世记1、诗篇23、约翰福音3。</p>
+        </div>
+
+        <div class="bible-segmented" aria-label="旧约新约切换">
+          <button type="button" data-testament="旧约" class="is-active">旧约</button>
+          <button type="button" data-testament="新约">新约</button>
+        </div>
+
+        <div class="bible-view-toggle" aria-label="目录视图切换">
+          <button type="button" data-view-mode="grid" class="is-active">宫格</button>
+          <button type="button" data-view-mode="list">列表</button>
+        </div>
+
+        <div class="bible-book-list is-grid" data-book-list>
+          {bookGroups[0].books.map(([slug, title, shortName]) => (
+            <button type="button" data-book={slug}>
+              <strong>{shortName}</strong>
+              <span>{title}</span>
+            </button>
+          ))}
+        </div>
+      </aside>
+
+      <main class="bible-reading-pane">
+        <header class="bible-reading-header">
+          <button class="bible-mobile-directory" type="button" data-action="toggle-directory">目录</button>
+          <div>
+            <p data-current-version>和合本 · 阅读器</p>
+            <h2 data-current-title>创世记 1</h2>
+          </div>
+          <div class="bible-reading-actions">
+            <button type="button" data-action="cloud-login">登录同步</button>
+            <button type="button" data-action="read-chapter">朗读本章</button>
+          </div>
+        </header>
+
+        <div class="bible-chapter-strip" data-chapter-list aria-label="章节选择"></div>
+        <div class="bible-result-list" data-search-results hidden></div>
+        <article class="bible-verses" data-verse-list></article>
+      </main>
+
+      <aside class="bible-notes-panel">
+        <section>
+          <h3>阅读进度</h3>
+          <p data-last-read>正在载入阅读位置...</p>
+        </section>
+        <section>
+          <button class="bible-panel-toggle" type="button" data-action="toggle-reader-bookmarks" aria-expanded="false">经文收藏</button>
+          <div class="bible-bookmark-search" data-reader-bookmark-search hidden>
+            <label>
+              <span>搜索收藏</span>
+              <input data-bookmark-search type="search" placeholder="卷名 / 章节 / 经文" autocomplete="off" />
+            </label>
+            <p data-bookmark-search-status>可按卷名、章节、节号或经文搜索。</p>
+          </div>
+          <div data-bookmark-list class="bible-bookmark-list" hidden></div>
+        </section>
+      </aside>
+    </div>
+  </section>
+
+  <section class="bible-feature-section bible-bookmarks-section" id="bible-bookmarks" aria-labelledby="bible-bookmarks-title">
+    <div class="bible-section-shell">
+      <p class="bible-section-kicker">SAVE</p>
+      <h2 id="bible-bookmarks-title">经文收藏</h2>
+      <p class="bible-section-lede">收藏和阅读进度都先保存在本机浏览器；登录后可以同步到云端。</p>
+      <div class="bible-bookmark-board">
+        <section>
+          <h3>我的收藏</h3>
+          <div class="bible-bookmark-search bible-bookmark-search-dark">
+            <label>
+              <span>搜索收藏</span>
+              <input data-bookmark-search type="search" placeholder="例如：创-1-4 / 约3:16 / 有光" autocomplete="off" />
+            </label>
+            <p data-bookmark-search-status>可按卷名、章节、节号或经文搜索。</p>
+          </div>
+          <div class="bible-bookmark-list" data-bookmark-section-list>
+            <p>还没有收藏经文。进入微读圣经后点击经文右侧星标。</p>
+          </div>
+        </section>
+        <section>
+          <h3>推荐动作</h3>
+          <ul class="bible-plain-list">
+            <li>用搜索框输入“约3:16”定位经文。</li>
+            <li>点击经文右侧功能图标，再选择收藏。</li>
+            <li>在阅读器右侧点击“经文收藏”展开收藏列表。</li>
+            <li>点击“登录同步”把本机数据合并到云端。</li>
+          </ul>
+          <a class="bible-section-link" href="#bible-reader">打开阅读器</a>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <section class="bible-feature-section" id="bible-videos" aria-labelledby="bible-videos-title">
+    <div class="bible-section-shell">
+      <p class="bible-section-kicker">WATCH</p>
+      <h2 id="bible-videos-title">圣经视频</h2>
+      <p class="bible-section-lede">以短课导读的方式整理观看路线；每张卡片都能回到对应经文章节继续阅读。</p>
+      <div class="bible-card-grid">
+        {videoModules.map((item) => (
+          <article class="bible-board-card">
+            <span>{item.meta}</span>
+            <h3>{item.title}</h3>
+            <p>{item.text}</p>
+            <small>{item.guide}</small>
+            <a href={item.href}>关联阅读</a>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="bible-feature-section" id="bible-people" aria-labelledby="bible-people-title">
+    <div class="bible-section-shell">
+      <p class="bible-section-kicker">PEOPLE</p>
+      <h2 id="bible-people-title">圣经人物</h2>
+      <p class="bible-section-lede">以人物为入口，把故事、经文、主题和生命应用串起来。</p>
+      <div class="bible-card-grid bible-people-grid">
+        {peopleCards.map((person) => (
+          <article class="bible-board-card">
+            <span>{person.role}</span>
+            <h3>{person.name}</h3>
+            <p>{person.text}</p>
+            <small>{person.refs}</small>
+            <em>{person.question}</em>
+            <a href={person.href}>进入线索</a>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="bible-feature-section" id="bible-daily" aria-labelledby="bible-daily-title">
+    <div class="bible-section-shell">
+      <p class="bible-section-kicker">DAILY</p>
+      <h2 id="bible-daily-title">每日读经</h2>
+      <p class="bible-section-lede">一个 7 天读经计划，勾选进度会保存在本机浏览器。</p>
+      <div class="bible-daily-summary" aria-live="polite">
+        <strong data-daily-progress>0 / 7</strong>
+        <span>今日可以从已收录章节开始，再按计划记录回应。</span>
+      </div>
+      <div class="bible-daily-plan">
+        {dailyPlan.map((item, index) => (
+          <label class="bible-daily-item">
+            <input type="checkbox" data-daily-step={String(index)} />
+            <span>{item.day}</span>
+            <strong>{item.title}</strong>
+            <em>{item.passage}</em>
+            <small>{item.prompt}</small>
+          </label>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="bible-feature-section" id="bible-groups" aria-labelledby="bible-groups-title">
+    <div class="bible-section-shell">
+      <p class="bible-section-kicker">GROUP</p>
+      <h2 id="bible-groups-title">小组聚会</h2>
+      <p class="bible-section-lede">提供一份可复制的查经流程，适合小组长快速带领一段经文讨论。</p>
+      <div class="bible-group-layout">
+        <article class="bible-board-card" data-group-guide>
+          <span>60-75 MIN</span>
+          <h3>小组查经模板</h3>
+          <ol class="bible-plain-list">
+            <li>开场祷告与近况分享。</li>
+            <li>朗读本次经文两遍，第二遍请不同成员朗读。</li>
+            <li>用观察、解释、应用三个层次讨论经文。</li>
+            <li>记录本周行动和彼此代祷事项。</li>
+          </ol>
+        </article>
+        <article class="bible-board-card">
+          <span>QUESTIONS</span>
+          <h3>讨论问题</h3>
+          <ul class="bible-plain-list">
+            {groupQuestions.map((question) => <li>{question}</li>)}
+          </ul>
+          <button type="button" data-action="copy-group-guide">复制提纲</button>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="bible-feature-section" id="bible-hymns" aria-labelledby="bible-hymns-title">
+    <div class="bible-section-shell">
+      <p class="bible-section-kicker">HYMN</p>
+      <h2 id="bible-hymns-title">赞美诗歌</h2>
+      <p class="bible-section-lede">按主题、经文和聚会流程整理诗歌索引；这里只提供使用建议，不展示完整歌词。</p>
+      <div class="bible-card-grid">
+        {hymnCards.map((hymn) => (
+          <article class="bible-board-card">
+            <span>{hymn.theme}</span>
+            <h3>{hymn.title}</h3>
+            <p>{hymn.use}</p>
+            <small>{hymn.scripture}</small>
+            <em>{hymn.flow}</em>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <dialog class="bible-login-modal" data-login-modal aria-labelledby="bible-login-title">
+    <form method="dialog" class="bible-login-card" data-login-form>
+      <button type="button" aria-label="关闭登录弹窗" data-action="close-login">×</button>
+      <p>CLOUD SYNC</p>
+      <h2 id="bible-login-title">登录后同步收藏和进度</h2>
+      <label>
+        <span>邮箱</span>
+        <input name="email" type="email" autocomplete="email" required />
+      </label>
+      <label>
+        <span>密码</span>
+        <input name="password" type="password" autocomplete="current-password" required />
+      </label>
+      <label data-verify-field hidden>
+        <span>邮箱验证码</span>
+        <input name="verificationCode" type="text" autocomplete="one-time-code" />
+      </label>
+      <div class="bible-login-actions">
+        <button type="submit" data-login-submit>登录</button>
+        <button type="button" data-action="start-signup">注册并发送验证码</button>
+      </div>
+      <p data-login-status>未登录时会先保存到本机浏览器。</p>
+    </form>
+  </dialog>
+
+  <p class="bible-toast" data-bible-toast hidden></p>
+  <script is:inline type="application/json" id="bible-data" set:html={JSON.stringify(bibleData)}></script>
+
+  <script>
+    import { mountBibleReader } from '../scripts/bible-reader';
+
+    const root = document.querySelector<HTMLElement>('[data-bible-app]');
+    const dataElement = document.getElementById('bible-data');
+    if (root && dataElement?.textContent) {
+      mountBibleReader(root, JSON.parse(dataElement.textContent));
+    }
+  </script>
+</section>
+
+<style is:global>
+  .main-content:has(.bible-app) {
+    padding: 0;
+  }
+
+  .app-shell:has(.bible-app) {
+    display: block;
+  }
+
+  .app-shell:has(.bible-app) > .sidebar,
+  body:has(.bible-app) > .bottom-nav {
+    display: none;
+  }
+
+  .main-content:has(.bible-app) .site-footer {
+    display: none;
+  }
+
+  .bible-app {
+    --gold: #d8b35f;
+    --gold-soft: #f1d995;
+    --night: #030303;
+    --paper: #f8f0dc;
+    --ink: #221a10;
+    --muted: #786c5b;
+    min-height: 100vh;
+    background: #050505;
+    color: #fff7e0;
+    font-family: "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+  }
+
+  .bible-app button,
+  .bible-app input,
+  .bible-app textarea {
+    font: inherit;
+  }
+
+  .bible-stage {
+    position: relative;
+    min-height: 100vh;
+    overflow: hidden;
+    padding: 1rem clamp(1rem, 2.8vw, 2.4rem) 1.25rem;
+    background:
+      radial-gradient(circle at 50% 42%, rgba(211, 180, 104, 0.22), transparent 18rem),
+      radial-gradient(circle at 50% 88%, rgba(255, 244, 196, 0.1), transparent 22rem),
+      linear-gradient(180deg, #000 0%, #050505 58%, #080604 100%);
+  }
+
+  .bible-stage::before {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.08) 0.7px, transparent 0.7px);
+    background-size: 18px 18px;
+    opacity: 0.22;
+    content: "";
+  }
+
+  .bible-top-nav {
+    position: relative;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    width: min(72vw, 860px);
+    min-height: 3.6rem;
+    margin: 1rem auto 0;
+    border: 1px solid rgba(216, 179, 95, 0.2);
+    border-radius: 999px;
+    padding: 0.35rem 0.55rem;
+    background: rgba(255, 246, 218, 0.04);
+  }
+
+  .bible-home-link {
+    flex: 0 0 auto;
+    color: var(--gold-soft);
+    font-size: 0.76rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+  }
+
+  .bible-nav-scroll {
+    display: flex;
+    flex: 1 1 auto;
+    gap: 0.42rem;
+    overflow-x: auto;
+    padding-bottom: 0.2rem;
+    scrollbar-width: none;
+  }
+
+  .bible-nav-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .bible-nav-scroll button {
+    flex: 0 0 auto;
+    min-height: 2.2rem;
+    border: 1px solid rgba(216, 179, 95, 0.18);
+    border-radius: 999px;
+    padding: 0.44rem 0.76rem;
+    background: rgba(255, 246, 218, 0.04);
+    color: rgba(255, 247, 224, 0.76);
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 800;
+  }
+
+  .bible-nav-scroll button.is-active {
+    border-color: rgba(216, 179, 95, 0.7);
+    background: rgba(216, 179, 95, 0.16);
+    color: #fff5d4;
+  }
+
+  .bible-stage-copy {
+    position: relative;
+    z-index: 2;
+    max-width: 31rem;
+    padding-top: clamp(1.3rem, 2.4vw, 2.2rem);
+  }
+
+  .bible-stage-copy p,
+  .bible-section-kicker,
+  .bible-page-kicker,
+  .bible-reader-brand p,
+  .bible-login-card > p {
+    margin: 0 0 0.55rem;
+    color: var(--gold);
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.16em;
+  }
+
+  .bible-book-shell {
+    position: relative;
+    z-index: 3;
+    width: min(72vw, 860px);
+    margin: clamp(0.9rem, 1.8vw, 1.4rem) auto 0;
+    perspective: 1800px;
+  }
+
+  .bible-book-shadow {
+    position: absolute;
+    right: 7%;
+    bottom: -2.4rem;
+    left: 9%;
+    height: 3rem;
+    border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(0, 0, 0, 0.78), transparent 70%);
+    filter: blur(12px);
+  }
+
+  .bible-book {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: clamp(24rem, 40vw, 31rem);
+    border-radius: 1.05rem;
+    transform-style: preserve-3d;
+    filter: drop-shadow(0 34px 50px rgba(0, 0, 0, 0.58));
+  }
+
+  .bible-book-spine {
+    position: absolute;
+    z-index: 4;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 1.7rem;
+    transform: translateX(-50%);
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.45), rgba(255, 255, 255, 0.16), rgba(0, 0, 0, 0.54));
+    filter: blur(0.2px);
+  }
+
+  .bible-page {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255, 240, 196, 0.24);
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  .bible-left-page {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border-radius: 1.05rem 0 0 1.05rem;
+    padding: clamp(1.5rem, 3.4vw, 3.2rem);
+    background:
+      linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.08) 96%, rgba(0, 0, 0, 0.2) 100%),
+      repeating-linear-gradient(0deg, transparent 0 36px, rgba(88, 61, 28, 0.045) 37px 38px),
+      #f8f0dc;
+  }
+
+  .bible-left-page h2 {
+    margin: 0.35rem 0 1rem;
+    color: #1a130b;
+    font-family: "Noto Serif SC", "Songti SC", SimSun, serif;
+    font-size: clamp(2.3rem, 5vw, 5rem);
+    line-height: 1;
+    letter-spacing: 0;
+  }
+
+  .bible-left-page blockquote {
+    margin: auto 0 1.2rem;
+  }
+
+  .bible-left-page blockquote span {
+    display: block;
+    color: #2b2115;
+    font-family: "Noto Serif SC", "Songti SC", SimSun, serif;
+    font-size: clamp(1.35rem, 2.5vw, 2.5rem);
+    font-weight: 800;
+    line-height: 1.35;
+  }
+
+  .bible-left-page cite {
+    display: block;
+    margin-top: 0.75rem;
+    color: #9c6d24;
+    font-style: normal;
+    font-weight: 900;
+  }
+
+  .bible-left-page p:not(.bible-page-kicker) {
+    margin: 0;
+    color: #685943;
+    line-height: 1.75;
+  }
+
+  .bible-page-action {
+    display: inline-flex;
+    width: fit-content;
+    align-items: center;
+    min-height: 2.8rem;
+    margin-top: 1.3rem;
+    border-radius: 999px;
+    padding: 0.66rem 1rem;
+    background: #1b1309;
+    color: #f8e6b1;
+    font-size: 0.86rem;
+    font-weight: 900;
+    text-decoration: none;
+  }
+
+  .bible-right-page {
+    border-radius: 0 1.05rem 1.05rem 0;
+    background: #101010;
+  }
+
+  .bible-page-art {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 50% 26%, color-mix(in srgb, var(--art-c) 76%, transparent), transparent 10rem),
+      radial-gradient(circle at 70% 70%, color-mix(in srgb, var(--art-b) 66%, transparent), transparent 16rem),
+      linear-gradient(145deg, var(--art-a), color-mix(in srgb, var(--art-b) 42%, #050505) 62%, #050505);
+  }
+
+  .bible-page-art img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.72;
+    filter: contrast(1.08) saturate(0.82);
+    mix-blend-mode: screen;
+  }
+
+  .bible-page-art::before {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    background:
+      radial-gradient(circle at 50% 34%, rgba(255, 239, 184, 0.2), transparent 14rem),
+      linear-gradient(180deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.38));
+    content: "";
+  }
+
+  .bible-page-art::after {
+    position: absolute;
+    z-index: 1;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 38%;
+    background:
+      radial-gradient(ellipse at 50% 100%, rgba(0, 0, 0, 0.72), transparent 64%),
+      linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.44));
+    content: "";
+  }
+
+  .bible-page-art span {
+    position: absolute;
+    z-index: 2;
+    right: 1.1rem;
+    bottom: 1.1rem;
+    border: 1px solid rgba(255, 241, 201, 0.3);
+    border-radius: 999px;
+    padding: 0.34rem 0.62rem;
+    background: rgba(0, 0, 0, 0.36);
+    color: #fff4d1;
+    font-size: 0.72rem;
+    font-weight: 900;
+  }
+
+  .bible-turn-page {
+    position: absolute;
+    z-index: 6;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 50%;
+    border-radius: 0 1.05rem 1.05rem 0;
+    background: linear-gradient(90deg, rgba(249, 237, 211, 0.96), rgba(158, 112, 51, 0.28));
+    opacity: 0;
+    pointer-events: none;
+    transform-origin: left center;
+  }
+
+  .bible-book.is-turning .bible-turn-page {
+    animation: biblePageTurn 620ms cubic-bezier(0.2, 0.72, 0.18, 1);
+  }
+
+  @keyframes biblePageTurn {
+    0% { opacity: 0; transform: rotateY(0deg); }
+    18% { opacity: 1; }
+    100% { opacity: 0; transform: rotateY(-165deg); }
+  }
+
+  .bible-book-controls {
+    position: relative;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+    margin-top: 1.4rem;
+    color: rgba(255, 247, 224, 0.72);
+    font-size: 0.8rem;
+    font-weight: 800;
+  }
+
+  .bible-book-controls button {
+    border: 1px solid rgba(216, 179, 95, 0.24);
+    border-radius: 999px;
+    padding: 0.48rem 0.72rem;
+    background: rgba(255, 246, 218, 0.04);
+    color: #fff1c7;
+    cursor: pointer;
+  }
+
+  .bible-reader-section {
+    padding: clamp(1rem, 3vw, 2.5rem);
+    background: linear-gradient(180deg, #0b0905 0%, #f2eadb 7rem, #f2eadb 100%);
+    color: var(--ink);
+  }
+
+  .bible-reader-shell {
+    display: grid;
+    grid-template-columns: minmax(18rem, 0.72fr) minmax(0, 1.5fr) minmax(16rem, 0.66fr);
+    gap: 0.85rem;
+    max-width: 1480px;
+    min-height: 82vh;
+    margin: 0 auto;
+  }
+
+  .bible-reader-sidebar,
+  .bible-reading-pane,
+  .bible-notes-panel {
+    border: 1px solid rgba(101, 79, 44, 0.16);
+    border-radius: 0.8rem;
+    background: rgba(255, 251, 241, 0.82);
+    box-shadow: 0 18px 32px rgba(60, 40, 14, 0.08);
+  }
+
+  .bible-reader-sidebar,
+  .bible-notes-panel {
+    overflow: auto;
+    padding: 1rem;
+  }
+
+  .bible-reader-brand h2,
+  .bible-reading-header h2,
+  .bible-feature-section h2 {
+    margin: 0;
+    font-family: "Noto Serif SC", "Songti SC", SimSun, serif;
+    letter-spacing: 0;
+  }
+
+  .bible-reader-brand h2 {
+    font-size: 2rem;
+  }
+
+  .bible-reader-brand {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .bible-directory-close {
+    display: none;
+  }
+
+  .bible-reader-tools {
+    display: grid;
+    gap: 0.48rem;
+    margin: 1rem 0;
+  }
+
+  .bible-reader-tools label {
+    display: grid;
+    gap: 0.38rem;
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-weight: 800;
+  }
+
+  .bible-reader-tools input,
+  .bible-login-card input,
+  .bible-notes-panel textarea {
+    width: 100%;
+    border: 1px solid rgba(101, 79, 44, 0.18);
+    border-radius: 0.52rem;
+    padding: 0.7rem 0.78rem;
+    background: #fffdf7;
+    color: var(--ink);
+    outline-color: #b58a32;
+  }
+
+  .bible-reader-tools p,
+  .bible-reading-header p,
+  .bible-notes-panel p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.78rem;
+    line-height: 1.55;
+  }
+
+  .bible-segmented,
+  .bible-view-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.34rem;
+    margin-bottom: 0.58rem;
+  }
+
+  .bible-segmented button,
+  .bible-view-toggle button,
+  .bible-reading-actions button,
+  .bible-mobile-directory,
+  .bible-notes-panel button,
+  .bible-login-actions button {
+    border: 1px solid rgba(101, 79, 44, 0.18);
+    border-radius: 0.5rem;
+    background: #fff8ea;
+    color: #4b3414;
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 900;
+  }
+
+  .bible-segmented button,
+  .bible-view-toggle button {
+    min-height: 2.2rem;
+  }
+
+  .bible-segmented button.is-active,
+  .bible-view-toggle button.is-active {
+    border-color: #a77a25;
+    background: #1e160b;
+    color: #f7df9e;
+  }
+
+  .bible-book-list {
+    display: grid;
+    gap: 0.42rem;
+  }
+
+  .bible-book-list.is-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .bible-book-list.is-list {
+    grid-template-columns: 1fr;
+  }
+
+  .bible-book-list button {
+    display: grid;
+    gap: 0.18rem;
+    min-height: 4.3rem;
+    border: 1px solid rgba(101, 79, 44, 0.12);
+    border-radius: 0.52rem;
+    background: #fffaf0;
+    color: #2d2112;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .bible-book-list.is-grid button {
+    place-items: center;
+    text-align: center;
+  }
+
+  .bible-book-list button strong {
+    font-size: 1.18rem;
+  }
+
+  .bible-book-list button span {
+    color: var(--muted);
+    font-size: 0.68rem;
+    font-weight: 800;
+  }
+
+  .bible-book-list button.is-active {
+    border-color: #a77a25;
+    background: #fbecd0;
+  }
+
+  .bible-reading-pane {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .bible-reading-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.9rem;
+    padding: 1rem 1.15rem;
+    border-bottom: 1px solid rgba(101, 79, 44, 0.14);
+    background: rgba(255, 250, 240, 0.92);
+  }
+
+  .bible-mobile-directory {
+    display: none;
+    min-height: 2.45rem;
+    padding: 0.52rem 0.72rem;
+  }
+
+  .bible-reading-header h2 {
+    margin-top: 0.22rem;
+    font-size: clamp(1.55rem, 3vw, 2.45rem);
+  }
+
+  .bible-reading-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.42rem;
+  }
+
+  .bible-reading-actions button,
+  .bible-notes-panel button,
+  .bible-login-actions button {
+    min-height: 2.35rem;
+    padding: 0.5rem 0.72rem;
+  }
+
+  .bible-chapter-strip {
+    display: flex;
+    gap: 0.38rem;
+    overflow-x: auto;
+    padding: 0.85rem 1.15rem;
+    border-bottom: 1px solid rgba(101, 79, 44, 0.1);
+    scrollbar-width: thin;
+  }
+
+  .bible-chapter-strip button {
+    flex: 0 0 auto;
+    width: 2.35rem;
+    height: 2.35rem;
+    border: 1px solid rgba(101, 79, 44, 0.18);
+    border-radius: 50%;
+    background: #fffaf0;
+    color: #4c3a21;
+    cursor: pointer;
+    font-size: 0.76rem;
+    font-weight: 900;
+  }
+
+  .bible-chapter-strip button.is-active {
+    border-color: #1e160b;
+    background: #1e160b;
+    color: #f7df9e;
+  }
+
+  .bible-result-list {
+    max-height: 16rem;
+    overflow: auto;
+    border-bottom: 1px solid rgba(101, 79, 44, 0.1);
+    padding: 0.8rem 1.15rem;
+    background: #fffdf7;
+  }
+
+  .bible-result-list button {
+    display: block;
+    width: 100%;
+    border: 0;
+    border-bottom: 1px solid rgba(101, 79, 44, 0.1);
+    padding: 0.65rem 0;
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .bible-verses {
+    display: grid;
+    gap: 0.72rem;
+    max-height: calc(82vh - 10rem);
+    overflow: auto;
+    padding: 1rem clamp(1rem, 2.4vw, 2rem) 2rem;
+    background: #fffaf0;
+  }
+
+  .bible-verse {
+    position: relative;
+    border: 1px solid rgba(101, 79, 44, 0.1);
+    border-radius: 0.65rem;
+    padding: 0.86rem 5.2rem 0.86rem 0.86rem;
+    background: rgba(255, 253, 247, 0.86);
+  }
+
+  .bible-verse.is-target {
+    border-color: #b58a32;
+    box-shadow: 0 0 0 3px rgba(181, 138, 50, 0.18);
+  }
+
+  .bible-verse-main {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.65rem;
+  }
+
+  .bible-verse-number {
+    display: grid;
+    width: 1.7rem;
+    height: 1.7rem;
+    place-items: center;
+    border-radius: 50%;
+    background: #f1dfb9;
+    color: #6c4a14;
+    font-size: 0.72rem;
+    font-weight: 900;
+  }
+
+  .bible-verse-text {
+    margin: 0;
+    color: #21170c;
+    font-family: "Noto Serif SC", "Songti SC", SimSun, serif;
+    font-size: 1.12rem;
+    line-height: 2;
+  }
+
+  .bible-verse.is-read .bible-verse-text {
+    color: #168ea1;
+  }
+
+  .bible-verse-actions {
+    position: absolute;
+    z-index: 5;
+    top: 50%;
+    right: 0.65rem;
+    display: flex;
+    gap: 0.16rem;
+    margin: 0;
+    transform: translateY(-50%);
+  }
+
+  .bible-verse-actions[hidden] {
+    display: none;
+  }
+
+  .bible-verse-actions button,
+  .bible-verse-actions a {
+    display: inline-grid;
+    width: 1.34rem;
+    height: 1.34rem;
+    place-items: center;
+    border: 1px solid rgba(101, 79, 44, 0.12);
+    border-radius: 50%;
+    padding: 0;
+    background: #fff7e7;
+    color: #654716;
+    cursor: pointer;
+    font-size: 0.58rem;
+    font-weight: 900;
+    text-decoration: none;
+  }
+
+  .bible-verse-actions .bible-verse-read-action {
+    color: #168ea1;
+  }
+
+  .bible-verse-actions .bible-verse-translation-link {
+    color: #654716;
+  }
+
+  .bible-verse.is-read .bible-verse-read-action {
+    border-color: rgba(22, 142, 161, 0.38);
+    background: rgba(22, 142, 161, 0.12);
+  }
+
+  .bible-placeholder {
+    display: grid;
+    min-height: 20rem;
+    place-items: center;
+    padding: 2rem;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .bible-notes-panel {
+    display: grid;
+    align-content: start;
+    gap: 0.85rem;
+  }
+
+  .bible-notes-panel section {
+    border-bottom: 1px solid rgba(101, 79, 44, 0.12);
+    padding-bottom: 0.82rem;
+  }
+
+  .bible-notes-panel h3 {
+    margin: 0 0 0.5rem;
+    color: #2b2115;
+    font-size: 0.95rem;
+  }
+
+  .bible-panel-toggle {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    justify-content: space-between;
+    text-align: left;
+  }
+
+  .bible-panel-toggle::after {
+    content: "+";
+    margin-left: auto;
+    font-family: ui-monospace, Consolas, monospace;
+  }
+
+  .bible-panel-toggle[aria-expanded="true"]::after {
+    content: "-";
+  }
+
+  .bible-bookmark-list {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .bible-bookmark-search {
+    display: grid;
+    gap: 0.35rem;
+    margin: 0.65rem 0;
+  }
+
+  .bible-bookmark-search[hidden] {
+    display: none;
+  }
+
+  .bible-bookmark-search label {
+    display: grid;
+    gap: 0.28rem;
+    color: #5f4930;
+    font-size: 0.72rem;
+    font-weight: 800;
+  }
+
+  .bible-bookmark-search input {
+    width: 100%;
+    border: 1px solid rgba(101, 79, 44, 0.16);
+    border-radius: 0.48rem;
+    padding: 0.5rem 0.58rem;
+    background: #fffaf0;
+    color: #2b2115;
+    font: inherit;
+  }
+
+  .bible-bookmark-search input:focus {
+    border-color: #b58a32;
+    outline: 2px solid rgba(181, 138, 50, 0.16);
+  }
+
+  .bible-bookmark-search p {
+    margin: 0;
+    color: rgba(66, 51, 30, 0.62);
+    font-size: 0.7rem;
+    line-height: 1.45;
+  }
+
+  .bible-bookmark-list[hidden] {
+    display: none;
+  }
+
+  .bible-bookmark-group {
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .bible-bookmark-group h4 {
+    margin: 0.3rem 0 0;
+    color: #2b2115;
+    font-size: 0.82rem;
+  }
+
+  .bible-bookmark-list button {
+    display: block;
+    width: 100%;
+    border: 1px solid rgba(101, 79, 44, 0.12);
+    border-radius: 0.5rem;
+    padding: 0.58rem;
+    background: #fffaf0;
+    color: #342618;
+    cursor: pointer;
+    text-align: left;
+    font-size: 0.76rem;
+    line-height: 1.5;
+  }
+
+  .bible-feature-section {
+    padding: clamp(2rem, 4vw, 4rem) clamp(1rem, 4vw, 4rem);
+    background: #090806;
+    color: #fff4d8;
+  }
+
+  .bible-feature-section:nth-of-type(even) {
+    background:
+      radial-gradient(circle at 12% 18%, rgba(216, 179, 95, 0.14), transparent 16rem),
+      #0d0b08;
+  }
+
+  .bible-section-shell {
+    max-width: 1160px;
+    margin: 0 auto;
+  }
+
+  .bible-feature-section h2 {
+    font-size: clamp(2rem, 4.4vw, 4.3rem);
+  }
+
+  .bible-section-lede {
+    max-width: 42rem;
+    margin: 0.75rem 0 1.4rem;
+    color: rgba(255, 247, 224, 0.68);
+    line-height: 1.75;
+  }
+
+  .bible-card-grid,
+  .bible-bookmark-board,
+  .bible-group-layout {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-top: 1.3rem;
+  }
+
+  .bible-bookmark-board,
+  .bible-group-layout {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  }
+
+  .bible-board-card,
+  .bible-bookmark-board section {
+    min-height: 11rem;
+    border: 1px solid rgba(216, 179, 95, 0.2);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    background: rgba(255, 246, 218, 0.045);
+  }
+
+  .bible-board-card span {
+    color: var(--gold);
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 0.68rem;
+    font-weight: 900;
+  }
+
+  .bible-board-card h3,
+  .bible-bookmark-board h3 {
+    margin: 0.6rem 0;
+    color: #fff4d8;
+  }
+
+  .bible-board-card p,
+  .bible-board-card small,
+  .bible-board-card em,
+  .bible-plain-list,
+  .bible-bookmark-board p {
+    margin: 0;
+    color: rgba(255, 247, 224, 0.66);
+    font-size: 0.84rem;
+    line-height: 1.7;
+  }
+
+  .bible-board-card small,
+  .bible-board-card em {
+    display: block;
+    margin-top: 0.65rem;
+  }
+
+  .bible-board-card em {
+    border-left: 2px solid rgba(216, 179, 95, 0.42);
+    padding-left: 0.65rem;
+    color: rgba(255, 247, 224, 0.78);
+    font-style: normal;
+  }
+
+  .bible-board-card a,
+  .bible-section-link,
+  .bible-board-card button {
+    display: inline-flex;
+    width: fit-content;
+    align-items: center;
+    min-height: 2.25rem;
+    margin-top: 0.95rem;
+    border: 1px solid rgba(216, 179, 95, 0.28);
+    border-radius: 999px;
+    padding: 0.42rem 0.72rem;
+    background: rgba(255, 246, 218, 0.06);
+    color: #f9df9f;
+    cursor: pointer;
+    font-size: 0.76rem;
+    font-weight: 900;
+    text-decoration: none;
+  }
+
+  .bible-plain-list {
+    display: grid;
+    gap: 0.5rem;
+    padding-left: 1.1rem;
+  }
+
+  .bible-bookmarks-section .bible-bookmark-list button {
+    border-color: rgba(216, 179, 95, 0.18);
+    background: rgba(255, 246, 218, 0.06);
+    color: #fff1c7;
+  }
+
+  .bible-bookmark-search-dark label {
+    color: #fff1c7;
+  }
+
+  .bible-bookmark-search-dark input {
+    border-color: rgba(216, 179, 95, 0.28);
+    background: rgba(255, 246, 218, 0.08);
+    color: #fff8e7;
+  }
+
+  .bible-bookmark-search-dark input::placeholder {
+    color: rgba(255, 247, 224, 0.42);
+  }
+
+  .bible-bookmark-search-dark p {
+    color: rgba(255, 247, 224, 0.58);
+  }
+
+  .bible-bookmarks-section .bible-bookmark-group h4 {
+    color: #fff4d8;
+  }
+
+  .bible-daily-plan {
+    display: grid;
+    gap: 0.65rem;
+    margin-top: 1.35rem;
+  }
+
+  .bible-daily-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem 1rem;
+    align-items: center;
+    width: fit-content;
+    max-width: 100%;
+    border: 1px solid rgba(216, 179, 95, 0.18);
+    border-radius: 999px;
+    padding: 0.48rem 0.78rem;
+    background: rgba(255, 246, 218, 0.045);
+    color: rgba(255, 247, 224, 0.68);
+    font-size: 0.82rem;
+  }
+
+  .bible-daily-summary strong {
+    color: #f9df9f;
+  }
+
+  .bible-daily-item {
+    display: grid;
+    grid-template-columns: auto 3rem minmax(8rem, 0.8fr) minmax(7rem, 0.7fr) minmax(0, 1.2fr);
+    gap: 0.8rem;
+    align-items: center;
+    border: 1px solid rgba(216, 179, 95, 0.18);
+    border-radius: 0.7rem;
+    padding: 0.85rem 1rem;
+    background: rgba(255, 246, 218, 0.045);
+    color: rgba(255, 247, 224, 0.72);
+  }
+
+  .bible-daily-item input {
+    width: 1.1rem;
+    height: 1.1rem;
+    accent-color: #d8b35f;
+  }
+
+  .bible-daily-item span,
+  .bible-daily-item strong {
+    color: #fff4d8;
+  }
+
+  .bible-daily-item em,
+  .bible-daily-item small {
+    color: rgba(255, 247, 224, 0.64);
+    font-style: normal;
+    line-height: 1.55;
+  }
+
+  .bible-daily-item.is-done {
+    border-color: rgba(216, 179, 95, 0.42);
+    background: rgba(216, 179, 95, 0.12);
+  }
+
+  .bible-login-modal {
+    width: min(92vw, 430px);
+    border: 0;
+    border-radius: 0.85rem;
+    padding: 0;
+    background: transparent;
+  }
+
+  .bible-login-modal::backdrop {
+    background: rgba(0, 0, 0, 0.58);
+    backdrop-filter: blur(3px);
+  }
+
+  .bible-login-card {
+    position: relative;
+    display: grid;
+    gap: 0.75rem;
+    padding: 1.2rem;
+    border: 1px solid rgba(216, 179, 95, 0.34);
+    border-radius: 0.85rem;
+    background: #12100c;
+    color: #fff4d8;
+  }
+
+  .bible-login-card > button:first-child {
+    position: absolute;
+    top: 0.7rem;
+    right: 0.7rem;
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid rgba(216, 179, 95, 0.24);
+    border-radius: 50%;
+    background: rgba(255, 246, 218, 0.06);
+    color: #fff4d8;
+    cursor: pointer;
+  }
+
+  .bible-login-card h2 {
+    margin: 0;
+    font-size: 1.35rem;
+  }
+
+  .bible-login-card label {
+    display: grid;
+    gap: 0.36rem;
+    color: rgba(255, 247, 224, 0.7);
+    font-size: 0.78rem;
+    font-weight: 900;
+  }
+
+  .bible-login-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .bible-login-card p:last-child {
+    margin: 0;
+    color: rgba(255, 247, 224, 0.62);
+    font-size: 0.76rem;
+    line-height: 1.6;
+  }
+
+  .bible-toast {
+    position: fixed;
+    z-index: 50;
+    right: 1rem;
+    bottom: 1rem;
+    max-width: min(30rem, calc(100vw - 2rem));
+    margin: 0;
+    border: 1px solid rgba(216, 179, 95, 0.36);
+    border-radius: 999px;
+    padding: 0.74rem 1rem;
+    background: #16120a;
+    color: #fff2c8;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+    font-size: 0.82rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bible-book.is-turning .bible-turn-page {
+      animation: none;
+    }
+  }
+
+  @media (max-width: 1180px) {
+    .bible-reader-shell {
+      grid-template-columns: minmax(16rem, 0.75fr) minmax(0, 1.4fr);
+    }
+
+    .bible-notes-panel {
+      grid-column: 1 / -1;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 760px) {
+    .bible-app {
+      padding-bottom: 4.5rem;
+    }
+
+    .bible-stage {
+      min-height: 92vh;
+      padding: 0.8rem 0.82rem 1.2rem;
+    }
+
+    .bible-top-nav {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 0.55rem;
+      padding-bottom: 0.7rem;
+    }
+
+    .bible-stage-copy {
+      padding-top: 1.5rem;
+    }
+
+    .bible-book-shell {
+      width: 100%;
+      perspective: 1200px;
+    }
+
+    .bible-book {
+      display: block;
+      min-height: 31rem;
+      border-radius: 1rem;
+    }
+
+    .bible-book-spine,
+    .bible-right-page,
+    .bible-turn-page {
+      display: none;
+    }
+
+    .bible-left-page {
+      min-height: 31rem;
+      border-radius: 1rem;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.42), transparent 44%),
+        linear-gradient(145deg, #fbf1d8, #e9d1a0);
+    }
+
+    .bible-left-page h2 {
+      font-size: clamp(2.4rem, 13vw, 4rem);
+    }
+
+    .bible-book.is-turning .bible-left-page {
+      animation: bibleCardTurn 420ms ease;
+    }
+
+    @keyframes bibleCardTurn {
+      0% { transform: rotateY(0deg); opacity: 1; }
+      45% { transform: rotateY(-14deg); opacity: 0.58; }
+      100% { transform: rotateY(0deg); opacity: 1; }
+    }
+
+    .bible-reader-section {
+      padding: 0;
+    }
+
+    .bible-reader-shell {
+      display: block;
+      min-height: 100vh;
+    }
+
+    .bible-reader-sidebar {
+      position: fixed;
+      z-index: 30;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      width: min(88vw, 350px);
+      border-radius: 0 0.9rem 0.9rem 0;
+      box-shadow: none;
+      opacity: 0;
+      pointer-events: none;
+      transform: translate3d(calc(-100% - 2rem), 0, 0);
+      transition: opacity 180ms ease, transform 180ms ease, visibility 180ms ease;
+      visibility: hidden;
+    }
+
+    .bible-reader-sidebar.is-open {
+      box-shadow: 0 18px 32px rgba(60, 40, 14, 0.16);
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(0);
+      visibility: visible;
+    }
+
+    .bible-directory-close {
+      display: inline-flex;
+      width: 2.15rem;
+      height: 2.15rem;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(150, 111, 42, 0.28);
+      border-radius: 999px;
+      background: #1b1309;
+      color: #f8e6b1;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 900;
+    }
+
+    .bible-reading-pane,
+    .bible-notes-panel {
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    .bible-reading-header {
+      position: sticky;
+      z-index: 20;
+      top: 0;
+      align-items: flex-start;
+    }
+
+    .bible-mobile-directory {
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .bible-reading-actions {
+      flex-direction: column;
+    }
+
+    .bible-verses {
+      max-height: none;
+      min-height: 65vh;
+    }
+
+    .bible-notes-panel {
+      display: block;
+      padding: 1rem;
+    }
+
+    .bible-card-grid,
+    .bible-bookmark-board,
+    .bible-group-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .bible-feature-section {
+      padding: 2.2rem 1rem;
+    }
+
+    .bible-daily-item {
+      grid-template-columns: auto 2.5rem minmax(0, 1fr);
+    }
+
+    .bible-daily-item em,
+    .bible-daily-item small {
+      grid-column: 3;
+    }
+  }
+</style>

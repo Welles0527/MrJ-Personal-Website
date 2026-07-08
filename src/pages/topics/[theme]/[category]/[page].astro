@@ -3,6 +3,7 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
 import TodoPage from '../../../../components/TodoPage.astro';
 import SkillsMcpTable from '../../../../components/SkillsMcpTable.astro';
 import OriginalWebToolsTable from '../../../../components/OriginalWebToolsTable.astro';
+import BibleTheologyPage from '../../../../components/BibleTheologyPage.astro';
 import { getCategory, getDetail, isInvestment, themes } from '../../../../data/site';
 
 export function getStaticPaths() {
@@ -19,10 +20,15 @@ const currentItem = previousCategory ? getDetail(previousCategory, item.slug) : 
 const isTodoPage = theme.slug === 'space' && category.slug === 'planning' && item.slug === 'todo';
 const isSkillsMcpDirectoryPage = theme.slug === 'tools' && category.slug === 'skills-mcp' && item.slug === 'skills-mcp-directory';
 const isOriginalWebToolsPage = theme.slug === 'applications' && category.slug === 'original-applications' && item.slug === 'web-pages';
+const isBibleTheologyPage = theme.slug === 'applications' && category.slug === 'inspiration-station' && item.slug === 'theology';
 ---
 
 {isTodoPage ? (
   <TodoPage />
+) : isBibleTheologyPage ? (
+  <BaseLayout title="圣经网站｜微读圣经" activeTheme={theme.slug}>
+    <BibleTheologyPage />
+  </BaseLayout>
 ) : isSkillsMcpDirectoryPage ? (
 <BaseLayout title={`${item.title}｜学问笔记`} activeTheme={theme.slug}>
   <section class="section-intro terms-intro">
