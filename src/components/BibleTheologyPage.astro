@@ -325,6 +325,7 @@ const hymnCards = [
           <div class="bible-reading-actions">
             <button type="button" data-action="cloud-login">登录同步</button>
             <button type="button" data-action="read-chapter">朗读本章</button>
+            <span class="bible-login-account" data-login-account hidden></span>
           </div>
         </header>
 
@@ -1089,6 +1090,19 @@ const hymnCards = [
     gap: 0.42rem;
   }
 
+  .bible-login-account {
+    flex-basis: 100%;
+    max-width: 18rem;
+    color: var(--muted);
+    font-size: 0.76rem;
+    font-weight: 900;
+    line-height: 1.35;
+    overflow: hidden;
+    text-align: right;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .bible-reading-actions button,
   .bible-notes-panel button,
   .bible-login-actions button {
@@ -1785,6 +1799,11 @@ const hymnCards = [
 
     .bible-reading-actions {
       flex-direction: column;
+      align-items: flex-end;
+    }
+
+    .bible-login-account {
+      max-width: 11.5rem;
     }
 
     .bible-verses {

@@ -212,6 +212,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   const verifyField = get<HTMLElement>('[data-verify-field]');
   const loginStatus = get<HTMLElement>('[data-login-status]');
   const cloudLoginButton = root.querySelector<HTMLButtonElement>('[data-action="cloud-login"]');
+  const loginAccount = root.querySelector<HTMLElement>('[data-login-account]');
   const toast = get<HTMLElement>('[data-bible-toast]');
   const groupGuide = root.querySelector<HTMLElement>('[data-group-guide]');
   const dailySteps = [...root.querySelectorAll<HTMLInputElement>('[data-daily-step]')];
@@ -245,6 +246,11 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   const renderLoginState = (nextSession: CloudSession | null) => {
     loginStatus.textContent = nextSession ? `已登录：${nextSession.account}` : '未登录时会先保存到本机浏览器。';
     if (cloudLoginButton) cloudLoginButton.textContent = nextSession ? '已登录同步' : '登录同步';
+    if (loginAccount) {
+      loginAccount.hidden = !nextSession;
+      loginAccount.textContent = nextSession?.account ?? '';
+      loginAccount.title = nextSession?.account ?? '';
+    }
   };
 
   const rememberedSession = getRememberedSession();
@@ -252,6 +258,11 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     session = rememberedSession;
     renderLoginState(session);
   }
+
+  window.addEventListener('site-auth-change', (event) => {
+    session = event instanceof CustomEvent ? event.detail as CloudSession | null : null;
+    renderLoginState(session);
+  });
 
   if (!params.get('book') && state.lastRead.book) {
     currentBook = state.lastRead.book;
