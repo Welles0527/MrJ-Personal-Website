@@ -26,6 +26,7 @@ type FeaturePage = {
   action: string;
   href: string;
   status: string;
+  image: string;
   artA: string;
   artB: string;
   artC: string;
@@ -190,6 +191,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   const featureSummary = get<HTMLElement>('[data-feature-summary]');
   const featureAction = get<HTMLAnchorElement>('[data-feature-action]');
   const featureArt = get<HTMLElement>('[data-feature-art]');
+  const featureImage = get<HTMLImageElement>('[data-feature-image]');
   const featureStatus = get<HTMLElement>('[data-feature-status]');
   const featureCount = get<HTMLElement>('[data-feature-count]');
   const bookList = get<HTMLElement>('[data-book-list]');
@@ -206,6 +208,14 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   const readerBookmarkSearch = root.querySelector<HTMLElement>('[data-reader-bookmark-search]');
   const bookmarkSearchInputs = [...root.querySelectorAll<HTMLInputElement>('[data-bookmark-search]')];
   const bookmarkSearchStatuses = [...root.querySelectorAll<HTMLElement>('[data-bookmark-search-status]')];
+  const noteSectionList = get<HTMLElement>('[data-note-section-list]');
+  const noteModal = get<HTMLDialogElement>('[data-note-modal]');
+  const noteForm = get<HTMLFormElement>('[data-note-form]');
+  const noteReference = get<HTMLElement>('[data-note-ref]');
+  const noteVerse = get<HTMLElement>('[data-note-verse]');
+  const noteText = get<HTMLTextAreaElement>('[data-note-text]');
+  const noteStatus = get<HTMLElement>('[data-note-status]');
+  const deleteNoteButton = get<HTMLButtonElement>('[data-action="delete-note"]');
   const directory = get<HTMLElement>('[data-bible-directory]');
   const loginModal = get<HTMLDialogElement>('[data-login-modal]');
   const loginForm = get<HTMLFormElement>('[data-login-form]');
@@ -242,6 +252,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   let toastTimer: number | undefined;
   let syncTimer: number | undefined;
   let fullTextStatus: 'loading' | 'ready' | 'failed' = data.fullTextUrl ? 'loading' : 'ready';
+  let activeNoteTarget: { book: string; chapter: number; verse: number; verseText: string } | null = null;
 
   const renderLoginState = (nextSession: CloudSession | null) => {
     loginStatus.textContent = nextSession ? `已登录：${nextSession.account}` : '未登录时会先保存到本机浏览器。';
@@ -347,7 +358,9 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     featureSummary.textContent = page.summary;
     featureAction.textContent = page.action;
     featureAction.href = page.href;
+    featureImage.src = page.image;
     featureStatus.textContent = page.status;
+    featureArt.dataset.artId = page.id;
     featureArt.style.setProperty('--art-a', page.artA);
     featureArt.style.setProperty('--art-b', page.artB);
     featureArt.style.setProperty('--art-c', page.artC);
@@ -395,6 +408,9 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
 
   const isReadVerse = (book: string, chapter: number, verse: number) =>
     readVerses.has(verseKey(book, chapter, verse));
+
+  const noteForVerse = (book: string, chapter: number, verse: number) =>
+    state.notes.find((item) => item.book === book && item.chapter === chapter && item.verse === verse);
 
   const normalizeBookmarkSearch = (value: string) =>
     value.trim().toLocaleLowerCase().replace(/\s+/g, '').replace(/[－—–]/g, '-');
@@ -461,9 +477,10 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       const key = verseKey(sample.book, sample.chapter, verse);
       const active = targetVerse === verse ? ' is-target' : '';
       const read = isReadVerse(sample.book, sample.chapter, verse);
+      const noted = Boolean(noteForVerse(sample.book, sample.chapter, verse));
       const translationUrl = bibleComTcvChapterUrl(sample.book, sample.chapter);
       return `
-        <section class="bible-verse${active}${read ? ' is-read' : ''}" id="${key}" data-verse="${verse}">
+        <section class="bible-verse${active}${read ? ' is-read' : ''}${noted ? ' has-note' : ''}" id="${key}" data-verse="${verse}" title="双击添加或编辑笔记">
           <div class="bible-verse-main">
             <span class="bible-verse-number">${verse}</span>
             <p class="bible-verse-text">${escapeHtml(text)}</p>
@@ -538,6 +555,44 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     setBookmarkSearchStatus(keyword ? `找到 ${visibleBookmarks.length} 条收藏。` : `共 ${state.bookmarks.length} 条收藏。`);
   };
 
+  const sortedNotes = () => state.notes
+    .slice()
+    .sort((first, second) => {
+      const firstBook = data.books.findIndex((book) => book.slug === first.book);
+      const secondBook = data.books.findIndex((book) => book.slug === second.book);
+      return firstBook - secondBook || first.chapter - second.chapter || first.verse - second.verse;
+    });
+
+  const renderNotes = () => {
+    if (!state.notes.length) {
+      noteSectionList.innerHTML = '<p>还没有笔记。</p>';
+      return;
+    }
+
+    const grouped = new Map<string, Note[]>();
+    sortedNotes().forEach((item) => {
+      const key = `${item.book}-${item.chapter}`;
+      grouped.set(key, [...(grouped.get(key) ?? []), item]);
+    });
+
+    noteSectionList.innerHTML = [...grouped.entries()].map(([key, items]) => {
+      const first = items[0];
+      const book = bookBySlug(first.book);
+      const itemsHtml = items.map((item) => `
+        <button type="button" data-action="open-note" data-note-book="${item.book}" data-note-chapter="${item.chapter}" data-note-verse="${item.verse}">
+          <strong>${escapeHtml(book?.title ?? item.book)} ${item.chapter}:${item.verse}</strong>
+          <span>${escapeHtml(item.text)}</span>
+        </button>
+      `).join('');
+      return `
+        <section class="bible-bookmark-group" data-note-group="${escapeHtml(key)}">
+          <h4>${escapeHtml(book?.title ?? first.book)} ${first.chapter}章</h4>
+          ${itemsHtml}
+        </section>
+      `;
+    }).join('');
+  };
+
   const toggleReaderBookmarks = () => {
     if (!readerBookmarkToggle) return;
     const expanded = readerBookmarkToggle.getAttribute('aria-expanded') === 'true';
@@ -582,6 +637,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     renderChapters();
     renderVerses(targetVerse);
     renderBookmarks();
+    renderNotes();
   };
 
   const gotoReference = (book: string, chapter: number, verse?: number) => {
@@ -702,6 +758,69 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     trigger.setAttribute('aria-pressed', String(nextRead));
   };
 
+  const openNoteEditor = (book: string, chapter: number, verse: number) => {
+    const bookInfo = bookBySlug(book);
+    const sample = data.samples[chapterKey(book, chapter)];
+    const verseText = sample?.verses[verse - 1] ?? '';
+    if (!bookInfo || !verseText) {
+      notify('本节经文尚未载入，暂时不能添加笔记。');
+      return;
+    }
+
+    const existing = noteForVerse(book, chapter, verse);
+    activeNoteTarget = { book, chapter, verse, verseText };
+    noteReference.textContent = `${bookInfo.title} ${chapter}:${verse}`;
+    noteVerse.textContent = verseText;
+    noteText.value = existing?.text ?? '';
+    noteStatus.textContent = existing ? '正在编辑已保存的笔记。' : '笔记会先保存在本机浏览器。';
+    deleteNoteButton.hidden = !existing;
+    noteModal.showModal();
+    window.setTimeout(() => noteText.focus(), 60);
+  };
+
+  const saveActiveNote = () => {
+    if (!activeNoteTarget) return;
+    const text = noteText.value.trim();
+    if (!text) {
+      noteStatus.textContent = '请输入笔记内容。';
+      return;
+    }
+
+    const existing = noteForVerse(activeNoteTarget.book, activeNoteTarget.chapter, activeNoteTarget.verse);
+    const time = nowIso();
+    if (existing) {
+      state.notes = state.notes.map((item) => item.id === existing.id ? { ...item, text, updatedAt: time } : item);
+    } else {
+      state.notes = [{
+        id: createId(),
+        book: activeNoteTarget.book,
+        chapter: activeNoteTarget.chapter,
+        verse: activeNoteTarget.verse,
+        text,
+        createdAt: time,
+        updatedAt: time
+      }, ...state.notes];
+    }
+
+    persist('笔记已保存。');
+    noteModal.close();
+    renderAll(activeNoteTarget.verse);
+  };
+
+  const deleteActiveNote = () => {
+    if (!activeNoteTarget) return;
+    const existing = noteForVerse(activeNoteTarget.book, activeNoteTarget.chapter, activeNoteTarget.verse);
+    if (!existing) {
+      noteModal.close();
+      return;
+    }
+
+    state.notes = state.notes.filter((item) => item.id !== existing.id);
+    persist('笔记已删除。');
+    noteModal.close();
+    renderAll(activeNoteTarget.verse);
+  };
+
   const loadCloudState = async (ownerId: string): Promise<ReaderState | null> => {
     const db = getCloudDb();
     const result = await db.collection(COLLECTION).where({ ownerId }).get();
@@ -775,6 +894,19 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     }
   });
 
+  noteForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    saveActiveNote();
+  });
+
+  verseList.addEventListener('dblclick', (event) => {
+    const target = event.target;
+    if (!(target instanceof Element) || target.closest('.bible-verse-actions')) return;
+    const verseElement = target.closest<HTMLElement>('.bible-verse[data-verse]');
+    const verse = Number(verseElement?.dataset.verse || '');
+    if (verse) openNoteEditor(currentBook, currentChapter, verse);
+  });
+
   root.addEventListener('click', (event) => {
     const target = event.target;
     if (!(target instanceof Element)) return;
@@ -811,6 +943,13 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     if (trigger.dataset.gotoBook && trigger.dataset.gotoChapter) {
       gotoReference(trigger.dataset.gotoBook, Number(trigger.dataset.gotoChapter), Number(trigger.dataset.gotoVerse || '') || undefined);
     }
+    if (trigger.dataset.action === 'open-note' && trigger.dataset.noteBook && trigger.dataset.noteChapter && trigger.dataset.noteVerse) {
+      const noteBook = trigger.dataset.noteBook;
+      const noteChapter = Number(trigger.dataset.noteChapter);
+      const noteVerseNumber = Number(trigger.dataset.noteVerse);
+      gotoReference(noteBook, noteChapter, noteVerseNumber);
+      window.setTimeout(() => openNoteEditor(noteBook, noteChapter, noteVerseNumber), 120);
+    }
     if (trigger.dataset.action === 'toggle-directory') directory.classList.toggle('is-open');
     if (trigger.dataset.action === 'toggle-reader-bookmarks') toggleReaderBookmarks();
     if (trigger.dataset.action === 'cloud-login') {
@@ -829,6 +968,8 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       }
     }
     if (trigger.dataset.action === 'close-login') loginModal.close();
+    if (trigger.dataset.action === 'close-note') noteModal.close();
+    if (trigger.dataset.action === 'delete-note') deleteActiveNote();
     if (trigger.dataset.action === 'start-signup') startSignUp();
     if (trigger.dataset.action === 'copy-group-guide') {
       const guideText = groupGuide?.innerText.trim();

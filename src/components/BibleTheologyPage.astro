@@ -12,9 +12,10 @@ const featurePages = [
     action: '进入阅读',
     href: '#bible-reader',
     status: '已上线',
-    artA: '#0e1722',
-    artB: '#d8b35f',
-    artC: '#ece1c2'
+    image: `${basePath}images/bible-theology/feature-reader.webp`,
+    artA: '#9ee7ff',
+    artB: '#ffd166',
+    artC: '#ff7ab6'
   },
   {
     id: 'bookmarks',
@@ -26,9 +27,10 @@ const featurePages = [
     action: '查看收藏',
     href: '#bible-bookmarks',
     status: '已上线',
-    artA: '#17110b',
-    artB: '#8c5a2f',
-    artC: '#f0d7a2'
+    image: `${basePath}images/bible-theology/feature-bookmarks.webp`,
+    artA: '#ffe08a',
+    artB: '#ff8fab',
+    artC: '#8ec5ff'
   },
   {
     id: 'videos',
@@ -40,9 +42,10 @@ const featurePages = [
     action: '进入视频',
     href: '#bible-videos',
     status: '导读库',
-    artA: '#071a21',
-    artB: '#1d6f78',
-    artC: '#dbb46c'
+    image: `${basePath}images/bible-theology/feature-videos.webp`,
+    artA: '#7dd3fc',
+    artB: '#a78bfa',
+    artC: '#f9a8d4'
   },
   {
     id: 'people',
@@ -54,9 +57,10 @@ const featurePages = [
     action: '进入人物',
     href: '#bible-people',
     status: '人物库',
-    artA: '#20130f',
-    artB: '#7c2d22',
-    artC: '#e7bc78'
+    image: `${basePath}images/bible-theology/feature-people.webp`,
+    artA: '#fbbf24',
+    artB: '#fb7185',
+    artC: '#93c5fd'
   },
   {
     id: 'daily',
@@ -68,9 +72,10 @@ const featurePages = [
     action: '进入计划',
     href: '#bible-daily',
     status: '7日计划',
-    artA: '#122119',
-    artB: '#6c8f49',
-    artC: '#f2d06c'
+    image: `${basePath}images/bible-theology/feature-daily.webp`,
+    artA: '#86efac',
+    artB: '#fde68a',
+    artC: '#60a5fa'
   },
   {
     id: 'groups',
@@ -82,9 +87,10 @@ const featurePages = [
     action: '进入小组',
     href: '#bible-groups',
     status: '带领模板',
-    artA: '#101624',
-    artB: '#3c5f91',
-    artC: '#e7d3a8'
+    image: `${basePath}images/bible-theology/feature-groups.webp`,
+    artA: '#c4b5fd',
+    artB: '#67e8f9',
+    artC: '#fca5a5'
   },
   {
     id: 'hymns',
@@ -96,9 +102,10 @@ const featurePages = [
     action: '进入诗歌',
     href: '#bible-hymns',
     status: '主题索引',
-    artA: '#1d1222',
-    artB: '#7f4e95',
-    artC: '#e5bd63'
+    image: `${basePath}images/bible-theology/feature-hymns.webp`,
+    artA: '#f0abfc',
+    artB: '#facc15',
+    artC: '#38bdf8'
   }
 ];
 
@@ -251,8 +258,8 @@ const hymnCards = [
           <a class="bible-page-action" data-feature-action href={featurePages[0].href}>{featurePages[0].action}</a>
         </div>
         <div class="bible-page bible-right-page">
-          <div class="bible-page-art" data-feature-art style={`--art-a:${featurePages[0].artA};--art-b:${featurePages[0].artB};--art-c:${featurePages[0].artC};`}>
-            <img src={`${basePath}images/bible-theology/open-bible-light.png`} alt="" loading="eager" />
+          <div class="bible-page-art" data-feature-art data-art-id={featurePages[0].id} style={`--art-a:${featurePages[0].artA};--art-b:${featurePages[0].artB};--art-c:${featurePages[0].artC};`}>
+            <img data-feature-image src={featurePages[0].image} alt="" loading="eager" decoding="async" />
             <span data-feature-status>{featurePages[0].status}</span>
           </div>
         </div>
@@ -374,14 +381,10 @@ const hymnCards = [
           </div>
         </section>
         <section>
-          <h3>推荐动作</h3>
-          <ul class="bible-plain-list">
-            <li>用搜索框输入“约3:16”定位经文。</li>
-            <li>点击经文右侧功能图标，再选择收藏。</li>
-            <li>在阅读器右侧点击“经文收藏”展开收藏列表。</li>
-            <li>点击“登录同步”把本机数据合并到云端。</li>
-          </ul>
-          <a class="bible-section-link" href="#bible-reader">打开阅读器</a>
+          <h3>我的笔记</h3>
+          <div class="bible-note-list" data-note-section-list>
+            <p>还没有笔记。</p>
+          </div>
         </section>
       </div>
     </div>
@@ -518,6 +521,24 @@ const hymnCards = [
         <button type="button" data-action="start-signup">注册并发送验证码</button>
       </div>
       <p data-login-status>未登录时会先保存到本机浏览器。</p>
+    </form>
+  </dialog>
+
+  <dialog class="bible-note-modal" data-note-modal aria-labelledby="bible-note-title">
+    <form method="dialog" class="bible-note-card" data-note-form>
+      <button type="button" aria-label="关闭笔记弹窗" data-action="close-note">×</button>
+      <p data-note-ref>经文笔记</p>
+      <h2 id="bible-note-title">我的笔记</h2>
+      <blockquote data-note-verse></blockquote>
+      <label>
+        <span>笔记内容</span>
+        <textarea data-note-text name="noteText" rows="7" placeholder="写下你的观察、问题或回应。"></textarea>
+      </label>
+      <div class="bible-note-actions">
+        <button type="submit">保存笔记</button>
+        <button type="button" data-action="delete-note">删除笔记</button>
+      </div>
+      <p data-note-status>笔记会先保存在本机浏览器。</p>
     </form>
   </dialog>
 
@@ -746,10 +767,18 @@ const hymnCards = [
   .bible-left-page blockquote span {
     display: block;
     color: #2b2115;
-    font-family: "Noto Serif SC", "Songti SC", SimSun, serif;
+    font-family: "LXGW WenKai Screen", "LXGW WenKai", "Kaiti SC", STKaiti, KaiTi, "DFKai-SB", cursive, serif;
     font-size: clamp(1.35rem, 2.5vw, 2.5rem);
-    font-weight: 800;
-    line-height: 1.35;
+    font-weight: 700;
+    line-height: 1.42;
+  }
+
+  @media (min-width: 900px) and (hover: hover) {
+    .bible-left-page blockquote span {
+      font-size: clamp(1.08rem, 1.45vw, 1.55rem);
+      font-weight: 600;
+      line-height: 1.55;
+    }
   }
 
   .bible-left-page cite {
@@ -783,27 +812,25 @@ const hymnCards = [
 
   .bible-right-page {
     border-radius: 0 1.05rem 1.05rem 0;
-    background: #101010;
+    background: #fff7d7;
   }
 
   .bible-page-art {
     position: absolute;
     inset: 0;
-    background:
-      radial-gradient(circle at 50% 26%, color-mix(in srgb, var(--art-c) 76%, transparent), transparent 10rem),
-      radial-gradient(circle at 70% 70%, color-mix(in srgb, var(--art-b) 66%, transparent), transparent 16rem),
-      linear-gradient(145deg, var(--art-a), color-mix(in srgb, var(--art-b) 42%, #050505) 62%, #050505);
+    overflow: hidden;
+    background: #1b1309;
   }
 
   .bible-page-art img {
     position: absolute;
+    z-index: 0;
     inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    opacity: 0.72;
-    filter: contrast(1.08) saturate(0.82);
-    mix-blend-mode: screen;
+    object-position: center;
+    filter: contrast(1.04) saturate(1.04);
   }
 
   .bible-page-art::before {
@@ -811,9 +838,10 @@ const hymnCards = [
     z-index: 1;
     inset: 0;
     background:
-      radial-gradient(circle at 50% 34%, rgba(255, 239, 184, 0.2), transparent 14rem),
-      linear-gradient(180deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.38));
+      linear-gradient(90deg, rgba(13, 8, 2, 0.18), transparent 24%, transparent 72%, rgba(13, 8, 2, 0.2)),
+      linear-gradient(180deg, rgba(255, 238, 178, 0.08), transparent 34%, rgba(0, 0, 0, 0.18));
     content: "";
+    pointer-events: none;
   }
 
   .bible-page-art::after {
@@ -822,11 +850,231 @@ const hymnCards = [
     right: 0;
     bottom: 0;
     left: 0;
-    height: 38%;
-    background:
-      radial-gradient(ellipse at 50% 100%, rgba(0, 0, 0, 0.72), transparent 64%),
-      linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.44));
+    height: 30%;
+    background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.36));
     content: "";
+    pointer-events: none;
+  }
+
+  .bible-art-scene,
+  .bible-art-scene i {
+    position: absolute;
+    display: block;
+  }
+
+  .bible-art-scene {
+    z-index: 2;
+    inset: 0;
+  }
+
+  .bible-art-scene i {
+    border: 3px solid rgba(54, 39, 82, 0.28);
+    filter: drop-shadow(0 1rem 1.1rem rgba(61, 32, 96, 0.16));
+  }
+
+  .bible-art-light {
+    top: 13%;
+    left: 50%;
+    width: min(48%, 13.5rem);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 42% 38%, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.18) 46%, transparent 47%),
+      conic-gradient(from 20deg, var(--art-c), var(--art-b), var(--art-a), var(--art-c));
+    opacity: 0.94;
+    transform: translateX(-50%);
+  }
+
+  .bible-art-book {
+    right: 7%;
+    bottom: 9%;
+    left: 7%;
+    height: 25%;
+    border-radius: 56% 56% 18% 18% / 70% 70% 24% 24%;
+    background:
+      linear-gradient(90deg, rgba(255, 255, 255, 0.96) 0 49%, rgba(53, 41, 86, 0.22) 50%, rgba(255, 255, 255, 0.92) 51% 100%),
+      repeating-linear-gradient(0deg, transparent 0 0.55rem, rgba(74, 58, 103, 0.16) 0.6rem 0.66rem);
+  }
+
+  .bible-art-mark {
+    top: 17%;
+    right: 18%;
+    width: 3.2rem;
+    height: 5.8rem;
+    border-radius: 0.75rem 0.75rem 1.4rem 1.4rem;
+    background: linear-gradient(180deg, #fff, var(--art-b));
+    transform: rotate(10deg);
+  }
+
+  .bible-art-grid {
+    top: 19%;
+    left: 12%;
+    width: 6.6rem;
+    height: 4.8rem;
+    border-radius: 1rem;
+    background:
+      linear-gradient(90deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.38)),
+      repeating-linear-gradient(90deg, transparent 0 1rem, rgba(69, 47, 108, 0.2) 1.05rem 1.18rem);
+    transform: rotate(-9deg);
+  }
+
+  .bible-art-figure {
+    top: 36%;
+    left: 50%;
+    width: 5.5rem;
+    height: 8.8rem;
+    border-radius: 999px 999px 45% 45%;
+    background:
+      radial-gradient(circle at 50% 17%, #fff7cf 0 1.2rem, transparent 1.24rem),
+      linear-gradient(180deg, var(--art-c), color-mix(in srgb, var(--art-a) 60%, white));
+    transform: translateX(-50%);
+  }
+
+  .bible-art-notes {
+    top: 16%;
+    left: 63%;
+    width: 1.05rem;
+    height: 1.05rem;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow:
+      -8.5rem 4.2rem 0 0.2rem color-mix(in srgb, var(--art-b) 75%, white),
+      -5.4rem -2.8rem 0 0.12rem color-mix(in srgb, var(--art-c) 75%, white),
+      4.2rem 5.2rem 0 0.18rem color-mix(in srgb, var(--art-a) 72%, white),
+      2.4rem -1.4rem 0 0.1rem rgba(255, 255, 255, 0.88);
+  }
+
+  .bible-page-art[data-art-id="reader"] .bible-art-mark {
+    width: 0.85rem;
+    height: 10rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.86);
+    transform: rotate(0deg);
+  }
+
+  .bible-page-art[data-art-id="reader"] .bible-art-mark::before,
+  .bible-page-art[data-art-id="reader"] .bible-art-mark::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 8rem;
+    height: 0.85rem;
+    border-radius: 999px;
+    background: inherit;
+    content: "";
+    transform: translate(-50%, -50%);
+  }
+
+  .bible-page-art[data-art-id="bookmarks"] .bible-art-light {
+    left: 36%;
+    background: radial-gradient(circle at 42% 38%, #fff, transparent 48%), linear-gradient(145deg, #fff4a8, #ff7ca8);
+  }
+
+  .bible-page-art[data-art-id="bookmarks"] .bible-art-mark {
+    top: 18%;
+    right: 24%;
+    width: 5.4rem;
+    height: 12rem;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%);
+    background: linear-gradient(180deg, #ff5f8d, #ffd166);
+  }
+
+  .bible-page-art[data-art-id="videos"] .bible-art-grid {
+    top: 31%;
+    left: 17%;
+    width: 66%;
+    height: 8rem;
+    border-radius: 1.15rem;
+    background:
+      radial-gradient(circle at 50% 50%, #fff 0 0.9rem, transparent 0.95rem),
+      linear-gradient(90deg, rgba(31, 41, 86, 0.84), rgba(93, 95, 239, 0.72)),
+      repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.86) 0 0.45rem, transparent 0.5rem 1.5rem);
+    transform: rotate(-4deg);
+  }
+
+  .bible-page-art[data-art-id="videos"] .bible-art-mark {
+    top: 40%;
+    right: 38%;
+    width: 0;
+    height: 0;
+    border: 0;
+    border-top: 1.5rem solid transparent;
+    border-bottom: 1.5rem solid transparent;
+    border-left: 2.6rem solid #fff;
+    border-radius: 0.2rem;
+    background: transparent;
+  }
+
+  .bible-page-art[data-art-id="people"] .bible-art-figure {
+    top: 26%;
+    width: 7.2rem;
+    height: 13rem;
+    background:
+      radial-gradient(circle at 50% 13%, #ffe8b3 0 1.3rem, transparent 1.35rem),
+      linear-gradient(165deg, #7c3aed 0 45%, #fb7185 46% 100%);
+  }
+
+  .bible-page-art[data-art-id="people"] .bible-art-book {
+    height: 18%;
+    background: linear-gradient(90deg, rgba(255, 240, 180, 0.82), rgba(255, 255, 255, 0.52));
+  }
+
+  .bible-page-art[data-art-id="daily"] .bible-art-light {
+    top: 12%;
+    background: radial-gradient(circle at 45% 38%, #fff 0 28%, #fde68a 29% 58%, #fb923c 59% 100%);
+  }
+
+  .bible-page-art[data-art-id="daily"] .bible-art-grid {
+    top: 54%;
+    left: 19%;
+    width: 60%;
+    height: 5.6rem;
+    border-radius: 1.25rem;
+    background: linear-gradient(180deg, #fff, #dcfce7);
+    transform: rotate(0deg);
+  }
+
+  .bible-page-art[data-art-id="groups"] .bible-art-light {
+    width: 10rem;
+    top: 19%;
+    left: 50%;
+  }
+
+  .bible-page-art[data-art-id="groups"] .bible-art-figure {
+    width: 4.3rem;
+    height: 6.2rem;
+    box-shadow:
+      -5.3rem 1.7rem 0 -0.2rem color-mix(in srgb, var(--art-b) 72%, white),
+      5.3rem 1.7rem 0 -0.2rem color-mix(in srgb, var(--art-c) 72%, white);
+  }
+
+  .bible-page-art[data-art-id="groups"] .bible-art-book {
+    right: 20%;
+    left: 20%;
+    height: 18%;
+  }
+
+  .bible-page-art[data-art-id="hymns"] .bible-art-grid {
+    top: 28%;
+    left: 13%;
+    width: 75%;
+    height: 10rem;
+    border: 0;
+    border-radius: 1.2rem;
+    background: repeating-linear-gradient(0deg, transparent 0 1.12rem, rgba(66, 44, 105, 0.36) 1.18rem 1.3rem);
+    transform: rotate(-5deg);
+  }
+
+  .bible-page-art[data-art-id="hymns"] .bible-art-notes {
+    top: 28%;
+    left: 28%;
+    width: 1.7rem;
+    height: 1.7rem;
+    background: #3b216d;
+    box-shadow:
+      4.8rem 2.4rem 0 0.15rem #7c3aed,
+      10rem 0.8rem 0 0.05rem #f97316,
+      12.6rem 5rem 0 0.18rem #06b6d4;
   }
 
   .bible-page-art span {
@@ -958,6 +1206,7 @@ const hymnCards = [
 
   .bible-reader-tools input,
   .bible-login-card input,
+  .bible-note-card textarea,
   .bible-notes-panel textarea {
     width: 100%;
     border: 1px solid rgba(101, 79, 44, 0.18);
@@ -965,7 +1214,13 @@ const hymnCards = [
     padding: 0.7rem 0.78rem;
     background: #fffdf7;
     color: var(--ink);
+    font: inherit;
     outline-color: #b58a32;
+  }
+
+  .bible-note-card textarea {
+    min-height: 10rem;
+    resize: vertical;
   }
 
   .bible-reader-tools p,
@@ -990,7 +1245,8 @@ const hymnCards = [
   .bible-reading-actions button,
   .bible-mobile-directory,
   .bible-notes-panel button,
-  .bible-login-actions button {
+  .bible-login-actions button,
+  .bible-note-actions button {
     border: 1px solid rgba(101, 79, 44, 0.18);
     border-radius: 0.5rem;
     background: #fff8ea;
@@ -1105,7 +1361,8 @@ const hymnCards = [
 
   .bible-reading-actions button,
   .bible-notes-panel button,
-  .bible-login-actions button {
+  .bible-login-actions button,
+  .bible-note-actions button {
     min-height: 2.35rem;
     padding: 0.5rem 0.72rem;
   }
@@ -1299,7 +1556,8 @@ const hymnCards = [
     content: "-";
   }
 
-  .bible-bookmark-list {
+  .bible-bookmark-list,
+  .bible-note-list {
     display: grid;
     gap: 0.45rem;
   }
@@ -1359,7 +1617,8 @@ const hymnCards = [
     font-size: 0.82rem;
   }
 
-  .bible-bookmark-list button {
+  .bible-bookmark-list button,
+  .bible-note-list button {
     display: block;
     width: 100%;
     border: 1px solid rgba(101, 79, 44, 0.12);
@@ -1371,6 +1630,12 @@ const hymnCards = [
     text-align: left;
     font-size: 0.76rem;
     line-height: 1.5;
+  }
+
+  .bible-note-list button span {
+    display: block;
+    margin-top: 0.28rem;
+    color: inherit;
   }
 
   .bible-feature-section {
@@ -1486,7 +1751,8 @@ const hymnCards = [
     padding-left: 1.1rem;
   }
 
-  .bible-bookmarks-section .bible-bookmark-list button {
+  .bible-bookmarks-section .bible-bookmark-list button,
+  .bible-bookmarks-section .bible-note-list button {
     border-color: rgba(216, 179, 95, 0.18);
     background: rgba(255, 246, 218, 0.06);
     color: #fff1c7;
@@ -1574,7 +1840,8 @@ const hymnCards = [
     background: rgba(216, 179, 95, 0.12);
   }
 
-  .bible-login-modal {
+  .bible-login-modal,
+  .bible-note-modal {
     width: min(92vw, 430px);
     border: 0;
     border-radius: 0.85rem;
@@ -1582,12 +1849,14 @@ const hymnCards = [
     background: transparent;
   }
 
-  .bible-login-modal::backdrop {
+  .bible-login-modal::backdrop,
+  .bible-note-modal::backdrop {
     background: rgba(0, 0, 0, 0.58);
     backdrop-filter: blur(3px);
   }
 
-  .bible-login-card {
+  .bible-login-card,
+  .bible-note-card {
     position: relative;
     display: grid;
     gap: 0.75rem;
@@ -1598,7 +1867,8 @@ const hymnCards = [
     color: #fff4d8;
   }
 
-  .bible-login-card > button:first-child {
+  .bible-login-card > button:first-child,
+  .bible-note-card > button:first-child {
     position: absolute;
     top: 0.7rem;
     right: 0.7rem;
@@ -1611,12 +1881,14 @@ const hymnCards = [
     cursor: pointer;
   }
 
-  .bible-login-card h2 {
+  .bible-login-card h2,
+  .bible-note-card h2 {
     margin: 0;
     font-size: 1.35rem;
   }
 
-  .bible-login-card label {
+  .bible-login-card label,
+  .bible-note-card label {
     display: grid;
     gap: 0.36rem;
     color: rgba(255, 247, 224, 0.7);
@@ -1624,13 +1896,24 @@ const hymnCards = [
     font-weight: 900;
   }
 
-  .bible-login-actions {
+  .bible-note-card blockquote {
+    margin: 0;
+    border-left: 2px solid rgba(216, 179, 95, 0.46);
+    padding-left: 0.8rem;
+    color: rgba(255, 247, 224, 0.76);
+    font-size: 0.88rem;
+    line-height: 1.75;
+  }
+
+  .bible-login-actions,
+  .bible-note-actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0.5rem;
   }
 
-  .bible-login-card p:last-child {
+  .bible-login-card p:last-child,
+  .bible-note-card p:last-child {
     margin: 0;
     color: rgba(255, 247, 224, 0.62);
     font-size: 0.76rem;
@@ -1697,20 +1980,26 @@ const hymnCards = [
     }
 
     .bible-book {
-      display: block;
-      min-height: 31rem;
+      display: flex;
+      min-height: 0;
+      flex-direction: column-reverse;
       border-radius: 1rem;
     }
 
     .bible-book-spine,
-    .bible-right-page,
     .bible-turn-page {
       display: none;
     }
 
+    .bible-right-page {
+      display: block;
+      min-height: 15.5rem;
+      border-radius: 1rem 1rem 0 0;
+    }
+
     .bible-left-page {
-      min-height: 31rem;
-      border-radius: 1rem;
+      min-height: 24rem;
+      border-radius: 0 0 1rem 1rem;
       background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.42), transparent 44%),
         linear-gradient(145deg, #fbf1d8, #e9d1a0);
