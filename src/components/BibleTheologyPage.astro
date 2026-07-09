@@ -1,5 +1,6 @@
 ---
 const basePath = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
+const characterMapHref = `${basePath}topics/applications/inspiration-station/theology/character-map`;
 
 const featurePages = [
   {
@@ -54,8 +55,8 @@ const featurePages = [
     quote: '信就是所望之事的实底，是未见之事的确据。',
     reference: '希伯来书 11:1',
     summary: '用人物线索进入故事、信心、失败与蒙召。',
-    action: '进入人物',
-    href: '#bible-people',
+    action: '进入图谱',
+    href: characterMapHref,
     status: '人物库',
     image: `${basePath}images/bible-theology/feature-people.webp`,
     artA: '#fbbf24',
@@ -345,6 +346,7 @@ const hymnCards = [
         <section>
           <h3>阅读进度</h3>
           <p data-last-read>正在载入阅读位置...</p>
+          <div class="bible-reading-progress" data-reading-progress aria-live="polite"></div>
         </section>
         <section>
           <button class="bible-panel-toggle" type="button" data-action="toggle-reader-bookmarks" aria-expanded="false">经文收藏</button>
@@ -414,6 +416,7 @@ const hymnCards = [
       <p class="bible-section-kicker">PEOPLE</p>
       <h2 id="bible-people-title">圣经人物</h2>
       <p class="bible-section-lede">以人物为入口，把故事、经文、主题和生命应用串起来。</p>
+      <a class="bible-section-link bible-character-map-link" href={characterMapHref}>打开圣经人物图谱</a>
       <div class="bible-card-grid bible-people-grid">
         {peopleCards.map((person) => (
           <article class="bible-board-card">
@@ -1538,6 +1541,67 @@ const hymnCards = [
     font-size: 0.95rem;
   }
 
+  .bible-reading-progress {
+    display: grid;
+    gap: 0.58rem;
+    margin-top: 0.72rem;
+  }
+
+  .bible-reading-progress-list {
+    display: grid;
+    gap: 0.62rem;
+    margin: 0;
+  }
+
+  .bible-reading-progress-item {
+    display: grid;
+    gap: 0.28rem;
+  }
+
+  .bible-reading-progress-item dt {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    color: #46341c;
+    font-size: 0.74rem;
+    font-weight: 900;
+  }
+
+  .bible-reading-progress-item dt strong {
+    color: #168ea1;
+    font-size: 0.82rem;
+  }
+
+  .bible-reading-progress-item dd {
+    display: grid;
+    gap: 0.24rem;
+    margin: 0;
+  }
+
+  .bible-reading-progress-bar {
+    overflow: hidden;
+    height: 0.42rem;
+    border-radius: 999px;
+    background: rgba(101, 79, 44, 0.12);
+  }
+
+  .bible-reading-progress-bar span {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #168ea1, #d8a632);
+    transition: width 180ms ease;
+  }
+
+  .bible-reading-progress-item small,
+  .bible-reading-progress-note {
+    color: var(--muted);
+    font-size: 0.68rem;
+    line-height: 1.45;
+  }
+
   .bible-panel-toggle {
     display: flex;
     align-items: center;
@@ -1743,6 +1807,14 @@ const hymnCards = [
     font-size: 0.76rem;
     font-weight: 900;
     text-decoration: none;
+  }
+
+  .bible-character-map-link {
+    border-color: rgba(216, 179, 95, 0.48);
+    background:
+      radial-gradient(circle at 20% 20%, rgba(255, 245, 190, 0.16), transparent 8rem),
+      rgba(216, 179, 95, 0.1);
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.16);
   }
 
   .bible-plain-list {

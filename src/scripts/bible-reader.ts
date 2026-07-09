@@ -85,6 +85,11 @@ type ReaderState = {
   updatedAt: string;
 };
 
+type ReadingProgressSummary = {
+  read: number;
+  total: number;
+};
+
 const STORAGE_KEY = 'mywebsite.bible-reader.v1';
 const DAILY_PLAN_KEY = 'mywebsite.bible-daily-plan.v1';
 const READ_VERSES_KEY = 'mywebsite.bible-read-verses.v1';
@@ -227,6 +232,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   const groupGuide = root.querySelector<HTMLElement>('[data-group-guide]');
   const dailySteps = [...root.querySelectorAll<HTMLInputElement>('[data-daily-step]')];
   const dailyProgress = root.querySelector<HTMLElement>('[data-daily-progress]');
+  const readingProgress = root.querySelector<HTMLElement>('[data-reading-progress]');
 
   const params = new URLSearchParams(window.location.search);
   const requestedBook = params.get('book') || 'gen';
@@ -284,6 +290,17 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   const bookBySlug = (slug: string) => data.books.find((book) => book.slug === slug);
   const currentBookInfo = () => bookBySlug(currentBook) ?? data.books[0];
   const currentSample = () => data.samples[chapterKey(currentBook, currentChapter)];
+  const countTextChars = (text: string) => Array.from(text.replace(/\s+/g, '')).length;
+  let verseCharCounts = new Map<string, number>();
+
+  const indexReadingProgress = () => {
+    verseCharCounts = new Map();
+    Object.values(data.samples).forEach((sample) => {
+      sample.verses.forEach((text, index) => {
+        verseCharCounts.set(verseKey(sample.book, sample.chapter, index + 1), countTextChars(text));
+      });
+    });
+  };
 
   const sampleFromFullText = (key: string, verses: string[]): ChapterSample | null => {
     const [book, chapterText] = key.split('-');
@@ -314,6 +331,8 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       data.samples = { ...data.samples, ...samples };
       fullTextStatus = 'ready';
       const label = payload.version?.label ?? data.versionLabel ?? '和合本';
+      data.versionLabel = label;
+      indexReadingProgress();
       searchStatus.textContent = `已载入${label}全文：${Object.keys(samples).length}章。`;
       renderAll(Number(new URLSearchParams(window.location.search).get('verse') || '') || undefined);
     } catch {
@@ -408,6 +427,68 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
 
   const isReadVerse = (book: string, chapter: number, verse: number) =>
     readVerses.has(verseKey(book, chapter, verse));
+
+  const getProgressSummary = (book?: string, chapter?: number): ReadingProgressSummary => {
+    return Object.values(data.samples).reduce<ReadingProgressSummary>((summary, sample) => {
+      if (book && sample.book !== book) return summary;
+      if (chapter && sample.chapter !== chapter) return summary;
+
+      sample.verses.forEach((text, index) => {
+        const verse = index + 1;
+        const key = verseKey(sample.book, sample.chapter, verse);
+        const chars = verseCharCounts.get(key) ?? countTextChars(text);
+        summary.total += chars;
+        if (readVerses.has(key)) summary.read += chars;
+      });
+      return summary;
+    }, { read: 0, total: 0 });
+  };
+
+  const formatPercent = ({ read, total }: ReadingProgressSummary) => {
+    if (!total) return '0%';
+    const value = (read / total) * 100;
+    const digits = value > 0 && value < 1 ? 2 : 1;
+    return `${value.toFixed(digits)}%`;
+  };
+
+  const progressWidth = ({ read, total }: ReadingProgressSummary) =>
+    total ? Math.min(100, Math.max(0, (read / total) * 100)).toFixed(2) : '0';
+
+  const formatCharCount = (count: number) => count.toLocaleString('zh-CN');
+
+  const renderProgressItem = (label: string, summary: ReadingProgressSummary) => {
+    const detail = summary.total
+      ? `已读 ${formatCharCount(summary.read)} / ${formatCharCount(summary.total)} 字`
+      : '正文尚未载入';
+    return `
+      <div class="bible-reading-progress-item">
+        <dt><span>${escapeHtml(label)}</span><strong>${formatPercent(summary)}</strong></dt>
+        <dd>
+          <span class="bible-reading-progress-bar" aria-hidden="true"><span style="width: ${progressWidth(summary)}%"></span></span>
+          <small>${detail}</small>
+        </dd>
+      </div>
+    `;
+  };
+
+  const renderReadingProgress = () => {
+    if (!readingProgress) return;
+    const book = currentBookInfo();
+    const note = fullTextStatus === 'loading'
+      ? '全文载入中，暂按已载入章节统计。'
+      : fullTextStatus === 'failed'
+        ? '全文载入失败，当前仅按已载入章节统计。'
+        : `按${data.versionLabel ?? '当前经文'}字数统计。`;
+
+    readingProgress.innerHTML = `
+      <dl class="bible-reading-progress-list">
+        ${renderProgressItem('总进度', getProgressSummary())}
+        ${renderProgressItem(`${book.title}进度`, getProgressSummary(currentBook))}
+        ${renderProgressItem(`${currentChapter}章进度`, getProgressSummary(currentBook, currentChapter))}
+      </dl>
+      <p class="bible-reading-progress-note">${escapeHtml(note)}</p>
+    `;
+  };
 
   const noteForVerse = (book: string, chapter: number, verse: number) =>
     state.notes.find((item) => item.book === book && item.chapter === chapter && item.verse === verse);
@@ -636,6 +717,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     renderBooks();
     renderChapters();
     renderVerses(targetVerse);
+    renderReadingProgress();
     renderBookmarks();
     renderNotes();
   };
@@ -756,6 +838,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     writeReadVerses(readVerses);
     verseElement?.classList.toggle('is-read', nextRead);
     trigger.setAttribute('aria-pressed', String(nextRead));
+    renderReadingProgress();
   };
 
   const openNoteEditor = (book: string, chapter: number, verse: number) => {
@@ -1028,6 +1111,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       loginStatus.textContent = session ? `已登录：${session.account}；云同步暂不可用。` : '云同步暂不可用；当前使用本机保存。';
     });
 
+  indexReadingProgress();
   renderDailyPlan();
   renderAll(state.lastRead.verse);
   void loadFullBibleText();
