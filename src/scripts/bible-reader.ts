@@ -91,6 +91,8 @@ type ReadingProgressSummary = {
   total: number;
 };
 
+type BookReadingStatus = 'reading' | 'read';
+
 type CloudResult<T> = {
   data?: T;
   error?: { message?: string } | null;
@@ -99,6 +101,7 @@ type CloudResult<T> = {
 const STORAGE_KEY = 'mywebsite.bible-reader.v1';
 const DAILY_PLAN_KEY = 'mywebsite.bible-daily-plan.v1';
 const READ_VERSES_KEY = 'mywebsite.bible-read-verses.v1';
+const BOOK_STATUS_KEY = 'mywebsite.bible-book-status.v1';
 const COLLECTION = 'officialWebsiteBibleReaderState';
 
 const nowIso = () => new Date().toISOString();
@@ -156,6 +159,26 @@ const readReadVerses = () => {
 const writeReadVerses = (readVerses: Set<string>) => {
   try {
     window.localStorage.setItem(READ_VERSES_KEY, JSON.stringify([...readVerses]));
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const readBookStatuses = () => {
+  try {
+    const raw = window.localStorage.getItem(BOOK_STATUS_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {} as Record<string, BookReadingStatus>;
+    return Object.fromEntries(Object.entries(parsed).filter((item): item is [string, BookReadingStatus] => item[1] === 'reading' || item[1] === 'read'));
+  } catch {
+    return {} as Record<string, BookReadingStatus>;
+  }
+};
+
+const writeBookStatuses = (statuses: Record<string, BookReadingStatus>) => {
+  try {
+    window.localStorage.setItem(BOOK_STATUS_KEY, JSON.stringify(statuses));
     return true;
   } catch {
     return false;
@@ -234,6 +257,9 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   const noteText = get<HTMLTextAreaElement>('[data-note-text]');
   const noteStatus = get<HTMLElement>('[data-note-status]');
   const deleteNoteButton = get<HTMLButtonElement>('[data-action="delete-note"]');
+  const bookStatusModal = get<HTMLDialogElement>('[data-book-status-modal]');
+  const bookStatusTitle = get<HTMLElement>('[data-book-status-title]');
+  const bookStatusOptions = [...root.querySelectorAll<HTMLButtonElement>('[data-book-reading-status]')];
   const directory = get<HTMLElement>('[data-bible-directory]');
   const loginModal = get<HTMLDialogElement>('[data-login-modal]');
   const loginForm = get<HTMLFormElement>('[data-login-form]');
@@ -270,6 +296,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   let currentChapter = fallbackChapter;
   let state = readLocalState(fallbackState);
   let readVerses = readReadVerses();
+  let bookStatuses = readBookStatuses();
   let readingSavePending = false;
   const setReadingSyncStatus = (message: string, status = 'idle') => {
     if (!readingSyncStatus) return;
@@ -289,6 +316,9 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   let activeNoteTarget: { book: string; chapter: number; verse: number; verseText: string } | null = null;
   let activeUtterance: SpeechSynthesisUtterance | null = null;
   let lastSpeechText = '';
+  let activeBookStatusSlug: string | null = null;
+  let pendingBookSlug: string | null = null;
+  let bookClickTimer: number | undefined;
 
   const renderLoginState = (nextSession: CloudSession | null) => {
     loginStatus.textContent = nextSession ? `已登录：${nextSession.account}` : '未登录时会先保存到本机浏览器。';
@@ -447,12 +477,73 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     const books = data.books.filter((book) => book.testament === selectedTestament);
     bookList.classList.toggle('is-grid', viewMode === 'grid');
     bookList.classList.toggle('is-list', viewMode === 'list');
-    bookList.innerHTML = books.map((book) => `
-      <button type="button" class="${book.slug === currentBook ? 'is-active' : ''}" data-book="${book.slug}">
+    bookList.innerHTML = books.map((book) => {
+      const status = bookStatuses[book.slug];
+      const classes = [book.slug === currentBook ? 'is-active' : '', status ? `is-status-${status}` : ''].filter(Boolean).join(' ');
+      const statusText = status === 'reading' ? '在读' : status === 'read' ? '已读' : '未设置状态';
+      return `
+      <button type="button" class="${classes}" data-book="${book.slug}" title="双击设置阅读状态" aria-label="${escapeHtml(book.title)}，${statusText}，双击设置阅读状态">
         <strong>${escapeHtml(book.shortName)}</strong>
         <span>${escapeHtml(book.title)}</span>
       </button>
-    `).join('');
+    `;
+    }).join('');
+  };
+
+  const openBookStatusModal = (bookSlug: string) => {
+    const book = bookBySlug(bookSlug);
+    if (!book) return;
+    activeBookStatusSlug = book.slug;
+    bookStatusTitle.textContent = `${book.title}阅读状态`;
+    const currentStatus = bookStatuses[book.slug];
+    bookStatusOptions.forEach((button) => {
+      const selected = button.dataset.bookReadingStatus === currentStatus;
+      button.classList.toggle('is-selected', selected);
+      button.setAttribute('aria-pressed', String(selected));
+    });
+    bookStatusModal.showModal();
+  };
+
+  const setBookReadingStatus = (status: BookReadingStatus) => {
+    if (!activeBookStatusSlug) return;
+    const book = bookBySlug(activeBookStatusSlug);
+    if (!book) return;
+    bookStatuses = { ...bookStatuses, [book.slug]: status };
+    const saved = writeBookStatuses(bookStatuses);
+    renderBooks();
+    bookStatusModal.close();
+    notify(saved
+      ? `${book.title}已标记为${status === 'reading' ? '在读' : '已读'}。`
+      : `${book.title}状态已更新，但当前浏览器无法长期保存。`);
+  };
+
+  const selectBook = (bookSlug: string) => {
+    const nextBook = bookBySlug(bookSlug);
+    if (!nextBook) return;
+    stopSpeech(true);
+    currentBook = nextBook.slug;
+    currentChapter = 1;
+    selectedTestament = nextBook.testament;
+    directory.classList.remove('is-open');
+    renderAll(1);
+  };
+
+  const handleBookCardClick = (bookSlug: string) => {
+    if (bookClickTimer && pendingBookSlug === bookSlug) {
+      window.clearTimeout(bookClickTimer);
+      bookClickTimer = undefined;
+      pendingBookSlug = null;
+      openBookStatusModal(bookSlug);
+      return;
+    }
+
+    window.clearTimeout(bookClickTimer);
+    pendingBookSlug = bookSlug;
+    bookClickTimer = window.setTimeout(() => {
+      bookClickTimer = undefined;
+      pendingBookSlug = null;
+      selectBook(bookSlug);
+    }, 320);
   };
 
   const renderChapters = () => {
@@ -1150,17 +1241,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       root.querySelectorAll('[data-view-mode]').forEach((button) => button.classList.toggle('is-active', button === trigger));
       renderBooks();
     }
-    if (trigger.dataset.book) {
-      const nextBook = bookBySlug(trigger.dataset.book);
-      if (nextBook) {
-        stopSpeech(true);
-        currentBook = nextBook.slug;
-        currentChapter = 1;
-        selectedTestament = nextBook.testament;
-        directory.classList.remove('is-open');
-        renderAll(1);
-      }
-    }
+    if (trigger.dataset.book) handleBookCardClick(trigger.dataset.book);
     if (trigger.dataset.chapter) {
       stopSpeech(true);
       currentChapter = Number(trigger.dataset.chapter);
@@ -1190,6 +1271,11 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     }
     if (trigger.dataset.action === 'close-login') loginModal.close();
     if (trigger.dataset.action === 'close-note') noteModal.close();
+    if (trigger.dataset.action === 'close-book-status') bookStatusModal.close();
+    if (trigger.dataset.action === 'set-book-status') {
+      const status = trigger.dataset.bookReadingStatus;
+      if (status === 'reading' || status === 'read') setBookReadingStatus(status);
+    }
     if (trigger.dataset.action === 'delete-note') deleteActiveNote();
     if (trigger.dataset.action === 'start-signup') startSignUp();
     if (trigger.dataset.action === 'copy-group-guide') {

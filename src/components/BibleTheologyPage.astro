@@ -550,6 +550,19 @@ const hymnCards = [
     </form>
   </dialog>
 
+  <dialog class="bible-note-modal" data-book-status-modal aria-labelledby="bible-book-status-title">
+    <div class="bible-note-card">
+      <button type="button" aria-label="关闭阅读状态弹窗" data-action="close-book-status">×</button>
+      <p>READING STATUS</p>
+      <h2 id="bible-book-status-title" data-book-status-title>设置阅读状态</h2>
+      <p class="bible-book-status-help">选择后会保存在当前浏览器中，之后可再次双击修改。</p>
+      <div class="bible-note-actions bible-book-status-actions">
+        <button type="button" data-action="set-book-status" data-book-reading-status="reading" aria-pressed="false">在读</button>
+        <button type="button" data-action="set-book-status" data-book-reading-status="read" aria-pressed="false">已读</button>
+      </div>
+    </div>
+  </dialog>
+
   <p class="bible-toast" data-bible-toast hidden></p>
   <script is:inline type="application/json" id="bible-data" set:html={JSON.stringify(bibleData)}></script>
 
@@ -1298,6 +1311,8 @@ const hymnCards = [
     color: #2d2112;
     cursor: pointer;
     text-align: left;
+    touch-action: manipulation;
+    transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
   }
 
   .bible-book-list.is-grid button {
@@ -1318,6 +1333,21 @@ const hymnCards = [
   .bible-book-list button.is-active {
     border-color: #a77a25;
     background: #fbecd0;
+  }
+
+  .bible-book-list button.is-status-reading {
+    border-color: #c8b5df;
+    background: #f1eaf8;
+  }
+
+  .bible-book-list button.is-status-read {
+    border-color: #b3d2b5;
+    background: #eaf5eb;
+  }
+
+  .bible-book-list button.is-active.is-status-reading,
+  .bible-book-list button.is-active.is-status-read {
+    box-shadow: inset 0 0 0 1px #a77a25;
   }
 
   .bible-reading-pane {
@@ -2024,6 +2054,29 @@ const hymnCards = [
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0.5rem;
+  }
+
+  .bible-book-status-help {
+    margin: 0;
+    color: rgba(255, 247, 224, 0.68);
+    font-size: 0.8rem;
+    line-height: 1.6;
+  }
+
+  .bible-book-status-actions button[data-book-reading-status="reading"] {
+    border-color: #c8b5df;
+    background: #f1eaf8;
+    color: #523b70;
+  }
+
+  .bible-book-status-actions button[data-book-reading-status="read"] {
+    border-color: #b3d2b5;
+    background: #eaf5eb;
+    color: #315c36;
+  }
+
+  .bible-book-status-actions button.is-selected {
+    box-shadow: 0 0 0 2px #d8b35f;
   }
 
   .bible-login-card p:last-child,
