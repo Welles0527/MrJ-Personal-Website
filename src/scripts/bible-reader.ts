@@ -1,4 +1,4 @@
-import { getCloudDb, getCloudSession, getRememberedSession, signInWithPassword, startEmailSignUp } from './site-auth';
+import { cloudErrorMessage, getCloudDb, getCloudSession, getRememberedSession, signInWithPassword, startEmailSignUp } from './site-auth';
 import type { CloudSession } from './site-auth';
 
 type BibleBook = {
@@ -91,6 +91,11 @@ type ReadingProgressSummary = {
   total: number;
 };
 
+type CloudResult<T> = {
+  data?: T;
+  error?: { message?: string } | null;
+};
+
 const STORAGE_KEY = 'mywebsite.bible-reader.v1';
 const DAILY_PLAN_KEY = 'mywebsite.bible-daily-plan.v1';
 const READ_VERSES_KEY = 'mywebsite.bible-read-verses.v1';
@@ -155,6 +160,12 @@ const writeReadVerses = (readVerses: Set<string>) => {
   } catch {
     return false;
   }
+};
+
+const assertCloudResult = <T>(result: CloudResult<T>, fallback: string) => {
+  if (!result) throw new Error(fallback);
+  if (result.error) throw new Error(result.error.message || fallback);
+  return result.data;
 };
 
 const mergeState = (local: ReaderState, cloud: ReaderState): ReaderState => {
@@ -284,14 +295,15 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     }
   };
 
-  const markCloudSyncUnavailable = () => {
+  const markCloudSyncUnavailable = (error?: unknown) => {
     automaticCloudSyncEnabled = false;
-    setReadingSyncStatus('云端同步失败，请重试。', 'error');
+    const detail = cloudErrorMessage(error, '云端同步失败。');
+    setReadingSyncStatus(`${detail} 请重试。`, 'error');
     if (!session) {
       renderLoginState(null);
       return;
     }
-    loginStatus.textContent = `已登录：${session.account}；当前使用本机保存。`;
+    loginStatus.textContent = `已登录：${session.account}；${detail}`;
     if (cloudLoginButton) cloudLoginButton.textContent = '重试同步';
   };
 
@@ -907,8 +919,8 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       trigger.setAttribute('aria-pressed', String(nextRead));
       renderReadingProgress();
       if (!cached) notify('阅读进度已保存到云端，但本地缓存更新失败。');
-    } catch {
-      markCloudSyncUnavailable();
+    } catch (error) {
+      markCloudSyncUnavailable(error);
       notify('阅读进度未保存，请重试。');
     } finally {
       readingSavePending = false;
@@ -983,8 +995,8 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
 
   const loadCloudState = async (ownerId: string): Promise<ReaderState | null> => {
     const db = getCloudDb();
-    const result = await db.collection(COLLECTION).where({ ownerId }).get();
-    const item = result?.data?.[0];
+    const result = await db.collection(COLLECTION).where({ ownerId }).get() as CloudResult<Array<ReaderState & { _id?: string; ownerId?: string }>>;
+    const item = assertCloudResult(result, '读取云端阅读进度失败。')?.[0];
     if (!item?.lastRead) return null;
     return {
       lastRead: item.lastRead,
@@ -999,10 +1011,8 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     if (!session) return;
     const db = getCloudDb();
     const payload = { ...state, readVerses: [...nextReadVerses], ownerId: session.uid };
-    const result = await db.collection(COLLECTION).where({ ownerId: session.uid }).get();
-    const existing = result?.data?.[0];
-    if (existing?._id) await db.collection(COLLECTION).doc(existing._id).set(payload);
-    else await db.collection(COLLECTION).add(payload);
+    const result = await db.collection(COLLECTION).doc(session.uid).set(payload) as CloudResult<unknown>;
+    assertCloudResult(result, '保存云端阅读进度失败。');
   };
 
   const finishLogin = async (nextSession: CloudSession) => {
@@ -1024,8 +1034,8 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       setReadingSyncStatus(cached ? '已同步到云端和本地。' : '云端已保存，本地缓存更新失败。', cached ? 'saved' : 'error');
       notify(cached ? '已登录并同步阅读数据。' : '云端已保存，但本地缓存更新失败。');
       if (loginModal.open) loginModal.close();
-    } catch {
-      markCloudSyncUnavailable();
+    } catch (error) {
+      markCloudSyncUnavailable(error);
       loginStatus.textContent = '已登录，但云端同步失败，请点击“重试同步”。';
     }
   };
