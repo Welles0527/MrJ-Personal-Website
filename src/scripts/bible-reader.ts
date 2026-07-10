@@ -1,4 +1,4 @@
-import { cloudErrorMessage, getCloudDb, getCloudSession, getRememberedSession, signInWithPassword, startEmailSignUp } from './site-auth';
+import { cloudErrorMessage, getCloudDb, getCloudSession, signInWithPassword, startEmailSignUp } from './site-auth';
 import type { CloudSession } from './site-auth';
 
 type BibleBook = {
@@ -306,12 +306,6 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     loginStatus.textContent = `已登录：${session.account}；${detail}`;
     if (cloudLoginButton) cloudLoginButton.textContent = '重试同步';
   };
-
-  const rememberedSession = getRememberedSession();
-  if (rememberedSession) {
-    session = rememberedSession;
-    renderLoginState(session);
-  }
 
   window.addEventListener('site-auth-change', (event) => {
     session = event instanceof CustomEvent ? event.detail as CloudSession | null : null;

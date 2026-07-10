@@ -40,7 +40,12 @@ const auth = app.auth();
 const db = app.database();
 
 const errorMessage = (error: unknown, fallback: string) => {
+  if (typeof error === 'string' && error.trim()) return error;
   if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') return error.message;
+  if (error && typeof error === 'object' && 'error' in error) {
+    const nestedError = error.error;
+    if (nestedError && typeof nestedError === 'object' && 'message' in nestedError && typeof nestedError.message === 'string') return nestedError.message;
+  }
   return fallback;
 };
 
@@ -102,7 +107,10 @@ export const getCloudSession = async () => {
   const remembered = getRememberedSession();
   const loginState = await auth.getLoginState() as LoginState;
   const session = sessionFromCurrentUser(loginState);
-  if (!session) return remembered;
+  if (!session) {
+    if (remembered) forgetSession();
+    return null;
+  }
 
   if (!remembered || remembered.uid !== session.uid) {
     rememberSession(session);
