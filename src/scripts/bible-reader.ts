@@ -240,6 +240,9 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   const verifyField = get<HTMLElement>('[data-verify-field]');
   const loginStatus = get<HTMLElement>('[data-login-status]');
   const cloudLoginButton = root.querySelector<HTMLButtonElement>('[data-action="cloud-login"]');
+  const readChapterButton = get<HTMLButtonElement>('[data-action="read-chapter"]');
+  const replayChapterButton = get<HTMLButtonElement>('[data-action="replay-chapter"]');
+  const stopReadingButton = get<HTMLButtonElement>('[data-action="stop-reading"]');
   const loginAccount = root.querySelector<HTMLElement>('[data-login-account]');
   const readingSyncStatus = root.querySelector<HTMLElement>('[data-reading-sync-status]');
   const toast = get<HTMLElement>('[data-bible-toast]');
@@ -284,6 +287,8 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   let syncTimer: number | undefined;
   let fullTextStatus: 'loading' | 'ready' | 'failed' = data.fullTextUrl ? 'loading' : 'ready';
   let activeNoteTarget: { book: string; chapter: number; verse: number; verseText: string } | null = null;
+  let activeUtterance: SpeechSynthesisUtterance | null = null;
+  let lastSpeechText = '';
 
   const renderLoginState = (nextSession: CloudSession | null) => {
     loginStatus.textContent = nextSession ? `已登录：${nextSession.account}` : '未登录时会先保存到本机浏览器。';
@@ -776,6 +781,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   const gotoReference = (book: string, chapter: number, verse?: number) => {
     const nextBook = bookBySlug(book);
     if (!nextBook) return;
+    stopSpeech(true);
     currentBook = book;
     currentChapter = Math.min(Math.max(chapter, 1), nextBook.chapters);
     selectedTestament = nextBook.testament;
@@ -843,6 +849,22 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     }).join('') : '<p>当前收录经文中没有找到匹配内容。</p>';
   };
 
+  const renderSpeechControls = (isSpeaking: boolean) => {
+    readChapterButton.textContent = isSpeaking ? '正在朗读' : '朗读本章';
+    readChapterButton.setAttribute('aria-pressed', String(isSpeaking));
+    replayChapterButton.disabled = !lastSpeechText;
+    stopReadingButton.disabled = !isSpeaking;
+  };
+
+  const stopSpeech = (clearReplay = false) => {
+    if ('speechSynthesis' in window) {
+      activeUtterance = null;
+      window.speechSynthesis.cancel();
+    }
+    if (clearReplay) lastSpeechText = '';
+    renderSpeechControls(false);
+  };
+
   const speak = (text: string) => {
     if (!('speechSynthesis' in window)) {
       notify('当前浏览器不支持语音朗读。');
@@ -850,8 +872,22 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     }
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
+    activeUtterance = utterance;
+    lastSpeechText = text;
     utterance.lang = 'zh-CN';
     utterance.rate = 0.92;
+    utterance.onend = () => {
+      if (activeUtterance !== utterance) return;
+      activeUtterance = null;
+      renderSpeechControls(false);
+    };
+    utterance.onerror = () => {
+      if (activeUtterance !== utterance) return;
+      activeUtterance = null;
+      renderSpeechControls(false);
+      notify('朗读中断，请重新播放。');
+    };
+    renderSpeechControls(true);
     window.speechSynthesis.speak(utterance);
   };
 
@@ -1009,25 +1045,34 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     assertCloudResult(result, '保存云端阅读进度失败。');
   };
 
-  const finishLogin = async (nextSession: CloudSession) => {
+  const synchronizeCloudSession = async (nextSession: CloudSession, options: { notifySuccess?: boolean; closeLogin?: boolean } = {}) => {
     session = nextSession;
     automaticCloudSyncEnabled = true;
     renderLoginState(session);
     setReadingSyncStatus('正在读取云端阅读进度…', 'saving');
+
+    const cloudState = await loadCloudState(session.uid);
+    if (cloudState) {
+      state = mergeState(state, cloudState);
+      mergeCloudReadVerses(cloudState);
+      currentBook = state.lastRead.book;
+      currentChapter = state.lastRead.chapter;
+      selectedTestament = currentBookInfo().testament;
+    }
+
+    state.updatedAt = nowIso();
+    setReadingSyncStatus('正在保存云端同步结果…', 'saving');
+    await syncCloudState();
+    const cached = cacheSyncedState();
+    renderAll(state.lastRead.verse);
+    setReadingSyncStatus(cached ? '已同步到云端和本地。' : '云端已保存，本地缓存更新失败。', cached ? 'saved' : 'error');
+    if (options.notifySuccess) notify(cached ? '已登录并同步阅读数据。' : '云端已保存，但本地缓存更新失败。');
+    if (options.closeLogin && loginModal.open) loginModal.close();
+  };
+
+  const finishLogin = async (nextSession: CloudSession) => {
     try {
-      const cloudState = await loadCloudState(session.uid);
-      if (cloudState) {
-        state = mergeState(state, cloudState);
-        mergeCloudReadVerses(cloudState);
-      }
-      state.updatedAt = nowIso();
-      setReadingSyncStatus('正在保存云端同步结果…', 'saving');
-      await syncCloudState();
-      const cached = cacheSyncedState();
-      renderAll(state.lastRead.verse);
-      setReadingSyncStatus(cached ? '已同步到云端和本地。' : '云端已保存，本地缓存更新失败。', cached ? 'saved' : 'error');
-      notify(cached ? '已登录并同步阅读数据。' : '云端已保存，但本地缓存更新失败。');
-      if (loginModal.open) loginModal.close();
+      await synchronizeCloudSession(nextSession, { notifySuccess: true, closeLogin: true });
     } catch (error) {
       markCloudSyncUnavailable(error);
       loginStatus.textContent = '已登录，但云端同步失败，请点击“重试同步”。';
@@ -1108,6 +1153,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     if (trigger.dataset.book) {
       const nextBook = bookBySlug(trigger.dataset.book);
       if (nextBook) {
+        stopSpeech(true);
         currentBook = nextBook.slug;
         currentChapter = 1;
         selectedTestament = nextBook.testament;
@@ -1116,6 +1162,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       }
     }
     if (trigger.dataset.chapter) {
+      stopSpeech(true);
       currentChapter = Number(trigger.dataset.chapter);
       renderAll(1);
     }
@@ -1134,15 +1181,8 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     if (trigger.dataset.action === 'cloud-login') {
       const activeSession = session;
       if (activeSession) {
-        automaticCloudSyncEnabled = true;
         setReadingSyncStatus('正在重试云端同步…', 'saving');
-        syncCloudState()
-          .then(() => {
-            const cached = cacheSyncedState();
-            renderLoginState(activeSession);
-            setReadingSyncStatus(cached ? '已同步到云端和本地。' : '云端已保存，本地缓存更新失败。', cached ? 'saved' : 'error');
-            notify(cached ? '已使用当前登录同步阅读数据。' : '云端已保存，但本地缓存更新失败。');
-          })
+        synchronizeCloudSession(activeSession, { notifySuccess: true })
           .catch(markCloudSyncUnavailable);
       } else {
         loginModal.showModal();
@@ -1161,6 +1201,11 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       const sample = currentSample();
       if (sample) speak(`${sample.title}。${sample.verses.map((text, index) => `${index + 1}节，${text}`).join('')}`);
       else notify('该章正文暂未导入，无法朗读。');
+    }
+    if (trigger.dataset.action === 'replay-chapter' && lastSpeechText) speak(lastSpeechText);
+    if (trigger.dataset.action === 'stop-reading') {
+      stopSpeech();
+      notify('已停止朗读。');
     }
     const verse = Number(trigger.dataset.verse || '');
     if (verse && trigger.dataset.action === 'toggle-bookmark') toggleBookmark(verse);
@@ -1194,23 +1239,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
         renderLoginState(session);
         return;
       }
-      session = nextSession;
-      automaticCloudSyncEnabled = true;
-      renderLoginState(session);
-      setReadingSyncStatus('正在读取云端阅读进度…', 'saving');
-      const cloudState = await loadCloudState(session.uid);
-      if (cloudState) {
-        state = mergeState(state, cloudState);
-        mergeCloudReadVerses(cloudState);
-        currentBook = state.lastRead.book;
-        currentChapter = state.lastRead.chapter;
-      }
-      state.updatedAt = nowIso();
-      setReadingSyncStatus('正在保存云端同步结果…', 'saving');
-      await syncCloudState();
-      const cached = cacheSyncedState();
-      if (cloudState) renderAll(state.lastRead.verse);
-      setReadingSyncStatus(cached ? '已同步到云端和本地。' : '云端已保存，本地缓存更新失败。', cached ? 'saved' : 'error');
+      await synchronizeCloudSession(nextSession);
     })
     .catch(markCloudSyncUnavailable);
 

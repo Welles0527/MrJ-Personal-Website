@@ -332,7 +332,11 @@ const hymnCards = [
           </div>
           <div class="bible-reading-actions">
             <button type="button" data-action="cloud-login">登录同步</button>
-            <button type="button" data-action="read-chapter">朗读本章</button>
+            <div class="bible-speech-actions" aria-label="章节朗读控制">
+              <button type="button" data-action="read-chapter" aria-pressed="false">朗读本章</button>
+              <button class="bible-speech-icon" type="button" data-action="replay-chapter" aria-label="重新播放本章" title="重新播放本章" disabled>↻</button>
+              <button class="bible-speech-icon" type="button" data-action="stop-reading" aria-label="停止朗读" title="停止朗读" disabled>■</button>
+            </div>
             <span class="bible-login-account" data-login-account hidden></span>
             <span class="bible-reading-sync-status" data-reading-sync-status aria-live="polite"></span>
           </div>
@@ -1347,6 +1351,22 @@ const hymnCards = [
     flex-wrap: wrap;
     justify-content: flex-end;
     gap: 0.42rem;
+  }
+
+  .bible-speech-actions {
+    display: flex;
+    gap: 0.32rem;
+  }
+
+  .bible-reading-actions .bible-speech-icon {
+    width: 2.35rem;
+    padding: 0;
+    font-size: 1rem;
+  }
+
+  .bible-reading-actions button:disabled {
+    cursor: not-allowed;
+    opacity: 0.42;
   }
 
   .bible-login-account {
