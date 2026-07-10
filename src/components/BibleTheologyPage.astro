@@ -334,6 +334,7 @@ const hymnCards = [
             <button type="button" data-action="cloud-login">登录同步</button>
             <button type="button" data-action="read-chapter">朗读本章</button>
             <span class="bible-login-account" data-login-account hidden></span>
+            <span class="bible-reading-sync-status" data-reading-sync-status aria-live="polite"></span>
           </div>
         </header>
 
@@ -1359,6 +1360,27 @@ const hymnCards = [
     text-align: right;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .bible-reading-sync-status {
+    flex-basis: 100%;
+    color: var(--muted);
+    font-size: 0.7rem;
+    font-weight: 800;
+    line-height: 1.35;
+    text-align: right;
+  }
+
+  .bible-reading-sync-status[data-status="saving"] {
+    color: #a77a25;
+  }
+
+  .bible-reading-sync-status[data-status="saved"] {
+    color: #168ea1;
+  }
+
+  .bible-reading-sync-status[data-status="error"] {
+    color: #a24a2a;
   }
 
   .bible-reading-actions button,
