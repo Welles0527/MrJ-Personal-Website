@@ -38,6 +38,7 @@ const SESSION_TTL_MS = 3 * 24 * 60 * 60 * 1000;
 const app = cloudbase.init({ env: ENV_ID });
 const auth = app.auth();
 const db = app.database();
+let sessionRevision = 0;
 
 const errorMessage = (error: unknown, fallback: string) => {
   if (typeof error === 'string' && error.trim()) return error;
@@ -64,19 +65,21 @@ const readRememberedSession = (): RememberedSession | null => {
 const rememberSession = (session: CloudSession) => {
   try {
     window.localStorage.setItem(SESSION_KEY, JSON.stringify({ ...session, expiresAt: Date.now() + SESSION_TTL_MS }));
-    window.dispatchEvent(new CustomEvent('site-auth-change', { detail: session }));
   } catch {
     // CloudBase auth still owns the real session; this only controls the three-day local default.
   }
+  sessionRevision += 1;
+  window.dispatchEvent(new CustomEvent('site-auth-change', { detail: session }));
 };
 
 const forgetSession = () => {
   try {
     window.localStorage.removeItem(SESSION_KEY);
-    window.dispatchEvent(new CustomEvent('site-auth-change', { detail: null }));
   } catch {
     // Nothing to clean up when localStorage is unavailable.
   }
+  sessionRevision += 1;
+  window.dispatchEvent(new CustomEvent('site-auth-change', { detail: null }));
 };
 
 const sessionFromCurrentUser = (loginState?: LoginState) => {
@@ -105,9 +108,11 @@ export const getRememberedSession = () => {
 
 export const getCloudSession = async () => {
   const remembered = getRememberedSession();
+  const revisionAtStart = sessionRevision;
   const loginState = await auth.getLoginState() as LoginState;
   const session = sessionFromCurrentUser(loginState);
   if (!session) {
+    if (sessionRevision !== revisionAtStart) return getRememberedSession();
     if (remembered) forgetSession();
     return null;
   }
