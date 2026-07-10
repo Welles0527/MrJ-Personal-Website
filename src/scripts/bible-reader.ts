@@ -254,6 +254,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   let state = readLocalState(fallbackState);
   let readVerses = readReadVerses();
   let session: CloudSession | null = null;
+  let automaticCloudSyncEnabled = true;
   let verifySignUp: ((verificationCode: string) => Promise<CloudSession>) | null = null;
   let toastTimer: number | undefined;
   let syncTimer: number | undefined;
@@ -270,6 +271,16 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     }
   };
 
+  const markCloudSyncUnavailable = () => {
+    automaticCloudSyncEnabled = false;
+    if (!session) {
+      renderLoginState(null);
+      return;
+    }
+    loginStatus.textContent = `已登录：${session.account}；当前使用本机保存。`;
+    if (cloudLoginButton) cloudLoginButton.textContent = '重试同步';
+  };
+
   const rememberedSession = getRememberedSession();
   if (rememberedSession) {
     session = rememberedSession;
@@ -278,6 +289,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
 
   window.addEventListener('site-auth-change', (event) => {
     session = event instanceof CustomEvent ? event.detail as CloudSession | null : null;
+    automaticCloudSyncEnabled = Boolean(session);
     renderLoginState(session);
   });
 
@@ -355,10 +367,10 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     state.updatedAt = nowIso();
     writeLocalState(state);
     if (message) notify(message);
-    if (session) {
+    if (session && automaticCloudSyncEnabled) {
       window.clearTimeout(syncTimer);
       syncTimer = window.setTimeout(() => {
-        syncCloudState().catch(() => notify('云端同步暂不可用，已保存在本机浏览器。'));
+        syncCloudState().catch(markCloudSyncUnavailable);
       }, 450);
     }
   };
@@ -1016,12 +1028,12 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
         currentChapter = 1;
         selectedTestament = nextBook.testament;
         directory.classList.remove('is-open');
-        renderAll();
+        renderAll(1);
       }
     }
     if (trigger.dataset.chapter) {
       currentChapter = Number(trigger.dataset.chapter);
-      renderAll();
+      renderAll(1);
     }
     if (trigger.dataset.gotoBook && trigger.dataset.gotoChapter) {
       gotoReference(trigger.dataset.gotoBook, Number(trigger.dataset.gotoChapter), Number(trigger.dataset.gotoVerse || '') || undefined);
@@ -1040,12 +1052,11 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       if (activeSession) {
         syncCloudState()
           .then(() => {
+            automaticCloudSyncEnabled = true;
             renderLoginState(activeSession);
             notify('已使用当前登录同步阅读数据。');
           })
-          .catch(() => {
-            loginStatus.textContent = `已登录：${activeSession.account}；云同步暂不可用。`;
-          });
+          .catch(markCloudSyncUnavailable);
       } else {
         loginModal.showModal();
       }
@@ -1097,6 +1108,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
         return;
       }
       session = nextSession;
+      automaticCloudSyncEnabled = true;
       renderLoginState(session);
       const cloudState = await loadCloudState(session.uid);
       if (cloudState) {
@@ -1107,9 +1119,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
         renderAll(state.lastRead.verse);
       }
     })
-    .catch(() => {
-      loginStatus.textContent = session ? `已登录：${session.account}；云同步暂不可用。` : '云同步暂不可用；当前使用本机保存。';
-    });
+    .catch(markCloudSyncUnavailable);
 
   indexReadingProgress();
   renderDailyPlan();
