@@ -550,7 +550,10 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     const book = currentBookInfo();
     chapterList.innerHTML = Array.from({ length: book.chapters }, (_, index) => {
       const chapter = index + 1;
-      return `<button type="button" class="${chapter === currentChapter ? 'is-active' : ''}" data-chapter="${chapter}" aria-label="${escapeHtml(book.title)} ${chapter}章">${chapter}</button>`;
+      const progress = getProgressSummary(book.slug, chapter);
+      const complete = progress.total > 0 && progress.read >= progress.total;
+      const classes = [chapter === currentChapter ? 'is-active' : '', complete ? 'is-complete' : ''].filter(Boolean).join(' ');
+      return `<button type="button" class="${classes}" data-chapter="${chapter}" aria-label="${escapeHtml(book.title)} ${chapter}章${complete ? '，已读完' : ''}">${chapter}</button>`;
     }).join('');
   };
 
@@ -881,6 +884,41 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     renderAll(verse);
   };
 
+  const gotoFirstUnreadVerse = () => {
+    if (fullTextStatus === 'loading') {
+      notify('圣经全文正在载入，请稍后再使用书签。');
+      return;
+    }
+    if (fullTextStatus === 'failed') {
+      notify('圣经全文载入失败，暂时无法查找第一节未读经文。');
+      return;
+    }
+
+    const references = data.books.flatMap((book) => Array.from({ length: book.chapters }, (_, index) => {
+      const chapter = index + 1;
+      const sample = data.samples[chapterKey(book.slug, chapter)];
+      return sample?.verses.map((_, verseIndex) => ({ book: book.slug, chapter, verse: verseIndex + 1 })) ?? [];
+    }).flat());
+    if (!references.length) {
+      notify('当前没有可定位的经文。');
+      return;
+    }
+
+    const currentVerse = state.lastRead.verse ?? 1;
+    const startIndex = references.findIndex((reference) => reference.book === currentBook
+      && reference.chapter === currentChapter
+      && reference.verse === currentVerse);
+    const normalizedStart = startIndex >= 0 ? startIndex : 0;
+    const searchOrder = [...references.slice(normalizedStart), ...references.slice(0, normalizedStart)];
+    const firstUnread = searchOrder.find((reference) => !readVerses.has(verseKey(reference.book, reference.chapter, reference.verse)));
+    if (!firstUnread) {
+      notify('整本圣经已经全部读完。');
+      return;
+    }
+
+    gotoReference(firstUnread.book, firstUnread.chapter, firstUnread.verse);
+  };
+
   const aliases = data.books
     .flatMap((book) => [
       { alias: book.title, priority: 1 },
@@ -1039,6 +1077,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       verseElement?.classList.toggle('is-read', nextRead);
       trigger.setAttribute('aria-pressed', String(nextRead));
       renderReadingProgress();
+      renderChapters();
       if (!cached) notify('阅读进度已保存到云端，但本地缓存更新失败。');
     } catch (error) {
       markCloudSyncUnavailable(error);
@@ -1289,6 +1328,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       else notify('该章正文暂未导入，无法朗读。');
     }
     if (trigger.dataset.action === 'replay-chapter' && lastSpeechText) speak(lastSpeechText);
+    if (trigger.dataset.action === 'find-first-unread') gotoFirstUnreadVerse();
     if (trigger.dataset.action === 'stop-reading') {
       stopSpeech();
       notify('已停止朗读。');

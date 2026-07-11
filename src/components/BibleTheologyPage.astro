@@ -352,6 +352,10 @@ const hymnCards = [
           <h3>阅读进度</h3>
           <p data-last-read>正在载入阅读位置...</p>
           <div class="bible-reading-progress" data-reading-progress aria-live="polite"></div>
+          <button class="bible-resume-bookmark" type="button" data-action="find-first-unread" title="定位到第一节未读经文">
+            <span aria-hidden="true"></span>
+            继续阅读
+          </button>
         </section>
         <section>
           <button class="bible-panel-toggle" type="button" data-action="toggle-reader-bookmarks" aria-expanded="false">经文收藏</button>
@@ -1461,12 +1465,26 @@ const hymnCards = [
     cursor: pointer;
     font-size: 0.76rem;
     font-weight: 900;
+    transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
   }
 
   .bible-chapter-strip button.is-active {
     border-color: #1e160b;
     background: #1e160b;
     color: #f7df9e;
+  }
+
+  .bible-chapter-strip button.is-complete {
+    border-color: #b3d2b5;
+    background: #eaf5eb;
+    color: #315c36;
+  }
+
+  .bible-chapter-strip button.is-active.is-complete {
+    border-color: #1e160b;
+    background: #dcefdc;
+    color: #234b2a;
+    box-shadow: inset 0 0 0 1px rgba(30, 22, 11, 0.22);
   }
 
   .bible-result-list {
@@ -1672,6 +1690,31 @@ const hymnCards = [
     color: var(--muted);
     font-size: 0.68rem;
     line-height: 1.45;
+  }
+
+  .bible-notes-panel .bible-resume-bookmark {
+    display: inline-flex;
+    min-height: 2.35rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.48rem;
+    width: 100%;
+    margin-top: 0.72rem;
+    border-color: #b3d2b5;
+    background: #eaf5eb;
+    color: #315c36;
+  }
+
+  .bible-resume-bookmark > span {
+    width: 0.72rem;
+    height: 1rem;
+    background: currentColor;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%);
+  }
+
+  .bible-notes-panel .bible-resume-bookmark:hover {
+    border-color: #7fa984;
+    background: #dcefdc;
   }
 
   .bible-panel-toggle {
