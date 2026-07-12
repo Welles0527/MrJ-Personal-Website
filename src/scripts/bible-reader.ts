@@ -188,9 +188,10 @@ const writeBookStatuses = (statuses: Record<string, BookReadingStatus>) => {
 
 const readReadingTheme = () => {
   try {
-    return window.localStorage.getItem(READING_THEME_KEY) === 'dark';
+    const savedTheme = window.localStorage.getItem(READING_THEME_KEY);
+    return savedTheme ? savedTheme === 'dark' : true;
   } catch {
-    return false;
+    return true;
   }
 };
 
