@@ -1,4 +1,4 @@
-const CACHE_NAME = 'j-space-shell-v1';
+const CACHE_NAME = 'j-space-shell-v2';
 const BASE_PATH = '/officialwebsite/';
 const APP_SHELL = [
   BASE_PATH,
