@@ -1,0 +1,25 @@
+{
+  "name": "J-Space · 学问笔记",
+  "short_name": "J-Space",
+  "description": "J先生AI学习网站：AI知识、实用工具、项目搭建与个人学习记录。",
+  "start_url": "/officialwebsite/",
+  "scope": "/officialwebsite/",
+  "display": "standalone",
+  "background_color": "#f7f1e4",
+  "theme_color": "#1e160b",
+  "lang": "zh-CN",
+  "icons": [
+    {
+      "src": "/officialwebsite/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/officialwebsite/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -18,8 +18,14 @@ const basePath = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_U
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="J先生AI学习网站：AI知识、实用工具、项目搭建与个人学习记录。" />
+    <meta name="theme-color" content="#1e160b" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="icon" type="image/svg+xml" href={`${basePath}favicon.svg`} />
     <link rel="shortcut icon" type="image/svg+xml" href={`${basePath}favicon.svg`} />
+    <link rel="manifest" href={`${basePath}manifest.webmanifest`} />
+    <link rel="apple-touch-icon" href={`${basePath}icons/icon-192.png`} />
     <title>{title}</title>
   </head>
   <body>
@@ -38,6 +44,17 @@ const basePath = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_U
       import { mountSiteAuthStatus } from '../scripts/site-auth-widget';
 
       mountSiteAuthStatus();
+    </script>
+    <script>
+      if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+        const pwaBasePath = import.meta.env.BASE_URL.endsWith('/')
+          ? import.meta.env.BASE_URL
+          : `${import.meta.env.BASE_URL}/`;
+
+        navigator.serviceWorker.register(`${pwaBasePath}sw.js`, {
+          scope: pwaBasePath
+        }).catch(() => {});
+      }
     </script>
   </body>
 </html>
