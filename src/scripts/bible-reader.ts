@@ -265,9 +265,12 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   const bookmarkSectionList = root.querySelector<HTMLElement>('[data-bookmark-section-list]');
   const readerBookmarkToggle = root.querySelector<HTMLButtonElement>('[data-action="toggle-reader-bookmarks"]');
   const readerBookmarkSearch = root.querySelector<HTMLElement>('[data-reader-bookmark-search]');
+  const bookmarkTotal = get<HTMLElement>('[data-bookmark-total]');
   const bookmarkSearchInputs = [...root.querySelectorAll<HTMLInputElement>('[data-bookmark-search]')];
   const bookmarkSearchStatuses = [...root.querySelectorAll<HTMLElement>('[data-bookmark-search-status]')];
   const noteSectionList = get<HTMLElement>('[data-note-section-list]');
+  const readerNoteToggle = get<HTMLButtonElement>('[data-action="toggle-reader-notes"]');
+  const noteTotal = get<HTMLElement>('[data-note-total]');
   const noteModal = get<HTMLDialogElement>('[data-note-modal]');
   const noteForm = get<HTMLFormElement>('[data-note-form]');
   const noteReference = get<HTMLElement>('[data-note-ref]');
@@ -777,6 +780,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
 
   const renderBookmarks = () => {
     const keyword = getBookmarkSearchKeyword();
+    bookmarkTotal.textContent = `${state.bookmarks.length} 条`;
     let html = '<p>还没有收藏经文。</p>';
     if (!state.bookmarks.length) {
       bookmarkList.innerHTML = html;
@@ -841,6 +845,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     });
 
   const renderNotes = () => {
+    noteTotal.textContent = `${state.notes.length} 条`;
     if (!state.notes.length) {
       noteSectionList.innerHTML = '<p>还没有笔记。</p>';
       return;
@@ -880,6 +885,12 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     readerBookmarkToggle.setAttribute('aria-expanded', String(!expanded));
     if (readerBookmarkSearch) readerBookmarkSearch.hidden = expanded;
     bookmarkList.hidden = expanded;
+  };
+
+  const toggleReaderNotes = () => {
+    const expanded = readerNoteToggle.getAttribute('aria-expanded') === 'true';
+    readerNoteToggle.setAttribute('aria-expanded', String(!expanded));
+    noteSectionList.hidden = expanded;
   };
 
   const readDailyPlan = () => {
@@ -1348,6 +1359,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     }
     if (trigger.dataset.action === 'toggle-directory') directory.classList.toggle('is-open');
     if (trigger.dataset.action === 'toggle-reader-bookmarks') toggleReaderBookmarks();
+    if (trigger.dataset.action === 'toggle-reader-notes') toggleReaderNotes();
     if (trigger.dataset.action === 'toggle-reading-theme') toggleReadingTheme();
     if (trigger.dataset.action === 'toggle-bookmark-group' && trigger.dataset.groupKey) {
       const key = trigger.dataset.groupKey;

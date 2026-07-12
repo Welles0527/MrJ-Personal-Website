@@ -360,8 +360,10 @@ const hymnCards = [
             继续阅读
           </button>
         </section>
-        <section>
-          <button class="bible-panel-toggle" type="button" data-action="toggle-reader-bookmarks" aria-expanded="false">经文收藏</button>
+        <section id="bible-bookmarks">
+          <button class="bible-panel-toggle" type="button" data-action="toggle-reader-bookmarks" aria-expanded="false">
+            <span>经文收藏 <small data-bookmark-total>0 条</small></span>
+          </button>
           <div class="bible-bookmark-search" data-reader-bookmark-search hidden>
             <label>
               <span>搜索收藏</span>
@@ -371,36 +373,15 @@ const hymnCards = [
           </div>
           <div data-bookmark-list class="bible-bookmark-list" hidden></div>
         </section>
-      </aside>
-    </div>
-  </section>
-
-  <section class="bible-feature-section bible-bookmarks-section" id="bible-bookmarks" aria-labelledby="bible-bookmarks-title">
-    <div class="bible-section-shell">
-      <p class="bible-section-kicker">SAVE</p>
-      <h2 id="bible-bookmarks-title">经文收藏</h2>
-      <p class="bible-section-lede">收藏和阅读进度都先保存在本机浏览器；登录后可以同步到云端。</p>
-      <div class="bible-bookmark-board">
         <section>
-          <h3>我的收藏</h3>
-          <div class="bible-bookmark-search bible-bookmark-search-dark">
-            <label>
-              <span>搜索收藏</span>
-              <input data-bookmark-search type="search" placeholder="例如：创-1-4 / 约3:16 / 有光" autocomplete="off" />
-            </label>
-            <p data-bookmark-search-status>可按卷名、章节、节号或经文搜索。</p>
-          </div>
-          <div class="bible-bookmark-list" data-bookmark-section-list>
-            <p>还没有收藏经文。进入微读圣经后点击经文右侧星标。</p>
-          </div>
-        </section>
-        <section>
-          <h3>我的笔记</h3>
-          <div class="bible-note-list" data-note-section-list>
+          <button class="bible-panel-toggle" type="button" data-action="toggle-reader-notes" aria-expanded="false">
+            <span>我的笔记 <small data-note-total>0 条</small></span>
+          </button>
+          <div class="bible-note-list" data-note-section-list hidden>
             <p>还没有笔记。</p>
           </div>
         </section>
-      </div>
+      </aside>
     </div>
   </section>
 
@@ -1742,6 +1723,18 @@ const hymnCards = [
     content: "-";
   }
 
+  .bible-panel-toggle > span {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.4rem;
+  }
+
+  .bible-panel-toggle small {
+    color: rgba(66, 51, 30, 0.58);
+    font-size: 0.68rem;
+    font-weight: 700;
+  }
+
   .bible-bookmark-list,
   .bible-note-list {
     display: grid;
@@ -1788,7 +1781,8 @@ const hymnCards = [
     line-height: 1.45;
   }
 
-  .bible-bookmark-list[hidden] {
+  .bible-bookmark-list[hidden],
+  .bible-note-list[hidden] {
     display: none;
   }
 
@@ -2062,7 +2056,6 @@ const hymnCards = [
   }
 
   .bible-card-grid,
-  .bible-bookmark-board,
   .bible-group-layout {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2070,13 +2063,11 @@ const hymnCards = [
     margin-top: 1.3rem;
   }
 
-  .bible-bookmark-board,
   .bible-group-layout {
     grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
   }
 
-  .bible-board-card,
-  .bible-bookmark-board section {
+  .bible-board-card {
     min-height: 11rem;
     border: 1px solid rgba(216, 179, 95, 0.2);
     border-radius: 0.75rem;
@@ -2091,8 +2082,7 @@ const hymnCards = [
     font-weight: 900;
   }
 
-  .bible-board-card h3,
-  .bible-bookmark-board h3 {
+  .bible-board-card h3 {
     margin: 0.6rem 0;
     color: #fff4d8;
   }
@@ -2100,8 +2090,7 @@ const hymnCards = [
   .bible-board-card p,
   .bible-board-card small,
   .bible-board-card em,
-  .bible-plain-list,
-  .bible-bookmark-board p {
+  .bible-plain-list {
     margin: 0;
     color: rgba(255, 247, 224, 0.66);
     font-size: 0.84rem;
@@ -2169,45 +2158,6 @@ const hymnCards = [
     display: grid;
     gap: 0.5rem;
     padding-left: 1.1rem;
-  }
-
-  .bible-bookmarks-section .bible-bookmark-list button,
-  .bible-bookmarks-section .bible-note-list button {
-    border-color: rgba(216, 179, 95, 0.18);
-    background: rgba(255, 246, 218, 0.06);
-    color: #fff1c7;
-  }
-
-  .bible-bookmarks-section .bible-collapsible-group-toggle {
-    border-color: rgba(216, 179, 95, 0.24) !important;
-    background: rgba(255, 246, 218, 0.08) !important;
-    color: #fff1c7 !important;
-  }
-
-  .bible-bookmarks-section .bible-collapsible-group-toggle small {
-    color: rgba(255, 247, 224, 0.58);
-  }
-
-  .bible-bookmark-search-dark label {
-    color: #fff1c7;
-  }
-
-  .bible-bookmark-search-dark input {
-    border-color: rgba(216, 179, 95, 0.28);
-    background: rgba(255, 246, 218, 0.08);
-    color: #fff8e7;
-  }
-
-  .bible-bookmark-search-dark input::placeholder {
-    color: rgba(255, 247, 224, 0.42);
-  }
-
-  .bible-bookmark-search-dark p {
-    color: rgba(255, 247, 224, 0.58);
-  }
-
-  .bible-bookmarks-section .bible-bookmark-group h4 {
-    color: #fff4d8;
   }
 
   .bible-daily-plan {
@@ -2559,7 +2509,6 @@ const hymnCards = [
     }
 
     .bible-card-grid,
-    .bible-bookmark-board,
     .bible-group-layout {
       grid-template-columns: 1fr;
     }

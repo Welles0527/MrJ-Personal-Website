@@ -37,7 +37,7 @@ const categories: Array<{ value: TodoCategory; label: string }> = [
   { value: 'study', label: '学习' },
   { value: 'life', label: '生活' },
   { value: 'health', label: '运动' },
-  { value: 'other', label: '其他' }
+  { value: 'other', label: '信仰' }
 ];
 const placements: Array<{ value: TodoPlacement; label: string }> = [
   { value: 'upcoming', label: '近期待办' },
@@ -168,7 +168,7 @@ const escapeHtml = (value: string) => value
   .replaceAll('"', '&quot;')
   .replaceAll("'", '&#039;');
 
-const categoryLabel = (category: TodoCategory) => categories.find((item) => item.value === category)?.label ?? '其他';
+const categoryLabel = (category: TodoCategory) => categories.find((item) => item.value === category)?.label ?? '信仰';
 const placementLabel = (placement: TodoPlacement) => placements.find((item) => item.value === placement)?.label ?? '近期待办';
 const monthDay = (date: Date) => `${date.getMonth() + 1}/${date.getDate()}`;
 const longDate = (date: Date) => `${date.getMonth() + 1}月${date.getDate()}日`;
