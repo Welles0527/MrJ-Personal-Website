@@ -1,6 +1,8 @@
 ---
 const basePath = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
 const characterMapHref = `${basePath}topics/applications/inspiration-station/theology/character-map`;
+const lifespanRankingHref = `${basePath}topics/applications/inspiration-station/theology/age-rankings?view=lifespan`;
+const accessionRankingHref = `${basePath}topics/applications/inspiration-station/theology/age-rankings?view=accession`;
 
 const featurePages = [
   {
@@ -331,6 +333,7 @@ const hymnCards = [
             <h2 data-current-title>创世记 1</h2>
           </div>
           <div class="bible-reading-actions">
+            <button type="button" class="bible-theme-toggle" data-action="toggle-reading-theme" aria-pressed="false">深色阅读</button>
             <button type="button" data-action="cloud-login">登录同步</button>
             <div class="bible-speech-actions" aria-label="章节朗读控制">
               <button type="button" data-action="read-chapter" aria-pressed="false">朗读本章</button>
@@ -425,7 +428,11 @@ const hymnCards = [
       <p class="bible-section-kicker">PEOPLE</p>
       <h2 id="bible-people-title">圣经人物</h2>
       <p class="bible-section-lede">以人物为入口，把故事、经文、主题和生命应用串起来。</p>
-      <a class="bible-section-link bible-character-map-link" href={characterMapHref}>打开圣经人物图谱</a>
+      <div class="bible-people-actions" aria-label="圣经人物工具">
+        <a class="bible-section-link bible-character-map-link" href={characterMapHref}>打开圣经人物图谱</a>
+        <a class="bible-section-link bible-person-ranking-link" href={lifespanRankingHref}>圣经寿命排名</a>
+        <a class="bible-section-link bible-person-ranking-link" href={accessionRankingHref}>登基年龄排名</a>
+      </div>
       <div class="bible-card-grid bible-people-grid">
         {peopleCards.map((person) => (
           <article class="bible-board-card">
@@ -1796,8 +1803,46 @@ const hymnCards = [
     font-size: 0.82rem;
   }
 
-  .bible-bookmark-list button,
-  .bible-note-list button {
+  .bible-collapsible-group-toggle {
+    display: flex !important;
+    min-height: 2.45rem !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    width: 100%;
+    border: 1px solid rgba(101, 79, 44, 0.14) !important;
+    border-radius: 0.5rem;
+    padding: 0.48rem 0.58rem !important;
+    background: #fffaf0 !important;
+    color: #2b2115 !important;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .bible-collapsible-group-toggle > span:first-child {
+    display: grid;
+    gap: 0.12rem;
+  }
+
+  .bible-collapsible-group-toggle strong {
+    font-size: 0.76rem;
+  }
+
+  .bible-collapsible-group-toggle small {
+    color: #806c50;
+    font-size: 0.68rem;
+  }
+
+  .bible-collapsible-group-content {
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .bible-collapsible-group-content[hidden] {
+    display: none;
+  }
+
+  .bible-collapsible-group-content > button {
     display: block;
     width: 100%;
     border: 1px solid rgba(101, 79, 44, 0.12);
@@ -1815,6 +1860,177 @@ const hymnCards = [
     display: block;
     margin-top: 0.28rem;
     color: inherit;
+  }
+
+  .bible-app.is-dark-reader .bible-reader-section {
+    background: #050505;
+    color: #fff4d8;
+  }
+
+  .bible-app.is-dark-reader .bible-reader-sidebar,
+  .bible-app.is-dark-reader .bible-reading-pane,
+  .bible-app.is-dark-reader .bible-notes-panel {
+    border-color: rgba(216, 179, 95, 0.24);
+    background: #12100c;
+    box-shadow: 0 18px 32px rgba(0, 0, 0, 0.28);
+  }
+
+  .bible-app.is-dark-reader .bible-reader-tools label,
+  .bible-app.is-dark-reader .bible-reader-tools p,
+  .bible-app.is-dark-reader .bible-reading-header p,
+  .bible-app.is-dark-reader .bible-notes-panel p,
+  .bible-app.is-dark-reader .bible-login-account,
+  .bible-app.is-dark-reader .bible-reading-sync-status,
+  .bible-app.is-dark-reader .bible-reading-progress-item small,
+  .bible-app.is-dark-reader .bible-reading-progress-note {
+    color: rgba(255, 247, 224, 0.64);
+  }
+
+  .bible-app.is-dark-reader .bible-reader-tools input,
+  .bible-app.is-dark-reader .bible-bookmark-search input {
+    border-color: rgba(216, 179, 95, 0.26);
+    background: #1a150d;
+    color: #fff4d8;
+  }
+
+  .bible-app.is-dark-reader .bible-reader-tools input::placeholder,
+  .bible-app.is-dark-reader .bible-bookmark-search input::placeholder {
+    color: rgba(255, 247, 224, 0.42);
+  }
+
+  .bible-app.is-dark-reader .bible-segmented button,
+  .bible-app.is-dark-reader .bible-view-toggle button,
+  .bible-app.is-dark-reader .bible-reading-actions button,
+  .bible-app.is-dark-reader .bible-mobile-directory {
+    border-color: rgba(216, 179, 95, 0.24);
+    background: #1a150d;
+    color: #f7df9e;
+  }
+
+  .bible-app.is-dark-reader .bible-segmented button.is-active,
+  .bible-app.is-dark-reader .bible-view-toggle button.is-active,
+  .bible-app.is-dark-reader .bible-theme-toggle {
+    border-color: #d8b35f;
+    background: #d8b35f;
+    color: #1e160b;
+  }
+
+  .bible-app.is-dark-reader .bible-book-list button,
+  .bible-app.is-dark-reader .bible-chapter-strip button {
+    border-color: rgba(216, 179, 95, 0.2);
+    background: #19140c;
+    color: #f7df9e;
+  }
+
+  .bible-app.is-dark-reader .bible-book-list button span {
+    color: rgba(255, 247, 224, 0.6);
+  }
+
+  .bible-app.is-dark-reader .bible-book-list button.is-active,
+  .bible-app.is-dark-reader .bible-chapter-strip button.is-active {
+    border-color: #d8b35f;
+    background: #d8b35f;
+    color: #1e160b;
+  }
+
+  .bible-app.is-dark-reader .bible-book-list button.is-status-reading {
+    border-color: #8f79b5;
+    background: #29203a;
+    color: #e6d8ff;
+  }
+
+  .bible-app.is-dark-reader .bible-book-list button.is-status-read,
+  .bible-app.is-dark-reader .bible-chapter-strip button.is-complete {
+    border-color: #6a9b78;
+    background: #1d3029;
+    color: #b8e0c4;
+  }
+
+  .bible-app.is-dark-reader .bible-reading-header,
+  .bible-app.is-dark-reader .bible-chapter-strip {
+    border-color: rgba(216, 179, 95, 0.18);
+    background: #0e0c08;
+  }
+
+  .bible-app.is-dark-reader .bible-result-list,
+  .bible-app.is-dark-reader .bible-verses {
+    border-color: rgba(216, 179, 95, 0.14);
+    background: #0b0906;
+  }
+
+  .bible-app.is-dark-reader .bible-result-list button {
+    border-color: rgba(216, 179, 95, 0.14);
+    color: #f7df9e;
+  }
+
+  .bible-app.is-dark-reader .bible-verse {
+    border-color: rgba(216, 179, 95, 0.16);
+    background: #151109;
+  }
+
+  .bible-app.is-dark-reader .bible-verse-text {
+    color: #f7df9e;
+  }
+
+  .bible-app.is-dark-reader .bible-verse.is-read .bible-verse-text {
+    color: #a8dce8;
+  }
+
+  .bible-app.is-dark-reader .bible-verse-number {
+    background: #3a2d15;
+    color: #f7df9e;
+  }
+
+  .bible-app.is-dark-reader .bible-verse-actions button,
+  .bible-app.is-dark-reader .bible-verse-actions a {
+    border-color: rgba(216, 179, 95, 0.24);
+    background: #21190d;
+    color: #f7df9e;
+  }
+
+  .bible-app.is-dark-reader .bible-verse.is-read .bible-verse-read-action {
+    border-color: rgba(168, 220, 232, 0.5);
+    background: rgba(168, 220, 232, 0.16);
+    color: #a8dce8;
+  }
+
+  .bible-app.is-dark-reader .bible-notes-panel h3,
+  .bible-app.is-dark-reader .bible-reading-progress-item dt,
+  .bible-app.is-dark-reader .bible-reading-progress-item dt strong {
+    color: #f7df9e;
+  }
+
+  .bible-app.is-dark-reader .bible-notes-panel .bible-resume-bookmark {
+    border-color: rgba(216, 179, 95, 0.42);
+    background: rgba(216, 179, 95, 0.12);
+    color: #f7df9e;
+  }
+
+  .bible-app.is-dark-reader .bible-notes-panel .bible-resume-bookmark:hover {
+    border-color: #d8b35f;
+    background: rgba(216, 179, 95, 0.22);
+  }
+
+  .bible-app.is-dark-reader .bible-panel-toggle {
+    border-color: rgba(216, 179, 95, 0.22);
+    background: #19140c;
+    color: #f7df9e;
+  }
+
+  .bible-app.is-dark-reader .bible-collapsible-group-toggle {
+    border-color: rgba(216, 179, 95, 0.22) !important;
+    background: #19140c !important;
+    color: #f7df9e !important;
+  }
+
+  .bible-app.is-dark-reader .bible-collapsible-group-toggle small {
+    color: rgba(255, 247, 224, 0.58);
+  }
+
+  .bible-app.is-dark-reader .bible-collapsible-group-content > button {
+    border-color: rgba(216, 179, 95, 0.18);
+    background: #151109;
+    color: #f7df9e;
   }
 
   .bible-feature-section {
@@ -1932,6 +2148,23 @@ const hymnCards = [
     box-shadow: 0 14px 32px rgba(0, 0, 0, 0.16);
   }
 
+  .bible-people-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    align-items: center;
+    margin-top: 0.95rem;
+  }
+
+  .bible-people-actions .bible-section-link {
+    margin-top: 0;
+  }
+
+  .bible-person-ranking-link {
+    border-color: rgba(216, 179, 95, 0.36);
+    background: rgba(255, 246, 218, 0.04);
+  }
+
   .bible-plain-list {
     display: grid;
     gap: 0.5rem;
@@ -1943,6 +2176,16 @@ const hymnCards = [
     border-color: rgba(216, 179, 95, 0.18);
     background: rgba(255, 246, 218, 0.06);
     color: #fff1c7;
+  }
+
+  .bible-bookmarks-section .bible-collapsible-group-toggle {
+    border-color: rgba(216, 179, 95, 0.24) !important;
+    background: rgba(255, 246, 218, 0.08) !important;
+    color: #fff1c7 !important;
+  }
+
+  .bible-bookmarks-section .bible-collapsible-group-toggle small {
+    color: rgba(255, 247, 224, 0.58);
   }
 
   .bible-bookmark-search-dark label {

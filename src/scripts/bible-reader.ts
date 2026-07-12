@@ -102,6 +102,7 @@ const STORAGE_KEY = 'mywebsite.bible-reader.v1';
 const DAILY_PLAN_KEY = 'mywebsite.bible-daily-plan.v1';
 const READ_VERSES_KEY = 'mywebsite.bible-read-verses.v1';
 const BOOK_STATUS_KEY = 'mywebsite.bible-book-status.v1';
+const READING_THEME_KEY = 'mywebsite.bible-reading-theme.v1';
 const COLLECTION = 'officialWebsiteBibleReaderState';
 
 const nowIso = () => new Date().toISOString();
@@ -179,6 +180,23 @@ const readBookStatuses = () => {
 const writeBookStatuses = (statuses: Record<string, BookReadingStatus>) => {
   try {
     window.localStorage.setItem(BOOK_STATUS_KEY, JSON.stringify(statuses));
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const readReadingTheme = () => {
+  try {
+    return window.localStorage.getItem(READING_THEME_KEY) === 'dark';
+  } catch {
+    return false;
+  }
+};
+
+const writeReadingTheme = (isDark: boolean) => {
+  try {
+    window.localStorage.setItem(READING_THEME_KEY, isDark ? 'dark' : 'light');
     return true;
   } catch {
     return false;
@@ -276,6 +294,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   const dailySteps = [...root.querySelectorAll<HTMLInputElement>('[data-daily-step]')];
   const dailyProgress = root.querySelector<HTMLElement>('[data-daily-progress]');
   const readingProgress = root.querySelector<HTMLElement>('[data-reading-progress]');
+  const readingThemeToggle = root.querySelector<HTMLButtonElement>('[data-action="toggle-reading-theme"]');
 
   const params = new URLSearchParams(window.location.search);
   const requestedBook = params.get('book') || 'gen';
@@ -297,6 +316,9 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   let state = readLocalState(fallbackState);
   let readVerses = readReadVerses();
   let bookStatuses = readBookStatuses();
+  let isDarkReading = readReadingTheme();
+  const expandedBookmarkGroups = new Set<string>();
+  const expandedNoteGroups = new Set<string>();
   let readingSavePending = false;
   const setReadingSyncStatus = (message: string, status = 'idle') => {
     if (!readingSyncStatus) return;
@@ -473,6 +495,21 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     featureNav.forEach((button) => button.classList.toggle('is-active', Number(button.dataset.featureTarget) === normalized));
   };
 
+  const renderReadingTheme = () => {
+    root.classList.toggle('is-dark-reader', isDarkReading);
+    if (!readingThemeToggle) return;
+    readingThemeToggle.textContent = isDarkReading ? '浅色阅读' : '深色阅读';
+    readingThemeToggle.setAttribute('aria-pressed', String(isDarkReading));
+    readingThemeToggle.title = isDarkReading ? '切换浅色阅读模式' : '切换深色阅读模式';
+  };
+
+  const toggleReadingTheme = () => {
+    isDarkReading = !isDarkReading;
+    const saved = writeReadingTheme(isDarkReading);
+    renderReadingTheme();
+    notify(saved ? `${isDarkReading ? '深色' : '浅色'}阅读模式已启用。` : '阅读模式已切换，但当前浏览器无法长期保存。');
+  };
+
   const renderBooks = () => {
     const books = data.books.filter((book) => book.testament === selectedTestament);
     bookList.classList.toggle('is-grid', viewMode === 'grid');
@@ -555,6 +592,11 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       const classes = [chapter === currentChapter ? 'is-active' : '', complete ? 'is-complete' : ''].filter(Boolean).join(' ');
       return `<button type="button" class="${classes}" data-chapter="${chapter}" aria-label="${escapeHtml(book.title)} ${chapter}章${complete ? '，已读完' : ''}">${chapter}</button>`;
     }).join('');
+    window.setTimeout(() => chapterList.querySelector<HTMLButtonElement>('.is-active')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: 'center'
+    }), 0);
   };
 
   const updateUrl = (verse?: number) => {
@@ -767,6 +809,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     html = [...grouped.entries()].map(([key, items]) => {
       const first = items[0];
       const book = bookBySlug(first.book);
+      const expanded = expandedBookmarkGroups.has(key);
       const itemsHtml = items.map((item) => `
         <button type="button" data-goto-book="${item.book}" data-goto-chapter="${item.chapter}" data-goto-verse="${item.verse}">
           <strong>${escapeHtml(book?.title ?? item.book)} ${item.chapter}:${item.verse}</strong><br>
@@ -775,8 +818,11 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       `).join('');
       return `
         <section class="bible-bookmark-group" data-bookmark-group="${escapeHtml(key)}">
-          <h4>${escapeHtml(book?.title ?? first.book)} ${first.chapter}章</h4>
-          ${itemsHtml}
+          <button class="bible-collapsible-group-toggle" type="button" data-action="toggle-bookmark-group" data-group-key="${escapeHtml(key)}" aria-expanded="${expanded}">
+            <span><strong>${escapeHtml(book?.title ?? first.book)} ${first.chapter}章</strong><small>${items.length} 条</small></span>
+            <span aria-hidden="true">${expanded ? '−' : '+'}</span>
+          </button>
+          <div class="bible-collapsible-group-content" data-bookmark-group-content="${escapeHtml(key)}"${expanded ? '' : ' hidden'}>${itemsHtml}</div>
         </section>
       `;
     }).join('');
@@ -809,6 +855,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     noteSectionList.innerHTML = [...grouped.entries()].map(([key, items]) => {
       const first = items[0];
       const book = bookBySlug(first.book);
+      const expanded = expandedNoteGroups.has(key);
       const itemsHtml = items.map((item) => `
         <button type="button" data-action="open-note" data-note-book="${item.book}" data-note-chapter="${item.chapter}" data-note-verse="${item.verse}">
           <strong>${escapeHtml(book?.title ?? item.book)} ${item.chapter}:${item.verse}</strong>
@@ -817,8 +864,11 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       `).join('');
       return `
         <section class="bible-bookmark-group" data-note-group="${escapeHtml(key)}">
-          <h4>${escapeHtml(book?.title ?? first.book)} ${first.chapter}章</h4>
-          ${itemsHtml}
+          <button class="bible-collapsible-group-toggle" type="button" data-action="toggle-note-group" data-group-key="${escapeHtml(key)}" aria-expanded="${expanded}">
+            <span><strong>${escapeHtml(book?.title ?? first.book)} ${first.chapter}章</strong><small>${items.length} 条</small></span>
+            <span aria-hidden="true">${expanded ? '−' : '+'}</span>
+          </button>
+          <div class="bible-collapsible-group-content" data-note-group-content="${escapeHtml(key)}"${expanded ? '' : ' hidden'}>${itemsHtml}</div>
         </section>
       `;
     }).join('');
@@ -1298,6 +1348,19 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     }
     if (trigger.dataset.action === 'toggle-directory') directory.classList.toggle('is-open');
     if (trigger.dataset.action === 'toggle-reader-bookmarks') toggleReaderBookmarks();
+    if (trigger.dataset.action === 'toggle-reading-theme') toggleReadingTheme();
+    if (trigger.dataset.action === 'toggle-bookmark-group' && trigger.dataset.groupKey) {
+      const key = trigger.dataset.groupKey;
+      if (expandedBookmarkGroups.has(key)) expandedBookmarkGroups.delete(key);
+      else expandedBookmarkGroups.add(key);
+      renderBookmarks();
+    }
+    if (trigger.dataset.action === 'toggle-note-group' && trigger.dataset.groupKey) {
+      const key = trigger.dataset.groupKey;
+      if (expandedNoteGroups.has(key)) expandedNoteGroups.delete(key);
+      else expandedNoteGroups.add(key);
+      renderNotes();
+    }
     if (trigger.dataset.action === 'cloud-login') {
       const activeSession = session;
       if (activeSession) {
@@ -1370,6 +1433,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     .catch(markCloudSyncUnavailable);
 
   indexReadingProgress();
+  renderReadingTheme();
   renderDailyPlan();
   renderAll(state.lastRead.verse);
   void loadFullBibleText();
