@@ -731,6 +731,12 @@ const navItems: NavItem[] = [
       .todo-month-day:hover { background: rgba(133, 82, 31, 0.08); }
       .todo-month-day.is-outside { color: rgba(100, 70, 44, 0.36); }
 
+      .todo-month-day.is-drop-target {
+        outline: 2px dashed rgba(151, 77, 18, 0.36);
+        outline-offset: -0.18rem;
+        background: rgba(175, 109, 45, 0.14);
+      }
+
       .todo-month-day.is-in-week::before {
         position: absolute;
         z-index: 0;
@@ -1027,6 +1033,7 @@ const navItems: NavItem[] = [
         outline-offset: -0.28rem;
       }
 
+      .todo-item.is-drop-target,
       .todo-overview-item.is-drop-target {
         border-color: rgba(170, 91, 24, 0.48);
         outline: 2px dashed rgba(151, 77, 18, 0.28);

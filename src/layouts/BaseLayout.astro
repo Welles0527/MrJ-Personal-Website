@@ -6,9 +6,10 @@ import '../styles/global.css';
 interface Props {
   title?: string;
   activeTheme?: string;
+  bare?: boolean;
 }
 
-const { title = '学问笔记', activeTheme } = Astro.props;
+const { title = '学问笔记', activeTheme, bare = false } = Astro.props;
 const basePath = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
 ---
 
@@ -29,14 +30,16 @@ const basePath = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_U
     <title>{title}</title>
   </head>
   <body>
-    <div class="app-shell">
-      <Sidebar activeTheme={activeTheme} />
+    <div class:list={['app-shell', { 'app-shell--bare': bare }]}>
+      {!bare && <Sidebar activeTheme={activeTheme} />}
       <main class="main-content">
         <slot />
-        <footer class="site-footer">
-          <span>© {new Date().getFullYear()} 学问笔记</span>
-          <span>个人投资内容仅为个人记录，不构成投资建议。</span>
-        </footer>
+        {!bare && (
+          <footer class="site-footer">
+            <span>© {new Date().getFullYear()} 学问笔记</span>
+            <span>个人投资内容仅为个人记录，不构成投资建议。</span>
+          </footer>
+        )}
       </main>
     </div>
     <BottomNavigation activeTheme={activeTheme} />

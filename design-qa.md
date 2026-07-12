@@ -1,47 +1,62 @@
-# 待办页原布局咖啡风格 QA
+# 圣经人物排行功能 — Design QA
 
-- Source layout truth: `C:/Users/huawei/AppData/Local/Temp/codex-clipboard-f3c33240-c690-439a-98ab-efcd507ba850.png`
-- Style reference: `C:/Users/huawei/AppData/Local/Temp/codex-clipboard-2c0d7b4b-ff56-4e0c-8ea9-222a9007cac9.png`
-- Implementation: `http://127.0.0.1:4321/officialwebsite/topics/space/planning/todo`
-- Desktop screenshot: in-session Puppeteer capture `todo-original-layout-coffee-1440x900-pass1` at `1440x900`.
-- Mobile screenshot: in-session Puppeteer capture `todo-original-layout-coffee-mobile-390x844` at `390x844`.
-- State: login dialog closed for layout comparison; current week sample tasks visible.
+## Comparison target
 
-**Findings**
+- Source visual truth (user reference): `C:\Users\huawei\AppData\Local\Temp\codex-clipboard-fb9c4099-466e-45d4-bdfa-16f68ab9bdfd.png`
+- Same-state source capture: `C:\Users\huawei\AppData\Local\Temp\codex-theology-people-cdp-1440x1024-20260712-195554.png`
+- Implementation screenshot: `C:\Users\huawei\AppData\Local\Temp\codex-people-final-1440x1024.png`
+- Side-by-side comparison input: `C:\Users\huawei\AppData\Local\Temp\codex-people-comparison-1440x1024.png`
+- Ranking desktop screenshot: `C:\Users\huawei\AppData\Local\Temp\codex-ranking-sidebar-removed-1440x900.png`
+- Ranking mobile screenshot: `C:\Users\huawei\AppData\Local\Temp\codex-ranking-sidebar-removed-390x844.png`
 
-- No actionable P0, P1, or P2 findings remain.
-- [P3] The source layout uses a cleaner blue accent system; the implementation intentionally keeps the coffee-paper palette and brown controls from the newer style reference.
-- [P3] The source screenshot is logged in. The implementation keeps the existing auth behavior, so anonymous sessions may see the login dialog first.
+## Viewport and state
 
-**Required Fidelity Surfaces**
+- People-section comparison: 1440 × 1024 desktop, `#bible-people` scrolled into view.
+- Ranking desktop: 1440 × 900, lifespan tab selected.
+- Ranking mobile: 390 × 844, accession-age tab selected.
 
-- Fonts and typography: the original wide hierarchy is restored with the coffee-style handwritten heading and unified day-card UI text.
-- Spacing and layout rhythm: desktop is back to top filters, data tools, full-width planner, and seven-column weekly board. The today clipboard is hidden from this layout.
-- Navigation: desktop keeps the coffee leather left sidebar; mobile keeps it as a slide-out drawer with no exposed edge when closed.
-- Colors and visual tokens: beige paper background, coffee-brown primary actions, soft category pills, and warm card shadows carry the current coffee feeling.
-- Image quality and asset fidelity: no raster assets were introduced. Existing decorative coffee marks are restrained so they do not obscure controls.
-- Copy and content: Chinese labels, category names, date ranges, add/edit/delete, export, completion, and stats remain dynamic.
+## Full-view comparison evidence
 
-**Patches Made Since Previous QA Pass**
+The same-state desktop comparison keeps the source section's black canvas, warm-gold type, hero hierarchy, three-column person-card grid, card borders, and button treatment. The only above-the-fold structural difference is the requested three-button action row: the original map entry remains first, with the two ranking entries beside it. The people cards shift downward by that one intentional row; their sizing, spacing, and content density remain intact.
 
-- Restored the original desktop information layout.
-- Restored the desktop left navigation sidebar.
-- Re-added the data tools/export row.
-- Hid the desktop today clipboard so the seven-day board is primary again.
-- Preserved the coffee visual system through color, paper texture, rounded panels, and brown controls.
-- Verified daily-card plus button hit areas and mobile drawer behavior.
+The ranking views continue the existing dark/gold visual language while adding no substitute imagery, custom SVG artwork, or placeholder assets. The ranking routes intentionally omit the left learning-navigation sidebar; mobile keeps the existing bottom navigation and the content remains within the 375 px document width (`scrollWidth === clientWidth`).
 
-**Implementation Checklist**
+## Focused region comparison evidence
 
-- [x] Compare desktop layout at `1440x900`.
-- [x] Check mobile layout at `390x844`.
-- [x] Verify no horizontal overflow in checked viewports.
-- [x] Verify daily-card `+` opens the add modal.
-- [x] Run `npm run lint`.
-- [x] Run `npm run build`.
+The action row was checked in the side-by-side image at 1440 × 1024. The new links use the source button's compact pill shape, gold border, fill, text color, and spacing. Their labels are fully visible and the row sits between the introduction and the cards, rather than altering the page-level navigation.
 
-**Follow-up Polish**
+The ranking tabs and chart rows were checked in the desktop and mobile captures. The selected tab is visually distinct; rank bars, values, Bible references, and the dispute/calculation notes remain aligned without clipping.
 
-- If the final direction keeps this layout, the next polish pass can tune exact column heights and paper texture intensity against the current production viewport.
+## Fidelity surfaces
+
+- **Fonts and typography:** The people-section heading and card typography retain the source's serif display/body hierarchy. The ranking view uses a compatible serif display face and readable compact metadata; no truncation was observed at either verified width.
+- **Spacing and layout rhythm:** Existing people cards retain their three-column desktop structure. The added action controls are grouped and do not overlap the cards. Mobile rank rows collapse into a readable two-column flow.
+- **Colors and visual tokens:** The black ground, warm off-white copy, muted secondary text, and gold interactive accents are consistent with the source section.
+- **Image quality and asset fidelity:** The source section contains no required imagery or custom icons for this addition. No image asset was substituted with CSS art, SVG, emoji, or placeholders.
+- **Copy and content:** The requested labels are present: `圣经寿命排名` and `登基年龄排名`. Both views expose the supplied workbook-derived ranking data and their own `争议与推算` notes.
+
+## Findings
+
+- No actionable P0, P1, or P2 mismatches found.
+- No P3 follow-up is required for the implemented scope.
+
+## Primary interactions tested
+
+- The three people-section links have the expected destinations: character map, lifespan ranking, and accession-age ranking.
+- Direct `?view=accession` loading selects `君王登基年龄排名`.
+- Switching from accession age to lifespan and back updates the visible ranking and restores `?view=accession` in the URL.
+- Console errors captured on the ranking desktop and mobile routes: none.
+
+## Comparison history
+
+1. 2026-07-12 — Compared the 1440 × 1024 source capture and final implementation in one side-by-side image. No P0/P1/P2 issue was found, so no visual-fix iteration was required.
+
+## Implementation checklist
+
+- [x] Place the two ranking entries beside the existing character-map control in `圣经人物`.
+- [x] Hide the left learning-navigation sidebar on both age-ranking routes only.
+- [x] Render lifespan and accession-age data with separate selectable views.
+- [x] Surface dispute/calculation notes below each ranking.
+- [x] Verify desktop and mobile layout, tab behavior, console errors, lint, and production build.
 
 final result: passed

@@ -474,7 +474,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
         sameDate(date, state.selectedDate) ? 'is-selected' : '',
         hasImportant ? 'has-important' : ''
       ].filter(Boolean).join(' ');
-      return `<button class="${classes}" type="button" data-action="select-date" data-date="${dateKey}" aria-label="${dateDescription(date)}${hasImportant ? '，有重要待办' : ''}"><span>${date.getDate()}</span>${hasImportant ? '<i class="todo-month-star" aria-hidden="true">★</i>' : ''}</button>`;
+      return `<button class="${classes}" type="button" data-action="select-date" data-date="${dateKey}" data-drop-date="${dateKey}" aria-label="${dateDescription(date)}${hasImportant ? '，有重要待办' : ''}"><span>${date.getDate()}</span>${hasImportant ? '<i class="todo-month-star" aria-hidden="true">★</i>' : ''}</button>`;
     }).join('');
   };
 
@@ -550,7 +550,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
   };
 
   const renderTodo = (todo: Todo) => {
-    return `<li class="todo-item ${todo.completed ? 'is-completed' : ''}" draggable="true" data-todo-id="${todo.id}" title="双击编辑">
+    return `<li class="todo-item ${todo.completed ? 'is-completed' : ''}" draggable="true" data-todo-id="${todo.id}" data-overview-drop-id="${todo.id}" title="双击编辑">
       <input class="todo-checkbox" type="checkbox" ${todo.completed ? 'checked' : ''} data-action="toggle-complete" data-todo-id="${todo.id}" aria-label="${todo.completed ? '取消完成' : '完成'}：${escapeHtml(todo.title)}" />
       <div class="todo-item-main">
         <p class="todo-item-title-row">
@@ -815,6 +815,16 @@ export function mountTodoWorkspace(root: HTMLElement) {
     }
   };
 
+  const saveMovedTodo = async (todo: Todo, successMessage: string) => {
+    if (cloudSession) return saveCloudTodo(todo, successMessage, { optimistic: true });
+    upsertTodoInState(todo);
+    persist(state.todos);
+    render();
+    enqueueId(PENDING_UPSERT_KEY, todo.id);
+    notify('移动已保存到本地；登录后会同步到云端。');
+    return true;
+  };
+
   const clearDropTargets = () => {
     root.querySelectorAll('.is-drop-target, .is-dragging').forEach((element) => {
       element.classList.remove('is-drop-target', 'is-dragging');
@@ -824,9 +834,16 @@ export function mountTodoWorkspace(root: HTMLElement) {
   const moveTodoToDate = async (todoId: string, dateKey: string) => {
     const date = parseDateKey(dateKey);
     const todo = state.todos.find((item) => item.id === todoId);
-    if (!date || !todo || todo.date === dateKey) return;
+    if (!date || !todo) return;
+    if (todo.date === dateKey) {
+      const todos = allTodosForDateKey(dateKey);
+      if (todos[todos.length - 1]?.id === todo.id) return;
+      await persistReorderedTodos([...todos.filter((item) => item.id !== todo.id), todo]);
+      selectDate(date);
+      return;
+    }
     const nextTodo: Todo = { ...todo, date: dateKey, sortOrder: nextDateSortOrder(dateKey), updatedAt: new Date().toISOString() };
-    const saved = await saveCloudTodo(nextTodo, '待办已移动并同步到云端。', { optimistic: true });
+    const saved = await saveMovedTodo(nextTodo, '待办已移动并同步到云端。');
     if (!saved) return;
     selectDate(date);
     render();
@@ -836,7 +853,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
     const todo = state.todos.find((item) => item.id === todoId);
     if (!todo || (!todo.date && todo.placement === placement)) return;
     const nextTodo: Todo = { ...todo, date: '', placement, sortOrder: nextSortOrder(placement), updatedAt: new Date().toISOString() };
-    await saveCloudTodo(nextTodo, '待办已移动并同步到云端。', { optimistic: true });
+    await saveMovedTodo(nextTodo, '待办已移动并同步到云端。');
   };
 
   const persistReorderedTodos = async (orderedTodos: Todo[]) => {
