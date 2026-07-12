@@ -520,10 +520,19 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     bookList.classList.toggle('is-list', viewMode === 'list');
     bookList.innerHTML = books.map((book) => {
       const status = bookStatuses[book.slug];
-      const classes = [book.slug === currentBook ? 'is-active' : '', status ? `is-status-${status}` : ''].filter(Boolean).join(' ');
-      const statusText = status === 'reading' ? '在读' : status === 'read' ? '已读' : '未设置状态';
+      const progress = getProgressSummary(book.slug);
+      const completed = fullTextStatus === 'ready' && progress.total > 0 && progress.read >= progress.total;
+      const effectiveStatus = completed ? 'read' : status;
+      const classes = [book.slug === currentBook ? 'is-active' : '', effectiveStatus ? `is-status-${effectiveStatus}` : ''].filter(Boolean).join(' ');
+      const statusText = effectiveStatus === 'reading' ? '在读' : effectiveStatus === 'read' ? '已读' : '未设置状态';
+      const statusMarker = effectiveStatus === 'reading'
+        ? '<span class="bible-book-status-marker bible-book-status-marker-reading" title="在读" aria-label="在读">◉</span>'
+        : effectiveStatus === 'read'
+          ? '<span class="bible-book-status-marker bible-book-status-marker-read" title="已读完" aria-label="已读完">✓</span>'
+          : '';
       return `
       <button type="button" class="${classes}" data-book="${book.slug}" title="双击设置阅读状态" aria-label="${escapeHtml(book.title)}，${statusText}，双击设置阅读状态">
+        ${statusMarker}
         <strong>${escapeHtml(book.shortName)}</strong>
         <span>${escapeHtml(book.title)}</span>
       </button>
@@ -727,6 +736,14 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     return haystack.includes(normalized) || compactHaystack.includes(compact);
   };
 
+  const sortedBookmarks = () => state.bookmarks
+    .slice()
+    .sort((first, second) => {
+      const firstBook = data.books.findIndex((book) => book.slug === first.book);
+      const secondBook = data.books.findIndex((book) => book.slug === second.book);
+      return firstBook - secondBook || first.chapter - second.chapter || first.verse - second.verse;
+    });
+
   const renderVerses = (targetVerse?: number) => {
     const sample = currentSample();
     const book = currentBookInfo();
@@ -844,6 +861,83 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       const secondBook = data.books.findIndex((book) => book.slug === second.book);
       return firstBook - secondBook || first.chapter - second.chapter || first.verse - second.verse;
     });
+
+  const formatExportDate = (value: string) => {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? value : date.toLocaleString('zh-CN');
+  };
+
+  const downloadExcel = (filename: string, title: string, headers: string[], rows: string[][]) => {
+    const tableRows = [headers, ...rows].map((row, rowIndex) => `
+      <tr>${row.map((cell) => `<${rowIndex === 0 ? 'th' : 'td'}>${escapeHtml(cell)}</${rowIndex === 0 ? 'th' : 'td'}>`).join('')}</tr>
+    `).join('');
+    const workbook = `<!doctype html><html><head><meta charset="utf-8"><style>
+      body{font-family:Arial,"Microsoft YaHei",sans-serif;color:#222}h2{color:#8b6518}table{border-collapse:collapse}th,td{border:1px solid #cfc6b7;padding:6px 10px;vertical-align:top}th{background:#f2dfad;color:#38250d}td{mso-number-format:"\\@"}
+    </style></head><body><h2>${escapeHtml(title)}</h2><table>${tableRows}</table></body></html>`;
+    const blob = new Blob([`\ufeff${workbook}`], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  };
+
+  const exportBookmarks = () => {
+    if (!state.bookmarks.length) {
+      notify('还没有可导出的经文收藏。');
+      return;
+    }
+    const rows = sortedBookmarks().map((item, index) => {
+      const book = bookBySlug(item.book);
+      return [
+        String(index + 1),
+        book?.title ?? item.book,
+        String(item.chapter),
+        String(item.verse),
+        item.text,
+        formatExportDate(item.createdAt),
+        formatExportDate(item.updatedAt)
+      ];
+    });
+    downloadExcel(
+      `经文收藏-${new Date().toISOString().slice(0, 10)}.xls`,
+      '经文收藏',
+      ['序号', '卷名', '章', '节', '经文', '收藏时间', '更新时间'],
+      rows
+    );
+    notify(`已导出 ${rows.length} 条经文收藏。`);
+  };
+
+  const exportNotes = () => {
+    if (!state.notes.length) {
+      notify('还没有可导出的笔记。');
+      return;
+    }
+    const rows = sortedNotes().map((item, index) => {
+      const book = bookBySlug(item.book);
+      const sample = data.samples[chapterKey(item.book, item.chapter)];
+      return [
+        String(index + 1),
+        book?.title ?? item.book,
+        String(item.chapter),
+        String(item.verse),
+        sample?.verses[item.verse - 1] ?? '',
+        item.text,
+        formatExportDate(item.createdAt),
+        formatExportDate(item.updatedAt)
+      ];
+    });
+    downloadExcel(
+      `我的笔记-${new Date().toISOString().slice(0, 10)}.xls`,
+      '我的笔记',
+      ['序号', '卷名', '章', '节', '经文', '笔记', '创建时间', '更新时间'],
+      rows
+    );
+    notify(`已导出 ${rows.length} 条笔记。`);
+  };
 
   const renderNotes = () => {
     noteTotal.textContent = `${state.notes.length} 条`;
@@ -1361,6 +1455,8 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     if (trigger.dataset.action === 'toggle-directory') directory.classList.toggle('is-open');
     if (trigger.dataset.action === 'toggle-reader-bookmarks') toggleReaderBookmarks();
     if (trigger.dataset.action === 'toggle-reader-notes') toggleReaderNotes();
+    if (trigger.dataset.action === 'export-bookmarks') exportBookmarks();
+    if (trigger.dataset.action === 'export-notes') exportNotes();
     if (trigger.dataset.action === 'toggle-reading-theme') toggleReadingTheme();
     if (trigger.dataset.action === 'toggle-bookmark-group' && trigger.dataset.groupKey) {
       const key = trigger.dataset.groupKey;

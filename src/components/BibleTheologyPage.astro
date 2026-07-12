@@ -364,6 +364,9 @@ const hymnCards = [
           <button class="bible-panel-toggle" type="button" data-action="toggle-reader-bookmarks" aria-expanded="false">
             <span>经文收藏 <small data-bookmark-total>0 条</small></span>
           </button>
+          <div class="bible-panel-export-row">
+            <button type="button" data-action="export-bookmarks" title="导出全部经文收藏为 Excel">导出收藏 Excel</button>
+          </div>
           <div class="bible-bookmark-search" data-reader-bookmark-search hidden>
             <label>
               <span>搜索收藏</span>
@@ -377,6 +380,9 @@ const hymnCards = [
           <button class="bible-panel-toggle" type="button" data-action="toggle-reader-notes" aria-expanded="false">
             <span>我的笔记 <small data-note-total>0 条</small></span>
           </button>
+          <div class="bible-panel-export-row">
+            <button type="button" data-action="export-notes" title="导出全部笔记为 Excel">导出笔记 Excel</button>
+          </div>
           <div class="bible-note-list" data-note-section-list hidden>
             <p>还没有笔记。</p>
           </div>
@@ -1294,6 +1300,7 @@ const hymnCards = [
   }
 
   .bible-book-list button {
+    position: relative;
     display: grid;
     gap: 0.18rem;
     min-height: 4.3rem;
@@ -1316,10 +1323,35 @@ const hymnCards = [
     font-size: 1.18rem;
   }
 
-  .bible-book-list button span {
+  .bible-book-list button > span:not(.bible-book-status-marker) {
     color: var(--muted);
     font-size: 0.68rem;
     font-weight: 800;
+  }
+
+  .bible-book-status-marker {
+    position: absolute;
+    top: 0.36rem;
+    left: 0.36rem;
+    display: grid;
+    width: 1.12rem;
+    height: 1.12rem;
+    place-items: center;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    font-size: 0.62rem;
+    font-weight: 900;
+    line-height: 1;
+  }
+
+  .bible-book-status-marker-reading {
+    background: #f1eaf8;
+    color: #6e5296;
+  }
+
+  .bible-book-status-marker-read {
+    background: #eaf5eb;
+    color: #315c36;
   }
 
   .bible-book-list button.is-active {
@@ -1435,17 +1467,18 @@ const hymnCards = [
 
   .bible-chapter-strip {
     display: flex;
-    gap: 0.38rem;
+    gap: 0.25rem;
     overflow-x: auto;
-    padding: 0.85rem 1.15rem;
+    overflow-y: hidden;
+    padding: 0.7rem 1rem;
     border-bottom: 1px solid rgba(101, 79, 44, 0.1);
     scrollbar-width: thin;
   }
 
   .bible-chapter-strip button {
     flex: 0 0 auto;
-    width: 2.35rem;
-    height: 2.35rem;
+    width: 2.1rem;
+    height: 2.1rem;
     border: 1px solid rgba(101, 79, 44, 0.18);
     border-radius: 50%;
     background: #fffaf0;
@@ -1735,6 +1768,22 @@ const hymnCards = [
     font-weight: 700;
   }
 
+  .bible-panel-export-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 0.42rem;
+  }
+
+  .bible-panel-export-row button {
+    min-height: 1.9rem !important;
+    border-color: rgba(101, 79, 44, 0.16) !important;
+    border-radius: 999px !important;
+    padding: 0.3rem 0.56rem !important;
+    background: #fff8ea !important;
+    color: #6b4b16 !important;
+    font-size: 0.68rem !important;
+  }
+
   .bible-bookmark-list,
   .bible-note-list {
     display: grid;
@@ -1920,6 +1969,20 @@ const hymnCards = [
     color: rgba(255, 247, 224, 0.6);
   }
 
+  .bible-app.is-dark-reader .bible-book-list button > span.bible-book-status-marker {
+    color: #f7df9e;
+  }
+
+  .bible-app.is-dark-reader .bible-book-status-marker-reading {
+    background: #29203a;
+    color: #e6d8ff !important;
+  }
+
+  .bible-app.is-dark-reader .bible-book-status-marker-read {
+    background: #1d3029;
+    color: #b8e0c4 !important;
+  }
+
   .bible-app.is-dark-reader .bible-book-list button.is-active,
   .bible-app.is-dark-reader .bible-chapter-strip button.is-active {
     border-color: #d8b35f;
@@ -2011,6 +2074,12 @@ const hymnCards = [
     border-color: rgba(216, 179, 95, 0.22);
     background: #19140c;
     color: #f7df9e;
+  }
+
+  .bible-app.is-dark-reader .bible-panel-export-row button {
+    border-color: rgba(216, 179, 95, 0.24) !important;
+    background: #21190d !important;
+    color: #f7df9e !important;
   }
 
   .bible-app.is-dark-reader .bible-collapsible-group-toggle {
