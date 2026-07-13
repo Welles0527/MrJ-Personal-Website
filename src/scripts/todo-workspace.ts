@@ -37,11 +37,12 @@ const categories: Array<{ value: TodoCategory; label: string }> = [
   { value: 'study', label: '学习' },
   { value: 'life', label: '生活' },
   { value: 'health', label: '运动' },
-  { value: 'other', label: '信仰' }
+  { value: 'other', label: ['信', '仰'].join('') }
 ];
 const placements: Array<{ value: TodoPlacement; label: string }> = [
   { value: 'upcoming', label: '近期待办' },
-  { value: 'ai', label: 'AI灵感' }
+  { value: 'ai', label: 'AI灵感' },
+  { value: 'weekly', label: '每周必做' }
 ];
 
 const weekdayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
@@ -272,6 +273,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
   let cloudSession: CloudSession | null = null;
   let completeEmailSignUp: ((verificationCode: string) => Promise<CloudSession>) | null = null;
   let draggedTodoId: string | null = null;
+  let draggedWithCopy = false;
   const localMigrationOrigin = LOCAL_MIGRATION_ORIGIN;
 
   const persist = (todos: Todo[]) => {
@@ -492,13 +494,13 @@ export function mountTodoWorkspace(root: HTMLElement) {
       <div class="todo-overview-actions">
         <button type="button" data-action="move-overview-up" data-todo-id="${todo.id}" aria-label="上移：${escapeHtml(todo.title)}" title="上移" ${index === 0 ? 'disabled' : ''}>↑</button>
         <button type="button" data-action="move-overview-down" data-todo-id="${todo.id}" aria-label="下移：${escapeHtml(todo.title)}" title="下移" ${index === total - 1 ? 'disabled' : ''}>↓</button>
-        <button type="button" data-action="edit-todo" data-todo-id="${todo.id}" aria-label="编辑：${escapeHtml(todo.title)}" title="编辑">编</button>
-        <button type="button" data-action="ask-delete" data-todo-id="${todo.id}" aria-label="删除：${escapeHtml(todo.title)}" title="删除">删</button>
+        <button type="button" data-action="edit-todo" data-todo-id="${todo.id}" aria-label="编辑：${escapeHtml(todo.title)}" title="编辑"><span aria-hidden="true">✎</span></button>
+        <button type="button" data-action="ask-delete" data-todo-id="${todo.id}" aria-label="删除：${escapeHtml(todo.title)}" title="删除"><span aria-hidden="true">×</span></button>
       </div>
     </li>`;
 
   const renderPlacementLanes = () => {
-    const sidebarPlacements = placements.filter((placement) => placement.value === 'ai');
+    const sidebarPlacements = placements.filter((placement) => placement.value === 'ai' || placement.value === 'weekly');
     sidebarLanes.innerHTML = sidebarPlacements.map((placement) => {
       const todos = filterTodos(allTodosForPlacement(placement.value));
       return `<section class="todo-overview-lane" aria-label="${placement.label}" data-drop-placement="${placement.value}">
@@ -555,12 +557,11 @@ export function mountTodoWorkspace(root: HTMLElement) {
       <div class="todo-item-main">
         <p class="todo-item-title-row">
           ${todo.important ? '<span class="todo-item-star" aria-hidden="true">★</span>' : ''}
-          <span class="todo-item-title">${escapeHtml(todo.title)}</span>
+          <span class="todo-item-title todo-category-title-${todo.category}">${escapeHtml(todo.title)}</span>
         </p>
       </div>
       <div class="todo-item-actions">
-        <button type="button" data-action="edit-todo" data-todo-id="${todo.id}" aria-label="编辑：${escapeHtml(todo.title)}" title="编辑">编</button>
-        <button class="todo-delete-button" type="button" data-action="ask-delete" data-todo-id="${todo.id}" aria-label="删除：${escapeHtml(todo.title)}" title="删除">删</button>
+        <button class="todo-delete-button" type="button" data-action="ask-delete" data-todo-id="${todo.id}" aria-label="删除：${escapeHtml(todo.title)}" title="删除"><span aria-hidden="true">×</span></button>
       </div>
     </li>`;
   };
@@ -815,13 +816,13 @@ export function mountTodoWorkspace(root: HTMLElement) {
     }
   };
 
-  const saveMovedTodo = async (todo: Todo, successMessage: string) => {
+  const saveMovedTodo = async (todo: Todo, successMessage: string, localMessage = '移动已保存到本地；登录后会同步到云端。') => {
     if (cloudSession) return saveCloudTodo(todo, successMessage, { optimistic: true });
     upsertTodoInState(todo);
     persist(state.todos);
     render();
     enqueueId(PENDING_UPSERT_KEY, todo.id);
-    notify('移动已保存到本地；登录后会同步到云端。');
+    notify(localMessage);
     return true;
   };
 
@@ -856,7 +857,38 @@ export function mountTodoWorkspace(root: HTMLElement) {
     await saveMovedTodo(nextTodo, '待办已移动并同步到云端。');
   };
 
-  const persistReorderedTodos = async (orderedTodos: Todo[]) => {
+  const copyTodoToDate = async (todoId: string, dateKey: string) => {
+    const date = parseDateKey(dateKey);
+    const todo = state.todos.find((item) => item.id === todoId);
+    if (!date || !todo) return;
+    const copiedTodo: Todo = {
+      ...todo,
+      id: createId(),
+      date: dateKey,
+      sortOrder: nextDateSortOrder(dateKey),
+      updatedAt: new Date().toISOString()
+    };
+    const saved = await saveMovedTodo(copiedTodo, '待办已复制并同步到云端。', '待办已复制到本地；登录后会同步到云端。');
+    if (!saved) return;
+    selectDate(date);
+    render();
+  };
+
+  const copyTodoToPlacement = async (todoId: string, placement: TodoPlacement) => {
+    const todo = state.todos.find((item) => item.id === todoId);
+    if (!todo) return;
+    const copiedTodo: Todo = {
+      ...todo,
+      id: createId(),
+      date: '',
+      placement,
+      sortOrder: nextSortOrder(placement),
+      updatedAt: new Date().toISOString()
+    };
+    await saveMovedTodo(copiedTodo, '待办已复制并同步到云端。', '待办已复制到本地；登录后会同步到云端。');
+  };
+
+  const persistReorderedTodos = async (orderedTodos: Todo[], message = '待办顺序已更新。') => {
     const now = new Date().toISOString();
     const reorderedTodos = orderedTodos.map((todo, index) => ({
       ...todo,
@@ -868,7 +900,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
     persist(state.todos);
     reorderedTodos.forEach((todo) => enqueueId(PENDING_UPSERT_KEY, todo.id));
     render();
-    notify('待办顺序已更新。');
+    notify(message);
 
     if (!cloudSession) return;
     const session = cloudSession;
@@ -912,6 +944,25 @@ export function mountTodoWorkspace(root: HTMLElement) {
       ...todos.slice(insertIndex)
     ];
     await persistReorderedTodos(reorderedTodos);
+  };
+
+  const copyTodoNearOverviewTodo = async (todoId: string, targetId: string, insertAfter: boolean) => {
+    const sourceTodo = state.todos.find((item) => item.id === todoId);
+    const targetTodo = state.todos.find((item) => item.id === targetId);
+    if (!sourceTodo || !targetTodo) return;
+    const todos = targetTodo.date ? allTodosForDateKey(targetTodo.date) : allTodosForPlacement(targetTodo.placement);
+    const targetIndex = todos.findIndex((todo) => todo.id === targetTodo.id);
+    if (targetIndex < 0) return;
+    const copiedTodo: Todo = targetTodo.date
+      ? { ...sourceTodo, id: createId(), date: targetTodo.date, updatedAt: new Date().toISOString() }
+      : { ...sourceTodo, id: createId(), date: '', placement: targetTodo.placement, updatedAt: new Date().toISOString() };
+    const insertIndex = targetIndex + (insertAfter ? 1 : 0);
+    const reorderedTodos = [
+      ...todos.slice(0, insertIndex),
+      copiedTodo,
+      ...todos.slice(insertIndex)
+    ];
+    await persistReorderedTodos(reorderedTodos, '待办已复制并完成排序。');
   };
 
   const showCloudError = (error: unknown, fallback: string) => {
@@ -1121,13 +1172,15 @@ export function mountTodoWorkspace(root: HTMLElement) {
     const todoItem = target.closest<HTMLElement>('[data-todo-id][draggable="true"]');
     if (!todoItem?.dataset.todoId || !event.dataTransfer) return;
     draggedTodoId = todoItem.dataset.todoId;
-    event.dataTransfer.effectAllowed = 'move';
+    draggedWithCopy = event.ctrlKey;
+    event.dataTransfer.effectAllowed = draggedWithCopy ? 'copy' : 'move';
     event.dataTransfer.setData('text/plain', draggedTodoId);
     todoItem.classList.add('is-dragging');
   });
 
   root.addEventListener('dragend', () => {
     draggedTodoId = null;
+    draggedWithCopy = false;
     clearDropTargets();
   });
 
@@ -1138,7 +1191,8 @@ export function mountTodoWorkspace(root: HTMLElement) {
     const dropTarget = target.closest<HTMLElement>('[data-overview-drop-id], [data-drop-date], [data-drop-placement]');
     if (!dropTarget) return;
     event.preventDefault();
-    event.dataTransfer!.dropEffect = 'move';
+    draggedWithCopy = event.ctrlKey;
+    event.dataTransfer!.dropEffect = draggedWithCopy ? 'copy' : 'move';
     root.querySelectorAll('.is-drop-target').forEach((element) => {
       if (element !== dropTarget) element.classList.remove('is-drop-target');
     });
@@ -1161,20 +1215,35 @@ export function mountTodoWorkspace(root: HTMLElement) {
     if (!dropTarget) return;
     event.preventDefault();
     const todoId = event.dataTransfer?.getData('text/plain') || draggedTodoId;
+    const copyRequested = event.ctrlKey || draggedWithCopy;
     clearDropTargets();
     draggedTodoId = null;
+    draggedWithCopy = false;
     try {
       if (dropTarget.dataset.overviewDropId) {
         const rect = dropTarget.getBoundingClientRect();
-        await moveTodoNearOverviewTodo(todoId, dropTarget.dataset.overviewDropId, event.clientY > rect.top + rect.height / 2);
+        const insertAfter = event.clientY > rect.top + rect.height / 2;
+        if (copyRequested) {
+          await copyTodoNearOverviewTodo(todoId, dropTarget.dataset.overviewDropId, insertAfter);
+        } else {
+          await moveTodoNearOverviewTodo(todoId, dropTarget.dataset.overviewDropId, insertAfter);
+        }
         return;
       }
       if (dropTarget.dataset.dropDate) {
-        await moveTodoToDate(todoId, dropTarget.dataset.dropDate);
+        if (copyRequested) {
+          await copyTodoToDate(todoId, dropTarget.dataset.dropDate);
+        } else {
+          await moveTodoToDate(todoId, dropTarget.dataset.dropDate);
+        }
         return;
       }
       if (isPlacement(dropTarget.dataset.dropPlacement)) {
-        await moveTodoToPlacement(todoId, dropTarget.dataset.dropPlacement);
+        if (copyRequested) {
+          await copyTodoToPlacement(todoId, dropTarget.dataset.dropPlacement);
+        } else {
+          await moveTodoToPlacement(todoId, dropTarget.dataset.dropPlacement);
+        }
       }
     } catch (error) {
       showCloudError(error, '移动待办失败。');

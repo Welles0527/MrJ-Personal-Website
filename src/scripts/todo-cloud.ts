@@ -2,7 +2,7 @@ import { cloudErrorMessage, getCloudDb, getCloudSession, getRememberedSession, s
 import type { CloudSession } from './site-auth';
 
 export type CloudTodoCategory = 'work' | 'study' | 'life' | 'health' | 'other';
-export type CloudTodoPlacement = 'upcoming' | 'ai';
+export type CloudTodoPlacement = 'upcoming' | 'ai' | 'weekly';
 
 export type CloudTodo = {
   id: string;
