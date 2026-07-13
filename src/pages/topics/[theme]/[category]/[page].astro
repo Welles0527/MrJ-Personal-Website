@@ -4,7 +4,7 @@ import TodoPage from '../../../../components/TodoPage.astro';
 import SkillsMcpTable from '../../../../components/SkillsMcpTable.astro';
 import OriginalWebToolsTable from '../../../../components/OriginalWebToolsTable.astro';
 import BibleTheologyPage from '../../../../components/BibleTheologyPage.astro';
-import { getCategory, getDetail, isInvestment, themes } from '../../../../data/site';
+import { getCategory, getDetail, isInvestment, sitePath, themes } from '../../../../data/site';
 
 export function getStaticPaths() {
   return themes.flatMap((theme) => theme.categories.flatMap((category) => category.details.map((item) => ({
@@ -20,6 +20,7 @@ const currentItem = previousCategory ? getDetail(previousCategory, item.slug) : 
 const isTodoPage = theme.slug === 'space' && category.slug === 'planning' && item.slug === 'todo';
 const isSkillsMcpDirectoryPage = theme.slug === 'tools' && category.slug === 'skills-mcp' && item.slug === 'skills-mcp-directory';
 const isOriginalWebToolsPage = theme.slug === 'applications' && category.slug === 'original-applications' && item.slug === 'web-pages';
+const isMiniPluginsPage = theme.slug === 'applications' && category.slug === 'original-applications' && item.slug === 'mini-plugins';
 const isBibleTheologyPage = theme.slug === 'applications' && category.slug === 'inspiration-station' && item.slug === 'theology';
 ---
 
@@ -46,6 +47,31 @@ const isBibleTheologyPage = theme.slug === 'applications' && category.slug === '
     <p class="lede">集中管理已经完成和准备发布的自创网页工具，后续产品发布后直接补充链接。</p>
   </section>
   <OriginalWebToolsTable />
+</BaseLayout>
+) : isMiniPluginsPage ? (
+<BaseLayout title="小插件｜学习笔记" activeTheme={theme.slug}>
+  <section class="section-intro terms-intro">
+    <p class={`eyebrow tone-${theme.color}`}>{theme.title} / {category.title}</p>
+    <h1>{item.title}</h1>
+    <p class="lede">可直接打开和使用的个人小插件。</p>
+  </section>
+  <section class="mini-plugin-list" aria-label="小插件列表">
+    <a class="mini-plugin-card" href={sitePath('/topics/applications/original-applications/mini-plugins/momdiet/')}>
+      <span class="mini-plugin-card-kicker">MomDiet</span>
+      <h2>每日饮食计划</h2>
+      <p>安排每日餐次与食品，按单位自动换算克数和能量，记录饮食、用药与体重。</p>
+      <span class="mini-plugin-card-action">打开应用 →</span>
+    </a>
+  </section>
+  <style>
+    .mini-plugin-list { max-width: 720px; margin: 0 auto 4rem; }
+    .mini-plugin-card { display: block; padding: 1.35rem 1.45rem; border: 1px solid var(--line); border-radius: 0.65rem; background: rgba(255, 253, 249, 0.7); color: inherit; text-decoration: none; transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease; }
+    .mini-plugin-card:hover { border-color: var(--clay); box-shadow: 0 0.8rem 2.2rem rgba(67, 38, 22, 0.1); transform: translateY(-2px); }
+    .mini-plugin-card-kicker { color: var(--clay); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+    .mini-plugin-card h2 { margin: 0.45rem 0 0; font-size: clamp(1.45rem, 3vw, 2.1rem); }
+    .mini-plugin-card p { max-width: 38rem; margin: 0.65rem 0 1.1rem; color: var(--muted); line-height: 1.7; }
+    .mini-plugin-card-action { color: var(--clay); font-size: 0.82rem; font-weight: 800; }
+  </style>
 </BaseLayout>
 ) : (
 <BaseLayout title={`${item.title}｜学问笔记`} activeTheme={theme.slug}>
