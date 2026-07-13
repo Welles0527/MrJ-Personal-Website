@@ -1339,21 +1339,28 @@ const hymnCards = [
     width: 1.12rem;
     height: 1.12rem;
     place-items: center;
-    border: 1px solid currentColor;
-    border-radius: 50%;
     font-size: 0.62rem;
     font-weight: 900;
     line-height: 1;
   }
 
+  .bible-book-status-marker img {
+    width: 2.35rem;
+    height: 2.35rem;
+    max-width: none;
+    object-fit: contain;
+    transform: translate(-0.58rem, -0.58rem);
+  }
+
   .bible-book-status-marker-reading {
-    background: #f1eaf8;
     color: #6e5296;
   }
 
   .bible-book-status-marker-read {
     background: #eaf5eb;
     color: #315c36;
+    border: 1px solid currentColor;
+    border-radius: 50%;
   }
 
   .bible-book-list button.is-active {
@@ -1378,6 +1385,7 @@ const hymnCards = [
 
   .bible-reading-pane {
     min-width: 0;
+    align-self: start;
     overflow: hidden;
   }
 
@@ -1533,7 +1541,7 @@ const hymnCards = [
   .bible-verses {
     display: grid;
     gap: 0.72rem;
-    max-height: calc(82vh - 10rem);
+    max-height: min(82vh, calc(100vh - 8rem));
     overflow: auto;
     padding: 1rem clamp(1rem, 2.4vw, 2rem) 2rem;
     background: #fffaf0;
@@ -2444,6 +2452,14 @@ const hymnCards = [
       padding: 0.8rem 0.82rem 1.2rem;
     }
 
+    .bible-app.is-direct-reader .bible-stage {
+      display: none;
+    }
+
+    .bible-app.is-direct-reader .bible-reader-section {
+      padding-top: 0;
+    }
+
     .bible-top-nav {
       align-items: flex-start;
       flex-direction: column;
@@ -2555,11 +2571,31 @@ const hymnCards = [
       box-shadow: none;
     }
 
+    .bible-reading-pane {
+      overflow: visible;
+    }
+
     .bible-reading-header {
-      position: sticky;
-      z-index: 20;
-      top: 0;
+      position: relative;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
       align-items: flex-start;
+      gap: 0.55rem;
+      padding: 0.72rem 0.8rem;
+    }
+
+    .bible-reading-header > div:first-of-type {
+      min-width: 0;
+    }
+
+    .bible-reading-header > div:last-of-type {
+      grid-column: 2;
+      justify-content: flex-start;
+      gap: 0.28rem;
+    }
+
+    .bible-reading-header h2 {
+      font-size: 1.55rem;
     }
 
     .bible-mobile-directory {
@@ -2568,8 +2604,36 @@ const hymnCards = [
     }
 
     .bible-reading-actions {
-      flex-direction: column;
-      align-items: flex-end;
+      flex-direction: row;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .bible-reading-actions button {
+      min-height: 2rem;
+      padding: 0.34rem 0.5rem;
+      font-size: 0.7rem;
+    }
+
+    .bible-reading-actions .bible-speech-icon {
+      width: 2rem;
+    }
+
+    .bible-login-account,
+    .bible-reading-sync-status {
+      display: none;
+    }
+
+    .bible-chapter-strip {
+      position: sticky;
+      z-index: 20;
+      top: 0;
+    }
+
+    .bible-book-status-marker img {
+      width: 2.05rem;
+      height: 2.05rem;
+      transform: translate(-0.47rem, -0.47rem);
     }
 
     .bible-login-account {

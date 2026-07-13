@@ -301,6 +301,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   const readingThemeToggle = root.querySelector<HTMLButtonElement>('[data-action="toggle-reading-theme"]');
 
   const params = new URLSearchParams(window.location.search);
+  root.classList.toggle('is-direct-reader', params.has('book'));
   const requestedBook = params.get('book') || 'gen';
   const requestedChapter = Number(params.get('chapter') || '1');
   const fallbackBook = data.books.some((book) => book.slug === requestedBook) ? requestedBook : 'gen';
@@ -526,7 +527,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       const classes = [book.slug === currentBook ? 'is-active' : '', effectiveStatus ? `is-status-${effectiveStatus}` : ''].filter(Boolean).join(' ');
       const statusText = effectiveStatus === 'reading' ? '在读' : effectiveStatus === 'read' ? '已读' : '未设置状态';
       const statusMarker = effectiveStatus === 'reading'
-        ? '<span class="bible-book-status-marker bible-book-status-marker-reading" title="在读" aria-label="在读">◉</span>'
+        ? '<span class="bible-book-status-marker bible-book-status-marker-reading" title="在读" aria-label="在读"><img src="/officialwebsite/images/bible-reading-status-icon.png" alt="" aria-hidden="true"></span>'
         : effectiveStatus === 'read'
           ? '<span class="bible-book-status-marker bible-book-status-marker-read" title="已读完" aria-label="已读完">✓</span>'
           : '';
@@ -605,17 +606,23 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       const classes = [chapter === currentChapter ? 'is-active' : '', complete ? 'is-complete' : ''].filter(Boolean).join(' ');
       return `<button type="button" class="${classes}" data-chapter="${chapter}" aria-label="${escapeHtml(book.title)} ${chapter}章${complete ? '，已读完' : ''}">${chapter}</button>`;
     }).join('');
-    window.setTimeout(() => chapterList.querySelector<HTMLButtonElement>('.is-active')?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'nearest',
-      inline: 'center'
-    }), 0);
+    window.setTimeout(() => {
+      const activeChapter = chapterList.querySelector<HTMLButtonElement>('.is-active');
+      if (!activeChapter) return;
+      const maxScrollLeft = chapterList.scrollWidth - chapterList.clientWidth;
+      const centeredLeft = activeChapter.offsetLeft - (chapterList.clientWidth - activeChapter.offsetWidth) / 2;
+      chapterList.scrollTo({
+        left: Math.min(maxScrollLeft, Math.max(0, centeredLeft)),
+        behavior: 'smooth'
+      });
+    }, 0);
   };
 
   const updateUrl = (verse?: number) => {
     const next = new URL(window.location.href);
     next.searchParams.set('book', currentBook);
     next.searchParams.set('chapter', String(currentChapter));
+    root.classList.add('is-direct-reader');
     if (verse) next.searchParams.set('verse', String(verse));
     else next.searchParams.delete('verse');
     window.history.replaceState({}, '', next);
@@ -1213,6 +1220,9 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     }
 
     const key = verseKey(currentBook, currentChapter, verse);
+    const pageScrollX = window.scrollX;
+    const pageScrollY = window.scrollY;
+    const verseScrollTop = verseList.scrollTop;
     const nextReadVerses = new Set(readVerses);
     const nextRead = !nextReadVerses.has(key);
 
@@ -1234,6 +1244,10 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       trigger.setAttribute('aria-pressed', String(nextRead));
       renderReadingProgress();
       renderChapters();
+      window.setTimeout(() => {
+        window.scrollTo(pageScrollX, pageScrollY);
+        verseList.scrollTop = verseScrollTop;
+      }, 0);
       if (!cached) notify('阅读进度已保存到云端，但本地缓存更新失败。');
     } catch (error) {
       markCloudSyncUnavailable(error);
