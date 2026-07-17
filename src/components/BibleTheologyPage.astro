@@ -3,6 +3,7 @@ const basePath = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_U
 const characterMapHref = `${basePath}topics/applications/inspiration-station/theology/character-map`;
 const lifespanRankingHref = `${basePath}topics/applications/inspiration-station/theology/age-rankings?view=lifespan`;
 const accessionRankingHref = `${basePath}topics/applications/inspiration-station/theology/age-rankings?view=accession`;
+const worshipMusicHref = `${basePath}worship/`;
 
 const featurePages = [
   {
@@ -491,6 +492,14 @@ const hymnCards = [
       <p class="bible-section-kicker">HYMN</p>
       <h2 id="bible-hymns-title">赞美诗歌</h2>
       <p class="bible-section-lede">按主题、经文和聚会流程整理诗歌索引；这里只提供使用建议，不展示完整歌词。</p>
+      <a class="bible-worship-entry" href={worshipMusicHref}>
+        <span class="bible-worship-entry-icon" aria-hidden="true">♫</span>
+        <span class="bible-worship-entry-copy">
+          <strong>进入敬拜音乐</strong>
+          <small>收听精选华语敬拜与赞美诗</small>
+        </span>
+        <i aria-hidden="true">↗</i>
+      </a>
       <div class="bible-card-grid">
         {hymnCards.map((hymn) => (
           <article class="bible-board-card">
@@ -2213,6 +2222,60 @@ const hymnCards = [
     font-size: 0.76rem;
     font-weight: 900;
     text-decoration: none;
+  }
+
+  .bible-worship-entry {
+    display: grid;
+    width: min(100%, 28rem);
+    grid-template-columns: 2.4rem minmax(0, 1fr) 1rem;
+    align-items: center;
+    gap: 0.8rem;
+    margin: 0 0 1.4rem;
+    padding: 0.8rem 1rem;
+    border: 1px solid rgba(216, 179, 95, 0.42);
+    border-radius: 0.8rem;
+    background: linear-gradient(135deg, rgba(73, 55, 25, 0.88), rgba(31, 27, 18, 0.94));
+    color: #fff4d8;
+    text-decoration: none;
+    box-shadow: 0 0.8rem 2rem rgba(0, 0, 0, 0.22);
+    transition: transform 180ms ease, border-color 180ms ease;
+  }
+
+  .bible-worship-entry:hover {
+    transform: translateY(-2px);
+    border-color: rgba(240, 207, 133, 0.86);
+    text-decoration: none;
+  }
+
+  .bible-worship-entry-icon {
+    display: grid;
+    width: 2.4rem;
+    height: 2.4rem;
+    place-items: center;
+    border-radius: 50%;
+    background: #e0ba62;
+    color: #20190d;
+    font-size: 1.15rem;
+  }
+
+  .bible-worship-entry strong,
+  .bible-worship-entry small {
+    display: block;
+  }
+
+  .bible-worship-entry-copy {
+    min-width: 0;
+  }
+
+  .bible-worship-entry small {
+    margin-top: 0.16rem;
+    color: rgba(255, 247, 224, 0.62);
+    line-height: 1.45;
+  }
+
+  .bible-worship-entry i {
+    color: #e0ba62;
+    font-style: normal;
   }
 
   .bible-character-map-link {

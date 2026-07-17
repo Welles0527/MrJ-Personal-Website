@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#081622" />
+    <title>敬拜音乐 · 让赞美成为今天的力量</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;600;700;900&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
+    <div class="app">
+      <aside class="sidebar">
+        <a class="logo" href="#top"><span class="logo-icon">◒</span><span><strong>敬拜音乐</strong><small>WORSHIP ROOM</small></span></a>
+        <nav class="side-nav" aria-label="网站导航">
+          <button class="side-link active" data-nav="discover"><span>⌂</span>发现</button>
+          <button class="side-link" data-nav="picked"><span>☆</span>为你精选</button>
+          <button class="side-link" data-nav="artists"><span>♧</span>歌手合集</button>
+          <button class="side-link" data-nav="singles"><span>▣</span>经典单曲</button>
+          <button class="side-link" data-nav="favorites"><span>♡</span>我的收藏 <i class="nav-dot" hidden></i></button>
+          <button class="side-link" data-nav="recent"><span>◷</span>最近播放</button>
+        </nav>
+        <div class="source-links"><span>聆听来源</span><a href="https://www.youtube.com/" target="_blank" rel="noreferrer">▶ <b>YouTube</b></a><a href="https://www.bilibili.com/" target="_blank" rel="noreferrer">▣ <b>B站</b></a></div>
+        <div class="account"><div class="avatar">恩</div><div><strong>晨光与祢同在</strong><small id="syncStatus">正在检查云端同步…</small></div><a class="account-link" href="../topics/space/planning/todo" aria-label="登录或管理账号">⌄</a></div>
+      </aside>
+
+      <main id="top">
+        <header class="topbar"><button class="mobile-menu" id="mobileMenu" aria-label="打开导航">☰</button><label class="search"><span>⌕</span><input id="searchInput" type="search" placeholder="搜索歌曲、歌手或心情…" /></label><button class="top-action" id="randomButton">随心听一首 <span>↗</span></button></header>
+
+        <section class="feature reveal">
+          <div class="feature-art"><div class="art-sun"></div><div class="art-mountains mountain-back"></div><div class="art-mountains mountain-front"></div><div class="art-bloom"></div><div class="art-credit">SUNRISE<br /><b>01</b></div></div>
+          <div class="feature-copy"><span class="kicker">今日精选 · 温暖治愈</span><h1>敬拜音乐</h1><p class="tagline">让赞美，成为今天的力量。</p><div class="feature-track"><div class="cover cover-sun">这一生<br />最美的祝福</div><div><h2>这一生最美的祝福</h2><p>赞美之泉 <span>·</span> 永恒的盼望</p></div></div><div class="feature-controls"><button class="big-play" data-play="这一生最美的祝福" data-artist="赞美之泉">▶</button><button data-skip="prev" aria-label="上一首">|◀</button><button data-play="这一生最美的祝福" data-artist="赞美之泉" aria-label="播放">▷</button><button data-skip="next" aria-label="下一首">▶|</button><div class="feature-progress"><i id="featureProgress"></i></div><small>02:28 / 05:26</small></div></div>
+        </section>
+
+        <section class="moods reveal delay-1"><button class="mood active" data-mood="全部"><span>✦</span>为你精选</button><button class="mood" data-mood="温暖治愈"><span>☼</span>温暖治愈</button><button class="mood" data-mood="抒情安静"><span>♧</span>抒情安静</button><button class="mood" data-mood="激情敬拜"><span>♨</span>激情敬拜</button><button class="mood" data-mood="欢快感恩"><span>☺</span>欢快感恩</button></section>
+
+        <div class="content-grid">
+          <section class="main-column reveal delay-2"><div class="section-head"><div><span class="kicker">MOST BELOVED</span><h2 id="listTitle">为你精选</h2></div><button class="all-button" id="clearFilter">查看全部 →</button></div><div id="songList" class="song-list"></div><div id="emptyState" class="empty" hidden>没有找到匹配歌曲，换个关键词试试。</div></section>
+          <aside class="queue-panel reveal delay-3"><div class="queue-head"><div><span class="kicker">NOW PLAYING</span><h2>正在播放</h2></div><button id="clearQueue">清空</button></div><div class="now-card"><div class="cover cover-sun">这一生<br />最美的祝福</div><div><strong id="nowTitle">这一生最美的祝福</strong><small id="nowArtist">赞美之泉</small></div><span class="heart filled">♥</span><div class="now-progress"><i id="nowProgress"></i></div><small class="time">点击歌曲开始播放</small></div><div class="media-player-shell"><iframe id="mediaPlayer" title="敬拜音乐播放器" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin"></iframe><div id="playerPrompt"><span>▶</span><strong>选择歌曲后将在这里播放</strong><small>优先播放 YouTube 完整版本，B站作为备用来源</small></div></div><div class="queue-head queue-list-head"><h3>播放列表 · <span id="queueCount">12</span></h3><button id="addQueue">＋ 添加到播放列表</button></div><div id="queueList" class="queue-list"></div><button class="lyrics-button" id="lyricsButton">♫ 查看歌词与经文 <span>↗</span></button></aside>
+        </div>
+      </main>
+    </div>
+
+    <div class="player"><div class="player-cover cover-sun">这一生<br />最美的祝福</div><div class="player-meta"><strong id="playerTitle">这一生最美的祝福</strong><small id="playerArtist">赞美之泉</small><button class="mini-heart" data-favorite="这一生最美的祝福" aria-label="收藏">♥</button></div><div class="player-controls"><button data-skip="prev" aria-label="上一首">|◀</button><button class="pause" id="playToggle" aria-label="播放">▶</button><button data-skip="next" aria-label="下一首">▶|</button></div><div class="player-seek"><span>来源</span><div><i id="playerProgress"></i></div><span id="playerSourceLabel">YouTube</span></div><button class="player-icon" id="lyricsButtonBottom" aria-label="歌词">▤</button><button class="player-icon" id="fullscreenPlayer" aria-label="全屏播放器">⛶</button></div>
+
+    <dialog id="lyricsDialog"><div class="dialog-head"><div><span class="kicker">LYRICS & SCRIPTURE</span><h2 id="dialogSong">这一生最美的祝福</h2><p id="dialogArtist">赞美之泉</p></div><button id="closeDialog" aria-label="关闭">×</button></div><div class="dialog-body"><blockquote>在你身边，有最美的祝福<br />每一天都充满盼望</blockquote><p class="scripture">“我的心哪，你要称颂耶和华，不可忘记他的一切恩惠。”<br /><small>诗篇 103:2 · 主题相关</small></p><a id="sourceLink" href="https://www.youtube.com/" target="_blank" rel="noreferrer">打开真实播放源 ↗</a></div></dialog>
+    <script src="catalog.js"></script>
+    <script src="sources.js"></script>
+    <script src="cloudbase-adapter.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
