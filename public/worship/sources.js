@@ -398,5 +398,8 @@ window.worshipSources = {
   "经典单曲::恩典之路": {
     "bvid": "BV1irvseyEd2",
     "youtubeId": "YaJ5gof0YNQ"
+  },
+  "生命河灵粮堂::如鹰展翅上腾": {
+    "youtubeId": "qF3RADPSlDs"
   }
 };

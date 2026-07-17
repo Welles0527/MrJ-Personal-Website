@@ -32,4 +32,40 @@ window.worshipCatalog = [
   ...group("KUA Worship", ["我神我王", "我信靠祢", "若有人在基督里", "前来敬拜祢", "哈利路亚这边", "宝座前", "祢的声音", "阿爸这就是祢", "无止尽的爱", "爱的印记"], "激情敬拜", "信心与盼望", "KUA Originals 官方项目与 Apple Music 热门歌曲", "https://kuaglobal.org/kuaoriginals/", "https://music.apple.com/us/artist/kua-worship/1584905348"),
   ...group("迦南诗选", ["真的有一位神爱你", "都有走路的艰难", "翱翔的地方是天空", "一个有信心的人", "压伤的芦苇", "万国的大使命", "你是我的主", "中国的早晨五点钟", "主啊，我赞美你", "最知心的朋友"], "温暖治愈", "信心与盼望", "迦南诗歌作品目录与经典百首选集交叉核对", "https://www.izanmei.cc/artist/jia-nan-shi-ge/song.html", "https://www.fuyin.tv/content/view/movid/1186/index.html"),
   ...group("经典单曲", ["奇异恩典", "生命的更新", "最知心的朋友", "你真伟大", "我知谁掌管明天", "坚固保障", "圣哉三一歌", "主祢是我力量", "何等恩典", "恩典之路"], "抒情安静", "安慰与医治", "经典诗歌本与教会聚会歌单方向，版本待按演唱者核验", "https://www.magicj.cn/officialwebsite/topics/applications/inspiration-station/theology?book=gen&chapter=1&verse=1", "https://www.youtube.com/results?search_query=中文经典赞美诗", "单曲"),
+  {
+    title: "如鹰展翅上腾",
+    artist: "生命河灵粮堂",
+    group: "经典单曲",
+    kind: "单曲",
+    album: "如鹰展翅上腾",
+    moods: ["激情敬拜", "欢快感恩", "信心"],
+    theme: "信心与盼望",
+    duration: "待核",
+    rank: 11,
+    reason: "生命河官方频道长期传播的经典敬拜作品",
+    cover: "sunset",
+    sourceUrl: searchSource("如鹰展翅上腾", "生命河灵粮堂"),
+    evidence: "生命河 ROLCC Media 官方版本",
+    evidenceUrl: "https://www.youtube.com/watch?v=qF3RADPSlDs",
+    artistUrl: "https://www.youtube.com/@rolccmedia",
+  },
 ];
+
+const moodOverrides = new Map([
+  ["赞美之泉::耶和华祝福满满", ["欢快感恩", "温暖治愈"]],
+  ["赞美之泉::我要欢唱", ["欢快感恩", "激情敬拜"]],
+  ["天韵合唱团::歌颂复活主", ["欢快感恩", "激情敬拜"]],
+  ["小羊诗歌::全地在歌唱", ["欢快感恩", "激情敬拜"]],
+  ["盛晓玫::活出爱", ["欢快感恩", "温暖治愈"]],
+  ["盛晓玫::幸福", ["欢快感恩", "温暖治愈"]],
+  ["泥土音乐::新天地", ["欢快感恩", "激情敬拜"]],
+  ["约书亚乐团::耶稣基督", ["欢快感恩", "激情敬拜"]],
+  ["约书亚乐团::求充满这地", ["激情敬拜", "欢快感恩"]],
+  ["KUA Worship::哈利路亚这边", ["欢快感恩", "激情敬拜"]],
+  ["迦南诗选::主啊，我赞美你", ["欢快感恩", "温暖治愈"]],
+]);
+
+window.worshipCatalog = window.worshipCatalog.map(song => ({
+  ...song,
+  moods: moodOverrides.get(`${song.artist}::${song.title}`) || song.moods,
+}));

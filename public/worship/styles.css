@@ -9,3 +9,19 @@
 .media-player-shell.is-playing #playerPrompt{display:none}
 .account-link{margin-left:auto;color:var(--muted);text-decoration:none;font-size:18px}
 @media(max-width:760px){.sidebar.mobile-open{display:flex;position:fixed;inset:0 auto 72px 0;width:min(82vw,300px);height:auto;align-items:stretch;z-index:20}.sidebar.mobile-open .logo{display:flex}.sidebar.mobile-open .logo>span:last-child,.sidebar.mobile-open .side-link{font-size:13px}.sidebar.mobile-open .side-link{width:100%;text-align:left;padding-inline:11px}.sidebar.mobile-open .side-link span{width:28px}.sidebar.mobile-open .source-links,.sidebar.mobile-open .account{display:flex}.sidebar.mobile-open .source-links{display:grid}.media-player-shell{border-radius:14px}}
+
+.song-title-button,.feature-song-title,.feature-artist,.now-song-title,.now-artist,.player-song-title,.player-artist,.queue-song-title,.queue-artist,.artist{margin:0;padding:0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.song-title-button,.now-song-title,.player-song-title,.queue-song-title{display:block;max-width:100%;font-family:var(--serif);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.song-title-button{font-size:14px}.song-title-button:hover,.feature-song-title:hover,.now-song-title:hover,.player-song-title:hover,.queue-song-title:hover{color:var(--gold);text-decoration:underline;text-underline-offset:.2em}
+.artist,.feature-artist,.now-artist,.player-artist,.queue-artist{color:var(--muted)}
+.artist:hover,.feature-artist:hover,.now-artist:hover,.player-artist:hover,.queue-artist:hover{color:var(--gold)}
+.feature-song-title{font-size:19px}.feature-artist{font-size:11px}.now-song-title{font-size:13px}.now-artist{display:block;margin-top:4px;font-size:10px}.player-song-title{font-size:14px}.player-artist{display:block;margin-top:2px;font-size:10px}.queue-song-title{width:100%;font-size:11px}.queue-artist{display:block;margin-top:2px;font-size:8px}
+.song-row.is-current{background:linear-gradient(90deg,rgba(239,169,54,.14),#0b1b2c);box-shadow:inset 3px 0 var(--gold)}
+.row-play.is-playing,.queue-play.is-playing,.feature-controls .is-playing{border-color:var(--gold);background:transparent;color:var(--gold);box-shadow:0 0 16px rgba(239,169,54,.24)}
+.row-play.is-playing,.queue-play.is-playing{font-size:11px}
+.artist-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.artist-card{display:grid;grid-template-columns:30px 54px minmax(0,1fr) 20px;align-items:center;gap:12px;padding:14px;border:1px solid var(--line);border-radius:10px;background:linear-gradient(135deg,#10283b,#0a1a2a);color:var(--text);text-align:left;cursor:pointer;transition:transform .2s,border-color .2s,background .2s}
+.artist-card:hover{transform:translateY(-2px);border-color:rgba(239,169,54,.6);background:linear-gradient(135deg,#163249,#0d2133)}
+.artist-card-number{color:#6e818a;font:600 11px var(--serif)}.artist-card-cover{width:54px;height:54px;border-radius:7px;font-size:9px}.artist-card strong{display:block;font:600 16px var(--serif)}.artist-card small{display:block;margin-top:5px;color:var(--muted);font-size:9px}.artist-card i{color:var(--gold);font-style:normal}
+.account>div:nth-child(2){min-width:0}.account strong,.account small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.account-link{flex:none}
+@media(max-width:760px){.artist-grid{grid-template-columns:1fr}.artist-card{grid-template-columns:24px 48px minmax(0,1fr) 18px;padding:11px}.artist-card-cover{width:48px;height:48px}.song-title-button{font-size:13px}}
