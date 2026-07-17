@@ -1,0 +1,10 @@
+import { createRequire } from 'node:module';
+const require=createRequire(import.meta.url);
+const { chromium }=require('C:/Users/huawei/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/index.js');
+import path from 'node:path';
+const browser=await chromium.launch({headless:true});
+const page=await browser.newPage({viewport:{width:512,height:512},deviceScaleFactor:1});
+await page.goto('file:///'+path.resolve(process.argv[2]).replaceAll('\\','/'));
+await page.locator('svg').evaluate(el=>{el.style.width='512px';el.style.height='512px'});
+await page.locator('svg').screenshot({path:process.argv[3],omitBackground:true});
+await browser.close();

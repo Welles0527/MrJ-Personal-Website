@@ -1,0 +1,852 @@
+---
+import { sitePath, themePath, themes } from '../data/site';
+
+const shortcuts = [
+  {
+    label: 'Skills/MCP',
+    text: '亲测工具目录',
+    href: sitePath('/topics/tools/skills-mcp/skills-mcp-directory')
+  },
+  {
+    label: '自创工具',
+    text: '个人应用入口',
+    href: sitePath('/topics/applications/original-applications')
+  },
+  {
+    label: '待办看板',
+    text: '周计划与任务',
+    href: sitePath('/topics/space/planning/todo')
+  }
+];
+
+const demos = [
+  {
+    id: 'uupm-bento',
+    source: 'UI/UX Pro Max 01',
+    name: 'AI-Native Bento',
+    title: '把学习路径做成一张可操作地图',
+    intro: '适合保留明亮、轻快、学习型产品感，用卡片层级替代现在的平铺感。',
+    className: 'style-uupm-bento',
+    image: sitePath('/images/hero-learning-atlas.png'),
+    cta: '开始学习',
+    secondary: '查看知识地图'
+  },
+  {
+    id: 'uupm-dark',
+    source: 'UI/UX Pro Max 02',
+    name: 'Modern Dark Atlas',
+    title: '夜间学习舱，重点内容先发光',
+    intro: '适合把 AI、工具、项目搭建做得更像高端生产力工作台。',
+    className: 'style-uupm-dark',
+    image: sitePath('/images/topic-build.png'),
+    cta: '进入项目搭建',
+    secondary: '浏览工具'
+  },
+  {
+    id: 'taste-luxury',
+    source: 'Taste Skill 01',
+    name: 'Soft Structuralism',
+    title: '像一套高级课程资料夹',
+    intro: '用冷灰、银白和大片留白提升质感，重点是空间、层级和触感。',
+    className: 'style-taste-luxury',
+    image: sitePath('/images/hero-learning-atlas.png'),
+    cta: '打开课程',
+    secondary: '看学习主题'
+  },
+  {
+    id: 'taste-brutalist',
+    source: 'Taste Skill 02',
+    name: 'Industrial Swiss',
+    title: 'AI 学习作战手册',
+    intro: '强网格、强对比、少装饰，适合想要很硬朗、很有记忆点的版本。',
+    className: 'style-taste-brutalist',
+    image: sitePath('/images/topic-tools.png'),
+    cta: '读取目录',
+    secondary: '查看任务'
+  },
+  {
+    id: 'awesome-linear',
+    source: 'Awesome DESIGN.md 01',
+    name: 'Linear Craft',
+    title: '沉稳的深色知识操作台',
+    intro: '借鉴 Linear 的深色画布、发光少、边界清晰和产品截图式层级。',
+    className: 'style-awesome-linear',
+    image: sitePath('/images/topic-knowledge.png'),
+    cta: '进入知识库',
+    secondary: '查看全部板块'
+  },
+  {
+    id: 'awesome-spotify',
+    source: 'Awesome DESIGN.md 02',
+    name: 'Spotify Library',
+    title: '把六个板块做成学习歌单',
+    intro: '沉浸式深色、圆形操作、绿色功能点，适合更年轻、更内容流的首页。',
+    className: 'style-awesome-spotify',
+    image: sitePath('/images/topic-courses.png'),
+    cta: '播放课程路径',
+    secondary: '浏览歌单'
+  }
+];
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="J先生AI学习网站首页风格 demo 对比。" />
+    <link rel="icon" type="image/svg+xml" href={sitePath('/favicon.svg')} />
+    <title>首页风格 Demo｜J先生AI学习网站</title>
+    <style>
+      :root {
+        --page-bg: #eef2f7;
+        --page-ink: #111827;
+        --page-muted: #667085;
+        --page-line: #d6dce5;
+        color: var(--page-ink);
+        background: var(--page-bg);
+        font-family: "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+        font-synthesis: none;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        background: var(--page-bg);
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        min-width: 320px;
+        background: var(--page-bg);
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      img {
+        display: block;
+        max-width: 100%;
+      }
+
+      .demo-page {
+        min-height: 100dvh;
+      }
+
+      .demo-index {
+        display: grid;
+        gap: 1.5rem;
+        max-width: 1220px;
+        margin: 0 auto;
+        padding: 2rem 1.25rem 1.4rem;
+      }
+
+      .demo-index h1 {
+        margin: 0;
+        max-width: 44rem;
+        font-size: 3rem;
+        line-height: 1.05;
+      }
+
+      .demo-index p {
+        margin: 0;
+        max-width: 46rem;
+        color: var(--page-muted);
+        font-size: 1rem;
+        line-height: 1.7;
+      }
+
+      .demo-jump {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .5rem;
+      }
+
+      .demo-jump a {
+        min-height: 2.75rem;
+        padding: .7rem .9rem;
+        border: 1px solid var(--page-line);
+        border-radius: 8px;
+        background: #ffffff;
+        color: #1f2937;
+        font-size: .86rem;
+        font-weight: 700;
+      }
+
+      .demo-jump a:hover,
+      .demo-jump a:focus-visible {
+        border-color: #111827;
+        outline: 0;
+      }
+
+      .demo-scene {
+        --canvas: #f8fafc;
+        --surface: #ffffff;
+        --surface-strong: #eef2f7;
+        --ink: #111827;
+        --muted: #667085;
+        --line: #d5dbe5;
+        --accent: #0d9488;
+        --accent-ink: #ffffff;
+        --radius: 8px;
+        color: var(--ink);
+        background: var(--canvas);
+        border-top: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+      }
+
+      .demo-shell {
+        width: min(100%, 1440px);
+        margin: 0 auto;
+        padding: 1rem 1.25rem 4rem;
+      }
+
+      .scene-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        min-height: 4.5rem;
+        color: var(--muted);
+        font-size: .9rem;
+      }
+
+      .scene-brand {
+        color: var(--ink);
+        font-weight: 900;
+      }
+
+      .scene-topbar nav {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: .85rem;
+      }
+
+      .scene-topbar a {
+        min-height: 2.75rem;
+        display: inline-flex;
+        align-items: center;
+      }
+
+      .scene-login {
+        display: inline-flex;
+        align-items: center;
+        min-height: 2.75rem;
+        padding: .55rem .75rem;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+      }
+
+      .scene-hero {
+        position: relative;
+        isolation: isolate;
+        display: grid;
+        min-height: 28rem;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--surface);
+      }
+
+      .scene-hero::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: -2;
+        background-image: var(--hero-image);
+        background-position: center;
+        background-size: cover;
+      }
+
+      .scene-hero::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        background: var(--hero-scrim, rgb(255 255 255 / .78));
+      }
+
+      .hero-content {
+        align-self: end;
+        width: min(100%, 58rem);
+        padding: 3rem;
+      }
+
+      .source-label {
+        display: inline-flex;
+        align-items: center;
+        min-height: 2rem;
+        margin: 0 0 .9rem;
+        padding: .38rem .62rem;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: color-mix(in srgb, var(--surface) 88%, transparent);
+        color: var(--muted);
+        font-size: .78rem;
+        font-weight: 800;
+      }
+
+      .scene-hero h2 {
+        margin: 0;
+        max-width: 48rem;
+        font-size: 4rem;
+        line-height: 1.05;
+      }
+
+      .scene-hero p {
+        margin: 1rem 0 0;
+        max-width: 38rem;
+        color: var(--muted);
+        font-size: 1.1rem;
+        line-height: 1.75;
+      }
+
+      .scene-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .75rem;
+        margin-top: 1.6rem;
+      }
+
+      .scene-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 2.85rem;
+        padding: .75rem 1rem;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--surface);
+        color: var(--ink);
+        font-size: .9rem;
+        font-weight: 900;
+        transition:
+          transform 220ms cubic-bezier(.16, 1, .3, 1),
+          background-color 220ms cubic-bezier(.16, 1, .3, 1),
+          border-color 220ms cubic-bezier(.16, 1, .3, 1);
+      }
+
+      .scene-button.primary {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: var(--accent-ink);
+      }
+
+      .scene-button:hover,
+      .scene-button:focus-visible,
+      .scene-card a:hover,
+      .scene-card a:focus-visible {
+        outline: 0;
+        transform: translateY(-1px);
+      }
+
+      .scene-layout {
+        display: grid;
+        grid-template-columns: 20rem minmax(0, 1fr);
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      .scene-panel,
+      .scene-card {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--surface);
+      }
+
+      .scene-panel {
+        display: grid;
+        gap: 1rem;
+        align-content: start;
+        padding: 1rem;
+      }
+
+      .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: .5rem;
+      }
+
+      .metric {
+        display: grid;
+        gap: .2rem;
+        min-height: 5rem;
+        align-content: center;
+        padding: .75rem;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--surface-strong);
+      }
+
+      .metric strong {
+        font-size: 1.45rem;
+        line-height: 1;
+      }
+
+      .metric span {
+        color: var(--muted);
+        font-size: .76rem;
+      }
+
+      .shortcut-stack {
+        display: grid;
+        gap: .55rem;
+      }
+
+      .shortcut-stack a {
+        display: grid;
+        gap: .16rem;
+        min-height: 3.4rem;
+        padding: .72rem;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--surface-strong);
+      }
+
+      .shortcut-stack strong {
+        font-size: .9rem;
+      }
+
+      .shortcut-stack span {
+        color: var(--muted);
+        font-size: .74rem;
+      }
+
+      .scene-topics {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+      }
+
+      .scene-card {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 7.5rem;
+        min-height: 15rem;
+        overflow: hidden;
+      }
+
+      .scene-card-copy {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        padding: 1rem;
+      }
+
+      .scene-card h3 {
+        margin: 0;
+        font-size: 1.45rem;
+        line-height: 1.15;
+      }
+
+      .scene-card p {
+        margin: .65rem 0 0;
+        color: var(--muted);
+        font-size: .82rem;
+        line-height: 1.6;
+      }
+
+      .scene-card a {
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        min-height: 2.75rem;
+        margin-top: auto;
+        color: var(--accent);
+        font-size: .85rem;
+        font-weight: 900;
+        transition: transform 220ms cubic-bezier(.16, 1, .3, 1);
+      }
+
+      .scene-card img {
+        align-self: end;
+        width: 100%;
+        padding: .7rem;
+      }
+
+      .style-uupm-bento {
+        --canvas: #f0fdfa;
+        --surface: #ffffff;
+        --surface-strong: #e8f7f3;
+        --ink: #134e4a;
+        --muted: #4f6f6b;
+        --line: #9ddfd5;
+        --accent: #0d9488;
+        --accent-ink: #ffffff;
+        --hero-scrim: rgb(240 253 250 / .82);
+      }
+
+      .style-uupm-bento .scene-topics {
+        grid-template-columns: 1.2fr .9fr .9fr;
+      }
+
+      .style-uupm-bento .scene-card:first-child,
+      .style-uupm-bento .scene-card:nth-child(4) {
+        grid-column: span 2;
+      }
+
+      .style-uupm-dark {
+        --canvas: #050506;
+        --surface: #0f1014;
+        --surface-strong: #171921;
+        --ink: #f4f7fb;
+        --muted: #9aa5b5;
+        --line: #2a2d36;
+        --accent: #5e6ad2;
+        --accent-ink: #ffffff;
+        --hero-scrim: linear-gradient(90deg, rgb(5 5 6 / .92), rgb(5 5 6 / .68), rgb(5 5 6 / .34));
+      }
+
+      .style-uupm-dark .scene-hero,
+      .style-awesome-linear .scene-hero {
+        min-height: 31rem;
+      }
+
+      .style-uupm-dark .scene-card img,
+      .style-awesome-linear .scene-card img,
+      .style-awesome-spotify .scene-card img {
+        mix-blend-mode: screen;
+        opacity: .82;
+      }
+
+      .style-taste-luxury {
+        --canvas: #f5f7fa;
+        --surface: #ffffff;
+        --surface-strong: #edf1f6;
+        --ink: #17202a;
+        --muted: #65717f;
+        --line: #d0d8e2;
+        --accent: #325f74;
+        --accent-ink: #ffffff;
+        --hero-scrim: rgb(247 249 252 / .76);
+        --radius: 8px;
+      }
+
+      .style-taste-luxury .scene-panel,
+      .style-taste-luxury .scene-card,
+      .style-taste-luxury .scene-hero {
+        box-shadow:
+          inset 0 1px 0 rgb(255 255 255 / .86),
+          0 18px 48px rgb(62 83 105 / .13);
+      }
+
+      .style-taste-luxury .scene-card {
+        padding: .35rem;
+        background: #e6ebf1;
+      }
+
+      .style-taste-luxury .scene-card-copy {
+        border-radius: 6px;
+        background: var(--surface);
+      }
+
+      .style-taste-brutalist {
+        --canvas: #f4f4f0;
+        --surface: #f4f4f0;
+        --surface-strong: #e5e2da;
+        --ink: #050505;
+        --muted: #454545;
+        --line: #050505;
+        --accent: #e61919;
+        --accent-ink: #ffffff;
+        --hero-scrim: rgb(244 244 240 / .76);
+        --radius: 0;
+      }
+
+      .style-taste-brutalist .scene-topbar,
+      .style-taste-brutalist .scene-layout,
+      .style-taste-brutalist .scene-topics {
+        gap: 1px;
+      }
+
+      .style-taste-brutalist .scene-hero,
+      .style-taste-brutalist .scene-card,
+      .style-taste-brutalist .scene-panel,
+      .style-taste-brutalist .metric,
+      .style-taste-brutalist .shortcut-stack a,
+      .style-taste-brutalist .scene-login,
+      .style-taste-brutalist .source-label,
+      .style-taste-brutalist .scene-button {
+        border-color: #050505;
+      }
+
+      .style-taste-brutalist .scene-hero h2 {
+        max-width: 50rem;
+        font-family: Impact, "Arial Black", "Noto Sans SC", sans-serif;
+        font-size: 5.1rem;
+        line-height: .92;
+      }
+
+      .style-taste-brutalist .scene-card img,
+      .style-taste-brutalist .scene-hero::before {
+        filter: grayscale(1) contrast(1.22);
+      }
+
+      .style-taste-brutalist .scene-card:nth-child(2n) {
+        background: #050505;
+        color: #f4f4f0;
+      }
+
+      .style-taste-brutalist .scene-card:nth-child(2n) p {
+        color: #d1d1ca;
+      }
+
+      .style-awesome-linear {
+        --canvas: #010102;
+        --surface: #0f1011;
+        --surface-strong: #18191a;
+        --ink: #f7f8f8;
+        --muted: #8a8f98;
+        --line: #2a2d32;
+        --accent: #5e6ad2;
+        --accent-ink: #ffffff;
+        --hero-scrim: linear-gradient(90deg, rgb(1 1 2 / .94), rgb(1 1 2 / .73), rgb(1 1 2 / .42));
+      }
+
+      .style-awesome-linear .scene-card,
+      .style-awesome-linear .scene-panel,
+      .style-uupm-dark .scene-card,
+      .style-uupm-dark .scene-panel {
+        box-shadow: inset 0 1px 0 rgb(255 255 255 / .04);
+      }
+
+      .style-awesome-spotify {
+        --canvas: #121212;
+        --surface: #181818;
+        --surface-strong: #252525;
+        --ink: #ffffff;
+        --muted: #b3b3b3;
+        --line: #3f3f3f;
+        --accent: #1ed760;
+        --accent-ink: #0b0b0b;
+        --hero-scrim: linear-gradient(90deg, rgb(18 18 18 / .94), rgb(18 18 18 / .72), rgb(18 18 18 / .38));
+        --radius: 8px;
+      }
+
+      .style-awesome-spotify .scene-button,
+      .style-awesome-spotify .scene-login,
+      .style-awesome-spotify .source-label {
+        border-radius: 999px;
+      }
+
+      .style-awesome-spotify .scene-card {
+        grid-template-columns: 1fr;
+        min-height: 18rem;
+        box-shadow: 0 8px 24px rgb(0 0 0 / .34);
+      }
+
+      .style-awesome-spotify .scene-card img {
+        order: -1;
+        width: 100%;
+        height: 8.4rem;
+        padding: .75rem .75rem 0;
+        object-fit: contain;
+      }
+
+      @media (max-width: 1180px) {
+        .scene-layout {
+          grid-template-columns: 1fr;
+        }
+
+        .scene-panel {
+          grid-template-columns: minmax(0, .75fr) minmax(0, 1fr);
+        }
+
+        .scene-topics,
+        .style-uupm-bento .scene-topics {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .style-uupm-bento .scene-card:first-child,
+        .style-uupm-bento .scene-card:nth-child(4) {
+          grid-column: span 1;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .demo-index {
+          padding: 1.3rem 1rem .8rem;
+        }
+
+        .demo-index h1 {
+          font-size: 2rem;
+          line-height: 1.12;
+        }
+
+        .demo-jump {
+          flex-wrap: nowrap;
+          overflow-x: auto;
+          padding-bottom: .2rem;
+        }
+
+        .demo-jump a {
+          flex: 0 0 auto;
+        }
+
+        .demo-shell {
+          padding: .7rem .85rem 2.75rem;
+        }
+
+        .scene-topbar {
+          min-height: 3.75rem;
+          overflow-x: auto;
+          justify-content: flex-start;
+        }
+
+        .scene-topbar nav {
+          flex: 0 0 auto;
+          flex-wrap: nowrap;
+        }
+
+        .scene-login {
+          display: none;
+        }
+
+        .scene-hero,
+        .style-uupm-dark .scene-hero,
+        .style-awesome-linear .scene-hero {
+          min-height: 30rem;
+        }
+
+        .hero-content {
+          padding: 1.2rem;
+        }
+
+        .scene-hero h2,
+        .style-taste-brutalist .scene-hero h2 {
+          font-size: 2.7rem;
+          line-height: 1.05;
+        }
+
+        .scene-hero p {
+          font-size: 1rem;
+          line-height: 1.65;
+        }
+
+        .scene-panel {
+          grid-template-columns: 1fr;
+        }
+
+        .metric-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .metric {
+          min-height: 4.4rem;
+          padding: .62rem;
+        }
+
+        .metric strong {
+          font-size: 1.25rem;
+        }
+
+        .scene-topics,
+        .style-uupm-bento .scene-topics {
+          grid-template-columns: 1fr;
+        }
+
+        .scene-card {
+          grid-template-columns: minmax(0, 1fr) 7rem;
+          min-height: 14rem;
+        }
+
+        .style-awesome-spotify .scene-card {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+
+        *,
+        *::before,
+        *::after {
+          transition-duration: .01ms !important;
+          animation-duration: .01ms !important;
+          animation-iteration-count: 1 !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="demo-page">
+      <header class="demo-index" aria-labelledby="demo-title">
+        <h1 id="demo-title">首页风格 Demo，共 6 套</h1>
+        <p>
+          每套都使用现有首页内容、真实图片和真实入口链接。先看方向，不替换当前主页。
+        </p>
+        <nav class="demo-jump" aria-label="跳转到指定风格">
+          {demos.map((demo) => <a href={`#${demo.id}`}>{demo.source}：{demo.name}</a>)}
+        </nav>
+      </header>
+
+      {demos.map((demo) => (
+        <section
+          id={demo.id}
+          class:list={['demo-scene', demo.className]}
+          style={`--hero-image: url('${demo.image}');`}
+          aria-labelledby={`${demo.id}-title`}
+        >
+          <div class="demo-shell">
+            <header class="scene-topbar" aria-label={`${demo.name} 快捷导航`}>
+              <a class="scene-brand" href={sitePath('/')}>J先生AI学习网站</a>
+              <nav>
+                {themes.slice(0, 6).map((theme) => <a href={themePath(theme)}>{theme.shortLabel}</a>)}
+              </nav>
+              <span class="scene-login" aria-disabled="true">登录即将开放</span>
+            </header>
+
+            <section class="scene-hero">
+              <div class="hero-content">
+                <p class="source-label">{demo.source} / {demo.name}</p>
+                <h2 id={`${demo.id}-title`}>{demo.title}</h2>
+                <p>{demo.intro}</p>
+                <div class="scene-actions">
+                  <a class="scene-button primary" href={sitePath('/topics/courses/catalog')}>{demo.cta}</a>
+                  <a class="scene-button" href={sitePath('/topics/knowledge')}>{demo.secondary}</a>
+                </div>
+              </div>
+            </section>
+
+            <div class="scene-layout">
+              <aside class="scene-panel" aria-label={`${demo.name} 内容概况`}>
+                <div class="metric-grid">
+                  <div class="metric"><strong>6</strong><span>学习主题</span></div>
+                  <div class="metric"><strong>3级</strong><span>内容目录</span></div>
+                  <div class="metric"><strong>持续</strong><span>整理更新</span></div>
+                </div>
+                <div class="shortcut-stack">
+                  {shortcuts.map((item) => (
+                    <a href={item.href}>
+                      <strong>{item.label}</strong>
+                      <span>{item.text}</span>
+                    </a>
+                  ))}
+                </div>
+              </aside>
+
+              <div class="scene-topics" aria-label={`${demo.name} 六大学习板块`}>
+                {themes.map((theme) => (
+                  <article class="scene-card">
+                    <div class="scene-card-copy">
+                      <h3>{theme.title}</h3>
+                      <p>{theme.description}</p>
+                      <a href={themePath(theme)}>进入板块</a>
+                    </div>
+                    <img src={theme.image} alt={`${theme.title}线稿插画`} loading="lazy" />
+                  </article>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      ))}
+    </main>
+  </body>
+</html>

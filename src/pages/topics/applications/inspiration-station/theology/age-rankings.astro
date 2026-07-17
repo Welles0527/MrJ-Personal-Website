@@ -1,0 +1,10 @@
+---
+import BaseLayout from '../../../../../layouts/BaseLayout.astro';
+import BibleAgeRankings from '../../../../../components/BibleAgeRankings/BibleAgeRankings';
+
+const initialView = Astro.url.searchParams.get('view') === 'accession' ? 'accession' : 'lifespan';
+---
+
+<BaseLayout title="圣经人物年龄排行｜微读圣经" activeTheme="applications" bare>
+  <BibleAgeRankings initialView={initialView} client:only="react" />
+</BaseLayout>

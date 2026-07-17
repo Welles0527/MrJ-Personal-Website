@@ -91,7 +91,11 @@ type ReadingProgressSummary = {
   total: number;
 };
 
-type BookReadingStatus = 'reading' | 'read';
+type RenderOptions = {
+  updateLastRead?: boolean;
+};
+
+type BookReadingStatus = 'reading' | 'read' | 'none';
 
 type CloudResult<T> = {
   data?: T;
@@ -171,7 +175,7 @@ const readBookStatuses = () => {
     const raw = window.localStorage.getItem(BOOK_STATUS_KEY);
     const parsed = raw ? JSON.parse(raw) : {};
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {} as Record<string, BookReadingStatus>;
-    return Object.fromEntries(Object.entries(parsed).filter((item): item is [string, BookReadingStatus] => item[1] === 'reading' || item[1] === 'read'));
+    return Object.fromEntries(Object.entries(parsed).filter((item): item is [string, BookReadingStatus] => item[1] === 'reading' || item[1] === 'read' || item[1] === 'none'));
   } catch {
     return {} as Record<string, BookReadingStatus>;
   }
@@ -428,11 +432,11 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       data.versionLabel = label;
       indexReadingProgress();
       searchStatus.textContent = `已载入${label}全文：${Object.keys(samples).length}章。`;
-      renderAll(Number(new URLSearchParams(window.location.search).get('verse') || '') || undefined);
+      renderAll(Number(new URLSearchParams(window.location.search).get('verse') || '') || undefined, { updateLastRead: false });
     } catch {
       fullTextStatus = 'failed';
       searchStatus.textContent = '全文数据加载失败，当前只显示已内置示例章节。';
-      renderAll(Number(new URLSearchParams(window.location.search).get('verse') || '') || undefined);
+      renderAll(Number(new URLSearchParams(window.location.search).get('verse') || '') || undefined, { updateLastRead: false });
     }
   };
 
@@ -515,19 +519,26 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     notify(saved ? `${isDarkReading ? '深色' : '浅色'}阅读模式已启用。` : '阅读模式已切换，但当前浏览器无法长期保存。');
   };
 
+  const ensureBookIsReading = (bookSlug: string) => {
+    if (bookStatuses[bookSlug]) return;
+    bookStatuses = { ...bookStatuses, [bookSlug]: 'reading' };
+    writeBookStatuses(bookStatuses);
+  };
+
   const renderBooks = () => {
     const books = data.books.filter((book) => book.testament === selectedTestament);
     bookList.classList.toggle('is-grid', viewMode === 'grid');
     bookList.classList.toggle('is-list', viewMode === 'list');
     bookList.innerHTML = books.map((book) => {
-      const status = bookStatuses[book.slug];
+      const savedStatus = bookStatuses[book.slug];
+      const status = savedStatus === 'none' ? undefined : savedStatus;
       const progress = getProgressSummary(book.slug);
       const completed = fullTextStatus === 'ready' && progress.total > 0 && progress.read >= progress.total;
       const effectiveStatus = completed ? 'read' : status;
       const classes = [book.slug === currentBook ? 'is-active' : '', effectiveStatus ? `is-status-${effectiveStatus}` : ''].filter(Boolean).join(' ');
       const statusText = effectiveStatus === 'reading' ? '在读' : effectiveStatus === 'read' ? '已读' : '未设置状态';
       const statusMarker = effectiveStatus === 'reading'
-        ? '<span class="bible-book-status-marker bible-book-status-marker-reading" title="在读" aria-label="在读"><img src="/officialwebsite/images/bible-reading-status-icon.png" alt="" aria-hidden="true"></span>'
+        ? '<span class="bible-book-status-marker bible-book-status-marker-reading" title="在读" aria-label="在读"><img src="/officialwebsite/images/bible-reading-status-icon.png?v=20260714" alt="" aria-hidden="true"></span>'
         : effectiveStatus === 'read'
           ? '<span class="bible-book-status-marker bible-book-status-marker-read" title="已读完" aria-label="已读完">✓</span>'
           : '';
@@ -563,20 +574,23 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     const saved = writeBookStatuses(bookStatuses);
     renderBooks();
     bookStatusModal.close();
-    notify(saved
-      ? `${book.title}已标记为${status === 'reading' ? '在读' : '已读'}。`
-      : `${book.title}状态已更新，但当前浏览器无法长期保存。`);
+    const message = status === 'none'
+      ? `${book.title}已取消阅读标记。`
+      : `${book.title}已标记为${status === 'reading' ? '在读' : '已读'}。`;
+    notify(saved ? message : `${book.title}状态已更新，但当前浏览器无法长期保存。`);
   };
 
   const selectBook = (bookSlug: string) => {
     const nextBook = bookBySlug(bookSlug);
     if (!nextBook) return;
+    const lastPosition = state.lastRead.book === nextBook.slug ? state.lastRead : null;
     stopSpeech(true);
     currentBook = nextBook.slug;
-    currentChapter = 1;
+    currentChapter = Math.min(Math.max(lastPosition?.chapter ?? 1, 1), nextBook.chapters);
     selectedTestament = nextBook.testament;
     directory.classList.remove('is-open');
-    renderAll(1);
+    ensureBookIsReading(nextBook.slug);
+    renderAll(lastPosition?.verse ?? 1);
   };
 
   const handleBookCardClick = (bookSlug: string) => {
@@ -610,7 +624,8 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       const activeChapter = chapterList.querySelector<HTMLButtonElement>('.is-active');
       if (!activeChapter) return;
       const maxScrollLeft = chapterList.scrollWidth - chapterList.clientWidth;
-      const centeredLeft = activeChapter.offsetLeft - (chapterList.clientWidth - activeChapter.offsetWidth) / 2;
+      const chapterLeft = activeChapter.getBoundingClientRect().left - chapterList.getBoundingClientRect().left + chapterList.scrollLeft;
+      const centeredLeft = chapterLeft - (chapterList.clientWidth - activeChapter.offsetWidth) / 2;
       chapterList.scrollTo({
         left: Math.min(maxScrollLeft, Math.max(0, centeredLeft)),
         behavior: 'smooth'
@@ -628,9 +643,14 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     window.history.replaceState({}, '', next);
   };
 
+  const renderLastRead = () => {
+    const savedBook = bookBySlug(state.lastRead.book);
+    lastRead.textContent = `${savedBook?.title ?? state.lastRead.book} ${state.lastRead.chapter}章${state.lastRead.verse ? ` ${state.lastRead.verse}节` : ''}`;
+  };
+
   const setLastRead = (verse?: number) => {
     state.lastRead = { book: currentBook, chapter: currentChapter, verse, updatedAt: nowIso() };
-    lastRead.textContent = `${currentBookInfo().title} ${currentChapter}章${verse ? ` ${verse}节` : ''}`;
+    renderLastRead();
     persist();
   };
 
@@ -751,7 +771,35 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       return firstBook - secondBook || first.chapter - second.chapter || first.verse - second.verse;
     });
 
-  const renderVerses = (targetVerse?: number) => {
+  const scrollToTargetVerse = (targetVerse: number) => {
+    window.setTimeout(() => {
+      const target = root.querySelector<HTMLElement>(`#${CSS.escape(verseKey(currentBook, currentChapter, targetVerse))}`);
+      if (!target) return;
+      const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+      if (window.matchMedia('(max-width: 760px)').matches) {
+        target.scrollIntoView({ block: 'center', behavior });
+        return;
+      }
+
+      const verseBounds = verseList.getBoundingClientRect();
+      const targetBounds = target.getBoundingClientRect();
+      const visibleTop = Math.max(0, verseBounds.top);
+      const visibleBottom = Math.min(window.innerHeight, verseBounds.bottom);
+      const visibleCenter = visibleBottom > visibleTop
+        ? (visibleTop + visibleBottom) / 2
+        : verseBounds.top + Math.min(verseList.clientHeight, window.innerHeight) / 2;
+      const targetCenter = (targetBounds.top + targetBounds.bottom) / 2;
+      const maxScrollTop = verseList.scrollHeight - verseList.clientHeight;
+      const centeredTop = verseList.scrollTop + targetCenter - visibleCenter;
+      verseList.scrollTo({
+        top: Math.min(maxScrollTop, Math.max(0, centeredTop)),
+        behavior
+      });
+    }, 80);
+  };
+
+  const renderVerses = (targetVerse?: number, options: RenderOptions = {}) => {
+    const updateLastRead = options.updateLastRead ?? true;
     const sample = currentSample();
     const book = currentBookInfo();
     currentTitle.textContent = `${book.title} ${currentChapter}`;
@@ -769,7 +817,8 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
           </div>
         </div>
       `;
-      setLastRead();
+      if (updateLastRead) setLastRead(targetVerse);
+      else renderLastRead();
       return;
     }
 
@@ -796,11 +845,10 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     }).join('');
 
     if (targetVerse) {
-      window.setTimeout(() => root.querySelector(`#${CSS.escape(verseKey(currentBook, currentChapter, targetVerse))}`)?.scrollIntoView({ block: 'center', behavior: 'smooth' }), 80);
-      setLastRead(targetVerse);
-    } else {
-      setLastRead();
+      scrollToTargetVerse(targetVerse);
     }
+    if (updateLastRead) setLastRead(targetVerse);
+    else renderLastRead();
   };
 
   const renderBookmarks = () => {
@@ -1025,11 +1073,11 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     }
   };
 
-  const renderAll = (targetVerse?: number) => {
+  const renderAll = (targetVerse?: number, options: RenderOptions = {}) => {
     selectedTestament = currentBookInfo().testament;
     renderBooks();
     renderChapters();
-    renderVerses(targetVerse);
+    renderVerses(targetVerse, options);
     renderReadingProgress();
     renderBookmarks();
     renderNotes();
@@ -1044,42 +1092,27 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     selectedTestament = nextBook.testament;
     searchResults.hidden = true;
     directory.classList.remove('is-open');
+    ensureBookIsReading(nextBook.slug);
     renderAll(verse);
   };
 
-  const gotoFirstUnreadVerse = () => {
+  const resumeLastRead = () => {
     if (fullTextStatus === 'loading') {
-      notify('圣经全文正在载入，请稍后再使用书签。');
+      notify('圣经全文正在载入，请稍后继续阅读。');
       return;
     }
     if (fullTextStatus === 'failed') {
-      notify('圣经全文载入失败，暂时无法查找第一节未读经文。');
+      notify('圣经全文载入失败，暂时无法恢复阅读位置。');
       return;
     }
 
-    const references = data.books.flatMap((book) => Array.from({ length: book.chapters }, (_, index) => {
-      const chapter = index + 1;
-      const sample = data.samples[chapterKey(book.slug, chapter)];
-      return sample?.verses.map((_, verseIndex) => ({ book: book.slug, chapter, verse: verseIndex + 1 })) ?? [];
-    }).flat());
-    if (!references.length) {
-      notify('当前没有可定位的经文。');
+    const savedBook = bookBySlug(state.lastRead.book);
+    if (!savedBook) {
+      notify('没有找到上次阅读的经卷。');
       return;
     }
 
-    const currentVerse = state.lastRead.verse ?? 1;
-    const startIndex = references.findIndex((reference) => reference.book === currentBook
-      && reference.chapter === currentChapter
-      && reference.verse === currentVerse);
-    const normalizedStart = startIndex >= 0 ? startIndex : 0;
-    const searchOrder = [...references.slice(normalizedStart), ...references.slice(0, normalizedStart)];
-    const firstUnread = searchOrder.find((reference) => !readVerses.has(verseKey(reference.book, reference.chapter, reference.verse)));
-    if (!firstUnread) {
-      notify('整本圣经已经全部读完。');
-      return;
-    }
-
-    gotoReference(firstUnread.book, firstUnread.chapter, firstUnread.verse);
+    gotoReference(savedBook.slug, state.lastRead.chapter, state.lastRead.verse ?? 1);
   };
 
   const aliases = data.books
@@ -1220,9 +1253,6 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     }
 
     const key = verseKey(currentBook, currentChapter, verse);
-    const pageScrollX = window.scrollX;
-    const pageScrollY = window.scrollY;
-    const verseScrollTop = verseList.scrollTop;
     const nextReadVerses = new Set(readVerses);
     const nextRead = !nextReadVerses.has(key);
 
@@ -1237,13 +1267,20 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     state.updatedAt = nowIso();
     try {
       await syncCloudState(nextReadVerses);
+      const pageScrollX = window.scrollX;
+      const pageScrollY = window.scrollY;
+      const verseScrollTop = verseList.scrollTop;
       readVerses = nextReadVerses;
       const cached = cacheSyncedState();
       const verseElement = root.querySelector<HTMLElement>(`#${CSS.escape(key)}`);
       verseElement?.classList.toggle('is-read', nextRead);
       trigger.setAttribute('aria-pressed', String(nextRead));
       renderReadingProgress();
-      renderChapters();
+      const chapterButton = chapterList.querySelector<HTMLButtonElement>(`[data-chapter="${currentChapter}"]`);
+      const chapterProgress = getProgressSummary(currentBook, currentChapter);
+      const chapterComplete = chapterProgress.total > 0 && chapterProgress.read >= chapterProgress.total;
+      chapterButton?.classList.toggle('is-complete', chapterComplete);
+      chapterButton?.setAttribute('aria-label', `${currentBookInfo().title} ${currentChapter}章${chapterComplete ? '，已读完' : ''}`);
       window.setTimeout(() => {
         window.scrollTo(pageScrollX, pageScrollY);
         verseList.scrollTop = verseScrollTop;
@@ -1499,7 +1536,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     if (trigger.dataset.action === 'close-book-status') bookStatusModal.close();
     if (trigger.dataset.action === 'set-book-status') {
       const status = trigger.dataset.bookReadingStatus;
-      if (status === 'reading' || status === 'read') setBookReadingStatus(status);
+      if (status === 'reading' || status === 'read' || status === 'none') setBookReadingStatus(status);
     }
     if (trigger.dataset.action === 'delete-note') deleteActiveNote();
     if (trigger.dataset.action === 'start-signup') startSignUp();
@@ -1514,7 +1551,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       else notify('该章正文暂未导入，无法朗读。');
     }
     if (trigger.dataset.action === 'replay-chapter' && lastSpeechText) speak(lastSpeechText);
-    if (trigger.dataset.action === 'find-first-unread') gotoFirstUnreadVerse();
+    if (trigger.dataset.action === 'resume-reading') resumeLastRead();
     if (trigger.dataset.action === 'stop-reading') {
       stopSpeech();
       notify('已停止朗读。');
@@ -1558,6 +1595,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   indexReadingProgress();
   renderReadingTheme();
   renderDailyPlan();
-  renderAll(state.lastRead.verse);
+  ensureBookIsReading(currentBook);
+  renderAll(Number(params.get('verse') || '') || undefined, { updateLastRead: false });
   void loadFullBibleText();
 }

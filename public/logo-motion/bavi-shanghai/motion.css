@@ -1,0 +1,71 @@
+:root {
+  --p2m-duration: 8000ms;
+  --p2m-ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --p2m-ease-settle: cubic-bezier(0.4, 0, 0.2, 1);
+  --p2m-overshoot: 1.03;
+}
+
+#mark, #container, #letter-j, #accent, #weather-context, #storm-core, #shanghai-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.is-playing #mark { animation: p2m-mark var(--p2m-duration) both; }
+.is-playing #container { animation: p2m-container var(--p2m-duration) both; }
+.is-playing #letter-j { animation: p2m-letter var(--p2m-duration) both; }
+.is-playing #accent { animation: p2m-accent var(--p2m-duration) both; }
+.is-playing #weather-context { animation: p2m-weather var(--p2m-duration) both; }
+.is-playing #storm-path { stroke-dasharray: 1 1; animation: p2m-path var(--p2m-duration) both; }
+.is-playing #storm-core { animation: p2m-core var(--p2m-duration) both; }
+.is-playing #shanghai-pulse { animation: p2m-shanghai var(--p2m-duration) both; }
+
+@keyframes p2m-mark {
+  0%, 10% { opacity: 0; transform: translateY(14px) scale(.82); }
+  20% { opacity: .28; transform: translateY(8px) scale(.76); animation-timing-function: cubic-bezier(.34,0,.14,1); }
+  44% { opacity: 1; transform: translateY(-4px) scale(1.03); animation-timing-function: cubic-bezier(.16,1,.3,1); }
+  62% { transform: translateY(0) scale(1); }
+  72%, 100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes p2m-container {
+  0%, 16% { opacity: 0; transform: rotate(-9deg) scale(.74); }
+  45% { opacity: 1; transform: rotate(1.2deg) scale(1.02); animation-timing-function: cubic-bezier(.16,1,.3,1); }
+  62%, 100% { opacity: 1; transform: rotate(0) scale(1); }
+}
+@keyframes p2m-letter {
+  0%, 24% { opacity: 0; transform: translateY(18px); }
+  49% { opacity: 1; transform: translateY(-3px); animation-timing-function: cubic-bezier(.16,1,.3,1); }
+  64%, 100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes p2m-accent {
+  0%, 31% { opacity: 0; transform: translate(-18px, 12px) rotate(-24deg) scale(.6); }
+  51% { opacity: 1; transform: translate(2px, -3px) rotate(4deg) scale(1.08); animation-timing-function: cubic-bezier(.34,1.56,.64,1); }
+  68%, 100% { opacity: 1; transform: translate(0) rotate(0) scale(1); }
+}
+@keyframes p2m-weather {
+  0%, 14% { opacity: 0; }
+  22%, 60% { opacity: 1; animation-timing-function: cubic-bezier(.4,0,.2,1); }
+  72%, 100% { opacity: 0; }
+}
+@keyframes p2m-path {
+  0%, 20% { stroke-dashoffset: 1; opacity: 0; }
+  24% { opacity: 1; }
+  58% { stroke-dashoffset: 0; opacity: 1; animation-timing-function: cubic-bezier(.34,0,.14,1); }
+  70%, 100% { stroke-dashoffset: 0; opacity: 0; }
+}
+@keyframes p2m-core {
+  0%, 20% { opacity: 0; transform: rotate(0) scale(.4); }
+  28% { opacity: 1; transform: rotate(180deg) scale(1.35); }
+  58% { opacity: 1; transform: translate(388px, -48px) rotate(720deg) scale(.72); animation-timing-function: cubic-bezier(.34,0,.14,1); }
+  70%, 100% { opacity: 0; transform: translate(388px, -48px) rotate(780deg) scale(.5); }
+}
+@keyframes p2m-shanghai {
+  0%, 52% { opacity: 0; transform: scale(.2); }
+  58% { opacity: 1; transform: scale(2.2); }
+  64% { opacity: .35; transform: scale(4.6); animation-timing-function: cubic-bezier(.16,1,.3,1); }
+  71%, 100% { opacity: 0; transform: scale(5.4); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #mark, #container, #letter-j, #accent { animation: none !important; opacity: 1 !important; transform: none !important; }
+  #weather-context { display: none; }
+}

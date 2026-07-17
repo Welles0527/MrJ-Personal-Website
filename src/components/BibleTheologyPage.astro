@@ -356,7 +356,7 @@ const hymnCards = [
           <h3>阅读进度</h3>
           <p data-last-read>正在载入阅读位置...</p>
           <div class="bible-reading-progress" data-reading-progress aria-live="polite"></div>
-          <button class="bible-resume-bookmark" type="button" data-action="find-first-unread" title="定位到第一节未读经文">
+          <button class="bible-resume-bookmark" type="button" data-action="resume-reading" title="返回上次阅读位置">
             <span aria-hidden="true"></span>
             继续阅读
           </button>
@@ -566,6 +566,7 @@ const hymnCards = [
       <div class="bible-note-actions bible-book-status-actions">
         <button type="button" data-action="set-book-status" data-book-reading-status="reading" aria-pressed="false">在读</button>
         <button type="button" data-action="set-book-status" data-book-reading-status="read" aria-pressed="false">已读</button>
+        <button type="button" class="bible-book-status-clear" data-action="set-book-status" data-book-reading-status="none" aria-pressed="false">取消标记</button>
       </div>
     </div>
   </dialog>
@@ -1393,8 +1394,11 @@ const hymnCards = [
   }
 
   .bible-reading-pane {
+    display: flex;
     min-width: 0;
-    align-self: start;
+    min-height: 0;
+    contain: size;
+    flex-direction: column;
     overflow: hidden;
   }
 
@@ -1549,8 +1553,10 @@ const hymnCards = [
 
   .bible-verses {
     display: grid;
+    min-height: 0;
+    flex: 1;
     gap: 0.72rem;
-    max-height: min(82vh, calc(100vh - 8rem));
+    max-height: none;
     overflow: auto;
     padding: 1rem clamp(1rem, 2.4vw, 2rem) 2rem;
     background: #fffaf0;
@@ -2460,6 +2466,13 @@ const hymnCards = [
     color: #315c36;
   }
 
+  .bible-book-status-actions .bible-book-status-clear {
+    grid-column: 1 / -1;
+    border-color: rgba(216, 179, 95, 0.3);
+    background: #1a150d;
+    color: rgba(255, 247, 224, 0.76);
+  }
+
   .bible-book-status-actions button.is-selected {
     box-shadow: 0 0 0 2px #d8b35f;
   }
@@ -2635,6 +2648,7 @@ const hymnCards = [
     }
 
     .bible-reading-pane {
+      contain: none;
       overflow: visible;
     }
 
@@ -2658,7 +2672,7 @@ const hymnCards = [
     }
 
     .bible-reading-header h2 {
-      font-size: 1.55rem;
+      font-size: 1.32rem;
     }
 
     .bible-mobile-directory {
@@ -2675,7 +2689,7 @@ const hymnCards = [
     .bible-reading-actions button {
       min-height: 2rem;
       padding: 0.34rem 0.5rem;
-      font-size: 0.7rem;
+      font-size: 0.64rem;
     }
 
     .bible-reading-actions .bible-speech-icon {
@@ -2697,6 +2711,59 @@ const hymnCards = [
       width: 2.05rem;
       height: 2.05rem;
       transform: translate(-0.47rem, -0.47rem);
+    }
+
+    .bible-reader-brand h2 {
+      font-size: 1.62rem;
+    }
+
+    .bible-reader-tools label {
+      font-size: 0.68rem;
+    }
+
+    .bible-reader-tools p,
+    .bible-reading-header p,
+    .bible-notes-panel p {
+      font-size: 0.7rem;
+    }
+
+    .bible-segmented button,
+    .bible-view-toggle button,
+    .bible-notes-panel button {
+      font-size: 0.7rem;
+    }
+
+    .bible-book-list button strong {
+      font-size: 1.02rem;
+    }
+
+    .bible-book-list button > span:not(.bible-book-status-marker) {
+      font-size: 0.61rem;
+    }
+
+    .bible-chapter-strip button {
+      width: 1.92rem;
+      height: 1.92rem;
+      font-size: 0.68rem;
+    }
+
+    .bible-verse {
+      padding: 0.72rem 4.45rem 0.72rem 0.72rem;
+    }
+
+    .bible-verse-number {
+      width: 1.5rem;
+      height: 1.5rem;
+      font-size: 0.66rem;
+    }
+
+    .bible-verse-text {
+      font-size: 0.96rem;
+      line-height: 1.78;
+    }
+
+    .bible-notes-panel h3 {
+      font-size: 0.86rem;
     }
 
     .bible-login-account {

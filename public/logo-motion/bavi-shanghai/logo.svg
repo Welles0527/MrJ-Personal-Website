@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-labelledby="title desc">
+  <title id="title">MagicJ 巴威台风上海影响标识</title>
+  <desc id="desc">MagicJ 标识与巴威台风路径、上海外围风雨提示组成的静态终帧。</desc>
+  <defs>
+    <linearGradient id="p2m-bg" x1="12" y1="8" x2="54" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1e3a5f"/>
+      <stop offset=".55" stop-color="#2f6fa3"/>
+      <stop offset="1" stop-color="#86b7d8"/>
+    </linearGradient>
+    <linearGradient id="p2m-shine" x1="15" y1="12" x2="48" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff" stop-opacity=".78"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="p2m-shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#031627" flood-opacity=".34"/>
+    </filter>
+  </defs>
+  <g id="weather-context" opacity="0">
+    <path id="coast" d="M65 252c75-55 116-111 184-147M417 110c55 18 100 54 152 106" fill="none" stroke="#79bde8" stroke-width="2" stroke-dasharray="6 10" opacity=".55"/>
+    <path id="storm-path" d="M120 262C178 232 207 195 246 168C290 137 331 126 381 134C429 142 469 174 508 214" fill="none" stroke="#f4c76a" stroke-width="4" stroke-linecap="round" pathLength="1"/>
+    <circle id="storm-core" cx="120" cy="262" r="11" fill="none" stroke="#f4c76a" stroke-width="3"/>
+    <circle id="shanghai-pulse" cx="508" cy="214" r="7" fill="#f4c76a"/>
+  </g>
+  <g id="mark-position" transform="translate(222 82) scale(3.0625)">
+    <g id="mark">
+      <rect id="container" width="64" height="64" rx="16" fill="url(#p2m-bg)"/>
+      <path id="shine" d="M14 14c8-5 24-6 36 1" fill="none" stroke="url(#p2m-shine)" stroke-width="5" stroke-linecap="round"/>
+      <path id="letter-j" d="M39 15v26c0 8.1-5.8 13.2-14.3 13.2-5.1 0-9.4-1.9-12.2-5.2l5.2-6.4c1.9 2.1 4 3.2 6.6 3.2 4.1 0 6.4-2.3 6.4-6.6V23H22v-8h17z" fill="#fff"/>
+      <g id="accent"><circle id="accent-dot" cx="47" cy="20" r="3.2" fill="#f4c76a"/><circle id="accent-spark" cx="51" cy="30" r="2" fill="#fff" opacity=".9"/><path id="accent-link" d="M47 20l4 10" stroke="#f4c76a" stroke-width="1.8" stroke-linecap="round"/></g>
+    </g>
+  </g>
+</svg>

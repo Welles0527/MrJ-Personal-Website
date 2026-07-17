@@ -1,0 +1,1615 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="J先生AI学习网站首页高保真交互 Demo。" />
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+    <title>学习档案馆 Demo｜J先生AI学习网站</title>
+    <style>
+      :root {
+        --paper: #f4f2eb;
+        --paper-bright: #fbfaf6;
+        --ink: #1d2521;
+        --ink-soft: #35403a;
+        --muted: #6a716c;
+        --line: #d6d7cf;
+        --clay: #d85f36;
+        --olive: #6f7d4c;
+        --sky: #4d7698;
+        --violet: #74668b;
+        --amber: #a46e40;
+        --stone: #71675f;
+        --header-height: 68px;
+        color: var(--ink);
+        background: var(--paper);
+        font-family: -apple-system, "SF Pro Text", "PingFang SC", "Noto Sans SC", sans-serif;
+        font-synthesis: none;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        min-width: 320px;
+        scroll-behavior: smooth;
+        background: var(--paper);
+      }
+
+      body {
+        min-width: 320px;
+        margin: 0;
+        background: var(--paper);
+      }
+
+      button,
+      input {
+        font: inherit;
+      }
+
+      button,
+      a {
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      button:focus-visible,
+      a:focus-visible,
+      input:focus-visible {
+        outline: 3px solid color-mix(in srgb, var(--sky) 45%, transparent);
+        outline-offset: 3px;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin-top: 0;
+      }
+
+      .site-header {
+        position: sticky;
+        z-index: 30;
+        top: 0;
+        height: var(--header-height);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(29, 37, 33, 0.96);
+        color: #f7f5ee;
+        backdrop-filter: blur(14px);
+      }
+
+      .header-inner {
+        display: flex;
+        width: min(100% - 40px, 1360px);
+        height: 100%;
+        align-items: center;
+        gap: 26px;
+        margin: 0 auto;
+      }
+
+      .brand {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        gap: 11px;
+      }
+
+      .brand-mark {
+        display: grid;
+        width: 34px;
+        height: 34px;
+        flex: 0 0 auto;
+        place-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        border-radius: 6px;
+        background: var(--clay);
+        color: #fff;
+        font-family: Georgia, "Songti SC", serif;
+        font-size: 19px;
+        font-weight: 700;
+      }
+
+      .brand-copy {
+        display: grid;
+        min-width: 0;
+        gap: 1px;
+      }
+
+      .brand-copy strong {
+        overflow: hidden;
+        font-size: 14px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .brand-copy small {
+        color: rgba(247, 245, 238, 0.58);
+        font-family: ui-monospace, Consolas, monospace;
+        font-size: 9px;
+      }
+
+      .primary-nav {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .nav-link {
+        min-height: 38px;
+        padding: 10px 12px;
+        border: 0;
+        border-radius: 5px;
+        background: transparent;
+        color: rgba(247, 245, 238, 0.7);
+        cursor: pointer;
+        font-size: 12px;
+      }
+
+      .nav-link:hover,
+      .nav-link.active {
+        background: rgba(255, 255, 255, 0.08);
+        color: #fff;
+      }
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: auto;
+      }
+
+      .icon-button,
+      .login-button {
+        display: inline-flex;
+        min-height: 38px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      .icon-button {
+        gap: 8px;
+        padding: 0 11px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.04);
+        color: rgba(247, 245, 238, 0.78);
+        font-size: 12px;
+      }
+
+      .key-hint {
+        padding: 2px 5px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 3px;
+        color: rgba(247, 245, 238, 0.5);
+        font-family: ui-monospace, Consolas, monospace;
+        font-size: 9px;
+      }
+
+      .login-button {
+        padding: 0 15px;
+        border: 1px solid #f5f2ea;
+        background: #f5f2ea;
+        color: var(--ink);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .hero {
+        position: relative;
+        overflow: hidden;
+        border-bottom: 1px solid var(--line);
+        background: var(--paper-bright);
+      }
+
+      .hero::before {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: calc(50% - 1px);
+        width: 1px;
+        background: var(--line);
+        content: "";
+      }
+
+      .hero-inner {
+        display: grid;
+        width: min(100% - 64px, 1360px);
+        min-height: 632px;
+        grid-template-columns: minmax(0, 0.86fr) minmax(520px, 1.14fr);
+        align-items: stretch;
+        gap: 0;
+        margin: 0 auto;
+      }
+
+      .hero-copy {
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+        justify-content: center;
+        padding: 72px clamp(36px, 5vw, 76px) 72px 0;
+      }
+
+      .eyebrow {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 22px;
+        color: var(--clay);
+        font-family: ui-monospace, Consolas, monospace;
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .eyebrow::before {
+        width: 24px;
+        height: 2px;
+        background: currentColor;
+        content: "";
+      }
+
+      .hero h1 {
+        max-width: 610px;
+        margin-bottom: 22px;
+        color: var(--ink);
+        font-family: Georgia, "Songti SC", "Noto Serif SC", serif;
+        font-size: clamp(48px, 5.5vw, 78px);
+        font-weight: 700;
+        line-height: 1.04;
+        text-wrap: balance;
+      }
+
+      .hero-lede {
+        max-width: 560px;
+        margin-bottom: 0;
+        color: var(--muted);
+        font-size: 16px;
+        line-height: 1.8;
+        text-wrap: pretty;
+      }
+
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 32px;
+      }
+
+      .button {
+        display: inline-flex;
+        min-height: 48px;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        padding: 0 19px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .button-primary {
+        border: 1px solid var(--ink);
+        background: var(--ink);
+        color: #fff;
+      }
+
+      .button-primary:hover {
+        background: var(--clay);
+        border-color: var(--clay);
+      }
+
+      .button-secondary {
+        border: 1px solid var(--line);
+        background: transparent;
+        color: var(--ink);
+      }
+
+      .button-secondary:hover {
+        border-color: var(--ink);
+        background: #fff;
+      }
+
+      .hero-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0;
+        margin: 38px 0 0;
+      }
+
+      .hero-meta div {
+        display: grid;
+        min-width: 112px;
+        gap: 4px;
+        padding-right: 28px;
+        border-right: 1px solid var(--line);
+        margin-right: 28px;
+      }
+
+      .hero-meta div:last-child {
+        padding-right: 0;
+        border-right: 0;
+        margin-right: 0;
+      }
+
+      .hero-meta dt {
+        font-family: Georgia, "Songti SC", serif;
+        font-size: 24px;
+        font-weight: 700;
+      }
+
+      .hero-meta dd {
+        margin: 0;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .hero-visual {
+        position: relative;
+        display: grid;
+        min-width: 0;
+        align-items: center;
+        padding: 38px 0 38px clamp(36px, 4vw, 62px);
+      }
+
+      .atlas-image {
+        display: block;
+        width: min(100%, 760px);
+        max-height: 550px;
+        justify-self: end;
+        object-fit: contain;
+        mix-blend-mode: multiply;
+      }
+
+      .route-panel {
+        position: absolute;
+        right: 24px;
+        bottom: 42px;
+        width: min(310px, calc(100% - 78px));
+        padding: 17px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 7px;
+        background: rgba(29, 37, 33, 0.95);
+        color: #f8f5ee;
+        box-shadow: 0 24px 60px rgba(29, 37, 33, 0.22);
+      }
+
+      .route-heading {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 16px;
+      }
+
+      .route-heading span {
+        color: rgba(248, 245, 238, 0.58);
+        font-family: ui-monospace, Consolas, monospace;
+        font-size: 9px;
+      }
+
+      .route-heading strong {
+        display: block;
+        margin-top: 4px;
+        font-size: 14px;
+      }
+
+      .route-progress {
+        color: #f0a385;
+        font-family: ui-monospace, Consolas, monospace;
+        font-size: 12px;
+      }
+
+      .route-steps {
+        display: grid;
+        gap: 7px;
+      }
+
+      .route-step {
+        display: grid;
+        width: 100%;
+        min-height: 42px;
+        grid-template-columns: 26px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 9px;
+        padding: 0 10px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 5px;
+        background: transparent;
+        color: rgba(248, 245, 238, 0.7);
+        cursor: pointer;
+        text-align: left;
+      }
+
+      .route-step:hover,
+      .route-step.active {
+        border-color: rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.07);
+        color: #fff;
+      }
+
+      .route-step-index {
+        font-family: ui-monospace, Consolas, monospace;
+        font-size: 10px;
+      }
+
+      .route-step small {
+        color: rgba(248, 245, 238, 0.45);
+        font-size: 9px;
+      }
+
+      .section-band {
+        padding: 78px 0 86px;
+      }
+
+      .section-inner {
+        width: min(100% - 64px, 1360px);
+        margin: 0 auto;
+      }
+
+      .section-heading {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 28px;
+        margin-bottom: 30px;
+      }
+
+      .section-kicker {
+        margin-bottom: 9px;
+        color: var(--clay);
+        font-family: ui-monospace, Consolas, monospace;
+        font-size: 10px;
+        font-weight: 700;
+      }
+
+      .section-heading h2 {
+        margin-bottom: 0;
+        font-family: Georgia, "Songti SC", "Noto Serif SC", serif;
+        font-size: clamp(34px, 4vw, 54px);
+        line-height: 1.1;
+      }
+
+      .section-heading p {
+        max-width: 450px;
+        margin-bottom: 2px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      .topic-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        border-top: 1px solid var(--line);
+        border-left: 1px solid var(--line);
+      }
+
+      .topic-card {
+        position: relative;
+        display: grid;
+        min-width: 0;
+        min-height: 330px;
+        grid-template-rows: auto 1fr auto;
+        padding: 24px;
+        overflow: hidden;
+        border: 0;
+        border-right: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+        background: transparent;
+        color: var(--ink);
+        cursor: pointer;
+        text-align: left;
+      }
+
+      .topic-card:hover,
+      .topic-card.selected {
+        background: var(--paper-bright);
+      }
+
+      .topic-card::after {
+        position: absolute;
+        right: -16px;
+        bottom: -18px;
+        width: 175px;
+        height: 132px;
+        background: var(--topic-image) center / contain no-repeat;
+        content: "";
+        filter: saturate(0.8);
+        mix-blend-mode: multiply;
+        opacity: 0.58;
+        transition: transform 220ms ease, opacity 220ms ease;
+      }
+
+      .topic-card:hover::after,
+      .topic-card.selected::after {
+        transform: translate(-4px, -4px) scale(1.03);
+        opacity: 0.86;
+      }
+
+      .topic-card-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .topic-number {
+        color: var(--tone);
+        font-family: ui-monospace, Consolas, monospace;
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .topic-arrow {
+        display: grid;
+        width: 30px;
+        height: 30px;
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: 50%;
+        font-size: 15px;
+        transition: transform 180ms ease;
+      }
+
+      .topic-card:hover .topic-arrow,
+      .topic-card.selected .topic-arrow {
+        transform: translate(2px, -2px);
+        border-color: var(--tone);
+        color: var(--tone);
+      }
+
+      .topic-card-copy {
+        position: relative;
+        z-index: 1;
+        max-width: 72%;
+        align-self: center;
+      }
+
+      .topic-card h3 {
+        margin-bottom: 11px;
+        font-family: Georgia, "Songti SC", "Noto Serif SC", serif;
+        font-size: 27px;
+        line-height: 1.15;
+      }
+
+      .topic-card p {
+        margin-bottom: 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.65;
+        text-wrap: pretty;
+      }
+
+      .topic-categories {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        max-width: 70%;
+        flex-wrap: wrap;
+        gap: 5px;
+        align-self: end;
+      }
+
+      .topic-categories span {
+        padding: 4px 7px;
+        border: 1px solid color-mix(in srgb, var(--tone) 35%, var(--line));
+        border-radius: 4px;
+        color: var(--tone);
+        font-size: 9px;
+      }
+
+      .topic-detail {
+        display: grid;
+        grid-template-columns: 190px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 28px;
+        min-height: 108px;
+        padding: 22px 24px;
+        border-right: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+        border-left: 1px solid var(--line);
+        background: var(--ink);
+        color: #fff;
+      }
+
+      .topic-detail-label {
+        color: #f1a080;
+        font-family: ui-monospace, Consolas, monospace;
+        font-size: 10px;
+      }
+
+      .topic-detail strong {
+        display: block;
+        margin-top: 5px;
+        font-family: Georgia, "Songti SC", serif;
+        font-size: 20px;
+      }
+
+      .topic-detail p {
+        margin-bottom: 0;
+        color: rgba(255, 255, 255, 0.62);
+        font-size: 12px;
+        line-height: 1.65;
+      }
+
+      .topic-detail .button {
+        min-height: 42px;
+        border-color: rgba(255, 255, 255, 0.25);
+        color: #fff;
+      }
+
+      .topic-detail .button:hover {
+        border-color: #fff;
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .continue-section {
+        border-top: 1px solid var(--line);
+        background: #e8ebe5;
+      }
+
+      .continue-layout {
+        display: grid;
+        grid-template-columns: minmax(260px, 0.7fr) minmax(0, 1.3fr);
+        gap: 70px;
+      }
+
+      .continue-intro {
+        align-self: start;
+      }
+
+      .continue-intro h2 {
+        margin-bottom: 18px;
+        font-family: Georgia, "Songti SC", serif;
+        font-size: clamp(34px, 4vw, 52px);
+        line-height: 1.1;
+      }
+
+      .continue-intro p {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.75;
+      }
+
+      .shortcut-list {
+        display: grid;
+        border-top: 1px solid #cbd0c8;
+      }
+
+      .shortcut-item {
+        display: grid;
+        min-height: 98px;
+        grid-template-columns: 46px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 18px;
+        padding: 15px 8px;
+        border: 0;
+        border-bottom: 1px solid #cbd0c8;
+        background: transparent;
+        color: var(--ink);
+        cursor: pointer;
+        text-align: left;
+      }
+
+      .shortcut-item:hover {
+        background: rgba(255, 255, 255, 0.35);
+      }
+
+      .shortcut-index {
+        color: var(--clay);
+        font-family: ui-monospace, Consolas, monospace;
+        font-size: 10px;
+      }
+
+      .shortcut-item strong {
+        display: block;
+        margin-bottom: 5px;
+        font-size: 14px;
+      }
+
+      .shortcut-item small {
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .shortcut-item > span:last-child {
+        font-size: 18px;
+      }
+
+      .site-footer {
+        padding: 30px 0 84px;
+        border-top: 1px solid var(--line);
+        background: var(--ink);
+        color: rgba(255, 255, 255, 0.58);
+      }
+
+      .footer-inner {
+        display: flex;
+        width: min(100% - 64px, 1360px);
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        margin: 0 auto;
+        font-size: 10px;
+      }
+
+      .mobile-nav {
+        display: none;
+      }
+
+      .overlay {
+        position: fixed;
+        z-index: 60;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: rgba(17, 23, 20, 0.58);
+        backdrop-filter: blur(8px);
+      }
+
+      .dialog {
+        width: min(100%, 540px);
+        max-height: min(720px, calc(100vh - 48px));
+        overflow: auto;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 8px;
+        background: var(--paper-bright);
+        box-shadow: 0 28px 90px rgba(18, 26, 21, 0.3);
+      }
+
+      .dialog-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 22px 24px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .dialog-kicker {
+        margin-bottom: 4px;
+        color: var(--clay);
+        font-family: ui-monospace, Consolas, monospace;
+        font-size: 9px;
+      }
+
+      .dialog h2 {
+        margin-bottom: 0;
+        font-family: Georgia, "Songti SC", serif;
+        font-size: 28px;
+      }
+
+      .close-button {
+        display: grid;
+        width: 38px;
+        height: 38px;
+        flex: 0 0 auto;
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        background: transparent;
+        color: var(--ink);
+        cursor: pointer;
+        font-size: 20px;
+      }
+
+      .dialog-body {
+        padding: 24px;
+      }
+
+      .search-input-wrap {
+        display: flex;
+        min-height: 50px;
+        align-items: center;
+        gap: 10px;
+        padding: 0 15px;
+        border: 1px solid var(--ink);
+        border-radius: 6px;
+        background: #fff;
+      }
+
+      .search-input-wrap input {
+        width: 100%;
+        min-width: 0;
+        border: 0;
+        outline: 0;
+        color: var(--ink);
+        background: transparent;
+      }
+
+      .search-results {
+        display: grid;
+        gap: 6px;
+        margin-top: 14px;
+      }
+
+      .search-result {
+        display: grid;
+        min-height: 58px;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 16px;
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        background: transparent;
+        color: var(--ink);
+        cursor: pointer;
+        text-align: left;
+      }
+
+      .search-result:hover {
+        border-color: var(--ink);
+        background: #fff;
+      }
+
+      .search-result strong {
+        display: block;
+        font-size: 13px;
+      }
+
+      .search-result small {
+        color: var(--muted);
+        font-size: 10px;
+      }
+
+      .empty-state {
+        padding: 28px 0;
+        color: var(--muted);
+        text-align: center;
+        font-size: 12px;
+      }
+
+      .journey-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .journey-item {
+        display: grid;
+        grid-template-columns: 34px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 12px;
+        padding: 13px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #fff;
+      }
+
+      .journey-item.current {
+        border-color: var(--clay);
+      }
+
+      .journey-number {
+        display: grid;
+        width: 30px;
+        height: 30px;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--paper);
+        color: var(--clay);
+        font-family: ui-monospace, Consolas, monospace;
+        font-size: 10px;
+      }
+
+      .journey-item strong {
+        display: block;
+        margin-bottom: 3px;
+        font-size: 13px;
+      }
+
+      .journey-item small {
+        color: var(--muted);
+        font-size: 10px;
+      }
+
+      .journey-item button {
+        min-height: 36px;
+        padding: 0 11px;
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        background: transparent;
+        color: var(--ink);
+        cursor: pointer;
+        font-size: 10px;
+      }
+
+      .login-form {
+        display: grid;
+        gap: 16px;
+      }
+
+      .field {
+        display: grid;
+        gap: 7px;
+      }
+
+      .field label {
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .field input {
+        min-height: 46px;
+        padding: 0 13px;
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        background: #fff;
+        color: var(--ink);
+      }
+
+      .field-error {
+        margin: -7px 0 0;
+        color: #a53c28;
+        font-size: 10px;
+      }
+
+      .login-note {
+        margin-bottom: 0;
+        color: var(--muted);
+        font-size: 10px;
+        line-height: 1.65;
+      }
+
+      .toast {
+        position: fixed;
+        z-index: 80;
+        right: 24px;
+        bottom: 24px;
+        max-width: min(360px, calc(100vw - 48px));
+        padding: 12px 15px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 6px;
+        background: var(--ink);
+        color: #fff;
+        box-shadow: 0 20px 50px rgba(18, 26, 21, 0.25);
+        font-size: 11px;
+      }
+
+      @media (max-width: 1080px) {
+        .primary-nav {
+          display: none;
+        }
+
+        .hero::before {
+          display: none;
+        }
+
+        .hero-inner {
+          grid-template-columns: 1fr 0.92fr;
+        }
+
+        .hero-copy {
+          padding-right: 36px;
+        }
+
+        .topic-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 760px) {
+        :root {
+          --header-height: 58px;
+        }
+
+        .header-inner,
+        .hero-inner,
+        .section-inner,
+        .footer-inner {
+          width: min(100% - 32px, 1360px);
+        }
+
+        .brand-copy small,
+        .search-label,
+        .key-hint {
+          display: none;
+        }
+
+        .login-button {
+          min-width: 42px;
+          padding: 0 11px;
+        }
+
+        .hero-inner {
+          min-height: auto;
+          grid-template-columns: 1fr;
+        }
+
+        .hero-copy {
+          padding: 48px 0 22px;
+        }
+
+        .hero h1 {
+          max-width: 520px;
+          font-size: clamp(42px, 13vw, 60px);
+        }
+
+        .hero-lede {
+          font-size: 14px;
+          line-height: 1.75;
+        }
+
+        .hero-actions {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          margin-top: 26px;
+        }
+
+        .hero-meta {
+          margin-top: 28px;
+        }
+
+        .hero-meta div {
+          min-width: 0;
+          padding-right: 16px;
+          margin-right: 16px;
+        }
+
+        .hero-visual {
+          min-height: 360px;
+          padding: 0 0 24px;
+        }
+
+        .atlas-image {
+          width: 100%;
+          max-height: 300px;
+          justify-self: center;
+        }
+
+        .route-panel {
+          right: 0;
+          bottom: 18px;
+          width: min(300px, calc(100% - 24px));
+        }
+
+        .section-band {
+          padding: 56px 0 62px;
+        }
+
+        .section-heading {
+          display: grid;
+          gap: 14px;
+          margin-bottom: 24px;
+        }
+
+        .section-heading p {
+          margin-bottom: 0;
+        }
+
+        .topic-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .topic-card {
+          min-height: 276px;
+          padding: 20px;
+        }
+
+        .topic-card-copy {
+          max-width: 66%;
+        }
+
+        .topic-detail {
+          grid-template-columns: 1fr;
+          gap: 10px;
+          padding: 20px;
+        }
+
+        .topic-detail .button {
+          width: 100%;
+        }
+
+        .continue-layout {
+          grid-template-columns: 1fr;
+          gap: 28px;
+        }
+
+        .shortcut-item {
+          grid-template-columns: 34px minmax(0, 1fr) auto;
+        }
+
+        .footer-inner {
+          display: grid;
+          gap: 8px;
+        }
+
+        .site-footer {
+          padding-bottom: 90px;
+        }
+
+        .mobile-nav {
+          position: fixed;
+          z-index: 40;
+          right: 0;
+          bottom: 0;
+          left: 0;
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          min-height: 62px;
+          border-top: 1px solid rgba(255, 255, 255, 0.12);
+          background: rgba(29, 37, 33, 0.97);
+          backdrop-filter: blur(14px);
+        }
+
+        .mobile-nav button {
+          display: grid;
+          min-width: 0;
+          place-items: center;
+          gap: 2px;
+          border: 0;
+          background: transparent;
+          color: rgba(255, 255, 255, 0.58);
+          cursor: pointer;
+          font-size: 9px;
+        }
+
+        .mobile-nav button.active {
+          color: #fff;
+        }
+
+        .mobile-nav b {
+          font-size: 15px;
+          font-weight: 400;
+        }
+
+        .overlay {
+          align-items: end;
+          padding: 0;
+        }
+
+        .dialog {
+          width: 100%;
+          max-height: 82vh;
+          border-right: 0;
+          border-bottom: 0;
+          border-left: 0;
+          border-radius: 8px 8px 0 0;
+        }
+
+        .toast {
+          right: 16px;
+          bottom: 78px;
+          max-width: calc(100vw - 32px);
+        }
+      }
+
+      @media (max-width: 420px) {
+        .brand-mark {
+          width: 32px;
+          height: 32px;
+        }
+
+        .brand-copy strong {
+          max-width: 112px;
+          font-size: 12px;
+        }
+
+        .header-actions {
+          gap: 6px;
+        }
+
+        .icon-button,
+        .login-button {
+          min-height: 36px;
+        }
+
+        .icon-button {
+          width: 38px;
+          padding: 0;
+        }
+
+        .login-button {
+          font-size: 11px;
+        }
+
+        .hero-actions {
+          grid-template-columns: 1fr;
+        }
+
+        .hero-meta {
+          justify-content: space-between;
+        }
+
+        .hero-meta div {
+          padding-right: 12px;
+          margin-right: 12px;
+        }
+
+        .hero-meta dt {
+          font-size: 21px;
+        }
+
+        .route-panel {
+          width: calc(100% - 12px);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+    <script type="text/babel">
+      const { useEffect, useMemo, useRef, useState } = React;
+
+      const topics = [
+        {
+          slug: "knowledge",
+          short: "知识",
+          title: "AI知识库",
+          description: "梳理概念、方法与命令，建立可复用的 AI 基础知识体系。",
+          categories: ["AI术语", "提示词", "CLI命令", "AI大事记"],
+          tone: "#6f7d4c",
+          image: "assets/topic-knowledge.png"
+        },
+        {
+          slug: "tools",
+          short: "工具",
+          title: "AI实用工具",
+          description: "筛选真正提升学习、创作和交付效率的实用工具。",
+          categories: ["大模型", "Skills / MCP", "智能体", "专业工具"],
+          tone: "#d85f36",
+          image: "assets/topic-tools.png"
+        },
+        {
+          slug: "build",
+          short: "搭建",
+          title: "AI项目搭建",
+          description: "把 AI 想法落成项目，沉淀配置、流程与持续交付的方法。",
+          categories: ["Vibe Coding", "一人公司", "平台连接", "Token技巧"],
+          tone: "#74668b",
+          image: "assets/topic-build.png"
+        },
+        {
+          slug: "applications",
+          short: "应用",
+          title: "AI个人应用",
+          description: "记录个人可直接使用的网页、小插件、课件和灵感案例。",
+          categories: ["自创应用", "AI灵感站", "推荐应用"],
+          tone: "#a46e40",
+          image: "assets/topic-applications.png"
+        },
+        {
+          slug: "courses",
+          short: "课程",
+          title: "AI课程学习",
+          description: "把自学材料整理为可跟随、可复盘的课程路径与视频入口。",
+          categories: ["大神视频", "课程目录", "课程脑图", "课程视频"],
+          tone: "#65784f",
+          image: "assets/topic-courses.png"
+        },
+        {
+          slug: "space",
+          short: "空间",
+          title: "个人空间站",
+          description: "公开记录效率系统、生活运动、投资观察和旅行足迹。",
+          categories: ["日历待办", "生活运动", "个人投资", "旅行记录"],
+          tone: "#4d7698",
+          image: "assets/topic-space.png"
+        }
+      ];
+
+      const shortcuts = [
+        { title: "Skills / MCP 亲测大全", description: "筛选亲测工具、MCP 与网站" },
+        { title: "自创工具", description: "查看个人自创应用入口" },
+        { title: "个人待办事项", description: "打开周计划与每日任务看板" },
+        { title: "微读圣经", description: "直接进入创世记第 1 章阅读" }
+      ];
+
+      const routeSteps = [
+        { title: "建立基础概念", time: "12 分钟" },
+        { title: "选择趁手工具", time: "8 分钟" },
+        { title: "完成首个项目", time: "25 分钟" }
+      ];
+
+      function App() {
+        const [selectedTopic, setSelectedTopic] = useState(topics[0]);
+        const [routeStep, setRouteStep] = useState(0);
+        const [dialog, setDialog] = useState(null);
+        const [query, setQuery] = useState("");
+        const [toast, setToast] = useState("");
+        const [email, setEmail] = useState("");
+        const [emailError, setEmailError] = useState("");
+        const searchInputRef = useRef(null);
+
+        const searchItems = useMemo(() => {
+          const allItems = [
+            ...topics.map((topic) => ({ title: topic.title, description: topic.description, type: "学习板块", action: () => selectTopic(topic) })),
+            ...shortcuts.map((shortcut) => ({ title: shortcut.title, description: shortcut.description, type: "快捷入口", action: () => showDemoNavigation(shortcut.title) }))
+          ];
+          const normalized = query.trim().toLowerCase();
+          if (!normalized) return allItems.slice(0, 6);
+          return allItems.filter((item) => `${item.title} ${item.description}`.toLowerCase().includes(normalized));
+        }, [query]);
+
+        useEffect(() => {
+          const handleKeyDown = (event) => {
+            if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+              event.preventDefault();
+              setDialog("search");
+            }
+            if (event.key === "Escape") setDialog(null);
+          };
+          window.addEventListener("keydown", handleKeyDown);
+          return () => window.removeEventListener("keydown", handleKeyDown);
+        }, []);
+
+        useEffect(() => {
+          if (dialog === "search") window.setTimeout(() => searchInputRef.current?.focus(), 60);
+          if (!dialog) {
+            setQuery("");
+            setEmailError("");
+          }
+        }, [dialog]);
+
+        useEffect(() => {
+          if (!toast) return undefined;
+          const timer = window.setTimeout(() => setToast(""), 2600);
+          return () => window.clearTimeout(timer);
+        }, [toast]);
+
+        function selectTopic(topic) {
+          setSelectedTopic(topic);
+          setDialog(null);
+          document.getElementById("learning-map")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+
+        function showDemoNavigation(label) {
+          setDialog(null);
+          setToast(`Demo 交互：正式接入后将打开“${label}”`);
+        }
+
+        function submitLogin(event) {
+          event.preventDefault();
+          const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+          if (!isValid) {
+            setEmailError("请输入有效的邮箱地址");
+            return;
+          }
+          setEmailError("");
+          setDialog(null);
+          setToast("Demo 登录验证通过，正式版本将连接现有账户系统");
+        }
+
+        return (
+          <>
+            <header className="site-header">
+              <div className="header-inner">
+                <a className="brand" href="#top" aria-label="返回首页顶部">
+                  <span className="brand-mark">J</span>
+                  <span className="brand-copy">
+                    <strong>J先生AI学习网站</strong>
+                    <small>KNOWLEDGE ATLAS / 2026</small>
+                  </span>
+                </a>
+                <nav className="primary-nav" aria-label="主导航">
+                  <button className="nav-link active" type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>首页</button>
+                  {topics.map((topic) => (
+                    <button className="nav-link" type="button" key={topic.slug} onClick={() => selectTopic(topic)}>{topic.short}</button>
+                  ))}
+                </nav>
+                <div className="header-actions">
+                  <button className="icon-button" type="button" aria-label="搜索全站内容" onClick={() => setDialog("search")}>
+                    <span aria-hidden="true">⌕</span>
+                    <span className="search-label">搜索</span>
+                    <span className="key-hint">Ctrl K</span>
+                  </button>
+                  <button className="login-button" type="button" onClick={() => setDialog("login")}>登录</button>
+                </div>
+              </div>
+            </header>
+
+            <main id="top">
+              <section className="hero" data-screen-label="首页首屏">
+                <div className="hero-inner">
+                  <div className="hero-copy">
+                    <p className="eyebrow">个人 AI 学习档案馆</p>
+                    <h1>J先生AI学习资料馆</h1>
+                    <p className="hero-lede">从知识到实践，从学习到应用。把分散的概念、工具、课程和项目，整理成一张能够持续生长的个人学习地图。</p>
+                    <div className="hero-actions">
+                      <button className="button button-primary" type="button" onClick={() => setDialog("journey")}>
+                        开始今日学习 <span aria-hidden="true">→</span>
+                      </button>
+                      <button className="button button-secondary" type="button" onClick={() => document.getElementById("learning-map")?.scrollIntoView({ behavior: "smooth" })}>
+                        浏览知识地图 <span aria-hidden="true">↓</span>
+                      </button>
+                    </div>
+                    <dl className="hero-meta" aria-label="网站内容概况">
+                      <div><dt>6</dt><dd>学习主题</dd></div>
+                      <div><dt>3级</dt><dd>内容目录</dd></div>
+                      <div><dt>持续</dt><dd>整理更新</dd></div>
+                    </dl>
+                  </div>
+
+                  <div className="hero-visual" aria-label="学习地图插画与本周路径">
+                    <img className="atlas-image" src="assets/hero-learning-atlas.png" alt="书本、电脑与知识卡片组成的AI学习地图手绘插画" />
+                    <aside className="route-panel" aria-label="本周学习路径">
+                      <div className="route-heading">
+                        <div>
+                          <span>WEEKLY ROUTE / 03</span>
+                          <strong>从概念到第一个项目</strong>
+                        </div>
+                        <b className="route-progress">{routeStep + 1}/3</b>
+                      </div>
+                      <div className="route-steps">
+                        {routeSteps.map((step, index) => (
+                          <button className={`route-step ${routeStep === index ? "active" : ""}`} type="button" key={step.title} onClick={() => setRouteStep(index)}>
+                            <span className="route-step-index">0{index + 1}</span>
+                            <span>{step.title}</span>
+                            <small>{step.time}</small>
+                          </button>
+                        ))}
+                      </div>
+                    </aside>
+                  </div>
+                </div>
+              </section>
+
+              <section className="section-band" id="learning-map" data-screen-label="六大学习板块">
+                <div className="section-inner">
+                  <div className="section-heading">
+                    <div>
+                      <p className="section-kicker">LEARNING MAP / 01—06</p>
+                      <h2>六大学习板块</h2>
+                    </div>
+                    <p>每个板块对应一条可独立进入的学习路径。点击板块查看它的定位，再进入对应内容。</p>
+                  </div>
+                  <div className="topic-grid" aria-label="六大学习板块">
+                    {topics.map((topic, index) => (
+                      <button
+                        className={`topic-card ${selectedTopic.slug === topic.slug ? "selected" : ""}`}
+                        style={{ "--tone": topic.tone, "--topic-image": `url(${topic.image})` }}
+                        type="button"
+                        key={topic.slug}
+                        onClick={() => setSelectedTopic(topic)}
+                      >
+                        <span className="topic-card-top">
+                          <span className="topic-number">0{index + 1} / {topic.short}</span>
+                          <span className="topic-arrow" aria-hidden="true">↗</span>
+                        </span>
+                        <span className="topic-card-copy">
+                          <h3>{topic.title}</h3>
+                          <p>{topic.description}</p>
+                        </span>
+                        <span className="topic-categories">
+                          {topic.categories.map((category) => <span key={category}>{category}</span>)}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="topic-detail" aria-live="polite">
+                    <div>
+                      <span className="topic-detail-label">CURRENT SELECTION</span>
+                      <strong>{selectedTopic.title}</strong>
+                    </div>
+                    <p>{selectedTopic.description} 当前包含 {selectedTopic.categories.join("、")}。</p>
+                    <button className="button button-secondary" type="button" onClick={() => showDemoNavigation(selectedTopic.title)}>进入板块 →</button>
+                  </div>
+                </div>
+              </section>
+
+              <section className="section-band continue-section" data-screen-label="继续学习">
+                <div className="section-inner continue-layout">
+                  <div className="continue-intro">
+                    <p className="section-kicker">QUICK ACCESS / RECENT</p>
+                    <h2>继续上次的探索</h2>
+                    <p>保留当前首页最常用的四个入口，让资料馆不仅能浏览，也能快速回到正在进行的学习和项目。</p>
+                  </div>
+                  <div className="shortcut-list">
+                    {shortcuts.map((shortcut, index) => (
+                      <button className="shortcut-item" type="button" key={shortcut.title} onClick={() => showDemoNavigation(shortcut.title)}>
+                        <span className="shortcut-index">0{index + 1}</span>
+                        <span><strong>{shortcut.title}</strong><small>{shortcut.description}</small></span>
+                        <span aria-hidden="true">→</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            </main>
+
+            <footer className="site-footer">
+              <div className="footer-inner">
+                <span>© 2026 学问笔记 · J先生AI学习网站</span>
+                <span>个人投资内容仅为个人记录，不构成投资建议。</span>
+              </div>
+            </footer>
+
+            <nav className="mobile-nav" aria-label="移动端快捷导航">
+              <button className="active" type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}><b>⌂</b><span>首页</span></button>
+              <button type="button" onClick={() => document.getElementById("learning-map")?.scrollIntoView({ behavior: "smooth" })}><b>▦</b><span>地图</span></button>
+              <button type="button" onClick={() => setDialog("search")}><b>⌕</b><span>搜索</span></button>
+              <button type="button" onClick={() => setDialog("journey")}><b>→</b><span>学习</span></button>
+            </nav>
+
+            {dialog && (
+              <div className="overlay" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setDialog(null)}>
+                <section className="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+                  <div className="dialog-header">
+                    <div>
+                      <p className="dialog-kicker">{dialog === "search" ? "SEARCH" : dialog === "journey" ? "LEARNING ROUTE" : "ACCOUNT"}</p>
+                      <h2 id="dialog-title">{dialog === "search" ? "搜索资料馆" : dialog === "journey" ? "今日学习路径" : "登录资料馆"}</h2>
+                    </div>
+                    <button className="close-button" type="button" aria-label="关闭弹窗" onClick={() => setDialog(null)}>×</button>
+                  </div>
+
+                  {dialog === "search" && (
+                    <div className="dialog-body">
+                      <div className="search-input-wrap">
+                        <span aria-hidden="true">⌕</span>
+                        <input ref={searchInputRef} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索知识、工具、课程或项目" aria-label="搜索内容" />
+                      </div>
+                      <div className="search-results">
+                        {searchItems.length ? searchItems.map((item) => (
+                          <button className="search-result" type="button" key={`${item.type}-${item.title}`} onClick={item.action}>
+                            <span><strong>{item.title}</strong><small>{item.description}</small></span>
+                            <small>{item.type} →</small>
+                          </button>
+                        )) : <div className="empty-state">没有找到相关内容，换一个关键词试试。</div>}
+                      </div>
+                    </div>
+                  )}
+
+                  {dialog === "journey" && (
+                    <div className="dialog-body">
+                      <div className="journey-list">
+                        {routeSteps.map((step, index) => (
+                          <div className={`journey-item ${routeStep === index ? "current" : ""}`} key={step.title}>
+                            <span className="journey-number">0{index + 1}</span>
+                            <span><strong>{step.title}</strong><small>预计 {step.time} · {index === routeStep ? "当前步骤" : "可自由切换"}</small></span>
+                            <button type="button" onClick={() => { setRouteStep(index); setDialog(null); setToast(`已切换到“${step.title}”`); }}>开始</button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {dialog === "login" && (
+                    <div className="dialog-body">
+                      <form className="login-form" onSubmit={submitLogin} noValidate>
+                        <div className="field">
+                          <label htmlFor="email">邮箱</label>
+                          <input id="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="name@example.com" aria-describedby={emailError ? "email-error" : undefined} />
+                        </div>
+                        {emailError && <p className="field-error" id="email-error" role="alert">{emailError}</p>}
+                        <button className="button button-primary" type="submit">继续登录</button>
+                        <p className="login-note">这是视觉 Demo。正式接入时沿用网站现有账户状态与登录链路，不在此页面保存数据。</p>
+                      </form>
+                    </div>
+                  )}
+                </section>
+              </div>
+            )}
+
+            {toast && <div className="toast" role="status">{toast}</div>}
+          </>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    </script>
+  </body>
+</html>

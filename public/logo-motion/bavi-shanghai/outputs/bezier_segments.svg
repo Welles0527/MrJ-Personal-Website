@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M39 15v26c0 8.1-5.8 13.2-14.3 13.2-5.1 0-9.4-1.9-12.2-5.2l5.2-6.4c1.9 2.1 4 3.2 6.6 3.2 4.1 0 6.4-2.3 6.4-6.6V23H22v-8h17z" fill="#111111" opacity="0.16"/>
+<g fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 39.0 15.0 L 39.0 41.0" stroke="#ef4444" stroke-width="4.5"/>
+<path d="M 39.0 41.0 C 39.0 49.1, 33.2 54.2, 24.7 54.2" stroke="#f97316" stroke-width="4.5"/>
+<path d="M 24.7 54.2 C 19.6 54.2, 15.3 52.3, 12.5 49.0" stroke="#eab308" stroke-width="4.5"/>
+<path d="M 12.5 49.0 L 17.7 42.6" stroke="#22c55e" stroke-width="4.5"/>
+<path d="M 17.7 42.6 C 19.6 44.7, 21.7 45.8, 24.3 45.8" stroke="#06b6d4" stroke-width="4.5"/>
+<path d="M 24.3 45.8 C 28.4 45.8, 30.7 43.5, 30.7 39.2" stroke="#3b82f6" stroke-width="4.5"/>
+<path d="M 30.7 39.2 L 30.7 23.0" stroke="#8b5cf6" stroke-width="4.5"/>
+<path d="M 30.7 23.0 L 22.0 23.0" stroke="#ec4899" stroke-width="4.5"/>
+<path d="M 22.0 23.0 L 22.0 15.0" stroke="#ef4444" stroke-width="4.5"/>
+<path d="M 22.0 15.0 L 39.0 15.0" stroke="#f97316" stroke-width="4.5"/>
+</g>
+<g stroke="#64748b" stroke-width="1.2" stroke-dasharray="5 5" opacity="0.58">
+<path d="M 39.0 41.0 L 39.0 49.1 M 24.7 54.2 L 33.2 54.2"/>
+<path d="M 24.7 54.2 L 19.6 54.2 M 12.5 49.0 L 15.3 52.3"/>
+<path d="M 17.7 42.6 L 19.6 44.7 M 24.3 45.8 L 21.7 45.8"/>
+<path d="M 24.3 45.8 L 28.4 45.8 M 30.7 39.2 L 30.7 43.5"/>
+</g>
+<g font-family="Arial, Helvetica, sans-serif">
+<circle cx="39.0" cy="15.0" r="3.1" fill="#ffffff" stroke="#111827" stroke-width="1.5"/>
+<text x="39.0" y="21.0" text-anchor="middle" font-size="10" font-weight="700" fill="#ef4444" stroke="#ffffff" stroke-width="3.5" paint-order="stroke fill">1</text>
+<circle cx="39.0" cy="41.0" r="3.1" fill="#ffffff" stroke="#111827" stroke-width="1.5"/>
+<circle cx="39.0" cy="49.1" r="2.4" fill="#2563eb" opacity="0.72"/>
+<circle cx="33.2" cy="54.2" r="2.4" fill="#2563eb" opacity="0.72"/>
+<text x="35.0" y="43.6" text-anchor="middle" font-size="10" font-weight="700" fill="#f97316" stroke="#ffffff" stroke-width="3.5" paint-order="stroke fill">2</text>
+<circle cx="24.7" cy="54.2" r="3.1" fill="#ffffff" stroke="#111827" stroke-width="1.5"/>
+<circle cx="19.6" cy="54.2" r="2.4" fill="#2563eb" opacity="0.72"/>
+<circle cx="15.3" cy="52.3" r="2.4" fill="#2563eb" opacity="0.72"/>
+<text x="17.7" y="45.8" text-anchor="middle" font-size="10" font-weight="700" fill="#dc2626" stroke="#ffffff" stroke-width="3.5" paint-order="stroke fill">3</text>
+<circle cx="12.5" cy="49.0" r="3.1" fill="#ffffff" stroke="#111827" stroke-width="1.5"/>
+<text x="15.1" y="38.8" text-anchor="middle" font-size="10" font-weight="700" fill="#dc2626" stroke="#ffffff" stroke-width="3.5" paint-order="stroke fill">4</text>
+<circle cx="17.7" cy="42.6" r="3.1" fill="#ffffff" stroke="#111827" stroke-width="1.5"/>
+<circle cx="19.6" cy="44.7" r="2.4" fill="#2563eb" opacity="0.72"/>
+<circle cx="21.7" cy="45.8" r="2.4" fill="#2563eb" opacity="0.72"/>
+<text x="20.7" y="38.0" text-anchor="middle" font-size="10" font-weight="700" fill="#06b6d4" stroke="#ffffff" stroke-width="3.5" paint-order="stroke fill">5</text>
+<circle cx="24.3" cy="45.8" r="3.1" fill="#ffffff" stroke="#111827" stroke-width="1.5"/>
+<circle cx="28.4" cy="45.8" r="2.4" fill="#2563eb" opacity="0.72"/>
+<circle cx="30.7" cy="43.5" r="2.4" fill="#2563eb" opacity="0.72"/>
+<text x="29.0" y="37.1" text-anchor="middle" font-size="10" font-weight="700" fill="#3b82f6" stroke="#ffffff" stroke-width="3.5" paint-order="stroke fill">6</text>
+<circle cx="30.7" cy="39.2" r="3.1" fill="#ffffff" stroke="#111827" stroke-width="1.5"/>
+<text x="30.7" y="24.1" text-anchor="middle" font-size="10" font-weight="700" fill="#dc2626" stroke="#ffffff" stroke-width="3.5" paint-order="stroke fill">7</text>
+<circle cx="30.7" cy="23.0" r="3.1" fill="#ffffff" stroke="#111827" stroke-width="1.5"/>
+<text x="26.3" y="16.0" text-anchor="middle" font-size="10" font-weight="700" fill="#dc2626" stroke="#ffffff" stroke-width="3.5" paint-order="stroke fill">8</text>
+<circle cx="22.0" cy="23.0" r="3.1" fill="#ffffff" stroke="#111827" stroke-width="1.5"/>
+<text x="22.0" y="12.0" text-anchor="middle" font-size="10" font-weight="700" fill="#dc2626" stroke="#ffffff" stroke-width="3.5" paint-order="stroke fill">9</text>
+<circle cx="22.0" cy="15.0" r="3.1" fill="#ffffff" stroke="#111827" stroke-width="1.5"/>
+<text x="30.5" y="8.0" text-anchor="middle" font-size="10" font-weight="700" fill="#dc2626" stroke="#ffffff" stroke-width="3.5" paint-order="stroke fill">10</text>
+</g>
+<g font-family="Arial, Helvetica, sans-serif" fill="#111827">
+<rect x="18" y="16" width="430" height="82" rx="8" fill="#ffffff" opacity="0.90" stroke="#cbd5e1"/>
+<text x="34" y="42" font-size="14" font-weight="700">Path audit: 4 cubic segments (no fixed budget)</text>
+<text x="34" y="64" font-size="12" fill="#475569">Join warnings: 6; short segments: 0</text>
+<text x="34" y="84" font-size="12" fill="#475569">Colored curves = segments; blue dots/gray lines = Bezier handles</text>
+</g>
+</svg>

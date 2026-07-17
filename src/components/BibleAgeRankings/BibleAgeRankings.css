@@ -1,0 +1,349 @@
+:root {
+  --age-rank-page: #080806;
+  --age-rank-panel: #12120f;
+  --age-rank-panel-soft: #191811;
+  --age-rank-ink: #fff3d3;
+  --age-rank-muted: rgba(255, 242, 207, 0.66);
+  --age-rank-gold: #d8b35f;
+  --age-rank-line: rgba(216, 179, 95, 0.24);
+}
+
+.age-rankings-page {
+  min-height: 100vh;
+  padding: clamp(2rem, 6vw, 5.75rem) 1.25rem 5rem;
+  background: var(--age-rank-page);
+  color: var(--age-rank-ink);
+}
+
+.age-rankings-shell {
+  width: min(100%, 1160px);
+  margin: 0 auto;
+}
+
+.age-rankings-toolbar,
+.age-ranking-card-heading,
+.age-ranking-notes > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.age-rankings-toolbar {
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--age-rank-line);
+}
+
+.age-rankings-toolbar p,
+.age-rankings-header p,
+.age-ranking-card-heading p,
+.age-ranking-notes p {
+  margin: 0;
+}
+
+.age-rankings-toolbar p {
+  color: rgba(255, 242, 207, 0.46);
+  font-size: 0.78rem;
+}
+
+.age-rankings-back,
+.age-rankings-tabs button {
+  border: 1px solid rgba(216, 179, 95, 0.38);
+  border-radius: 999px;
+  background: rgba(255, 246, 218, 0.05);
+  color: #f9df9f;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.age-rankings-back {
+  padding: 0.68rem 0.9rem;
+}
+
+.age-rankings-header {
+  max-width: 50rem;
+  padding: clamp(2.5rem, 7vw, 5rem) 0 2rem;
+}
+
+.age-rankings-header > p,
+.age-ranking-card-heading p,
+.age-ranking-notes > div > p {
+  color: var(--age-rank-gold);
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.13em;
+}
+
+.age-rankings-header h1,
+.age-ranking-card h2,
+.age-ranking-row h3 {
+  font-family: Georgia, "Songti SC", "STSong", serif;
+}
+
+.age-rankings-header h1 {
+  margin: 0.65rem 0 0.8rem;
+  font-size: clamp(2.35rem, 6vw, 5.25rem);
+  letter-spacing: -0.06em;
+  line-height: 0.95;
+}
+
+.age-rankings-header > span {
+  display: block;
+  max-width: 42rem;
+  color: var(--age-rank-muted);
+  font-size: 1rem;
+  line-height: 1.9;
+}
+
+.age-rankings-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-bottom: 1.25rem;
+}
+
+.age-rankings-tabs button {
+  min-height: 2.6rem;
+  padding: 0.62rem 1rem;
+  cursor: pointer;
+}
+
+.age-rankings-tabs button.is-selected {
+  border-color: rgba(250, 222, 144, 0.76);
+  background: rgba(216, 179, 95, 0.2);
+  color: #fff3d3;
+}
+
+.age-ranking-card {
+  overflow: hidden;
+  border: 1px solid var(--age-rank-line);
+  border-radius: 1.25rem;
+  background: var(--age-rank-panel);
+}
+
+.age-ranking-card-heading {
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border-bottom: 1px solid var(--age-rank-line);
+}
+
+.age-ranking-card-heading h2,
+.age-ranking-notes h2 {
+  margin: 0.35rem 0 0;
+  font-size: clamp(1.35rem, 3vw, 2rem);
+  line-height: 1.15;
+}
+
+.age-ranking-card-heading > span {
+  flex: 0 0 auto;
+  border: 1px solid rgba(216, 179, 95, 0.2);
+  border-radius: 999px;
+  padding: 0.48rem 0.7rem;
+  color: var(--age-rank-muted);
+  font-size: 0.75rem;
+}
+
+.age-ranking-chart {
+  padding: 0.35rem clamp(1rem, 3vw, 2rem) 1rem;
+}
+
+.age-ranking-row {
+  display: grid;
+  grid-template-columns: 2rem minmax(10rem, 0.95fr) minmax(13rem, 1.35fr) minmax(8.5rem, 0.65fr);
+  gap: 0.9rem;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid rgba(216, 179, 95, 0.13);
+}
+
+.age-ranking-row:last-child {
+  border-bottom: 0;
+}
+
+.age-ranking-place {
+  color: var(--age-rank-gold);
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.77rem;
+}
+
+.age-ranking-person h3 {
+  margin: 0;
+  color: var(--age-rank-ink);
+  font-size: 1.05rem;
+}
+
+.age-ranking-person p,
+.age-ranking-person small,
+.age-ranking-source small,
+.age-ranking-notes li p,
+.age-ranking-notes li small {
+  margin: 0;
+  color: var(--age-rank-muted);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.age-ranking-person p,
+.age-ranking-person small {
+  margin-top: 0.24rem;
+}
+
+.age-ranking-person small {
+  color: rgba(255, 225, 161, 0.74);
+}
+
+.age-ranking-measure {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.age-ranking-bar {
+  height: 0.65rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 246, 218, 0.08);
+}
+
+.age-ranking-bar span {
+  display: block;
+  width: var(--ranking-bar-width);
+  height: 100%;
+  border-radius: inherit;
+  background: #c58a2f;
+}
+
+.age-ranking-measure > strong {
+  color: #ffe2a0;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.age-ranking-source {
+  display: grid;
+  justify-items: start;
+  gap: 0.3rem;
+}
+
+.age-ranking-source > span {
+  border: 1px solid rgba(216, 179, 95, 0.24);
+  border-radius: 999px;
+  padding: 0.18rem 0.42rem;
+  color: #e5c881;
+  font-size: 0.68rem;
+  white-space: nowrap;
+}
+
+.age-ranking-source > span.is-variant {
+  border-color: rgba(231, 155, 91, 0.58);
+  color: #f4bc78;
+}
+
+.age-ranking-notes {
+  display: grid;
+  grid-template-columns: minmax(10rem, 0.5fr) minmax(0, 1fr);
+  gap: 1.5rem;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border-top: 1px solid var(--age-rank-line);
+  background: var(--age-rank-panel-soft);
+}
+
+.age-ranking-notes ul {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.age-ranking-notes li {
+  border-left: 2px solid rgba(216, 179, 95, 0.48);
+  padding-left: 0.8rem;
+}
+
+.age-ranking-notes li strong {
+  color: #f9df9f;
+  font-size: 0.84rem;
+}
+
+.age-ranking-notes li p {
+  margin-top: 0.22rem;
+}
+
+.age-ranking-notes li small {
+  display: block;
+  margin-top: 0.18rem;
+  color: rgba(255, 225, 161, 0.72);
+}
+
+.age-rankings-back:focus-visible,
+.age-rankings-tabs button:focus-visible {
+  outline: 2px solid #fff3d3;
+  outline-offset: 3px;
+}
+
+@media (min-width: 900px) and (hover: hover) {
+  .age-rankings-back:hover,
+  .age-rankings-tabs button:hover {
+    border-color: rgba(250, 222, 144, 0.76);
+    background: rgba(216, 179, 95, 0.15);
+  }
+}
+
+@media (max-width: 860px) {
+  .age-ranking-row {
+    grid-template-columns: 1.8rem minmax(8rem, 0.8fr) minmax(8rem, 1fr);
+  }
+
+  .age-ranking-source {
+    grid-column: 2 / -1;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .age-ranking-notes {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .age-rankings-page {
+    padding: 1.4rem 1rem 3rem;
+  }
+
+  .age-rankings-toolbar,
+  .age-ranking-card-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .age-rankings-toolbar p {
+    display: none;
+  }
+
+  .age-ranking-row {
+    grid-template-columns: 1.6rem minmax(0, 1fr);
+    gap: 0.55rem 0.75rem;
+  }
+
+  .age-ranking-measure,
+  .age-ranking-source {
+    grid-column: 2;
+  }
+
+  .age-ranking-source {
+    grid-template-columns: 1fr;
+  }
+
+  .age-ranking-person h3 {
+    font-size: 0.98rem;
+  }
+
+  .age-ranking-notes {
+    padding: 1.15rem;
+  }
+}

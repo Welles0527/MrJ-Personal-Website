@@ -1,0 +1,8 @@
+{
+  "svg": "public\\logo-motion\\bavi-shanghai\\logo.svg",
+  "source": "public\\logo-motion\\bavi-shanghai\\source-logo.png",
+  "overlay": "public\\logo-motion\\bavi-shanghai\\outputs\\fit_iterations\\02_no_shadow_overlay.png",
+  "iou": 1.0,
+  "src_only_px": 0,
+  "render_only_px": 0
+}
