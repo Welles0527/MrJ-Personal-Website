@@ -1,4 +1,8 @@
-const cloudStore = window.worshipCloudStore || {
+import { worshipCatalog } from "../data/worship-catalog";
+import { worshipSources } from "../data/worship-sources";
+
+export function initializeWorshipApp(cloudStoreOverride) {
+const cloudStore = cloudStoreOverride || window.worshipCloudStore || {
   userId: null,
   async load(key, fallback) {
     try { return JSON.parse(localStorage.getItem(`worship:${key}`)) ?? fallback; } catch { return fallback; }
@@ -21,14 +25,14 @@ const featuredSongs = [
   { title: "我要唱唱你的力量", artist: "KUA Worship", album: "KUA Worship 精选", moods: ["激情敬拜", "欢快感恩"], theme: "赞美与尊崇", duration: "05:12", rank: 12, reason: "现代华语现场敬拜的代表气质", cover: "red" },
 ];
 
-const songs = window.worshipCatalog?.length ? window.worshipCatalog : featuredSongs;
-const sourceMap = window.worshipSources || {};
+const songs = worshipCatalog.length ? worshipCatalog : featuredSongs;
+const sourceMap = worshipSources;
 const queue = [...songs.slice(0, 12)];
 const state = { mood: "全部", query: "", viewMode: "discover", artist: "", current: songs[0], playing: false, favorites: new Set(), recents: [] };
 const $ = selector => document.querySelector(selector);
 const coverClass = song => `cover-${song.cover || "sun"}`;
 const isCurrent = song => state.current?.title === song.title && state.current?.artist === song.artist;
-document.documentElement.dataset.worshipAppVersion = "20260717-title-play-v3";
+document.documentElement.dataset.worshipAppVersion = "content-hashed-assets-v1";
 
 function getFilteredSongs() {
   const query = state.query.trim().toLowerCase();
@@ -280,3 +284,4 @@ $("#mobileMenu").addEventListener("click", () => $(".sidebar").classList.toggle(
 $("#fullscreenPlayer").addEventListener("click", () => $(".media-player-shell").requestFullscreen?.());
 
 renderSongs(); renderQueue(); loadSavedState();
+}

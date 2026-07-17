@@ -1,4 +1,4 @@
-window.worshipSources = {
+const worshipSources = {
   "赞美之泉::这一生最美的祝福": {
     "bvid": "BV1vmx1zMEXS",
     "youtubeId": "tPf7Ig1ebL4"
@@ -403,3 +403,5 @@ window.worshipSources = {
     "youtubeId": "qF3RADPSlDs"
   }
 };
+
+export { worshipSources };

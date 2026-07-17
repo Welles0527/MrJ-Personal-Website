@@ -21,7 +21,7 @@ const group = (name, titles, mood, theme, evidence, evidenceUrl, artistUrl, kind
     artistUrl,
   }));
 
-window.worshipCatalog = [
+let worshipCatalog = [
   ...group("赞美之泉", ["这一生最美的祝福", "恩典之路", "亲近祢", "有一位神", "展开清晨的翅膀", "平安的七月夜", "耶和华祝福满满", "我亲爱的耶稣", "宝贵十架", "我要欢唱"], "温暖治愈", "感恩与喜乐", "赞美之泉官方音乐目录", "https://sop.org/music/sa01/", "https://music.apple.com/tw/artist/赞美之泉/267461612"),
   ...group("天韵合唱团", ["眼光", "野地的花", "神的道路", "耶稣爱你", "生命中的云彩", "看不见的时候", "勇敢", "这一条路", "歌颂复活主", "最痛的时候"], "温暖治愈", "信心与盼望", "《天韵十大点播金曲》官方平台曲目", "https://music.apple.com/kr/album/天韵十大点播金曲/1656655595", "https://music.apple.com/sg/artist/天韵合唱团/1502628137"),
   ...group("小羊诗歌", ["陪我走过春夏秋冬", "一粒麦子", "再次将我更新", "谁能使我与神的爱隔绝", "我愿为祢去", "父啊，我向祢呼求", "耶稣，万名之上的名", "活祭", "全地在歌唱", "祢是我神"], "抒情安静", "祷告与亲近", "Apple Music 热门歌曲与官方作品目录", "https://music.apple.com/us/artist/小羊诗歌/1089342613", "https://music.apple.com/us/artist/小羊诗歌/1089342613"),
@@ -65,7 +65,9 @@ const moodOverrides = new Map([
   ["迦南诗选::主啊，我赞美你", ["欢快感恩", "温暖治愈"]],
 ]);
 
-window.worshipCatalog = window.worshipCatalog.map(song => ({
+worshipCatalog = worshipCatalog.map(song => ({
   ...song,
   moods: moodOverrides.get(`${song.artist}::${song.title}`) || song.moods,
 }));
+
+export { worshipCatalog };
