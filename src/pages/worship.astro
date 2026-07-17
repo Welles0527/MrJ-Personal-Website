@@ -38,11 +38,12 @@ const accountHref = `${basePath}topics/space/planning/todo`;
       </aside>
 
       <main id="top">
-        <header class="topbar"><button class="mobile-menu" id="mobileMenu" aria-label="打开导航">☰</button><label class="search"><span>⌕</span><input id="searchInput" type="search" placeholder="搜索歌曲、歌手或心情…" /></label><button class="top-action add-song-trigger" id="addSongButton"><span>＋</span> 添加歌曲</button><button class="top-action" id="randomButton">随心听一首 <span>↗</span></button></header>
+        <header class="topbar"><button class="mobile-menu" id="mobileMenu" aria-label="打开导航">☰</button><label class="search"><span>⌕</span><input id="searchInput" type="search" placeholder="搜索歌曲、歌手或心情…" /></label><button class="top-action" id="randomButton">随心听一首 <span>↗</span></button></header>
 
         <section class="feature reveal">
           <div class="feature-art"><div class="art-sun"></div><div class="art-mountains mountain-back"></div><div class="art-mountains mountain-front"></div><div class="art-bloom"></div><div class="art-credit">SUNRISE<br /><b>01</b></div></div>
           <div class="feature-copy"><span class="kicker">今日精选 · 温暖治愈</span><h1>敬拜音乐</h1><p class="tagline">让赞美，成为今天的力量。</p><div class="feature-track"><div class="cover cover-sun">这一生<br />最美的祝福</div><div><h2><button type="button" class="feature-song-title" data-play="这一生最美的祝福" data-artist="赞美之泉">这一生最美的祝福</button></h2><p><button type="button" class="feature-artist" data-artist-filter="赞美之泉">赞美之泉</button> <span>·</span> 永恒的盼望</p></div></div><div class="feature-controls"><button class="big-play" data-play="这一生最美的祝福" data-artist="赞美之泉">▶</button><button data-skip="prev" aria-label="上一首">|◀</button><button class="feature-play" data-play="这一生最美的祝福" data-artist="赞美之泉" aria-label="播放">▶</button><button data-skip="next" aria-label="下一首">▶|</button><div class="feature-progress"><i id="featureProgress"></i></div><small>02:28 / 05:26</small></div></div>
+          <button class="add-song-trigger feature-add-song" id="addSongButton"><span>＋</span> 添加歌曲</button>
         </section>
 
         <section class="moods reveal delay-1"><button class="mood active" data-mood="全部"><span>✦</span>为你精选</button><button class="mood" data-mood="温暖治愈"><span>☼</span>温暖治愈</button><button class="mood" data-mood="抒情安静"><span>♧</span>抒情安静</button><button class="mood" data-mood="激情敬拜"><span>♨</span>激情敬拜</button><button class="mood" data-mood="欢快感恩"><span>☺</span>欢快感恩</button></section>
