@@ -12,7 +12,7 @@
 
 .song-title-button,.feature-song-title,.feature-artist,.now-song-title,.now-artist,.player-song-title,.player-artist,.queue-song-title,.queue-artist,.artist{margin:0;padding:0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
 .song-title-button,.now-song-title,.player-song-title,.queue-song-title{display:block;max-width:100%;font-family:var(--serif);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.song-title-button{font-size:14px}.song-title-button:hover,.feature-song-title:hover,.now-song-title:hover,.player-song-title:hover,.queue-song-title:hover{color:var(--gold);text-decoration:underline;text-underline-offset:.2em}
+.song-title-button{width:100%;min-height:39px;padding:4px 0;font-size:14px}.song-title-button:hover,.feature-song-title:hover,.now-song-title:hover,.player-song-title:hover,.queue-song-title:hover{color:var(--gold);text-decoration:underline;text-underline-offset:.2em}
 .artist,.feature-artist,.now-artist,.player-artist,.queue-artist{color:var(--muted)}
 .artist:hover,.feature-artist:hover,.now-artist:hover,.player-artist:hover,.queue-artist:hover{color:var(--gold)}
 .feature-song-title{font-size:19px}.feature-artist{font-size:11px}.now-song-title{font-size:13px}.now-artist{display:block;margin-top:4px;font-size:10px}.player-song-title{font-size:14px}.player-artist{display:block;margin-top:2px;font-size:10px}.queue-song-title{width:100%;font-size:11px}.queue-artist{display:block;margin-top:2px;font-size:8px}

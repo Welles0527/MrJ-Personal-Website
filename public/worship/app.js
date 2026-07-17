@@ -28,6 +28,7 @@ const state = { mood: "全部", query: "", viewMode: "discover", artist: "", cur
 const $ = selector => document.querySelector(selector);
 const coverClass = song => `cover-${song.cover || "sun"}`;
 const isCurrent = song => state.current?.title === song.title && state.current?.artist === song.artist;
+document.documentElement.dataset.worshipAppVersion = "20260717-title-play-v3";
 
 function getFilteredSongs() {
   const query = state.query.trim().toLowerCase();
@@ -71,7 +72,7 @@ function renderSongs() {
     <article class="song-row ${isCurrent(song) ? "is-current" : ""}">
       <span class="track-num">${String(song.rank ?? index + 1).padStart(2, "0")}</span>
       <div class="row-cover cover ${coverClass(song)}">${song.title.slice(0, 4)}</div>
-      <div class="song-name"><button type="button" class="song-title-button" data-play="${song.title}" data-artist="${song.artist}">${song.title}</button><small>${song.album}</small></div>
+      <button type="button" class="song-name song-title-button" data-play="${song.title}" data-artist="${song.artist}" aria-label="播放${song.title}"><strong>${song.title}</strong><small>${song.album}</small></button>
       <button type="button" class="artist" data-artist-filter="${song.artist}">${song.artist}</button>
       <div class="tags">${song.moods.slice(0, 2).map(mood => `<span>${mood}</span>`).join("")}</div>
       <span class="duration">${song.duration}</span>

@@ -1,6 +1,7 @@
 ---
 const basePath = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
 const accountHref = `${basePath}topics/space/planning/todo`;
+const assetVersion = '20260717-title-play-v3';
 ---
 
 <!doctype html>
@@ -9,11 +10,14 @@ const accountHref = `${basePath}topics/space/planning/todo`;
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#081622" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <title>敬拜音乐 · 让赞美成为今天的力量</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;600;700;900&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href={`${basePath}worship/styles.css`} />
+    <link rel="stylesheet" href={`${basePath}worship/styles.css?v=${assetVersion}`} />
   </head>
   <body>
     <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
@@ -52,8 +56,8 @@ const accountHref = `${basePath}topics/space/planning/todo`;
     <div class="player"><div class="player-cover cover-sun">这一生<br />最美的祝福</div><div class="player-meta"><button type="button" class="player-song-title" id="playerTitle" data-play="这一生最美的祝福" data-artist="赞美之泉">这一生最美的祝福</button><button type="button" class="player-artist" id="playerArtist" data-artist-filter="赞美之泉">赞美之泉</button><button class="mini-heart" data-favorite="这一生最美的祝福" aria-label="收藏">♥</button></div><div class="player-controls"><button data-skip="prev" aria-label="上一首">|◀</button><button class="pause" id="playToggle" aria-label="播放">▶</button><button data-skip="next" aria-label="下一首">▶|</button></div><div class="player-seek"><span>来源</span><div><i id="playerProgress"></i></div><span id="playerSourceLabel">YouTube</span></div><button class="player-icon" id="lyricsButtonBottom" aria-label="歌词">▤</button><button class="player-icon" id="fullscreenPlayer" aria-label="全屏播放器">⛶</button></div>
 
     <dialog id="lyricsDialog"><div class="dialog-head"><div><span class="kicker">LYRICS & SCRIPTURE</span><h2 id="dialogSong">这一生最美的祝福</h2><p id="dialogArtist">赞美之泉</p></div><button id="closeDialog" aria-label="关闭">×</button></div><div class="dialog-body"><blockquote>在你身边，有最美的祝福<br />每一天都充满盼望</blockquote><p class="scripture">“我的心哪，你要称颂耶和华，不可忘记他的一切恩惠。”<br /><small>诗篇 103:2 · 主题相关</small></p><a id="sourceLink" href="https://www.youtube.com/" target="_blank" rel="noreferrer">打开真实播放源 ↗</a></div></dialog>
-    <script is:inline src="/officialwebsite/worship/catalog.js"></script>
-    <script is:inline src="/officialwebsite/worship/sources.js"></script>
+    <script is:inline src={`/officialwebsite/worship/catalog.js?v=${assetVersion}`}></script>
+    <script is:inline src={`/officialwebsite/worship/sources.js?v=${assetVersion}`}></script>
     <script>
       import { getCloudDb, getCloudSession, getRememberedSession } from '../scripts/site-auth';
 
@@ -103,7 +107,7 @@ const accountHref = `${basePath}topics/space/planning/todo`;
       window.addEventListener('site-auth-change', (event) => { identity = (event as CustomEvent).detail || null; });
       await new Promise<void>((resolve, reject) => {
         const script = document.createElement('script');
-        script.src = '/officialwebsite/worship/app.js';
+        script.src = '/officialwebsite/worship/app.js?v=20260717-title-play-v3';
         script.onload = () => resolve();
         script.onerror = () => reject(new Error('敬拜音乐功能载入失败。'));
         document.body.append(script);
