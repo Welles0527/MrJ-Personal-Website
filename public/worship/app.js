@@ -120,6 +120,49 @@ function updatePlayIndicators() {
   $("#playToggle").setAttribute("aria-label", state.playing ? "暂停" : "播放");
 }
 
+function setPlaybackState(playing) {
+  const nextState = Boolean(playing);
+  if (state.playing === nextState) {
+    updatePlayIndicators();
+    return;
+  }
+  state.playing = nextState;
+  setProgress(state.playing ? 47 : 0);
+  updatePlayIndicators();
+}
+
+function sendYouTubeListening() {
+  const player = $("#mediaPlayer");
+  if (!player?.contentWindow || !player.src.includes("youtube-nocookie.com")) return;
+  player.contentWindow.postMessage(JSON.stringify({ event: "listening", id: "mediaPlayer" }), "*");
+  player.contentWindow.postMessage(JSON.stringify({ event: "command", func: "addEventListener", args: ["onStateChange"] }), "*");
+}
+
+function readPlayerState(payload) {
+  if (payload?.event === "onStateChange" && typeof payload.info === "number") return payload.info;
+  if (payload?.event === "infoDelivery" && typeof payload.info?.playerState === "number") return payload.info.playerState;
+  return null;
+}
+
+window.addEventListener("message", event => {
+  const player = $("#mediaPlayer");
+  if (!player?.contentWindow || event.source !== player.contentWindow) return;
+  if (!/^https:\/\/(www\.)?(youtube(?:-nocookie)?\.com)$/.test(event.origin)) return;
+  let payload = event.data;
+  if (typeof payload === "string") {
+    try { payload = JSON.parse(payload); } catch { return; }
+  }
+  const playerState = readPlayerState(payload);
+  if (playerState === 1 || playerState === 3) setPlaybackState(true);
+  if (playerState === 0 || playerState === 2 || playerState === 5) setPlaybackState(false);
+});
+
+$("#mediaPlayer").addEventListener("load", () => {
+  [0, 250, 800].forEach(delay => window.setTimeout(sendYouTubeListening, delay));
+});
+window.addEventListener("pageshow", () => window.setTimeout(sendYouTubeListening, 100));
+document.addEventListener("visibilitychange", () => { if (!document.hidden) sendYouTubeListening(); });
+
 function playSong(title, artist) {
   const song = songs.find(item => item.title === title && (!artist || item.artist === artist)) || songs.find(item => item.title === title) || state.current;
   state.current = { ...song, artist: artist || song.artist };
@@ -135,7 +178,7 @@ function playSong(title, artist) {
   const mediaPlayer = $("#mediaPlayer");
   const playerShell = mediaPlayer.closest(".media-player-shell");
   if (source.youtubeId) {
-    mediaPlayer.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(source.youtubeId)}?autoplay=1&rel=0&playsinline=1`;
+    mediaPlayer.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(source.youtubeId)}?autoplay=1&rel=0&playsinline=1&enablejsapi=1&origin=${encodeURIComponent(location.origin)}`;
     playerShell.classList.add("is-playing");
     $("#sourceLink").href = `https://www.youtube.com/watch?v=${source.youtubeId}`;
     $("#playerSourceLabel").textContent = "YouTube";
@@ -159,13 +202,11 @@ function togglePlayback() {
   if (state.playing) {
     player.dataset.pausedSrc = player.src;
     player.removeAttribute("src");
-    state.playing = false;
+    setPlaybackState(false);
   } else {
     player.src = player.dataset.pausedSrc || player.src;
-    state.playing = true;
+    setPlaybackState(true);
   }
-  setProgress(state.playing ? 47 : 0);
-  renderSongs(); renderQueue(); updatePlayIndicators();
 }
 
 async function loadSavedState() {
