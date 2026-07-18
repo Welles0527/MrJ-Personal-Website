@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <meta name="description" content="中国主动权益基金与基金经理研究看板">
+  <title>主动权益研究终端</title>
+  <link rel="stylesheet" href="./app.css?v=20260718">
+  <script src="./app.js?v=20260718" defer></script>
+</head>
+<body>
+  <svg class="svg-defs" aria-hidden="true">
+    <symbol id="i-fund" viewBox="0 0 24 24"><path d="M4 19V9m5 10V5m5 14v-7m5 7V3M2 21h20"/></symbol>
+    <symbol id="i-kpi" viewBox="0 0 24 24"><path d="M4 17l5-5 4 3 7-8M4 5v14h16"/></symbol>
+    <symbol id="i-score" viewBox="0 0 24 24"><path d="M12 3l2.6 5.3 5.9.9-4.2 4.1 1 5.8-5.3-2.8-5.3 2.8 1-5.8-4.2-4.1 5.9-.9L12 3z"/></symbol>
+    <symbol id="i-profile" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c.7-5 3.4-7 8-7s7.3 2 8 7"/></symbol>
+    <symbol id="i-base" viewBox="0 0 24 24"><path d="M4 20V8l8-5 8 5v12M8 20v-7h8v7M2 20h20"/></symbol>
+    <symbol id="i-offense" viewBox="0 0 24 24"><path d="M4 17l5-5 4 3 7-8M15 7h5v5"/></symbol>
+    <symbol id="i-defense" viewBox="0 0 24 24"><path d="M12 3l8 3v5c0 5-3.2 8.5-8 10-4.8-1.5-8-5-8-10V6l8-3zM8 12l2.5 2.5L16 9"/></symbol>
+    <symbol id="i-composite" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 6v6l4 2"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></symbol>
+    <symbol id="i-filter" viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4 2v-8L3 5z"/></symbol>
+    <symbol id="i-theme" viewBox="0 0 24 24"><path d="M20 15.5A8 8 0 118.5 4 6.5 6.5 0 0020 15.5z"/></symbol>
+    <symbol id="i-export" viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 15v5h16v-5"/></symbol>
+    <symbol id="i-columns" viewBox="0 0 24 24"><path d="M4 4h6v16H4zM14 4h6v16h-6z"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></symbol>
+  </svg>
+
+  <header class="app-header">
+    <a class="brand" href="#funds" aria-label="返回基金看板">
+      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span><strong>主动权益研究</strong><small>基金与经理决策终端</small></span>
+    </a>
+    <nav class="dashboard-nav" aria-label="主看板">
+      <button class="dashboard-tab fund" data-view="funds" aria-current="page"><svg><use href="#i-fund"/></svg><span>基金看板<small>产品客观数据</small></span></button>
+      <button class="dashboard-tab kpi" data-view="kpi"><svg><use href="#i-kpi"/></svg><span>基金经理KPI<small>经理客观指标</small></span></button>
+      <button class="dashboard-tab score" data-view="score"><svg><use href="#i-score"/></svg><span>基金经理打分排行<small>风险偏好试算</small></span></button>
+      <button class="dashboard-tab profile" data-view="profile"><svg><use href="#i-profile"/></svg><span>单个基金经理全数据<small>履历与对比</small></span></button>
+    </nav>
+    <div class="header-actions">
+      <span class="freshness" id="data-freshness">数据待载入</span>
+      <button class="icon-text-button" id="theme-toggle" type="button"><svg><use href="#i-theme"/></svg><span>切换浅色</span></button>
+    </div>
+  </header>
+
+  <main>
+    <section class="view active" id="view-funds" data-view-panel="funds" aria-labelledby="funds-title">
+      <div class="status-strip" aria-live="polite">
+        <div><span>基金池</span><strong id="fund-kpi-total">…</strong><small>有效主动权益策略</small></div>
+        <div><span>股票型</span><strong id="fund-kpi-stock">…</strong><small>份额已合并</small></div>
+        <div><span>偏股型</span><strong id="fund-kpi-mixed">…</strong><small>份额已合并</small></div>
+        <div><span>当前结果</span><strong id="fund-kpi-filtered">…</strong><small>随筛选与搜索更新</small></div>
+      </div>
+      <div class="view-body fund-body">
+        <header class="section-heading">
+          <div><h1 id="funds-title">基金看板</h1><p>判断某只基金产品本身，以本页为准。</p></div>
+          <div class="type-tabs" id="fund-type-tabs" role="group" aria-label="基金类型">
+            <button class="active" data-fund-type="all">全部 <b id="fund-tab-all">…</b></button>
+            <button data-fund-type="股票型">股票型 <b id="fund-tab-stock">…</b></button>
+            <button data-fund-type="偏股混合型">偏股型 <b id="fund-tab-mixed">…</b></button>
+          </div>
+        </header>
+        <div class="toolbar">
+          <label class="search-box"><svg><use href="#i-search"/></svg><input id="fund-search" type="search" placeholder="搜索基金代码、名称、经理或公司"><button type="button" data-clear="fund-search" aria-label="清空搜索">×</button></label>
+          <div class="date-range" aria-label="自定义收益区间">
+            <input id="custom-start" type="date" aria-label="开始日期">
+            <span>至</span>
+            <input id="custom-end" type="date" aria-label="结束日期">
+            <button class="secondary-button" id="custom-return-apply" type="button">计算自定义</button>
+          </div>
+          <button class="secondary-button export-button" data-export="funds" type="button"><svg><use href="#i-export"/></svg>导出当前结果</button>
+        </div>
+        <p class="inline-status" id="custom-return-status">自定义收益仅在有可审计预计算数据时启用，不使用估算值。</p>
+        <div class="table-shell" data-table-shell="funds">
+          <div class="table-scroll"><table><thead id="fund-table-head"></thead><tbody id="fund-table-body"></tbody></table></div>
+          <div class="table-footer" id="fund-table-footer"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-kpi" data-view-panel="kpi" aria-labelledby="kpi-title" hidden>
+      <div class="status-strip">
+        <div><span>基金经理</span><strong id="manager-kpi-total">…</strong><small>按东方财富经理ID去重</small></div>
+        <div><span>年化收益中位数</span><strong id="manager-kpi-return">…</strong><small>单人管理期聚合口径</small></div>
+        <div><span>最大回撤中位数</span><strong id="manager-kpi-drawdown">…</strong><small>越接近0通常回撤越小</small></div>
+        <div><span>当前结果</span><strong id="manager-kpi-filtered">…</strong><small>不等同于打分排名</small></div>
+      </div>
+      <div class="workspace">
+        <aside class="filter-rail" id="kpi-filter-rail" aria-label="KPI筛选">
+          <div class="rail-heading"><strong>指标筛选</strong><button class="rail-close" data-close-rail="kpi" aria-label="收起筛选">×</button></div>
+          <div id="kpi-filters" class="filter-groups"></div>
+          <div class="filter-actions"><button class="secondary-button" data-reset-filters="kpi">清空全部</button></div>
+        </aside>
+        <div class="content-area">
+          <header class="section-heading compact"><div><h1 id="kpi-title">基金经理KPI</h1><p>原始指标的筛选与排序，不带主观权重。</p></div></header>
+          <div class="toolbar">
+            <button class="secondary-button filter-toggle" data-open-rail="kpi"><svg><use href="#i-filter"/></svg>筛选</button>
+            <label class="search-box"><svg><use href="#i-search"/></svg><input id="manager-search" type="search" placeholder="搜索经理、ID、公司或当前基金"><button type="button" data-clear="manager-search" aria-label="清空搜索">×</button></label>
+            <button class="secondary-button" id="column-picker-open" type="button"><svg><use href="#i-columns"/></svg><span id="column-picker-label">字段</span></button>
+            <button class="secondary-button export-button" data-export="kpi"><svg><use href="#i-export"/></svg>导出</button>
+          </div>
+          <div class="active-filters" id="kpi-active-filters" aria-live="polite"></div>
+          <div class="table-shell"><div class="table-scroll"><table><thead id="kpi-table-head"></thead><tbody id="kpi-table-body"></tbody></table></div><div class="table-footer" id="kpi-table-footer"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-score" data-view-panel="score" aria-labelledby="score-title" hidden>
+      <div class="score-banner">
+        <div><span class="model-badge formal">正式模型</span><strong>40 / 30 / 30</strong><small>进攻 / 防守 / 综合</small></div>
+        <div><span class="model-badge" id="trial-model-badge">试算模型</span><strong id="trial-weight-summary">40 / 30 / 30</strong><small id="trial-model-status">与正式权重一致</small></div>
+        <div><span>正式可评分</span><strong id="score-eligible-count">…</strong><small>固定资格与风险门槛</small></div>
+        <div><span>当前结果</span><strong id="score-filtered-count">…</strong><small>随试算权重更新</small></div>
+      </div>
+      <div class="score-layout">
+        <aside class="filter-rail" id="score-filter-rail" aria-label="打分筛选">
+          <div class="rail-heading"><strong>排行筛选</strong><button class="rail-close" data-close-rail="score" aria-label="收起筛选">×</button></div>
+          <div id="score-filters" class="filter-groups"></div>
+          <div class="filter-actions"><button class="secondary-button" data-reset-filters="score">清空全部</button></div>
+        </aside>
+        <div class="content-area score-content">
+          <header class="section-heading compact"><div><h1 id="score-title">基金经理打分排行</h1><p>调整风险偏好只改变试算排名，不改变原始指标与固定门槛。</p></div></header>
+          <section class="weight-console" aria-labelledby="weight-title">
+            <div class="weight-console-head"><div><h2 id="weight-title">风险偏好权重</h2><p>拖动或输入数值，三项合计100%才会应用。</p></div><button class="secondary-button" id="weight-reset">恢复正式权重</button></div>
+            <div class="weight-grid">
+              <div class="weight-control offense"><label for="weight-offense"><svg><use href="#i-offense"/></svg><span>进攻能力</span></label><input id="weight-offense" type="range" min="0" max="100" step="1" value="40"><div><input id="weight-offense-number" type="number" min="0" max="100" step="1" value="40" aria-label="进攻能力权重"><span>%</span></div></div>
+              <div class="weight-control defense"><label for="weight-defense"><svg><use href="#i-defense"/></svg><span>防守能力</span></label><input id="weight-defense" type="range" min="0" max="100" step="1" value="30"><div><input id="weight-defense-number" type="number" min="0" max="100" step="1" value="30" aria-label="防守能力权重"><span>%</span></div></div>
+              <div class="weight-control composite"><label for="weight-composite"><svg><use href="#i-composite"/></svg><span>综合能力</span></label><input id="weight-composite" type="range" min="0" max="100" step="1" value="30"><div><input id="weight-composite-number" type="number" min="0" max="100" step="1" value="30" aria-label="综合能力权重"><span>%</span></div></div>
+            </div>
+            <div class="weight-total valid" id="weight-total" role="status"><span>权重合计</span><strong>100%</strong><small>已应用</small></div>
+          </section>
+          <div class="toolbar">
+            <button class="secondary-button filter-toggle" data-open-rail="score"><svg><use href="#i-filter"/></svg>筛选</button>
+            <label class="search-box"><svg><use href="#i-search"/></svg><input id="score-search" type="search" placeholder="搜索经理、ID或公司"><button type="button" data-clear="score-search" aria-label="清空搜索">×</button></label>
+            <button class="secondary-button export-button" data-export="score"><svg><use href="#i-export"/></svg>导出试算结果</button>
+          </div>
+          <div class="model-notice" id="score-data-notice" role="status"><svg><use href="#i-info"/></svg><span>正在检查正式评分数据…</span></div>
+          <div class="table-shell"><div class="table-scroll"><table><thead id="score-table-head"></thead><tbody id="score-table-body"></tbody></table></div><div class="table-footer" id="score-table-footer"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-profile" data-view-panel="profile" aria-labelledby="profile-title" hidden>
+      <div class="profile-search-band">
+        <div><h1 id="profile-title">单个基金经理全数据</h1><p>同名经理通过姓名 + 东方财富ID + 公司精确匹配。</p></div>
+        <div class="manager-combobox" data-combobox="primary">
+          <label for="profile-manager-search">选择基金经理</label>
+          <div class="search-box"><svg><use href="#i-search"/></svg><input id="profile-manager-search" type="search" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="profile-manager-options" placeholder="输入姓名、ID或公司"></div>
+          <div class="combobox-options" id="profile-manager-options" role="listbox" hidden></div>
+        </div>
+        <button class="secondary-button" id="compare-manager-open" disabled>+ 增加对比经理</button>
+      </div>
+      <div class="profile-empty" id="profile-empty"><svg><use href="#i-profile"/></svg><h2>先选择一位基金经理</h2><p>选择后展示个人简介、管理基金、六维能力与经理对比。</p></div>
+      <div class="profile-content" id="profile-content" hidden>
+        <section class="profile-summary" aria-labelledby="profile-summary-title">
+          <div class="identity-block"><span class="manager-monogram" id="profile-monogram"></span><div><p>东方财富基金经理</p><h2 id="profile-summary-title"></h2><div class="identity-meta" id="profile-identity-meta"></div></div></div>
+          <dl class="profile-stats" id="profile-stats"></dl>
+          <div class="biography"><h3>个人简介</h3><p id="profile-biography"></p><details><summary>学术背景与能力圈</summary><p id="profile-academic"></p></details></div>
+        </section>
+        <section class="radar-section" aria-labelledby="radar-title">
+          <div class="panel-heading"><div><h2 id="radar-title">六维能力雷达</h2><p>指标标准化至0至100分位；行业集中度与经验为最新值。</p></div><div class="period-tabs" id="radar-periods" role="group" aria-label="雷达图时间维度"><button class="active" data-period="1y">近1年</button><button data-period="2y">近2年</button><button data-period="3y">近3年</button><button data-period="5y">近5年</button></div></div>
+          <div class="radar-layout">
+            <div class="radar-wrap"><svg id="manager-radar" viewBox="0 0 640 430" role="img" aria-labelledby="radar-svg-title radar-svg-desc"><title id="radar-svg-title">基金经理六维能力雷达图</title><desc id="radar-svg-desc">选中经理的标准化指标对比</desc></svg><p class="chart-status" id="radar-status"></p></div>
+            <div class="radar-legend" id="radar-legend"></div>
+          </div>
+        </section>
+        <section class="managed-funds-section" aria-labelledby="managed-funds-title">
+          <div class="panel-heading"><div><h2 id="managed-funds-title">管理基金列表</h2><p>当前与历史关系分色显示；A/C/E份额按策略合并。任职回报为基金页面口径，个人能力评价仍只采用单人管理期。</p></div><div class="relation-legend"><span class="current">当前管理</span><span class="historical">历史管理</span></div></div>
+          <div class="table-shell"><div class="table-scroll"><table><thead id="profile-fund-table-head"></thead><tbody id="profile-fund-table-body"></tbody></table></div><div class="table-footer" id="profile-fund-table-footer"></div></div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <dialog class="column-dialog" id="column-dialog">
+    <form method="dialog" class="dialog-shell">
+      <div class="dialog-heading"><div><h2>选择KPI字段</h2><p>勾选后立即更新表格，基金经理列始终保留。</p></div><button value="cancel" aria-label="关闭">×</button></div>
+      <label class="search-box dialog-search"><svg><use href="#i-search"/></svg><input id="column-search" type="search" placeholder="搜索字段"></label>
+      <div class="column-groups" id="column-groups"></div>
+      <div class="dialog-actions"><button type="button" class="secondary-button" id="column-defaults">恢复默认字段</button><button value="done" class="primary-button">完成</button></div>
+    </form>
+  </dialog>
+
+  <dialog class="compare-dialog" id="compare-dialog">
+    <form method="dialog" class="dialog-shell small">
+      <div class="dialog-heading"><div><h2>增加对比经理</h2><p>最多同时对比两位经理。</p></div><button value="cancel" aria-label="关闭">×</button></div>
+      <div class="manager-combobox" data-combobox="compare"><label for="compare-manager-search">对比经理</label><div class="search-box"><svg><use href="#i-search"/></svg><input id="compare-manager-search" type="search" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="compare-manager-options" placeholder="输入姓名、ID或公司"></div><div class="combobox-options" id="compare-manager-options" role="listbox" hidden></div></div>
+      <p class="inline-status">对比只使用同一时间维度且可比的指标。</p>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>

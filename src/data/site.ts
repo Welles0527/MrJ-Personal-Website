@@ -136,7 +136,7 @@ export const themes: Theme[] = [
     categories: [
       { slug: 'planning', title: '日历待办', details: [detail('calendar', '个性化日历创建', ['规划', '日历']), detail('todo', '待办事项功能创建', ['规划', '效率'])] },
       { slug: 'lifestyle', title: '生活运动', details: [detail('snooker', '斯诺克', ['生活', '运动']), detail('football', '足球', ['生活', '运动']), detail('coffee', '咖啡', ['生活', '兴趣']), detail('games', '游戏', ['生活', '兴趣'])] },
-      { slug: 'investing', title: '个人投资', details: [detail('funds', '基金', ['投资', '记录']), detail('stocks', '股票', ['投资', '记录'])] },
+      { slug: 'investing', title: '个人投资', details: [{ ...detail('funds', '基金', ['投资', '研究']), status: 'ready' }, detail('stocks', '股票', ['投资', '记录'])] },
       { slug: 'travel', title: '旅行记录', details: [detail('travel-map', '旅行地图', ['旅行', '地图']), detail('photo-wall', '照片墙', ['旅行', '照片'])] }
     ]
   }

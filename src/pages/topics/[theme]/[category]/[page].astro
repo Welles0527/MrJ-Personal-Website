@@ -7,10 +7,12 @@ import BibleTheologyPage from '../../../../components/BibleTheologyPage.astro';
 import { getCategory, getDetail, isInvestment, sitePath, themes } from '../../../../data/site';
 
 export function getStaticPaths() {
-  return themes.flatMap((theme) => theme.categories.flatMap((category) => category.details.map((item) => ({
-    params: { theme: theme.slug, category: category.slug, page: item.slug },
-    props: { theme, category, item }
-  }))));
+  return themes.flatMap((theme) => theme.categories.flatMap((category) => category.details
+    .filter((item) => !(theme.slug === 'space' && category.slug === 'investing' && item.slug === 'funds'))
+    .map((item) => ({
+      params: { theme: theme.slug, category: category.slug, page: item.slug },
+      props: { theme, category, item }
+    }))));
 }
 
 const { theme, category, item } = Astro.props;

@@ -1,5 +1,6 @@
-const CACHE_NAME = 'j-space-shell-v3';
+const CACHE_NAME = 'j-space-shell-v4';
 const BASE_PATH = '/officialwebsite/';
+const FUND_DASHBOARD_PATH = `${BASE_PATH}topics/space/investing/funds/`;
 const APP_SHELL = [
   BASE_PATH,
   `${BASE_PATH}manifest.webmanifest`,
@@ -29,6 +30,19 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
 
   if (request.method !== 'GET' || url.origin !== self.location.origin || !url.pathname.startsWith(BASE_PATH)) {
+    return;
+  }
+
+  if (url.pathname.startsWith(FUND_DASHBOARD_PATH)) {
+    event.respondWith(
+      fetch(request).then((networkResponse) => {
+        if (networkResponse.ok) {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, responseToCache));
+        }
+        return networkResponse;
+      }).catch(() => caches.match(request).then((cachedResponse) => cachedResponse || caches.match(BASE_PATH)))
+    );
     return;
   }
 
