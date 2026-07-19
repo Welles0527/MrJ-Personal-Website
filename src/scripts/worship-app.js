@@ -123,7 +123,7 @@ function renderSongs() {
 
 function renderArtists() {
   const query = state.query.trim().toLowerCase();
-  const artists = [...new Set(songs.filter(song => song.kind !== "单曲").map(song => song.artist))]
+  const artists = [...new Set(songs.map(song => song.artist))]
     .filter(artist => artist.toLowerCase().includes(query));
   $("#songList").hidden = true;
   $("#artistList").hidden = false;
