@@ -1,7 +1,11 @@
 {
-  "schema_version": "fund-dashboard-data-v1.0.0",
-  "generated_at": "2026-07-18T15:36:53+00:00",
+  "schema_version": "fund-dashboard-data-v1.1.0",
+  "generated_at": "2026-07-18T19:01:20+00:00",
   "dashboard_enabled": true,
+  "capabilities": {
+    "custom_returns": true
+  },
+  "custom_return_endpoint": "/api/custom-return?start={start}&end={end}",
   "counts": {
     "funds": 3227,
     "managers": 1734,
@@ -35,6 +39,16 @@
       "name": "outputs/019f652b-3e7c-7ff3-8cf2-b91fedf10b7b/manager_metric_collection_v2/fund_manager_metric_data.sqlite",
       "bytes": 1315061760,
       "sha256": "f275e233ef9bbc9ead152c6ee7a11888744bcaa86e034cbf1eab294c2df1388a"
+    },
+    {
+      "name": "outputs/019f652b-3e7c-7ff3-8cf2-b91fedf10b7b/dashboard_analytics/fund_dashboard_analytics.sqlite",
+      "bytes": 8003584,
+      "sha256": "b17992b7c478c59a41621e2cf4b4ac95bfbe9fc147197f25e0bf3a4ebda7bdf5"
+    },
+    {
+      "name": "outputs/019f652b-3e7c-7ff3-8cf2-b91fedf10b7b/dashboard_analytics/raw/h00300_akshare.json",
+      "bytes": 492745,
+      "sha256": "7ddcbc8490bd8ca977e5768d1b47396b4e42290a75fbbc12a408f5a2a1267937"
     }
   ],
   "source_metadata": {
@@ -108,19 +122,100 @@
     "scoring_enabled": false
   },
   "formula_versions": {
-    "existing_metrics": "manager-metric-baseline-v1.3.0",
+    "existing_metrics": "manager-metric-baseline-v1.4.0",
     "scoring": "manager-score-v1.0.0",
-    "h00300_alpha": null,
-    "radar_windows": null
+    "h00300_alpha": "manager-metric-baseline-v1.4.0",
+    "radar_windows": "manager-radar-v1.0.0"
   },
   "scoring_status": {
-    "status": "trial_incomplete",
-    "reason": "real H00300 alpha and 1/2/3/5-year solo-window calculations are not yet available in this first export",
-    "formal_scores_published": 0
+    "status": "formal",
+    "reason": null,
+    "formal_scores_published": 331
   },
+  "h00300": {
+    "source": "AKShare stock_zh_index_hist_csindex",
+    "source_url": "https://www.csindex.com.cn/csindex-home/perf/index-perf",
+    "adapter_version": "1.18.64",
+    "fetched_at": "2026-07-18T18:22:32+00:00",
+    "start_date": "2004-01-01",
+    "end_date": "2026-07-17",
+    "records": 5233
+  },
+  "dashboard_analytics_quality_checks": [
+    {
+      "check_name": "formal_scores_published",
+      "status": "pass",
+      "actual": "331",
+      "expected": ">0",
+      "note": "固定门槛与10项完整指标"
+    },
+    {
+      "check_name": "fund_alpha_coverage",
+      "status": "pass",
+      "actual": "3227",
+      "expected": ">0",
+      "note": null
+    },
+    {
+      "check_name": "h00300_latest_date",
+      "status": "pass",
+      "actual": "2026-07-17",
+      "expected": ">=2026-07-16",
+      "note": null
+    },
+    {
+      "check_name": "h00300_records",
+      "status": "pass",
+      "actual": "5233",
+      "expected": ">=1000",
+      "note": null
+    },
+    {
+      "check_name": "joint_intervals_excluded",
+      "status": "pass",
+      "actual": "0",
+      "expected": "0",
+      "note": "计算入口仅查询tenures.is_solo=1"
+    },
+    {
+      "check_name": "manager_alpha_coverage",
+      "status": "pass",
+      "actual": "1472",
+      "expected": ">0",
+      "note": null
+    },
+    {
+      "check_name": "radar_1y_coverage",
+      "status": "pass",
+      "actual": "1373",
+      "expected": ">0",
+      "note": null
+    },
+    {
+      "check_name": "radar_2y_coverage",
+      "status": "pass",
+      "actual": "1404",
+      "expected": ">0",
+      "note": null
+    },
+    {
+      "check_name": "radar_3y_coverage",
+      "status": "pass",
+      "actual": "1420",
+      "expected": ">0",
+      "note": null
+    },
+    {
+      "check_name": "radar_5y_coverage",
+      "status": "pass",
+      "actual": "1434",
+      "expected": ">0",
+      "note": null
+    }
+  ],
   "warnings": [
-    "The existing Alpha field is the peer-median benchmark Alpha, not H00300 Alpha.",
-    "No formal total score or rating is emitted until real H00300 Alpha is complete.",
+    "Peer-median Alpha and H00300 total-return Alpha are separate fields and are not interchangeable.",
+    "Radar capture ratios use the same-fund-type daily return median benchmark; H00300 is used for the H00300 Alpha axis.",
     "Historical holdings are not attributed to a former manager when no same-period holdings exist."
   ],
   "manager_detail_shards": {
@@ -136,8 +231,8 @@
         "file": "manager_details_00.json",
         "path": "manager_details_00.json",
         "rows": 1154,
-        "bytes": 3530373,
-        "sha256": "b548d5da08e6f0bc43df264fa36d75e7f85eb62008cca764cafd6a9c6876edae"
+        "bytes": 3588634,
+        "sha256": "837ed1eab79678b96fdd83116db339b91c3452d36b2b9af8950cf748b52ef6f8"
       },
       {
         "index": 1,
@@ -147,8 +242,8 @@
         "file": "manager_details_01.json",
         "path": "manager_details_01.json",
         "rows": 939,
-        "bytes": 2870957,
-        "sha256": "b532c823a335058ae484a0f54562f4d2b13d67d283869a0727dfec96cf320521"
+        "bytes": 2918306,
+        "sha256": "7b21387730c1b0340ddf686c9dd246191e3e1a56ed6aaf11242a3e9244ea96a4"
       },
       {
         "index": 2,
@@ -158,8 +253,8 @@
         "file": "manager_details_02.json",
         "path": "manager_details_02.json",
         "rows": 870,
-        "bytes": 2652310,
-        "sha256": "ef3e912d555d11406f962441ef3906c1236e21b6038a3e7a2e0b62e8c4697b33"
+        "bytes": 2696397,
+        "sha256": "8d60b81a5d8ca8c42e8416c7aec62b56425172d1da82aaf2cc3be5af32e2b092"
       },
       {
         "index": 3,
@@ -169,8 +264,8 @@
         "file": "manager_details_03.json",
         "path": "manager_details_03.json",
         "rows": 980,
-        "bytes": 3012593,
-        "sha256": "bb11d4cd779137c8e4a1efd4216b38f68d5da9286613560d435533d5d7a1536c"
+        "bytes": 3062605,
+        "sha256": "551e956b1f444a36e565cfc06269afceef16dffe8b4a89689bbdce813bed94cb"
       },
       {
         "index": 4,
@@ -180,8 +275,8 @@
         "file": "manager_details_04.json",
         "path": "manager_details_04.json",
         "rows": 1157,
-        "bytes": 3549204,
-        "sha256": "514bbea87ece5023c6f4fdd659efed8ad5e2e009455cef28d8b1ee8a4fabf955"
+        "bytes": 3607826,
+        "sha256": "951f402c221bb65c510c41bed735813a8a6b023d3faf6874b914bd5ea8afd0d5"
       },
       {
         "index": 5,
@@ -191,8 +286,8 @@
         "file": "manager_details_05.json",
         "path": "manager_details_05.json",
         "rows": 900,
-        "bytes": 2808867,
-        "sha256": "21854f7ac9dd19a872cadb6563c8202064f65b532f87dafc4fc801effbb6ec0c"
+        "bytes": 2854942,
+        "sha256": "c293cca5ce43ffad02bee1945adf99fb4ec00ec762d89df83aeaaca5adf1c347"
       },
       {
         "index": 6,
@@ -202,8 +297,8 @@
         "file": "manager_details_06.json",
         "path": "manager_details_06.json",
         "rows": 970,
-        "bytes": 3016987,
-        "sha256": "0c6c44e17069f6d77ea0e06058d42cc953951e26b1eb48fee8735c55f9d9b312"
+        "bytes": 3066858,
+        "sha256": "66ce5275d01c9837fb68b93b2686574a7b6e9a150826cb9dc88b355a62575f2c"
       },
       {
         "index": 7,
@@ -213,8 +308,8 @@
         "file": "manager_details_07.json",
         "path": "manager_details_07.json",
         "rows": 851,
-        "bytes": 2617265,
-        "sha256": "fe94e70ca156a1c3a5101235c0c4acbc561c2ff13937d59da362c73ffd314e0a"
+        "bytes": 2660147,
+        "sha256": "9c06076b9d1adfcc76afe78c4185f055a0ac37ced27ca25cbb3d76e722c83a30"
       },
       {
         "index": 8,
@@ -224,8 +319,8 @@
         "file": "manager_details_08.json",
         "path": "manager_details_08.json",
         "rows": 976,
-        "bytes": 2997108,
-        "sha256": "0c933c8864c2e33781f242b46f9e510f61cd09fffcbbd3322ef5ad70d40bcd07"
+        "bytes": 3047169,
+        "sha256": "e2b22c9db4cdaa70d5a712aca58f7cf52cb153f42d7b8012fb7a7048a1f24117"
       },
       {
         "index": 9,
@@ -235,8 +330,8 @@
         "file": "manager_details_09.json",
         "path": "manager_details_09.json",
         "rows": 1020,
-        "bytes": 3184218,
-        "sha256": "b07db96fae64cbf729cbb1869b880d7fff9c5fb96de2fc029d5877bb2098f65a"
+        "bytes": 3236788,
+        "sha256": "10e8adb11158eecb0d97c0b1a9eaadd14b0d954a4321e063b6dd6256e95ec7a6"
       },
       {
         "index": 10,
@@ -246,8 +341,8 @@
         "file": "manager_details_10.json",
         "path": "manager_details_10.json",
         "rows": 1147,
-        "bytes": 3512262,
-        "sha256": "9852721e7dc4b53cb54482a7e39389f4c07baab3d08db15b0177fb575f6d957a"
+        "bytes": 3570382,
+        "sha256": "49a6744e10018f29e61f1665a2f498061d69b5751b005ac1c53b2a8c44c161f2"
       },
       {
         "index": 11,
@@ -257,8 +352,8 @@
         "file": "manager_details_11.json",
         "path": "manager_details_11.json",
         "rows": 1073,
-        "bytes": 3344031,
-        "sha256": "de3f97af85a0f3ff93ee93bf27e44afae1cfdae373ca56e29d0f7e5d660998d3"
+        "bytes": 3398623,
+        "sha256": "e8567b21586969eb77f750d3c25a91d9d57c84702137cbb4e0eb8dcb0229d368"
       },
       {
         "index": 12,
@@ -268,8 +363,8 @@
         "file": "manager_details_12.json",
         "path": "manager_details_12.json",
         "rows": 918,
-        "bytes": 2835709,
-        "sha256": "407d146bfc68ff098c9af09b50258b93c3a6ea13a27480a113688fdc3faf29a6"
+        "bytes": 2882784,
+        "sha256": "a23e6e5a48c29936732a9d85acd0f882f7a6b0cd51ba90caac372ac9df6b6fd7"
       },
       {
         "index": 13,
@@ -279,8 +374,8 @@
         "file": "manager_details_13.json",
         "path": "manager_details_13.json",
         "rows": 878,
-        "bytes": 2796455,
-        "sha256": "776043265d2d93ca637c8e3eefa76711d5842b29a7f0bc11b788879c17d74cb3"
+        "bytes": 2841625,
+        "sha256": "4c86847b54203bb0403de2f519493bb742059fe66971bf7bb6e8baad5790b593"
       },
       {
         "index": 14,
@@ -290,8 +385,8 @@
         "file": "manager_details_14.json",
         "path": "manager_details_14.json",
         "rows": 870,
-        "bytes": 2699555,
-        "sha256": "498cb84b1d6f2d693a489016616c1f91010999bfa08b7ed4479b10a592e1b11f"
+        "bytes": 2743686,
+        "sha256": "f9a55071df797c9b34ee4f2183fbb397a527bffd066e8dada9cf62a5d873b71f"
       },
       {
         "index": 15,
@@ -301,8 +396,8 @@
         "file": "manager_details_15.json",
         "path": "manager_details_15.json",
         "rows": 927,
-        "bytes": 2806114,
-        "sha256": "b4ba6c0eb63be35114951ed862740c6b5dd21398b193efc91089767004470819"
+        "bytes": 2853098,
+        "sha256": "9d6654e4ad29606fe24c8493c3cb754f8b410ff5773d6b9f43d3e8fb94d24b58"
       }
     ]
   },
@@ -310,116 +405,116 @@
     {
       "name": "funds.json",
       "rows": 3227,
-      "bytes": 10138683,
-      "sha256": "8cf10e79d326fbfe1e0b6d41d8cc93d993e1f0dcedf89967e672afad14c57ce9"
+      "bytes": 10158242,
+      "sha256": "77a17bc715ed30436d63d1e826a0f0af7a7d214e0366bf7885f40c49959a9c28"
     },
     {
       "name": "managers.json",
       "rows": 1734,
-      "bytes": 9564349,
-      "sha256": "23e5d9349e52b5859438006d1f4546124064124a4374119b0f0d1ab619665ae6"
+      "bytes": 12434181,
+      "sha256": "0e69528d6f6d2361ff6d3fd9dcc80595a1ee1180af97675b9a327500329a8fb9"
     },
     {
       "name": "manager_profiles.json",
       "rows": 1734,
       "bytes": 2413565,
-      "sha256": "d85a3b72a1fb3e81d03a67305817c30dc31c364e0d92d2eee534d8ead882409d"
+      "sha256": "5393a5bcad86f7841c57f5b1eb024cfb6ecdcf4e393cb53bb6885f8014a49812"
     },
     {
       "name": "manager_details_00.json",
       "rows": 1154,
-      "bytes": 3530373,
-      "sha256": "b548d5da08e6f0bc43df264fa36d75e7f85eb62008cca764cafd6a9c6876edae"
+      "bytes": 3588634,
+      "sha256": "837ed1eab79678b96fdd83116db339b91c3452d36b2b9af8950cf748b52ef6f8"
     },
     {
       "name": "manager_details_01.json",
       "rows": 939,
-      "bytes": 2870957,
-      "sha256": "b532c823a335058ae484a0f54562f4d2b13d67d283869a0727dfec96cf320521"
+      "bytes": 2918306,
+      "sha256": "7b21387730c1b0340ddf686c9dd246191e3e1a56ed6aaf11242a3e9244ea96a4"
     },
     {
       "name": "manager_details_02.json",
       "rows": 870,
-      "bytes": 2652310,
-      "sha256": "ef3e912d555d11406f962441ef3906c1236e21b6038a3e7a2e0b62e8c4697b33"
+      "bytes": 2696397,
+      "sha256": "8d60b81a5d8ca8c42e8416c7aec62b56425172d1da82aaf2cc3be5af32e2b092"
     },
     {
       "name": "manager_details_03.json",
       "rows": 980,
-      "bytes": 3012593,
-      "sha256": "bb11d4cd779137c8e4a1efd4216b38f68d5da9286613560d435533d5d7a1536c"
+      "bytes": 3062605,
+      "sha256": "551e956b1f444a36e565cfc06269afceef16dffe8b4a89689bbdce813bed94cb"
     },
     {
       "name": "manager_details_04.json",
       "rows": 1157,
-      "bytes": 3549204,
-      "sha256": "514bbea87ece5023c6f4fdd659efed8ad5e2e009455cef28d8b1ee8a4fabf955"
+      "bytes": 3607826,
+      "sha256": "951f402c221bb65c510c41bed735813a8a6b023d3faf6874b914bd5ea8afd0d5"
     },
     {
       "name": "manager_details_05.json",
       "rows": 900,
-      "bytes": 2808867,
-      "sha256": "21854f7ac9dd19a872cadb6563c8202064f65b532f87dafc4fc801effbb6ec0c"
+      "bytes": 2854942,
+      "sha256": "c293cca5ce43ffad02bee1945adf99fb4ec00ec762d89df83aeaaca5adf1c347"
     },
     {
       "name": "manager_details_06.json",
       "rows": 970,
-      "bytes": 3016987,
-      "sha256": "0c6c44e17069f6d77ea0e06058d42cc953951e26b1eb48fee8735c55f9d9b312"
+      "bytes": 3066858,
+      "sha256": "66ce5275d01c9837fb68b93b2686574a7b6e9a150826cb9dc88b355a62575f2c"
     },
     {
       "name": "manager_details_07.json",
       "rows": 851,
-      "bytes": 2617265,
-      "sha256": "fe94e70ca156a1c3a5101235c0c4acbc561c2ff13937d59da362c73ffd314e0a"
+      "bytes": 2660147,
+      "sha256": "9c06076b9d1adfcc76afe78c4185f055a0ac37ced27ca25cbb3d76e722c83a30"
     },
     {
       "name": "manager_details_08.json",
       "rows": 976,
-      "bytes": 2997108,
-      "sha256": "0c933c8864c2e33781f242b46f9e510f61cd09fffcbbd3322ef5ad70d40bcd07"
+      "bytes": 3047169,
+      "sha256": "e2b22c9db4cdaa70d5a712aca58f7cf52cb153f42d7b8012fb7a7048a1f24117"
     },
     {
       "name": "manager_details_09.json",
       "rows": 1020,
-      "bytes": 3184218,
-      "sha256": "b07db96fae64cbf729cbb1869b880d7fff9c5fb96de2fc029d5877bb2098f65a"
+      "bytes": 3236788,
+      "sha256": "10e8adb11158eecb0d97c0b1a9eaadd14b0d954a4321e063b6dd6256e95ec7a6"
     },
     {
       "name": "manager_details_10.json",
       "rows": 1147,
-      "bytes": 3512262,
-      "sha256": "9852721e7dc4b53cb54482a7e39389f4c07baab3d08db15b0177fb575f6d957a"
+      "bytes": 3570382,
+      "sha256": "49a6744e10018f29e61f1665a2f498061d69b5751b005ac1c53b2a8c44c161f2"
     },
     {
       "name": "manager_details_11.json",
       "rows": 1073,
-      "bytes": 3344031,
-      "sha256": "de3f97af85a0f3ff93ee93bf27e44afae1cfdae373ca56e29d0f7e5d660998d3"
+      "bytes": 3398623,
+      "sha256": "e8567b21586969eb77f750d3c25a91d9d57c84702137cbb4e0eb8dcb0229d368"
     },
     {
       "name": "manager_details_12.json",
       "rows": 918,
-      "bytes": 2835709,
-      "sha256": "407d146bfc68ff098c9af09b50258b93c3a6ea13a27480a113688fdc3faf29a6"
+      "bytes": 2882784,
+      "sha256": "a23e6e5a48c29936732a9d85acd0f882f7a6b0cd51ba90caac372ac9df6b6fd7"
     },
     {
       "name": "manager_details_13.json",
       "rows": 878,
-      "bytes": 2796455,
-      "sha256": "776043265d2d93ca637c8e3eefa76711d5842b29a7f0bc11b788879c17d74cb3"
+      "bytes": 2841625,
+      "sha256": "4c86847b54203bb0403de2f519493bb742059fe66971bf7bb6e8baad5790b593"
     },
     {
       "name": "manager_details_14.json",
       "rows": 870,
-      "bytes": 2699555,
-      "sha256": "498cb84b1d6f2d693a489016616c1f91010999bfa08b7ed4479b10a592e1b11f"
+      "bytes": 2743686,
+      "sha256": "f9a55071df797c9b34ee4f2183fbb397a527bffd066e8dada9cf62a5d873b71f"
     },
     {
       "name": "manager_details_15.json",
       "rows": 927,
-      "bytes": 2806114,
-      "sha256": "b4ba6c0eb63be35114951ed862740c6b5dd21398b193efc91089767004470819"
+      "bytes": 2853098,
+      "sha256": "9d6654e4ad29606fe24c8493c3cb754f8b410ff5773d6b9f43d3e8fb94d24b58"
     }
   ],
   "public_safety_scan": {

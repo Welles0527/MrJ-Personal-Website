@@ -17,7 +17,7 @@ const state = {
   loads: new Map(),
   fund: { type: "all", query: "", sort: ["return1y", "desc"], page: 1, pageSize: 50, custom: null },
   kpi: { query: "", sort: ["manager", "asc"], page: 1, pageSize: 25, filters: new Map(), columns: [] },
-  score: { query: "", sort: ["trialRank", "asc"], page: 1, pageSize: 25, filters: new Map(), draftWeights: [40, 30, 30], appliedWeights: [40, 30, 30] },
+  score: { query: "", sort: ["trialRank", "asc"], page: 1, pageSize: 25, filters: new Map(), draftWeights: [40, 30, 30], appliedWeights: [40, 30, 30], weightsDirty: false },
   profile: { primaryId: null, compareId: null, period: "1y", page: 1, pageSize: 25, sort: ["relation", "asc"] }
 };
 
@@ -36,6 +36,7 @@ const aliases = {
   alpha300: ["alpha_h00300", "alpha_hs300", "alpha_csi300_total_return", "hs300_alpha", "阿尔法 Alpha（沪深300全收益）"],
   sharpe: ["sharpe_ratio", "sharpe", "夏普比率"],
   calmar: ["calmar_ratio", "calmar", "卡玛比率"],
+  rollingExcessWinRate: ["rolling_excess_win_rate", "rolling_win_rate", "滚动超额胜率"],
   turnover: ["turnover_rate", "turnover", "基金换手率"],
   poolScale: ["current_pool_scale_yi", "pool_scale_yi", "current_scale_yi", "universe_scale_100m", "当前池内规模合计（亿元，重复归因）"],
   currentCount: ["current_pool_fund_count", "universe_fund_count", "当前池内基金数量"],
@@ -121,7 +122,8 @@ const SCORE_COLUMNS = [
   { key: "trialRank", label: "试算排名", kind: "integer" },
   { key: "formalRank", label: "正式排名", kind: "integer" },
   { key: "rankDelta", label: "排名变化", kind: "signedInteger" },
-  { key: "rating", label: "评级", kind: "text" },
+  { key: "trialRating", label: "试算评级", kind: "text" },
+  { key: "formalRating", label: "正式评级", kind: "text" },
   { key: "manager", label: "基金经理", kind: "manager" },
   { key: "company", label: "基金公司", kind: "text" },
   { key: "trialTotal", label: "试算总分", kind: "score" },
@@ -162,17 +164,20 @@ const FILTER_DEFS = [
 
 const SCORE_FILTER_DEFS = [
   ...FILTER_DEFS,
-  { key: "eligibility", label: "评分资格", category: "base", icon: "base", options: [["eligible", "具备正式评分资格"], ["ineligible", "不具备评分资格"]] },
-  { key: "rating", label: "正式评级", category: "base", icon: "score", options: [["A", "A"], ["B", "B"], ["C", "C"], ["D", "D"], ["missing", "未评级"]] }
+  { key: "trialTotal", label: "试算总分", category: "score", icon: "score", options: [["gte80", "≥80分"], ["70to80", "70-80分"], ["60to70", "60-70分"], ["lt60", "<60分"], ["missing", "不可计算 / 数据不足"]] },
+  { key: "trialRating", label: "试算评级", category: "score", icon: "score", options: [["A", "A"], ["B", "B"], ["C", "C"], ["D", "D"], ["missing", "未评级"]] },
+  { key: "eligibility", label: "正式评分资格", category: "score", icon: "score", options: [["eligible", "具备正式评分资格"], ["ineligible", "不具备评分资格"]] },
+  { key: "defenseGate", label: "防守固定门槛", category: "defense", icon: "defense", options: [["pass", "通过"], ["fail", "未通过"], ["pending", "指标不足，无法判断"]] },
+  { key: "completeness", label: "10项指标完整性", category: "score", icon: "score", options: [["complete", "10项完整"], ["incomplete", "存在缺失"]] }
 ];
 
 const RADAR_AXES = [
-  { key: "alpha300", source: ["alpha_hs300", "alpha300"], label: "α（沪深300）" },
+  { key: "alpha300", source: ["alpha_h00300", "alpha_hs300", "alpha300"], label: "α（沪深300）" },
   { key: "upsideCapture", source: ["upside_capture", "upsideCapture"], label: "上行捕获率" },
   { key: "maxDrawdown", source: ["max_drawdown", "maxDrawdown"], label: "最大回撤" },
-  { key: "industryConcentration", source: ["industry_concentration", "industryConcentration"], label: "行业集中度（当前）" },
+  { key: "downsideCapture", source: ["downside_capture", "downsideCapture"], label: "下行捕获率" },
   { key: "sharpe", source: ["sharpe", "sharpe_ratio"], label: "夏普比率" },
-  { key: "experience", source: ["experience", "experience_years"], label: "从业经验（当前）" }
+  { key: "rollingExcessWinRate", source: ["rolling_excess_win_rate", "rollingWinRate"], label: "滚动超额胜率" }
 ];
 
 const PERCENT_MANAGER_FIELDS = new Set([
@@ -186,11 +191,21 @@ document.addEventListener("DOMContentLoaded", init);
 async function init() {
   restorePreferences();
   bindStaticEvents();
+  if (location.protocol === "file:") {
+    showDirectFileWarning();
+    return;
+  }
   renderColumnPicker();
   renderFilters("kpi", FILTER_DEFS);
   renderFilters("score", SCORE_FILTER_DEFS);
   await loadManifest();
   await activateView(viewFromHash());
+}
+
+function showDirectFileWarning() {
+  document.getElementById("protocol-warning").hidden = false;
+  document.getElementById("data-freshness").textContent = "本地服务未启动";
+  document.querySelector("main").hidden = true;
 }
 
 function restorePreferences() {
@@ -528,6 +543,31 @@ function managerMatchesFilter(manager, key, option) {
   return true;
 }
 
+function filterScoreRecords(records, query, filters) {
+  const needle = normalizeSearch(query);
+  return records.filter(record => {
+    const manager = record.manager;
+    if (needle && !normalizeSearch([manager.name, manager.id, manager.company, ...manager.currentFunds].join(" ")).includes(needle)) return false;
+    return [...filters.entries()].every(([key, selected]) => selected.size === 0 || [...selected].some(option => scoreRecordMatchesFilter(record, key, option)));
+  });
+}
+
+function scoreRecordMatchesFilter(record, key, option) {
+  if (key === "trialTotal") {
+    const value = record.trialTotal;
+    if (!Number.isFinite(value)) return option === "missing";
+    if (option === "gte80") return value >= 80;
+    if (option === "70to80") return value >= 70 && value < 80;
+    if (option === "60to70") return value >= 60 && value < 70;
+    if (option === "lt60") return value < 60;
+  }
+  if (key === "trialRating") return option === "missing" ? record.trialRating === "未评级" : record.trialRating === option;
+  if (key === "eligibility") return option === "eligible" ? record.eligible : !record.eligible;
+  if (key === "defenseGate") return record.defenseGate === option;
+  if (key === "completeness") return option === "complete" ? record.metricsComplete : !record.metricsComplete;
+  return managerMatchesFilter(record.manager, key, option);
+}
+
 function renderFilters(scope, defs) {
   const root = document.getElementById(`${scope}-filters`);
   root.replaceChildren();
@@ -594,9 +634,7 @@ function renderScore() {
   const scored = buildScoreRecords(state.managers);
   const eligible = scored.filter(item => item.eligible && Number.isFinite(item.formalTotal));
   setText("score-eligible-count", formatInteger(eligible.length));
-  const filteredBase = filterManagers(state.managers, state.score.query, state.score.filters);
-  const allowed = new Set(filteredBase.map(item => item.id));
-  const filtered = scored.filter(item => allowed.has(item.manager.id));
+  const filtered = filterScoreRecords(scored, state.score.query, state.score.filters);
   setText("score-filtered-count", formatInteger(filtered.length));
   const notice = document.getElementById("score-data-notice");
   notice.classList.toggle("warning", eligible.length === 0);
@@ -619,17 +657,39 @@ function buildScoreRecords(managers) {
     const eligible = score.eligible === true && [offense, defense, composite].every(Number.isFinite);
     const formalTotal = eligible ? finite(score.total) ?? weightedTotal(offense, defense, composite, [40, 30, 30]) : null;
     const trialTotal = eligible ? weightedTotal(offense, defense, composite, state.score.appliedWeights) : null;
+    const reasons = arrayValue(score.reasons ?? score.eligibility_reasons ?? score.reason);
+    const metricsComplete = !reasons.includes("incomplete_metrics");
+    const defenseFailures = ["max_drawdown_gate", "downside_capture_gate", "defense_score_gate"];
+    const defenseGate = metricsComplete ? (reasons.some(reason => defenseFailures.includes(reason)) ? "fail" : "pass") : "pending";
     return {
       manager, eligible, offense, defense, composite, formalTotal, trialTotal,
-      rating: stringValue(score.rating),
-      reasons: arrayValue(score.reasons ?? score.eligibility_reasons ?? score.reason),
+      formalRating: stringValue(score.rating), trialRating: null,
+      reasons, metricsComplete, defenseGate,
       formalRank: null, trialRank: null, rankDelta: null
     };
   });
   assignRanks(rows, "formalTotal", "formalRank");
   assignRanks(rows, "trialTotal", "trialRank");
-  rows.forEach(row => { if (Number.isFinite(row.formalRank) && Number.isFinite(row.trialRank)) row.rankDelta = row.formalRank - row.trialRank; });
+  assignTrialRatings(rows);
+  rows.forEach(row => {
+    if (!row.formalRating && Number.isFinite(row.formalRank)) row.formalRating = ratingForRank(row.formalRank, rows.filter(item => Number.isFinite(item.formalRank)).length);
+    if (Number.isFinite(row.formalRank) && Number.isFinite(row.trialRank)) row.rankDelta = row.formalRank - row.trialRank;
+  });
   return rows;
+}
+
+function ratingForRank(rank, count) {
+  if (!Number.isFinite(rank) || !count) return "未评级";
+  const percentile = (rank - 1) / count;
+  if (percentile < 0.10) return "A";
+  if (percentile < 0.30) return "B";
+  if (percentile < 0.60) return "C";
+  return "D";
+}
+
+function assignTrialRatings(rows) {
+  const count = rows.filter(row => Number.isFinite(row.trialRank)).length;
+  rows.forEach(row => { row.trialRating = ratingForRank(row.trialRank, count); });
 }
 
 function assignRanks(rows, valueKey, rankKey) {
@@ -662,7 +722,8 @@ function scoreValue(row, key) {
   if (key === "maxDrawdown") return managerValue(row.manager, "maxDrawdown");
   if (key === "alpha300") return managerValue(row.manager, "alpha300");
   if (key === "sampleYears") return managerValue(row.manager, "sampleYears");
-  if (key === "rating") return row.rating || "未评级";
+  if (key === "trialRating") return row.trialRating || "未评级";
+  if (key === "formalRating") return row.formalRating || "未评级";
   if (key === "eligibility") return row.eligible ? "具备正式评分资格" : eligibilityText(row.reasons);
   return row[key];
 }
@@ -677,6 +738,7 @@ function bindWeightControls() {
       source.value = String(value);
       target.value = String(value);
       state.score.draftWeights[index] = value;
+      state.score.weightsDirty = state.score.draftWeights.some((item, position) => item !== state.score.appliedWeights[position]);
       validateWeights();
     };
     range.addEventListener("input", () => sync(range, number));
@@ -689,30 +751,40 @@ function bindWeightControls() {
       document.getElementById(`weight-${key}-number`).value = String(value);
     });
     state.score.draftWeights = [40, 30, 30];
+    state.score.weightsDirty = state.score.draftWeights.some((item, position) => item !== state.score.appliedWeights[position]);
     validateWeights();
   });
+  document.getElementById("weight-apply").addEventListener("click", applyWeights);
+  validateWeights();
 }
 
 function validateWeights() {
   const total = state.score.draftWeights.reduce((sum, value) => sum + value, 0);
   const valid = total === 100;
   const root = document.getElementById("weight-total");
+  const apply = document.getElementById("weight-apply");
   root.classList.toggle("valid", valid);
   root.classList.toggle("invalid", !valid);
   root.querySelector("strong").textContent = `${total}%`;
-  root.querySelector("small").textContent = valid ? "已应用" : total < 100 ? `还差${100 - total}%` : `超出${total - 100}%`;
-  if (valid) {
-    state.score.appliedWeights = [...state.score.draftWeights];
-    setText("trial-weight-summary", state.score.appliedWeights.join(" / "));
-    const same = state.score.appliedWeights.every((value, index) => value === [40, 30, 30][index]);
-    const badge = document.getElementById("trial-model-badge");
-    badge.classList.toggle("trial", !same);
-    setText("trial-model-status", same ? "与正式权重一致" : "已应用自定义风险偏好");
-    state.score.page = 1;
-    if (state.managers) renderScore();
-  } else {
-    setText("trial-model-status", "权重未满100%，保留上一次有效结果");
-  }
+  root.querySelector("small").textContent = !valid ? (total < 100 ? `还差${100 - total}%` : `超出${total - 100}%`) : state.score.weightsDirty ? "待应用" : "已应用";
+  apply.disabled = !valid || !state.score.weightsDirty;
+  if (!valid) setText("trial-model-status", "权重合计不是100%，保留上一次有效结果");
+  else if (state.score.weightsDirty) setText("trial-model-status", "权重尚未应用，当前排名保持不变");
+}
+
+function applyWeights() {
+  const total = state.score.draftWeights.reduce((sum, value) => sum + value, 0);
+  if (total !== 100) return;
+  state.score.appliedWeights = [...state.score.draftWeights];
+  state.score.weightsDirty = false;
+  setText("trial-weight-summary", state.score.appliedWeights.join(" / "));
+  const same = state.score.appliedWeights.every((value, index) => value === [40, 30, 30][index]);
+  const badge = document.getElementById("trial-model-badge");
+  badge.classList.toggle("trial", !same);
+  setText("trial-model-status", same ? "与正式权重一致" : "已应用自定义风险偏好");
+  state.score.page = 1;
+  validateWeights();
+  if (state.managers) renderScore();
 }
 
 function renderColumnPicker() {
@@ -1166,7 +1238,7 @@ async function loadCustomReturns() {
   }
   const path = endpoint.replace("{start}", encodeURIComponent(start)).replace("{end}", encodeURIComponent(end));
   try {
-    const payload = await fetchJson(path.startsWith("http") || path.startsWith(".") ? path : `${DATA_ROOT}/${path}`);
+    const payload = await fetchJson(path.startsWith("http") || path.startsWith(".") || path.startsWith("/") ? path : `${DATA_ROOT}/${path}`);
     const records = payloadArray(payload, ["rows", "returns", "records", "data"]);
     const map = new Map(records.map(item => [stringValue(item.fund_id ?? item.strategy_key ?? item.code), percentValue(item.return ?? item.custom_return)]));
     state.funds.forEach(fund => { fund.customReturn = map.get(fund.id) ?? map.get(fund.code) ?? null; });
@@ -1291,7 +1363,7 @@ function formatIntervals(intervals) {
 
 function formatPercent(value) { return Number.isFinite(value) ? `${value.toFixed(1)}%` : "待补采"; }
 function formatInteger(value) { return Number.isFinite(Number(value)) ? new Intl.NumberFormat("zh-CN", { maximumFractionDigits: 0 }).format(Number(value)) : "待补采"; }
-function formatDateTime(value) { const date = new Date(value); return Number.isNaN(date.getTime()) ? String(value) : new Intl.DateTimeFormat("zh-CN", { dateStyle: "medium", hour: "2-digit", minute: "2-digit" }).format(date); }
+function formatDateTime(value) { const date = new Date(value); return Number.isNaN(date.getTime()) ? String(value) : new Intl.DateTimeFormat("zh-CN", { dateStyle: "medium", timeStyle: "short" }).format(date); }
 function median(values) { const clean = values.filter(Number.isFinite).sort((a, b) => a - b); if (!clean.length) return null; const mid = Math.floor(clean.length / 2); return clean.length % 2 ? clean[mid] : (clean[mid - 1] + clean[mid]) / 2; }
 function finite(value) { if (value === null || value === undefined || value === "") return null; const number = Number(value); return Number.isFinite(number) ? number : null; }
 function percentValue(value) { const number = finite(value); return Number.isFinite(number) ? number * 100 : null; }

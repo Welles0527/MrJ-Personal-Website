@@ -3,11 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23f48120'/%3E%3Cpath d='M8 21h4V11H8zm6 0h4V7h-4zm6 0h4V14h-4z' fill='white'/%3E%3C/svg%3E">
   <meta name="color-scheme" content="dark light">
   <meta name="description" content="中国主动权益基金与基金经理研究看板">
   <title>主动权益研究终端</title>
-  <link rel="stylesheet" href="./app.css?v=20260718">
-  <script src="./app.js?v=20260718" defer></script>
+  <link rel="stylesheet" href="./app.css?v=20260719b">
+  <script src="./app.js?v=20260719b" defer></script>
 </head>
 <body>
   <svg class="svg-defs" aria-hidden="true">
@@ -43,6 +44,11 @@
       <button class="icon-text-button" id="theme-toggle" type="button"><svg><use href="#i-theme"/></svg><span>切换浅色</span></button>
     </div>
   </header>
+
+  <div class="protocol-warning" id="protocol-warning" role="alert" hidden>
+    <strong>本地数据服务尚未启动</strong>
+    <span>请关闭这个页面，然后双击项目根目录中的“启动基金研究看板.cmd”。看板使用期间请保持启动窗口开启，不要直接打开 index.html。</span>
+  </div>
 
   <main>
     <section class="view active" id="view-funds" data-view-panel="funds" aria-labelledby="funds-title">
@@ -122,7 +128,7 @@
         <div class="content-area score-content">
           <header class="section-heading compact"><div><h1 id="score-title">基金经理打分排行</h1><p>调整风险偏好只改变试算排名，不改变原始指标与固定门槛。</p></div></header>
           <section class="weight-console" aria-labelledby="weight-title">
-            <div class="weight-console-head"><div><h2 id="weight-title">风险偏好权重</h2><p>拖动或输入数值，三项合计100%才会应用。</p></div><button class="secondary-button" id="weight-reset">恢复正式权重</button></div>
+            <div class="weight-console-head"><div><h2 id="weight-title">风险偏好权重</h2><p>拖动或输入数值，合计100%后点击应用，排名才会重新计算。</p></div><div class="weight-actions"><button class="secondary-button" id="weight-reset">恢复正式权重</button><button class="primary-button" id="weight-apply" disabled>应用权重并重新排名</button></div></div>
             <div class="weight-grid">
               <div class="weight-control offense"><label for="weight-offense"><svg><use href="#i-offense"/></svg><span>进攻能力</span></label><input id="weight-offense" type="range" min="0" max="100" step="1" value="40"><div><input id="weight-offense-number" type="number" min="0" max="100" step="1" value="40" aria-label="进攻能力权重"><span>%</span></div></div>
               <div class="weight-control defense"><label for="weight-defense"><svg><use href="#i-defense"/></svg><span>防守能力</span></label><input id="weight-defense" type="range" min="0" max="100" step="1" value="30"><div><input id="weight-defense-number" type="number" min="0" max="100" step="1" value="30" aria-label="防守能力权重"><span>%</span></div></div>
@@ -159,7 +165,7 @@
           <div class="biography"><h3>个人简介</h3><p id="profile-biography"></p><details><summary>学术背景与能力圈</summary><p id="profile-academic"></p></details></div>
         </section>
         <section class="radar-section" aria-labelledby="radar-title">
-          <div class="panel-heading"><div><h2 id="radar-title">六维能力雷达</h2><p>指标标准化至0至100分位；行业集中度与经验为最新值。</p></div><div class="period-tabs" id="radar-periods" role="group" aria-label="雷达图时间维度"><button class="active" data-period="1y">近1年</button><button data-period="2y">近2年</button><button data-period="3y">近3年</button><button data-period="5y">近5年</button></div></div>
+          <div class="panel-heading"><div><h2 id="radar-title">六维能力雷达</h2><p>六项指标均按所选时间窗口重新计算，并转换为同类可比经理中的0至100分位。</p></div><div class="period-tabs" id="radar-periods" role="group" aria-label="雷达图时间维度"><button class="active" data-period="1y">近1年</button><button data-period="2y">近2年</button><button data-period="3y">近3年</button><button data-period="5y">近5年</button></div></div>
           <div class="radar-layout">
             <div class="radar-wrap"><svg id="manager-radar" viewBox="0 0 640 430" role="img" aria-labelledby="radar-svg-title radar-svg-desc"><title id="radar-svg-title">基金经理六维能力雷达图</title><desc id="radar-svg-desc">选中经理的标准化指标对比</desc></svg><p class="chart-status" id="radar-status"></p></div>
             <div class="radar-legend" id="radar-legend"></div>
