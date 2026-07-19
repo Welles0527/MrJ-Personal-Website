@@ -1,4 +1,6 @@
-/* 调研目录（2026-07-17）。播放链接使用平台检索页，避免伪造视频 ID。 */
+import { worshipSources } from "./worship-sources.js";
+
+/* 调研目录（2026-07-17）。每首歌的播放链接均来自已核验的平台视频 ID。 */
 const searchSource = (title, artist) =>
   `https://www.youtube.com/results?search_query=${encodeURIComponent(`${artist} ${title} 官方`)}`;
 
@@ -69,6 +71,11 @@ const moodOverrides = new Map([
 worshipCatalog = worshipCatalog.map(song => ({
   ...song,
   moods: moodOverrides.get(`${song.artist}::${song.title}`) || song.moods,
+  sourceUrl: worshipSources[`${song.artist}::${song.title}`]?.youtubeId
+    ? `https://www.youtube.com/watch?v=${worshipSources[`${song.artist}::${song.title}`].youtubeId}`
+    : worshipSources[`${song.artist}::${song.title}`]?.bvid
+      ? `https://www.bilibili.com/video/${worshipSources[`${song.artist}::${song.title}`].bvid}/`
+      : song.sourceUrl,
 }));
 
 export { worshipCatalog };

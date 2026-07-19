@@ -399,9 +399,17 @@ const worshipSources = {
     "bvid": "BV1irvseyEd2",
     "youtubeId": "YaJ5gof0YNQ"
   },
-  "生命河灵粮堂::如鹰展翅上腾": {
-    "youtubeId": "qF3RADPSlDs"
-  }
+  "生命河灵粮堂::神的应许": { "youtubeId": "9Tr-0l2DDTE" },
+  "生命河灵粮堂::高声唱哈利路亚": { "youtubeId": "_q5Kb9WBXoM" },
+  "生命河灵粮堂::愿你荣耀遍及全地": { "youtubeId": "9_3GgrPnxfc" },
+  "生命河灵粮堂::此生爱你不渝": { "youtubeId": "MBuxOIQCKIs" },
+  "生命河灵粮堂::从破碎到自由": { "youtubeId": "npHH7TD7XqU" },
+  "生命河灵粮堂::活着为你": { "youtubeId": "8Fw49OEpVqY" },
+  "生命河灵粮堂::生命的泉源": { "youtubeId": "aHOijXCQJZw" },
+  "生命河灵粮堂::神机会的风": { "youtubeId": "FhDb2SSXgh0" },
+  "生命河灵粮堂::你的爱不离不弃": { "youtubeId": "PNLyM3gCoIU" },
+  "生命河灵粮堂::奔向爱我的神": { "youtubeId": "gsEs6_JIocA" },
+  "生命河灵粮堂::如鹰展翅上腾": { "youtubeId": "qF3RADPSlDs" }
 };
 
 export { worshipSources };
