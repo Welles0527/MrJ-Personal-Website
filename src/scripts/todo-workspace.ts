@@ -1215,7 +1215,14 @@ export function mountTodoWorkspace(root: HTMLElement) {
     if (!dropTarget) return;
     event.preventDefault();
     const todoId = event.dataTransfer?.getData('text/plain') || draggedTodoId;
-    const copyRequested = event.ctrlKey || draggedWithCopy;
+    const sourceTodo = state.todos.find((todo) => todo.id === todoId);
+    const targetTodo = dropTarget.dataset.overviewDropId
+      ? state.todos.find((todo) => todo.id === dropTarget.dataset.overviewDropId)
+      : undefined;
+    const weeklySourceDroppedElsewhere = sourceTodo?.placement === 'weekly'
+      && targetTodo?.placement !== 'weekly'
+      && dropTarget.dataset.dropPlacement !== 'weekly';
+    const copyRequested = event.ctrlKey || draggedWithCopy || weeklySourceDroppedElsewhere;
     clearDropTargets();
     draggedTodoId = null;
     draggedWithCopy = false;
