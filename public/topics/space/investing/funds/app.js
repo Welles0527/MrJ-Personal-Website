@@ -3,7 +3,8 @@
 const DATA_ROOT = "./data";
 const STORAGE = {
   theme: "fund-dashboard-theme-v1",
-  kpiColumns: "fund-dashboard-kpi-columns-v1"
+  kpiColumns: "fund-dashboard-kpi-columns-v1",
+  managerPreferences: "fund-dashboard-manager-preferences-v2"
 };
 
 const state = {
@@ -14,11 +15,20 @@ const state = {
   managerDetails: null,
   managerDetailsById: new Map(),
   managerProfiles: null,
+  holdings: null,
+  holdingFundIndex: null,
+  guide: null,
   loads: new Map(),
+  preferences: new Map(),
+  preferenceEditorId: null,
+  preferenceSync: "local",
   fund: { type: "all", query: "", sort: ["return1y", "desc"], page: 1, pageSize: 50, custom: null },
   kpi: { query: "", sort: ["manager", "asc"], page: 1, pageSize: 25, filters: new Map(), columns: [] },
   score: { query: "", sort: ["trialRank", "asc"], page: 1, pageSize: 25, filters: new Map(), draftWeights: [40, 30, 30], appliedWeights: [40, 30, 30], weightsDirty: false },
-  profile: { primaryId: null, compareId: null, period: "1y", page: 1, pageSize: 25, sort: ["relation", "asc"] }
+  profile: { primaryId: null, compareId: null, period: "1y", page: 1, pageSize: 25, sort: ["relation", "asc"] },
+  preview: { fundTrigger: null, managerTrigger: null, managerId: null, radarPeriod: "3y" },
+  holdingsView: { selectedIds: [], query: "", relation: "all", fundType: "all", periodMode: "all", stockQuery: "", minOverlap: "2", minWeight: 0, rows: [], selectedStock: null },
+  guideView: { tab: "indicators" }
 };
 
 const aliases = {
@@ -154,6 +164,8 @@ const PROFILE_FUND_COLUMNS = [
 ];
 
 const FILTER_DEFS = [
+  { key: "favorite", label: "收藏状态", category: "base", icon: "star", options: [["favorite", "只看收藏"]] },
+  { key: "ability", label: "能力属性", category: "base", icon: "composite", options: [["offense", "进攻"], ["defense", "防守"], ["composite", "综合"]] },
   { key: "fundType", label: "基金类型", category: "base", icon: "base", options: [["stock", "股票型"], ["mixed", "偏股型"]] },
   { key: "poolScale", label: "基金规模", category: "base", icon: "base", options: [["lt2", "<2亿"], ["2to10", "2-10亿"], ["10to50", "10-50亿"], ["50to100", "50-100亿"], ["gte100", "≥100亿"], ["missing", "不可计算 / 数据不足"]] },
   { key: "experience", label: "从业经验", category: "base", icon: "base", options: [["lt2", "<2年"], ["2to5", "2-5年"], ["5to10", "5-10年"], ["gte10", "≥10年"], ["missing", "不可计算 / 数据不足"]] },
@@ -199,6 +211,7 @@ async function init() {
   renderFilters("kpi", FILTER_DEFS);
   renderFilters("score", SCORE_FILTER_DEFS);
   await loadManifest();
+  await initializePreferenceSync();
   await activateView(viewFromHash());
 }
 
@@ -219,6 +232,14 @@ function restorePreferences() {
   } catch {
     state.kpi.columns = [...DEFAULT_KPI_COLUMNS];
   }
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE.managerPreferences) || "{}");
+    Object.entries(saved && typeof saved === "object" ? saved : {}).forEach(([managerId, preference]) => {
+      if (managerId && preference && typeof preference === "object") state.preferences.set(managerId, normalizePreference(managerId, preference));
+    });
+  } catch {
+    state.preferences = new Map();
+  }
 }
 
 function bindStaticEvents() {
@@ -236,6 +257,8 @@ function bindStaticEvents() {
   bindSearch("fund-search", value => { state.fund.query = value; state.fund.page = 1; renderFunds(); });
   bindSearch("manager-search", value => { state.kpi.query = value; state.kpi.page = 1; renderKpi(); });
   bindSearch("score-search", value => { state.score.query = value; state.score.page = 1; renderScore(); });
+  bindSearch("holdings-manager-search", value => { state.holdingsView.query = value; renderHoldingsManagerOptions(); });
+  bindSearch("holdings-stock-search", value => { state.holdingsView.stockQuery = value; renderHoldingsAnalysis(); });
   document.getElementById("fund-type-tabs").addEventListener("click", event => {
     const button = event.target.closest("button[data-fund-type]");
     if (!button) return;
@@ -264,9 +287,36 @@ function bindStaticEvents() {
     const button = event.target.closest("button[data-period]");
     if (!button) return;
     state.profile.period = button.dataset.period;
-    document.querySelectorAll("#radar-periods button").forEach(item => item.classList.toggle("active", item === button));
+    syncPeriodTabs("radar-periods", state.profile.period);
     renderProfileRadar();
   });
+  ["relation", "fund-type", "period-mode", "min-overlap", "min-weight"].forEach(key => {
+    document.getElementById(`holdings-${key}`).addEventListener("change", event => {
+      const stateKey = key === "fund-type" ? "fundType" : key === "period-mode" ? "periodMode" : key === "min-overlap" ? "minOverlap" : key === "min-weight" ? "minWeight" : key;
+      state.holdingsView[stateKey] = key === "min-weight" ? Math.max(0, Number(event.target.value) || 0) : event.target.value;
+      renderHoldingsAnalysis();
+    });
+  });
+  document.getElementById("holding-drilldown-close").addEventListener("click", () => { state.holdingsView.selectedStock = null; document.getElementById("holding-drilldown").hidden = true; });
+  document.getElementById("guide-tabs").addEventListener("click", event => {
+    const button = event.target.closest("button[data-guide-tab]");
+    if (!button) return;
+    state.guideView.tab = button.dataset.guideTab;
+    document.querySelectorAll("#guide-tabs button").forEach(item => item.classList.toggle("active", item === button));
+    renderGuide();
+  });
+  document.getElementById("preference-save").addEventListener("click", savePreferenceEditor);
+  document.getElementById("preference-reset").addEventListener("click", resetPreferenceSuggestion);
+  bindPreviewDialog("fund-preview-dialog", "fund-preview-close", "fundTrigger");
+  bindPreviewDialog("manager-preview-dialog", "manager-preview-close", "managerTrigger");
+  document.getElementById("manager-preview-periods").addEventListener("click", event => {
+    const button = event.target.closest("button[data-period]");
+    if (!button) return;
+    state.preview.radarPeriod = button.dataset.period;
+    syncPeriodTabs("manager-preview-periods", state.preview.radarPeriod);
+    renderManagerPreviewRadar();
+  });
+  document.getElementById("manager-preview-detail").addEventListener("click", openManagerDetailFromPreview);
 }
 
 function bindSearch(id, callback) {
@@ -278,7 +328,7 @@ function bindSearch(id, callback) {
 }
 
 async function activateView(name) {
-  const view = ["funds", "kpi", "score", "profile"].includes(name) ? name : "funds";
+  const view = ["funds", "kpi", "score", "profile", "holdings", "guide"].includes(name) ? name : "funds";
   state.activeView = view;
   document.querySelectorAll("[data-view-panel]").forEach(panel => {
     const active = panel.dataset.viewPanel === view;
@@ -295,6 +345,8 @@ async function activateView(name) {
     if (view === "kpi") { if (!state.managers) renderTableMessage("kpi-table-body", state.kpi.columns.length, "正在载入基金经理KPI…", "按东方财富经理ID读取完整经理清单。"); await loadManagers(); renderKpi(); }
     if (view === "score") { if (!state.managers) renderTableMessage("score-table-body", SCORE_COLUMNS.length, "正在检查评分资格…", "缺失正式指标的经理不会生成分数。"); await loadManagers(); renderScore(); }
     if (view === "profile") { await loadManagers(); prepareProfileSearch(); if (state.profile.primaryId) await renderProfile(); }
+    if (view === "holdings") { await Promise.all([loadManagers(), loadHoldings()]); renderHoldings(); }
+    if (view === "guide") { await loadGuide(); renderGuide(); }
   } catch (error) {
     showViewError(view, error);
   }
@@ -371,6 +423,301 @@ async function loadManagerProfiles() {
     state.managerProfiles = [];
   }
   return state.managerProfiles;
+}
+
+async function loadHoldings() {
+  if (state.holdings) return state.holdings;
+  state.holdings = await loadOnce("holdings", () => fetchJson(filePath("holdings.json")));
+  state.holdingFundIndex = new Map();
+  holdingsFundRows().forEach(fund => {
+    const id = stringValue(fund.fund_id);
+    const code = stringValue(fund.fund_code);
+    if (id) state.holdingFundIndex.set(`id:${id}`, fund);
+    if (code) state.holdingFundIndex.set(`code:${code}`, fund);
+  });
+  return state.holdings;
+}
+
+async function loadGuide() {
+  if (state.guide) return state.guide;
+  state.guide = await loadOnce("guide", () => fetchJson(filePath("guide.json")));
+  return state.guide;
+}
+
+function bindPreviewDialog(dialogId, closeId, triggerKey) {
+  const dialog = document.getElementById(dialogId);
+  document.getElementById(closeId).addEventListener("click", () => dialog.close());
+  dialog.addEventListener("click", event => { if (event.target === dialog) dialog.close(); });
+  dialog.addEventListener("close", () => {
+    const trigger = state.preview[triggerKey];
+    state.preview[triggerKey] = null;
+    if (trigger?.isConnected) trigger.focus({ preventScroll: true });
+  });
+}
+
+async function openFundPreview(reference, trigger) {
+  const dialog = document.getElementById("fund-preview-dialog");
+  state.preview.fundTrigger = trigger;
+  setText("fund-preview-title", reference.name || "基金持仓");
+  setText("fund-preview-meta", [reference.code, reference.type].filter(Boolean).join(" · ") || "正在匹配基金策略ID");
+  document.getElementById("fund-preview-content").replaceChildren(el("div", { class: "preview-loading" }, el("strong", { text: "正在载入前十大持仓" }), el("span", { text: "首次打开需要读取持仓数据。" })));
+  if (!dialog.open) dialog.showModal();
+  try {
+    await loadHoldings();
+    renderFundPreview(reference);
+  } catch (error) {
+    document.getElementById("fund-preview-content").replaceChildren(previewEmptyState("持仓数据加载失败", error.message));
+  }
+}
+
+function findHoldingFund(reference) {
+  if (!state.holdingFundIndex) return null;
+  const id = stringValue(reference.id);
+  const code = stringValue(reference.code);
+  return (id && state.holdingFundIndex.get(`id:${id}`)) || (code && state.holdingFundIndex.get(`code:${code}`)) || null;
+}
+
+function renderFundPreview(reference) {
+  const root = document.getElementById("fund-preview-content");
+  root.replaceChildren();
+  const fund = findHoldingFund(reference);
+  const name = stringValue(fund?.fund_name) || reference.name || "基金名称未提供";
+  const code = stringValue(fund?.fund_code) || reference.code || reference.id || "代码未提供";
+  const type = normalizeFundType(fund?.fund_type || reference.type) || "类型未提供";
+  setText("fund-preview-title", name);
+  setText("fund-preview-meta", `${code} · ${type}`);
+
+  const reportDate = stringValue(fund?.report_date);
+  const status = !fund ? "不在当前持仓数据范围" : fund.status === "available" && arrayValue(fund.holdings).length ? "已取得最新披露持仓" : "暂无有效持仓";
+  const summary = el("dl", { class: "fund-preview-summary" });
+  [["基金代码", code], ["基金类型", type], ["持仓报告期", reportDate || "未提供"], ["数据状态", status]].forEach(([label, value]) => summary.append(el("div", {}, el("dt", { text: label }), el("dd", { text: value }))));
+  root.append(summary);
+
+  const managerIds = arrayValue(fund?.manager_ids || reference.managerIds);
+  const managerNames = arrayValue(fund?.manager_names || reference.managerNames);
+  const managerRow = el("div", { class: "fund-preview-managers" }, el("span", { text: "基金经理" }));
+  if (managerNames.length) managerRow.append(entityList(managerNames.map((managerName, index) => managerNameButton({ id: managerIds[index], name: managerName }))));
+  else managerRow.append(el("span", { class: "missing", text: "经理信息未提供" }));
+  root.append(managerRow);
+
+  if (!fund) return root.append(previewEmptyState("不在当前持仓数据范围", "该基金可能属于历史基金或当前基金池外产品。本次不按名称猜测，也不临时补采。"));
+  const holdings = arrayValue(fund.holdings);
+  if (fund.status !== "available" || !holdings.length) return root.append(previewEmptyState("暂无有效持仓", "现有结构化数据中没有可展示的前十大持仓。"));
+
+  const section = el("section", { class: "fund-preview-holdings" }, el("div", { class: "preview-section-heading" }, el("h3", { text: "前十大持仓" }), el("span", { text: reportDate ? `报告期 ${reportDate}` : "报告期未提供" })));
+  const table = el("table");
+  table.append(el("thead", {}, el("tr", {}, el("th", { text: "序号" }), el("th", { text: "股票" }), el("th", { text: "持仓权重" }))));
+  const body = el("tbody");
+  holdings.slice(0, 10).forEach((holding, index) => {
+    const weight = finite(holding.weight);
+    body.append(el("tr", {}, el("td", { class: "numeric", text: String(index + 1) }), el("td", {}, el("strong", { text: stringValue(holding.security_name) || "名称未提供" }), el("small", { text: stringValue(holding.security_code) || "代码未提供" })), el("td", { class: `numeric${Number.isFinite(weight) ? "" : " missing"}`, text: Number.isFinite(weight) ? formatPercent(weight * 100) : "未提供" })));
+  });
+  table.append(body);
+  section.append(el("div", { class: "table-scroll" }, table));
+  root.append(section);
+}
+
+function previewEmptyState(title, detail) {
+  return el("div", { class: "preview-empty" }, icon("i-info"), el("strong", { text: title }), el("span", { text: detail }));
+}
+
+async function openManagerPreview(managerId, trigger) {
+  const dialog = document.getElementById("manager-preview-dialog");
+  state.preview.managerTrigger = trigger;
+  state.preview.managerId = String(managerId);
+  state.preview.radarPeriod = "3y";
+  syncPeriodTabs("manager-preview-periods", state.preview.radarPeriod);
+  setText("manager-preview-title", "正在载入基金经理");
+  setText("manager-preview-meta", `经理ID ${managerId}`);
+  setText("manager-preview-status", "正在载入雷达图数据");
+  document.getElementById("manager-preview-radar").replaceChildren();
+  document.getElementById("manager-preview-legend").replaceChildren();
+  document.getElementById("manager-preview-detail").disabled = true;
+  if (!dialog.open) dialog.showModal();
+  try {
+    await loadManagers();
+    const manager = state.managers.find(item => item.id === String(managerId));
+    if (!manager) throw new Error("未找到对应东方财富经理ID");
+    setText("manager-preview-title", manager.name || "姓名未提供");
+    setText("manager-preview-meta", `ID ${manager.id} · ${manager.company || "公司未提供"}`);
+    document.getElementById("manager-preview-detail").disabled = false;
+    renderManagerPreviewRadar();
+  } catch (error) {
+    setText("manager-preview-status", `基金经理数据加载失败：${error.message}`);
+    document.getElementById("manager-preview-status").classList.add("error");
+  }
+}
+
+function renderManagerPreviewRadar() {
+  const manager = state.managers?.find(item => item.id === state.preview.managerId);
+  if (!manager) return;
+  const radar = radarWindow(manager, state.preview.radarPeriod);
+  drawRadar(manager, radar, null, null, { svgId: "manager-preview-radar", statusId: "manager-preview-status", legendId: "manager-preview-legend", allowRemoveCompare: false });
+}
+
+async function openManagerDetailFromPreview() {
+  const manager = state.managers?.find(item => item.id === state.preview.managerId);
+  if (!manager) return;
+  document.getElementById("manager-preview-dialog").close();
+  const fundDialog = document.getElementById("fund-preview-dialog");
+  if (fundDialog.open) fundDialog.close();
+  state.profile.primaryId = manager.id;
+  state.profile.compareId = null;
+  state.profile.period = state.preview.radarPeriod;
+  syncPeriodTabs("radar-periods", state.profile.period);
+  const input = document.getElementById("profile-manager-search");
+  input.value = `${manager.name} · ${manager.id} · ${manager.company || "公司未提供"}`;
+  document.getElementById("compare-manager-search").value = "";
+  document.getElementById("compare-manager-open").disabled = false;
+  if (state.activeView === "profile") await renderProfile();
+  else location.hash = "profile";
+}
+
+function syncPeriodTabs(rootId, period) {
+  document.querySelectorAll(`#${rootId} button[data-period]`).forEach(button => button.classList.toggle("active", button.dataset.period === period));
+}
+
+function normalizePreference(managerId, raw = {}) {
+  return {
+    managerId: String(managerId),
+    favorite: raw.favorite === true,
+    attributeOverride: Array.isArray(raw.attributeOverride) ? [...new Set(raw.attributeOverride.filter(tag => ["offense", "defense", "composite"].includes(tag)))] : null,
+    updatedAt: stringValue(raw.updatedAt) || new Date(0).toISOString(),
+    schemaVersion: "fund-manager-preferences-v1"
+  };
+}
+
+function preferenceFor(managerId) {
+  return state.preferences.get(String(managerId)) || normalizePreference(String(managerId));
+}
+
+function systemSuggestedTags(manager) {
+  if (!manager || !Number.isFinite(manager.soloDays) || manager.soloDays < 1095) return [];
+  const score = manager.score || {};
+  const values = {
+    offense: finite(score.offense ?? score.offense_score ?? score.offense_trial),
+    defense: finite(score.defense ?? score.defense_score ?? score.defense_trial),
+    composite: finite(score.risk_adjusted ?? score.composite ?? score.risk_adjusted_score ?? score.risk_adjusted_trial)
+  };
+  return Object.entries(values).filter(([, value]) => Number.isFinite(value) && value >= 70).map(([key]) => key);
+}
+
+function effectiveTags(manager) {
+  const preference = preferenceFor(manager.id);
+  return preference.attributeOverride === null ? systemSuggestedTags(manager) : preference.attributeOverride;
+}
+
+function savePreferencesLocal() {
+  localStorage.setItem(STORAGE.managerPreferences, JSON.stringify(Object.fromEntries(state.preferences)));
+}
+
+async function initializePreferenceSync() {
+  updatePreferenceSyncState("local");
+  const bridge = window.FundPreferenceCloud;
+  if (!bridge?.getSession) return;
+  try {
+    const session = await bridge.getSession();
+    if (!session?.uid) return updatePreferenceSyncState("signed-out");
+    updatePreferenceSyncState("syncing");
+    const remote = await bridge.load();
+    const remotePreferences = remote?.preferences && typeof remote.preferences === "object" ? remote.preferences : {};
+    const ids = new Set([...state.preferences.keys(), ...Object.keys(remotePreferences)]);
+    ids.forEach(managerId => {
+      const local = state.preferences.get(managerId);
+      const cloud = remotePreferences[managerId] ? normalizePreference(managerId, remotePreferences[managerId]) : null;
+      if (!local && cloud) state.preferences.set(managerId, cloud);
+      else if (local && cloud && Date.parse(cloud.updatedAt) > Date.parse(local.updatedAt)) state.preferences.set(managerId, cloud);
+    });
+    savePreferencesLocal();
+    await bridge.save(Object.fromEntries(state.preferences));
+    updatePreferenceSyncState("synced");
+  } catch (error) {
+    updatePreferenceSyncState("pending", error?.message);
+  }
+}
+
+function updatePreferenceSyncState(status, detail = "") {
+  state.preferenceSync = status;
+  const labels = { local: "收藏保存在本机", "signed-out": "未登录，收藏保存在本机", syncing: "正在同步收藏", synced: "收藏已与账号同步", pending: "收藏待同步" };
+  const node = document.getElementById("preference-sync-state");
+  if (node) { node.textContent = detail && status === "pending" ? `${labels[status]}：${detail}` : labels[status] || status; node.dataset.status = status; }
+}
+
+async function persistPreference(managerId, patch) {
+  const preference = normalizePreference(managerId, { ...preferenceFor(managerId), ...patch, updatedAt: new Date().toISOString() });
+  state.preferences.set(String(managerId), preference);
+  savePreferencesLocal();
+  rerenderPreferenceConsumers();
+  const bridge = window.FundPreferenceCloud;
+  if (!bridge?.getSession) return updatePreferenceSyncState("local");
+  try {
+    const session = await bridge.getSession();
+    if (!session?.uid) return updatePreferenceSyncState("signed-out");
+    updatePreferenceSyncState("syncing");
+    await bridge.save(Object.fromEntries(state.preferences));
+    updatePreferenceSyncState("synced");
+  } catch (error) {
+    updatePreferenceSyncState("pending", error?.message);
+  }
+}
+
+function rerenderPreferenceConsumers() {
+  if (state.managers) {
+    if (state.activeView === "kpi") renderKpi();
+    if (state.activeView === "score") renderScore();
+    if (state.activeView === "profile" && state.profile.primaryId) renderProfilePreferenceActions();
+    if (state.activeView === "holdings") renderHoldings();
+  }
+}
+
+function renderManagerPreferenceControls(manager, compact = false) {
+  const root = el("span", { class: `manager-preferences${compact ? " compact" : ""}` });
+  const preference = preferenceFor(manager.id);
+  const star = el("button", { type: "button", class: `favorite-button${preference.favorite ? " active" : ""}`, "aria-label": preference.favorite ? `取消收藏${manager.name}` : `收藏${manager.name}`, title: preference.favorite ? "取消收藏" : "星标收藏" });
+  star.append(el("span", { class: "favorite-glyph", "aria-hidden": "true", text: preference.favorite ? "⭐" : "☆" }));
+  star.addEventListener("click", event => { event.stopPropagation(); persistPreference(manager.id, { favorite: !preference.favorite }); });
+  root.append(star);
+  const tags = effectiveTags(manager);
+  const tagRoot = el("button", { type: "button", class: "ability-tags", "aria-label": `编辑${manager.name}的能力属性`, title: "编辑能力属性" });
+  const labels = { offense: "进攻", defense: "防守", composite: "综合" };
+  if (!tags.length) tagRoot.append(el("span", { class: "ability-empty", text: "+ 属性" }));
+  tags.forEach(tag => { const chip = el("span", { class: `ability-chip ${tag}`, title: labels[tag] }); chip.append(icon(`i-${tag}`)); if (!compact) chip.append(document.createTextNode(labels[tag])); tagRoot.append(chip); });
+  tagRoot.addEventListener("click", event => { event.stopPropagation(); openPreferenceEditor(manager.id); });
+  root.append(tagRoot);
+  return root;
+}
+
+function openPreferenceEditor(managerId) {
+  const manager = state.managers?.find(item => item.id === String(managerId));
+  if (!manager) return;
+  state.preferenceEditorId = manager.id;
+  const preference = preferenceFor(manager.id);
+  setText("preference-dialog-title", `${manager.name} · ${manager.id}`);
+  document.getElementById("preference-favorite").checked = preference.favorite;
+  const tags = effectiveTags(manager);
+  document.querySelectorAll("#preference-dialog .preference-tags input").forEach(input => { input.checked = tags.includes(input.value); });
+  const suggested = systemSuggestedTags(manager).map(tag => ({ offense: "进攻", defense: "防守", composite: "综合" })[tag]);
+  setText("preference-suggestion", `系统建议：${suggested.join("、") || "暂无"}。条件为单人样本不少于1095天且对应分项不低于70分。`);
+  document.getElementById("preference-dialog").showModal();
+}
+
+function savePreferenceEditor(event) {
+  event.preventDefault();
+  const managerId = state.preferenceEditorId;
+  if (!managerId) return;
+  const attributeOverride = [...document.querySelectorAll("#preference-dialog .preference-tags input:checked")].map(input => input.value);
+  persistPreference(managerId, { favorite: document.getElementById("preference-favorite").checked, attributeOverride });
+  document.getElementById("preference-dialog").close();
+}
+
+function resetPreferenceSuggestion() {
+  const managerId = state.preferenceEditorId;
+  const manager = state.managers?.find(item => item.id === managerId);
+  if (!manager) return;
+  persistPreference(managerId, { favorite: document.getElementById("preference-favorite").checked, attributeOverride: null });
+  const tags = systemSuggestedTags(manager);
+  document.querySelectorAll("#preference-dialog .preference-tags input").forEach(input => { input.checked = tags.includes(input.value); });
+  showToast("已恢复系统建议");
 }
 
 function loadOnce(key, loader) {
@@ -525,6 +872,8 @@ function filterManagers(managers, query, filters) {
 }
 
 function managerMatchesFilter(manager, key, option) {
+  if (key === "favorite") return option === "favorite" && preferenceFor(manager.id).favorite;
+  if (key === "ability") return effectiveTags(manager).includes(option);
   if (key === "fundType") {
     if (option === "stock") return manager.fundTypes.includes("股票型");
     if (option === "mixed") return manager.fundTypes.includes("偏股混合型");
@@ -914,7 +1263,8 @@ function renderCell(record, column, value, table) {
   if (column.kind === "manager") {
     const manager = table === "score" ? record.manager : record;
     cell.classList.add("manager-cell");
-    cell.append(el("span", { class: "manager-name", text: manager.name || "未提供" }), el("span", { class: "manager-id", text: manager.id || "ID未提供" }));
+    const identity = el("span", { class: "manager-identity" }, managerNameButton(manager), el("span", { class: "manager-id", text: manager.id || "ID未提供" }));
+    cell.append(identity, renderManagerPreferenceControls(manager, true));
     return cell;
   }
   if (column.kind === "relation") {
@@ -924,6 +1274,25 @@ function renderCell(record, column, value, table) {
   if (column.kind === "status") {
     const eligible = table === "score" && record.eligible;
     cell.append(el("span", { class: `status-tag ${eligible ? "qualified" : "unqualified"}`, text: value || "未说明" }));
+    return cell;
+  }
+  if (table === "fund" && column.key === "name") {
+    cell.append(fundNameButton(record));
+    return cell;
+  }
+  if (table === "fund" && column.key === "managers") {
+    cell.append(entityList(value.map((name, index) => managerNameButton({ id: record.managerIds[index], name }))));
+    if (!value.length) cell.classList.add("missing");
+    return cell;
+  }
+  if (table === "kpi" && column.key === "currentFunds") {
+    const links = value.map((name, index) => fundNameButton({ id: record.currentFundIds[index], code: record.currentFundIds[index], name }));
+    cell.append(entityList(links));
+    if (!value.length) cell.classList.add("missing");
+    return cell;
+  }
+  if (table === "profile" && column.key === "name") {
+    cell.append(fundNameButton({ id: record.strategyKey, code: record.code, name: record.name, type: record.type }));
     return cell;
   }
   if (Array.isArray(value)) {
@@ -968,6 +1337,55 @@ function renderCell(record, column, value, table) {
   cell.textContent = value === null || value === undefined || value === "" ? "待补采" : String(value);
   if (value === null || value === undefined || value === "") cell.classList.add("missing");
   return cell;
+}
+
+function entityList(items) {
+  const root = el("span", { class: "entity-list" });
+  items.filter(Boolean).forEach(item => root.append(item));
+  if (!root.childElementCount) root.append(el("span", { class: "missing", text: "待补采" }));
+  return root;
+}
+
+function managerNameButton(manager, options = {}) {
+  const id = stringValue(manager?.id ?? manager?.manager_id);
+  const name = stringValue(manager?.name ?? manager?.manager_name) || "姓名未提供";
+  if (!id) return el("span", { class: `manager-name${options.className ? ` ${options.className}` : ""}`, text: name, title: "经理ID未提供，无法打开雷达图" });
+  const button = el("button", {
+    type: "button",
+    class: `entity-link manager-link manager-name${options.className ? ` ${options.className}` : ""}`,
+    text: name,
+    title: `查看${name}的六维能力雷达图`,
+    "aria-label": `查看基金经理${name}，ID ${id}的六维能力雷达图`
+  });
+  button.addEventListener("click", event => {
+    event.stopPropagation();
+    openManagerPreview(id, button);
+  });
+  return button;
+}
+
+function fundNameButton(fund, options = {}) {
+  const reference = {
+    id: stringValue(fund?.id ?? fund?.fund_id ?? fund?.strategyKey ?? fund?.strategy_key),
+    code: stringValue(fund?.code ?? fund?.fund_code ?? fund?.representative_code),
+    name: stringValue(fund?.name ?? fund?.fund_name) || "基金名称未提供",
+    type: stringValue(fund?.type ?? fund?.fund_type),
+    managerIds: arrayValue(fund?.managerIds ?? fund?.manager_ids),
+    managerNames: arrayValue(fund?.managers ?? fund?.manager_names)
+  };
+  if (!reference.id && !reference.code) return el("span", { class: "fund-name", text: reference.name, title: "基金ID和代码未提供，无法打开持仓" });
+  const button = el("button", {
+    type: "button",
+    class: `entity-link fund-link${options.className ? ` ${options.className}` : ""}`,
+    text: reference.name,
+    title: `查看${reference.name}前十大持仓`,
+    "aria-label": `查看基金${reference.name}前十大持仓`
+  });
+  button.addEventListener("click", event => {
+    event.stopPropagation();
+    openFundPreview(reference, button);
+  });
+  return button;
 }
 
 function renderPagination(config, pageCount, start, shown) {
@@ -1020,13 +1438,15 @@ function renderManagerOptions(kind, query) {
   }).slice(0, 40);
   if (!matches.length) optionsRoot.append(el("div", { class: "table-message" }, el("span", { text: "没有匹配的基金经理" })));
   matches.forEach(manager => {
-    const button = el("button", { type: "button", class: "combobox-option", role: "option" });
+    const option = el("div", { class: "combobox-option", role: "option" });
     const left = el("span");
-    left.append(el("strong", { text: manager.name || "姓名未提供" }), el("small", { class: "option-id", text: manager.id ? `ID ${manager.id}` : "ID未提供" }));
+    left.append(managerNameButton(manager), el("small", { class: "option-id", text: manager.id ? `ID ${manager.id}` : "ID未提供" }));
     const right = el("span");
-    right.append(el("strong", { text: manager.company || "公司未提供" }), el("small", { text: manager.currentFunds.slice(0, 2).join("；") || "当前基金未提供" }));
-    button.append(left, right);
-    button.addEventListener("click", async () => {
+    right.append(el("strong", { text: manager.company || "公司未提供" }));
+    const currentFunds = manager.currentFunds.slice(0, 2).map((name, index) => fundNameButton({ id: manager.currentFundIds[index], code: manager.currentFundIds[index], name }, { className: "compact-fund-link" }));
+    right.append(currentFunds.length ? entityList(currentFunds) : el("small", { text: "当前基金未提供" }));
+    const choose = el("button", { type: "button", class: "secondary-button option-select", text: kind === "primary" ? "选中" : "对比" });
+    choose.addEventListener("click", async () => {
       optionsRoot.hidden = true;
       input.setAttribute("aria-expanded", "false");
       input.value = `${manager.name} · ${manager.id} · ${manager.company}`;
@@ -1041,7 +1461,8 @@ function renderManagerOptions(kind, query) {
         await renderProfileRadar();
       }
     });
-    optionsRoot.append(button);
+    option.append(left, right, choose);
+    optionsRoot.append(option);
   });
   optionsRoot.hidden = false;
   input.setAttribute("aria-expanded", "true");
@@ -1053,7 +1474,8 @@ async function renderProfile() {
   document.getElementById("profile-empty").hidden = true;
   document.getElementById("profile-content").hidden = false;
   setText("profile-monogram", manager.name.slice(0, 1) || "经");
-  setText("profile-summary-title", manager.name || "姓名未提供");
+  document.getElementById("profile-summary-title").replaceChildren(managerNameButton(manager, { className: "profile-manager-name" }));
+  renderProfilePreferenceActions();
   const meta = document.getElementById("profile-identity-meta");
   meta.replaceChildren(el("span", { text: `ID ${manager.id || "未提供"}` }), el("span", { text: manager.company || "公司未提供" }), el("span", { text: displayFundTypes(manager.fundTypes) || "类型未提供" }));
   await Promise.all([loadManagerProfiles(), loadManagerDetails(manager.id)]).catch(error => showToast(`经理详情加载失败：${error.message}`));
@@ -1064,7 +1486,16 @@ async function renderProfile() {
   setText("profile-academic", academic || "学术背景待补采；不使用推测内容。 ");
   renderProfileStats(manager, profile);
   renderProfileFunds();
+  syncPeriodTabs("radar-periods", state.profile.period);
   renderProfileRadar();
+}
+
+function renderProfilePreferenceActions() {
+  const root = document.getElementById("profile-preference-actions");
+  if (!root) return;
+  root.replaceChildren();
+  const manager = state.managers?.find(item => item.id === state.profile.primaryId);
+  if (manager) root.append(renderManagerPreferenceControls(manager));
 }
 
 function renderProfileStats(manager, profile) {
@@ -1157,8 +1588,8 @@ function radarWindow(manager, period) {
   return { values: result, reason: null };
 }
 
-function drawRadar(primary, primaryRadar, compare, compareRadar) {
-  const svg = document.getElementById("manager-radar");
+function drawRadar(primary, primaryRadar, compare, compareRadar, targets = {}) {
+  const svg = document.getElementById(targets.svgId || "manager-radar");
   svg.replaceChildren();
   const center = { x: 320, y: 215 }, radius = 155;
   for (let level = 1; level <= 5; level += 1) {
@@ -1172,7 +1603,7 @@ function drawRadar(primary, primaryRadar, compare, compareRadar) {
     label.textContent = axis.label;
     svg.append(label);
   });
-  const status = document.getElementById("radar-status");
+  const status = document.getElementById(targets.statusId || "radar-status");
   status.classList.remove("error");
   if (primaryRadar.values) appendRadarShape(svg, primaryRadar.values, center, radius, "primary", primary.name);
   if (compare && compareRadar?.values) appendRadarShape(svg, compareRadar.values, center, radius, "compare", compare.name);
@@ -1183,7 +1614,7 @@ function drawRadar(primary, primaryRadar, compare, compareRadar) {
     status.textContent = `${compare.name}：${compareRadar?.reason || "该窗口不可比"}`;
     status.classList.add("error");
   } else status.textContent = "分位分数越接近100，代表在当前可比样本中相对表现越强。";
-  renderRadarLegend(primary, primaryRadar, compare, compareRadar);
+  renderRadarLegend(primary, primaryRadar, compare, compareRadar, targets.legendId || "radar-legend", targets.allowRemoveCompare !== false);
 }
 
 function appendRadarShape(svg, values, center, radius, kind, name) {
@@ -1198,15 +1629,16 @@ function appendRadarShape(svg, values, center, radius, kind, name) {
   });
 }
 
-function renderRadarLegend(primary, primaryRadar, compare, compareRadar) {
-  const root = document.getElementById("radar-legend");
+function renderRadarLegend(primary, primaryRadar, compare, compareRadar, rootId = "radar-legend", allowRemoveCompare = true) {
+  const root = document.getElementById(rootId);
   root.replaceChildren();
   [
     { manager: primary, radar: primaryRadar, compare: false },
     ...(compare ? [{ manager: compare, radar: compareRadar, compare: true }] : [])
   ].forEach(item => {
     const heading = el("div", { class: `legend-manager${item.compare ? " compare" : ""}` });
-    heading.append(el("span", { class: "legend-swatch" }), el("div", {}, el("strong", { text: item.manager.name }), el("small", { text: `ID ${item.manager.id} · ${item.manager.company || "公司未提供"}` })));
+    const managerLabel = rootId === "manager-preview-legend" ? el("strong", { text: item.manager.name }) : managerNameButton(item.manager);
+    heading.append(el("span", { class: "legend-swatch" }), el("div", {}, managerLabel, el("small", { text: `ID ${item.manager.id} · ${item.manager.company || "公司未提供"}` })));
     root.append(heading);
     if (item.radar?.values) {
       const list = el("ul", { class: "radar-metrics" });
@@ -1214,11 +1646,316 @@ function renderRadarLegend(primary, primaryRadar, compare, compareRadar) {
       root.append(list);
     } else root.append(el("p", { class: "missing", text: item.radar?.reason || "暂无可比数据" }));
   });
-  if (compare) {
+  if (compare && allowRemoveCompare) {
     const remove = el("button", { type: "button", class: "secondary-button", text: "移除对比经理" });
     remove.addEventListener("click", () => { state.profile.compareId = null; document.getElementById("compare-manager-search").value = ""; renderProfileRadar(); });
     root.append(remove);
   }
+}
+
+function renderHoldings() {
+  renderHoldingsFavorites();
+  renderHoldingsManagerOptions();
+  renderSelectedManagers();
+  renderHoldingsAnalysis();
+}
+
+function holdingsFundRows() {
+  return Array.isArray(state.holdings?.funds) ? state.holdings.funds : [];
+}
+
+function renderHoldingsFavorites() {
+  const root = document.getElementById("holdings-favorites");
+  if (!root) return;
+  root.replaceChildren(el("span", { class: "mini-label", text: "收藏经理" }));
+  const favorites = (state.managers || []).filter(manager => preferenceFor(manager.id).favorite);
+  if (!favorites.length) return root.append(el("span", { class: "missing", text: "暂无收藏，可在经理姓名旁点击星标" }));
+  favorites.slice(0, 12).forEach(manager => {
+    const shortcut = el("span", { class: "favorite-shortcut", title: `${manager.name} · ${manager.id}` });
+    const add = el("button", { type: "button", class: "favorite-add", text: "+", "aria-label": `添加${manager.name}到持仓分析` });
+    add.addEventListener("click", () => addHoldingsManager(manager.id));
+    shortcut.append(el("span", { class: "favorite-glyph", "aria-hidden": "true", text: "⭐" }), managerNameButton(manager), add);
+    root.append(shortcut);
+  });
+}
+
+function renderHoldingsManagerOptions() {
+  const root = document.getElementById("holdings-manager-options");
+  if (!root || !state.managers) return;
+  root.replaceChildren();
+  const needle = normalizeSearch(state.holdingsView.query);
+  const selected = new Set(state.holdingsView.selectedIds);
+  const managers = state.managers.filter(manager => !needle || normalizeSearch([manager.name, manager.id, manager.company].join(" ")).includes(needle)).slice(0, 50);
+  managers.forEach(manager => {
+    const row = el("div", { class: "holdings-manager-option" });
+    const identity = el("div", {}, managerNameButton(manager), el("small", { text: `${manager.id} · ${manager.company || "公司未提供"}` }));
+    const add = el("button", { type: "button", class: "secondary-button", text: selected.has(manager.id) ? "已添加" : "添加", disabled: selected.has(manager.id) });
+    add.addEventListener("click", () => addHoldingsManager(manager.id));
+    row.append(identity, renderManagerPreferenceControls(manager, true), add);
+    root.append(row);
+  });
+  if (!managers.length) root.append(el("p", { class: "missing", text: "没有匹配的基金经理" }));
+}
+
+function addHoldingsManager(managerId) {
+  if (!state.holdingsView.selectedIds.includes(managerId)) state.holdingsView.selectedIds.push(managerId);
+  if (state.holdingsView.selectedIds.length > 10) showToast("已选择超过10位经理，矩阵仍可计算，但横向阅读会变得困难。");
+  renderHoldings();
+}
+
+function removeHoldingsManager(managerId) {
+  state.holdingsView.selectedIds = state.holdingsView.selectedIds.filter(id => id !== managerId);
+  state.holdingsView.selectedStock = null;
+  renderHoldings();
+}
+
+function renderSelectedManagers() {
+  const root = document.getElementById("holdings-selected-managers");
+  root.replaceChildren();
+  const selected = selectedHoldingManagers();
+  if (!selected.length) return root.append(el("span", { class: "missing", text: "尚未选择基金经理" }));
+  selected.forEach(manager => {
+    const chip = el("span", { class: "selected-manager-chip" });
+    chip.append(managerNameButton(manager), el("small", { text: manager.id }), renderManagerPreferenceControls(manager, true));
+    const remove = el("button", { type: "button", class: "chip-remove", text: "×", "aria-label": `移除${manager.name}` });
+    remove.addEventListener("click", () => removeHoldingsManager(manager.id));
+    chip.append(remove);
+    root.append(chip);
+  });
+}
+
+function selectedHoldingManagers() {
+  const map = new Map((state.managers || []).map(manager => [manager.id, manager]));
+  return state.holdingsView.selectedIds.map(id => map.get(id)).filter(Boolean);
+}
+
+function includedHoldingFunds() {
+  const selected = new Set(state.holdingsView.selectedIds);
+  const filtered = holdingsFundRows().filter(fund => {
+    if (!arrayValue(fund.manager_ids).some(id => selected.has(String(id)))) return false;
+    if (state.holdingsView.relation !== "all" && fund.relationship !== state.holdingsView.relation) return false;
+    if (state.holdingsView.fundType !== "all" && normalizeFundType(fund.fund_type) !== state.holdingsView.fundType) return false;
+    return true;
+  });
+  if (state.holdingsView.periodMode !== "latest") return filtered;
+  const latest = filtered.map(fund => fund.report_date).filter(Boolean).sort().at(-1);
+  return latest ? filtered.filter(fund => fund.status !== "available" || fund.report_date === latest) : filtered;
+}
+
+function buildHoldingsAnalysis() {
+  const managers = selectedHoldingManagers();
+  const includedFunds = includedHoldingFunds();
+  const byManager = new Map();
+  managers.forEach(manager => byManager.set(manager.id, { manager, funds: [], validFunds: [], missingFunds: [], stocks: new Map() }));
+  includedFunds.forEach(fund => {
+    arrayValue(fund.manager_ids).filter(id => byManager.has(String(id))).forEach(managerId => {
+      const bucket = byManager.get(String(managerId));
+      bucket.funds.push(fund);
+      const holdings = Array.isArray(fund.holdings) ? fund.holdings : [];
+      if (fund.status === "available" && holdings.length) bucket.validFunds.push(fund); else bucket.missingFunds.push(fund);
+    });
+  });
+  byManager.forEach(bucket => {
+    bucket.validFunds.forEach(fund => {
+      fund.holdings.forEach(holding => {
+        const code = stringValue(holding.security_code);
+        if (!code) return;
+        if (!bucket.stocks.has(code)) bucket.stocks.set(code, { code, name: stringValue(holding.security_name), weightSum: 0, fundCount: 0, details: [] });
+        const stock = bucket.stocks.get(code);
+        const weight = finite(holding.weight) || 0;
+        stock.weightSum += weight;
+        stock.fundCount += 1;
+        stock.details.push({ managerId: bucket.manager.id, managerName: bucket.manager.name, fundId: fund.fund_id, fundName: fund.fund_name, relationship: fund.relationship, reportDate: fund.report_date, weight });
+      });
+    });
+    bucket.stocks.forEach(stock => { stock.averageWeight = bucket.validFunds.length ? stock.weightSum / bucket.validFunds.length : 0; });
+  });
+  const aggregate = new Map();
+  byManager.forEach(bucket => bucket.stocks.forEach(stock => {
+    if (!aggregate.has(stock.code)) aggregate.set(stock.code, { code: stock.code, name: stock.name, managers: new Map(), details: [], averageWeightSum: 0 });
+    const target = aggregate.get(stock.code);
+    target.managers.set(bucket.manager.id, stock);
+    target.details.push(...stock.details);
+    target.averageWeightSum += stock.averageWeight;
+  }));
+  const managerCount = managers.length;
+  const minimum = managerCount <= 1 ? 1 : state.holdingsView.minOverlap === "all" ? managerCount : Math.max(2, Number(state.holdingsView.minOverlap) || 2);
+  const stockNeedle = normalizeSearch(state.holdingsView.stockQuery);
+  const minWeight = Math.max(0, Number(state.holdingsView.minWeight) || 0) / 100;
+  const stocks = [...aggregate.values()].map(stock => ({ ...stock, holderCount: stock.managers.size, coverage: managerCount ? stock.managers.size / managerCount : 0 }))
+    .filter(stock => stock.holderCount >= minimum)
+    .filter(stock => !stockNeedle || normalizeSearch(`${stock.code}${stock.name}`).includes(stockNeedle))
+    .filter(stock => stock.averageWeightSum >= minWeight)
+    .sort((a, b) => b.holderCount - a.holderCount || b.averageWeightSum - a.averageWeightSum || a.code.localeCompare(b.code));
+  return { managers, includedFunds, byManager, stocks, minimum };
+}
+
+function renderHoldingsAnalysis() {
+  if (!state.holdings) return;
+  const analysis = buildHoldingsAnalysis();
+  state.holdingsView.rows = analysis.stocks;
+  const uniqueCovered = new Set();
+  const uniqueMissing = new Set();
+  analysis.byManager.forEach(bucket => { bucket.validFunds.forEach(fund => uniqueCovered.add(fund.fund_id)); bucket.missingFunds.forEach(fund => uniqueMissing.add(fund.fund_id)); });
+  setText("holdings-kpi-intersections", formatInteger(analysis.stocks.length));
+  setText("holdings-kpi-max-overlap", formatInteger(analysis.stocks.reduce((max, stock) => Math.max(max, stock.holderCount), 0)));
+  setText("holdings-kpi-covered", formatInteger(uniqueCovered.size));
+  setText("holdings-kpi-missing", formatInteger(uniqueMissing.size));
+  renderHoldingsWarnings(analysis);
+  renderHoldingFundGroups(analysis);
+  renderHoldingsMatrix(analysis);
+  if (state.holdingsView.selectedStock) renderHoldingDrilldown(state.holdingsView.selectedStock, analysis);
+}
+
+function renderHoldingsWarnings(analysis) {
+  const root = document.getElementById("holdings-alert");
+  const reportDates = new Set(analysis.includedFunds.filter(fund => fund.status === "available").map(fund => fund.report_date).filter(Boolean));
+  const messages = [];
+  if (!analysis.managers.length) messages.push("请先添加至少一位基金经理。");
+  if (analysis.managers.length > 10) messages.push("已选择超过10位经理，矩阵可能需要较多横向滚动。");
+  if (reportDates.size > 1) messages.push(`混合报告期：${[...reportDates].sort().join("、")}。比较时请注意披露时点不同。`);
+  root.hidden = !messages.length;
+  root.textContent = messages.join(" ");
+}
+
+function renderHoldingFundGroups(analysis) {
+  const root = document.getElementById("holdings-fund-groups");
+  root.replaceChildren();
+  if (!analysis.managers.length) return root.append(el("p", { class: "missing", text: "选择经理后显示当前管理基金。" }));
+  analysis.byManager.forEach(bucket => {
+    const group = el("section", { class: "manager-fund-group" });
+    group.append(el("h3", {}, managerNameButton(bucket.manager), el("small", { text: `${bucket.validFunds.length}只有效，${bucket.missingFunds.length}只缺失` })));
+    const list = el("div", { class: "fund-pill-list" });
+    bucket.funds.forEach(fund => {
+      const status = fund.status === "available" ? `${fund.report_date}` : "暂无有效持仓";
+      const pill = el("span", { class: `fund-pill ${fund.relationship}` }, fundNameButton(fund), el("small", { text: `${fund.fund_code} · ${fund.relationship === "solo" ? "单人" : "共同"} · ${status}` }));
+      list.append(pill);
+    });
+    if (!bucket.funds.length) list.append(el("span", { class: "missing", text: "当前筛选下没有纳入基金" }));
+    group.append(list);
+    root.append(group);
+  });
+}
+
+function renderHoldingsMatrix(analysis) {
+  const table = document.getElementById("holdings-matrix");
+  table.replaceChildren();
+  const head = el("thead");
+  const headRow = el("tr");
+  headRow.append(el("th", { text: "股票" }), el("th", { text: "共同持仓" }));
+  analysis.managers.forEach(manager => headRow.append(el("th", {}, managerNameButton(manager), el("small", { class: "manager-id", text: manager.id }))));
+  head.append(headRow);
+  const body = el("tbody");
+  if (!analysis.stocks.length) {
+    body.append(el("tr", { class: "table-message" }, el("td", { colSpan: analysis.managers.length + 2 }, el("strong", { text: analysis.managers.length ? "没有符合条件的股票" : "尚未选择基金经理" }), el("span", { text: analysis.managers.length === 1 ? "一位经理时会显示其全部前十大持仓。" : "至少两位经理持有即可进入共同持股结果；可降低门槛或调整筛选。" }))));
+  }
+  analysis.stocks.forEach(stock => {
+    const row = el("tr", { class: "holding-stock-row" });
+    const stockButton = el("button", { type: "button", class: "stock-link" }, el("strong", { text: stock.name }), el("small", { text: stock.code }));
+    stockButton.addEventListener("click", () => { state.holdingsView.selectedStock = stock.code; renderHoldingDrilldown(stock.code, analysis); });
+    row.append(el("td", {}, stockButton));
+    row.append(el("td", { class: "overlap-cell" }, el("strong", { text: `${stock.holderCount}/${analysis.managers.length}位` }), el("small", { text: `覆盖${(stock.coverage * 100).toFixed(0)}%` })));
+    analysis.managers.forEach(manager => {
+      const value = stock.managers.get(manager.id);
+      const cell = el("td", { class: value ? "holding-value" : "holding-empty" });
+      if (value) cell.append(el("strong", { text: formatPercent(value.averageWeight * 100) }), el("small", { text: `${value.fundCount}只基金持有` }));
+      row.append(cell);
+    });
+    body.append(row);
+  });
+  table.append(head, body);
+  setText("holdings-result-note", analysis.managers.length === 1 ? "单经理模式：显示全部前十大持仓，不标记跨经理交集。" : `当前门槛：至少${analysis.minimum}位经理持有；按共同经理数和平均权重合计排序。`);
+}
+
+function renderHoldingDrilldown(stockCode, analysis) {
+  const stock = analysis.stocks.find(item => item.code === stockCode);
+  const section = document.getElementById("holding-drilldown");
+  if (!stock) { section.hidden = true; return; }
+  section.hidden = false;
+  setText("holding-drilldown-title", `${stock.name} · ${stock.code}`);
+  setText("holding-drilldown-summary", `${stock.holderCount}/${analysis.managers.length}位经理持有，覆盖${(stock.coverage * 100).toFixed(0)}%。以下为披露基金、报告期和实际权重。`);
+  const head = document.getElementById("holding-detail-head");
+  head.replaceChildren(el("tr", {}, ...["基金经理", "基金", "管理关系", "报告期", "实际权重"].map(label => el("th", { text: label }))));
+  const body = document.getElementById("holding-detail-body");
+  body.replaceChildren();
+  stock.details.sort((a, b) => b.weight - a.weight).forEach(detail => body.append(el("tr", {}, el("td", {}, managerNameButton({ id: detail.managerId, name: detail.managerName }), el("small", { class: "manager-id", text: detail.managerId })), el("td", {}, fundNameButton({ id: detail.fundId, code: detail.fundId, name: detail.fundName })), el("td", { text: detail.relationship === "solo" ? "当前单人" : "当前共同" }), el("td", { text: detail.reportDate || "未提供" }), el("td", { class: "numeric", text: formatPercent(detail.weight * 100) }))));
+  section.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderGuide() {
+  const root = document.getElementById("guide-content");
+  if (!root || !state.guide) return;
+  root.replaceChildren();
+  const tab = state.guideView.tab;
+  if (tab === "indicators") return renderGuideCards(root, state.guide.indicators || [], "指标定义");
+  if (tab === "data_notes") return renderGuideNotes(root, state.guide.data_notes || []);
+  if (tab === "formulas") return renderGuideFormulaTable(root, state.guide.formulas || []);
+  renderGuideScoring(root, state.guide.scoring || {});
+}
+
+function renderGuideCards(root, rows, title) {
+  const groups = new Map();
+  rows.forEach(row => { const key = row.category || "其他"; if (!groups.has(key)) groups.set(key, []); groups.get(key).push(row); });
+  groups.forEach((items, group) => {
+    const section = el("section", { class: "guide-section" });
+    section.append(el("h2", { text: group }));
+    const grid = el("div", { class: "definition-grid" });
+    items.forEach(item => grid.append(el("article", { class: "definition-card" }, el("div", { class: "definition-head" }, el("h3", { text: item.name }), el("span", { text: item.direction || "中性" })), el("p", { text: item.plain_language || "说明待补充" }), el("small", { text: `适用维度：${item.dimension || "未说明"} · ${item.status || "状态未说明"}` }))));
+    section.append(grid); root.append(section);
+  });
+  if (!rows.length) root.append(el("p", { class: "missing", text: `${title}尚未生成` }));
+}
+
+function renderGuideNotes(root, rows) {
+  const grid = el("div", { class: "data-note-grid" });
+  rows.forEach((item, index) => {
+    grid.append(el("article", { class: "data-note" }, el("span", { text: String(index + 1).padStart(2, "0") }), el("div", {}, el("h2", { text: item.topic }), el("p", { text: item.summary }))));
+  });
+  root.append(grid);
+}
+
+function renderGuideFormulaTable(root, rows) {
+  const search = el("label", { class: "search-box guide-search" }, icon("i-search"), el("input", { type: "search", placeholder: "搜索指标、公式或来源" }));
+  const shell = el("div", { class: "table-shell" });
+  const scroll = el("div", { class: "table-scroll" });
+  const table = el("table");
+  const head = el("thead", {}, el("tr", {}, ...["分类", "指标", "性质", "适用维度", "公式或逻辑", "数据来源", "归因范围"].map(label => el("th", { text: label }))));
+  const body = el("tbody");
+  const draw = query => {
+    body.replaceChildren();
+    const needle = normalizeSearch(query);
+    rows.filter(row => !needle || normalizeSearch(Object.values(row).join(" ")).includes(needle)).forEach(row => body.append(el("tr", {}, el("td", { text: row.category }), el("td", { text: row.name }), el("td", {}, el("span", { class: `source-badge ${row.nature === "计算生成" ? "computed" : "direct"}`, text: row.nature })), el("td", { text: row.dimension }), el("td", { text: row.logic }), el("td", { text: row.source }), el("td", { text: row.attribution }))));
+  };
+  search.querySelector("input").addEventListener("input", event => draw(event.target.value));
+  draw(""); table.append(head, body); scroll.append(table); shell.append(scroll); root.append(search, shell);
+}
+
+function renderGuideScoring(root, scoring) {
+  const flow = el("div", { class: "score-flow" });
+  (scoring.flow || []).forEach((step, index) => { flow.append(el("div", { class: "score-flow-step" }, el("span", { text: String(index + 1) }), el("strong", { text: step }))); if (index < scoring.flow.length - 1) flow.append(el("b", { class: "flow-arrow", text: "→" })); });
+  root.append(flow);
+  const components = el("div", { class: "score-component-grid" });
+  (scoring.components || []).forEach(component => {
+    const card = el("article", { class: `score-component ${component.key}` }, el("div", { class: "score-component-title" }, icon(`i-${component.key === "composite" ? "composite" : component.key}`), el("div", {}, el("h2", { text: component.name }), el("strong", { text: `占正式总分${(component.weight * 100).toFixed(0)}%` }))));
+    const list = el("ul");
+    component.metrics.forEach(metric => list.append(el("li", {}, el("span", { text: metric.name }), el("b", { text: `${(metric.weight * 100).toFixed(0)}%` }))));
+    card.append(list); components.append(card);
+  });
+  root.append(components);
+  const lower = el("div", { class: "scoring-lower" });
+  const gates = el("section", { class: "guide-section gates" }, el("h2", { text: "固定资格与防守门槛" }), el("p", { text: "权重可以试算，下面这些条件不能绕过。" }));
+  const gateList = el("div", { class: "gate-list" });
+  (scoring.eligibility || []).forEach(item => {
+    gateList.append(el("div", {}, icon("i-defense"), el("span", {}, el("strong", { text: item.name }), el("small", { text: item.rule }))));
+  });
+  gates.append(gateList);
+  const example = scoring.example || {};
+  const exampleCard = el("section", { class: "guide-section example" }, el("h2", { text: "简单算例" }), el("p", { text: `假设进攻${example.offense ?? 80}分、防守${example.defense ?? 70}分、综合${example.composite ?? 60}分。` }), el("div", { class: "formula-line", text: `${example.calculation || "80×40% + 70×30% + 60×30%"} = ${example.total ?? 71}分` }), el("p", { text: scoring.trial_note || "试算权重只改变试算排序。" }));
+  lower.append(gates, exampleCard); root.append(lower);
+  const ratings = el("section", { class: "guide-section ratings" }, el("h2", { text: "ABCD评级" }));
+  const ratingGrid = el("div", { class: "rating-grid" });
+  (scoring.ratings || []).forEach(item => ratingGrid.append(el("div", {}, el("strong", { text: item.rating }), el("span", { text: item.range }))));
+  ratings.append(ratingGrid); root.append(ratings);
 }
 
 async function loadCustomReturns() {
@@ -1266,8 +2003,7 @@ function exportCurrent(scope) {
   } else {
     columns = SCORE_COLUMNS;
     const built = buildScoreRecords(state.managers);
-    const allowed = new Set(filterManagers(state.managers, state.score.query, state.score.filters).map(item => item.id));
-    records = built.filter(item => allowed.has(item.manager.id));
+    records = filterScoreRecords(built, state.score.query, state.score.filters);
     value = scoreValue; filename = "基金经理评分_试算结果.csv";
   }
   const lines = [columns.map(column => csvCell(column.label)).join(",")];
@@ -1292,10 +2028,13 @@ function csvCell(value) {
 function showViewError(view, error) {
   const map = { funds: ["fund-table-body", 12], kpi: ["kpi-table-body", state.kpi.columns.length], score: ["score-table-body", SCORE_COLUMNS.length] };
   if (map[view]) renderTableMessage(map[view][0], map[view][1], "数据加载失败", error.message);
-  else {
+  else if (view === "profile") {
     document.getElementById("profile-empty").hidden = false;
     document.getElementById("profile-empty").querySelector("h2").textContent = "基金经理数据加载失败";
     document.getElementById("profile-empty").querySelector("p").textContent = error.message;
+  } else {
+    const target = document.getElementById(view === "holdings" ? "holdings-alert" : "guide-content");
+    if (target) { target.hidden = false; target.replaceChildren(el("p", { class: "error", text: `数据加载失败：${error.message}` })); }
   }
 }
 

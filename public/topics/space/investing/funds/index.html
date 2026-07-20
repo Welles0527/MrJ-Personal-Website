@@ -3,12 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>
+    if (location.protocol !== "file:" && /\/funds$/.test(location.pathname)) {
+      location.replace(`${location.pathname}/${location.search}${location.hash}`);
+    }
+  </script>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23f48120'/%3E%3Cpath d='M8 21h4V11H8zm6 0h4V7h-4zm6 0h4V14h-4z' fill='white'/%3E%3C/svg%3E">
   <meta name="color-scheme" content="dark light">
   <meta name="description" content="中国主动权益基金与基金经理研究看板">
   <title>主动权益研究终端</title>
-  <link rel="stylesheet" href="./app.css?v=20260719b">
-  <script src="./app.js?v=20260719b" defer></script>
+  <link rel="stylesheet" href="./app.css?v=20260720v4">
+  <script src="./fund-preferences-cloud.js?v=20260720v3" defer></script>
+  <script src="./app.js?v=20260720v4" defer></script>
 </head>
 <body>
   <svg class="svg-defs" aria-hidden="true">
@@ -16,6 +22,9 @@
     <symbol id="i-kpi" viewBox="0 0 24 24"><path d="M4 17l5-5 4 3 7-8M4 5v14h16"/></symbol>
     <symbol id="i-score" viewBox="0 0 24 24"><path d="M12 3l2.6 5.3 5.9.9-4.2 4.1 1 5.8-5.3-2.8-5.3 2.8 1-5.8-4.2-4.1 5.9-.9L12 3z"/></symbol>
     <symbol id="i-profile" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c.7-5 3.4-7 8-7s7.3 2 8 7"/></symbol>
+    <symbol id="i-holdings" viewBox="0 0 24 24"><path d="M4 20V9m6 11V4m5 16v-7m5 7V7M2 20h20"/><circle cx="4" cy="9" r="1.5"/><circle cx="10" cy="4" r="1.5"/><circle cx="15" cy="13" r="1.5"/><circle cx="20" cy="7" r="1.5"/></symbol>
+    <symbol id="i-guide" viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5zM8 9h8M8 13h8M8 17h5"/><path d="M16 3v4h4"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3l2.7 5.5 6 .9-4.4 4.2 1 6-5.3-2.8-5.3 2.8 1-6-4.4-4.2 6-.9L12 3z"/></symbol>
     <symbol id="i-base" viewBox="0 0 24 24"><path d="M4 20V8l8-5 8 5v12M8 20v-7h8v7M2 20h20"/></symbol>
     <symbol id="i-offense" viewBox="0 0 24 24"><path d="M4 17l5-5 4 3 7-8M15 7h5v5"/></symbol>
     <symbol id="i-defense" viewBox="0 0 24 24"><path d="M12 3l8 3v5c0 5-3.2 8.5-8 10-4.8-1.5-8-5-8-10V6l8-3zM8 12l2.5 2.5L16 9"/></symbol>
@@ -38,6 +47,8 @@
       <button class="dashboard-tab kpi" data-view="kpi"><svg><use href="#i-kpi"/></svg><span>基金经理KPI<small>经理客观指标</small></span></button>
       <button class="dashboard-tab score" data-view="score"><svg><use href="#i-score"/></svg><span>基金经理打分排行<small>风险偏好试算</small></span></button>
       <button class="dashboard-tab profile" data-view="profile"><svg><use href="#i-profile"/></svg><span>单个基金经理全数据<small>履历与对比</small></span></button>
+      <button class="dashboard-tab holdings" data-view="holdings"><svg><use href="#i-holdings"/></svg><span>持仓分析<small>经理共同持股</small></span></button>
+      <button class="dashboard-tab guide" data-view="guide"><svg><use href="#i-guide"/></svg><span>网站说明<small>口径与打分逻辑</small></span></button>
     </nav>
     <div class="header-actions">
       <span class="freshness" id="data-freshness">数据待载入</span>
@@ -160,7 +171,7 @@
       <div class="profile-empty" id="profile-empty"><svg><use href="#i-profile"/></svg><h2>先选择一位基金经理</h2><p>选择后展示个人简介、管理基金、六维能力与经理对比。</p></div>
       <div class="profile-content" id="profile-content" hidden>
         <section class="profile-summary" aria-labelledby="profile-summary-title">
-          <div class="identity-block"><span class="manager-monogram" id="profile-monogram"></span><div><p>东方财富基金经理</p><h2 id="profile-summary-title"></h2><div class="identity-meta" id="profile-identity-meta"></div></div></div>
+          <div class="identity-block"><span class="manager-monogram" id="profile-monogram"></span><div><p>东方财富基金经理</p><div class="identity-title-row"><h2 id="profile-summary-title"></h2><div id="profile-preference-actions"></div></div><div class="identity-meta" id="profile-identity-meta"></div></div></div>
           <dl class="profile-stats" id="profile-stats"></dl>
           <div class="biography"><h3>个人简介</h3><p id="profile-biography"></p><details><summary>学术背景与能力圈</summary><p id="profile-academic"></p></details></div>
         </section>
@@ -176,6 +187,56 @@
           <div class="table-shell"><div class="table-scroll"><table><thead id="profile-fund-table-head"></thead><tbody id="profile-fund-table-body"></tbody></table></div><div class="table-footer" id="profile-fund-table-footer"></div></div>
         </section>
       </div>
+    </section>
+
+    <section class="view" id="view-holdings" data-view-panel="holdings" aria-labelledby="holdings-title" hidden>
+      <div class="holdings-hero">
+        <div><span class="eyebrow">经理组合透视</span><h1 id="holdings-title">持仓分析</h1><p>添加基金经理，查看其当前管理基金的前十大持仓，以及任意两位以上经理的共同持股。</p></div>
+        <div class="sync-state" id="preference-sync-state">收藏保存在本机</div>
+      </div>
+      <div class="holdings-layout">
+        <aside class="holdings-selector">
+          <div class="panel-heading"><div><h2>添加基金经理</h2><p>始终按东方财富经理ID区分同名经理。</p></div></div>
+          <label class="search-box"><svg><use href="#i-search"/></svg><input id="holdings-manager-search" type="search" placeholder="搜索姓名、ID或公司"></label>
+          <div class="favorite-shortcuts" id="holdings-favorites"></div>
+          <div class="holdings-manager-options" id="holdings-manager-options"></div>
+        </aside>
+        <div class="holdings-main">
+          <div class="selected-managers" id="holdings-selected-managers"><span class="missing">尚未选择基金经理</span></div>
+          <div class="holdings-toolbar">
+            <label>管理关系<select id="holdings-relation"><option value="all">全部</option><option value="solo">仅单人</option><option value="joint">仅共同管理</option></select></label>
+            <label>基金类型<select id="holdings-fund-type"><option value="all">全部</option><option value="股票型">股票型</option><option value="偏股混合型">偏股型</option></select></label>
+            <label>报告期一致性<select id="holdings-period-mode"><option value="all">允许混合报告期</option><option value="latest">仅最新报告期</option></select></label>
+            <label>最低共同经理数<select id="holdings-min-overlap"><option value="2">至少2位</option><option value="3">至少3位</option><option value="4">至少4位</option><option value="all">全部已选经理</option></select></label>
+            <label>最低平均权重<input id="holdings-min-weight" type="number" min="0" max="100" step="0.1" value="0">%</label>
+            <label class="search-box stock-search"><svg><use href="#i-search"/></svg><input id="holdings-stock-search" type="search" placeholder="搜索股票代码或名称"></label>
+          </div>
+          <div class="holdings-alert" id="holdings-alert" hidden></div>
+          <div class="status-strip holdings-kpis">
+            <div><span>共同持股</span><strong id="holdings-kpi-intersections">0</strong><small>满足当前人数门槛</small></div>
+            <div><span>最高重合</span><strong id="holdings-kpi-max-overlap">0</strong><small>共同持仓经理数</small></div>
+            <div><span>持仓覆盖基金</span><strong id="holdings-kpi-covered">0</strong><small>进入权重分母</small></div>
+            <div><span>缺失基金</span><strong id="holdings-kpi-missing">0</strong><small>不进入权重分母</small></div>
+          </div>
+          <section class="manager-fund-strip" aria-labelledby="holdings-funds-title"><div class="panel-heading"><div><h2 id="holdings-funds-title">纳入基金</h2><p>按经理分组；单人和共同管理清楚标记。</p></div></div><div id="holdings-fund-groups"></div></section>
+          <section class="holdings-matrix-section" aria-labelledby="holdings-matrix-title">
+            <div class="panel-heading"><div><h2 id="holdings-matrix-title">共同持股矩阵</h2><p>平均权重按经理全部有效纳入基金计算，未进入某只基金前十大按0计算。</p></div><span id="holdings-result-note" class="inline-status"></span></div>
+            <div class="table-shell"><div class="table-scroll holdings-matrix-scroll"><table id="holdings-matrix"></table></div></div>
+          </section>
+          <section class="holding-drilldown" id="holding-drilldown" hidden aria-labelledby="holding-drilldown-title"><div class="panel-heading"><div><h2 id="holding-drilldown-title">股票持仓明细</h2><p id="holding-drilldown-summary"></p></div><button type="button" class="secondary-button" id="holding-drilldown-close">关闭</button></div><div class="table-shell"><div class="table-scroll"><table><thead id="holding-detail-head"></thead><tbody id="holding-detail-body"></tbody></table></div></div></section>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-guide" data-view-panel="guide" aria-labelledby="guide-title" hidden>
+      <div class="guide-hero"><span class="eyebrow">口径可追溯</span><h1 id="guide-title">网站说明</h1><p>网页以当前配置、计算代码和数据清单为准；参考Excel中的过期表述不会覆盖现行规则。</p></div>
+      <div class="guide-tabs" id="guide-tabs" role="tablist" aria-label="网站说明章节">
+        <button class="active" data-guide-tab="indicators" role="tab">指标定义</button>
+        <button data-guide-tab="data_notes" role="tab">数据说明</button>
+        <button data-guide-tab="formulas" role="tab">指标公式与来源</button>
+        <button data-guide-tab="scoring" role="tab">打分逻辑</button>
+      </div>
+      <div class="guide-content" id="guide-content"></div>
     </section>
   </main>
 
@@ -194,6 +255,47 @@
       <div class="manager-combobox" data-combobox="compare"><label for="compare-manager-search">对比经理</label><div class="search-box"><svg><use href="#i-search"/></svg><input id="compare-manager-search" type="search" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="compare-manager-options" placeholder="输入姓名、ID或公司"></div><div class="combobox-options" id="compare-manager-options" role="listbox" hidden></div></div>
       <p class="inline-status">对比只使用同一时间维度且可比的指标。</p>
     </form>
+  </dialog>
+
+  <dialog class="preference-dialog" id="preference-dialog">
+    <form method="dialog" class="dialog-shell small">
+      <div class="dialog-heading"><div><h2 id="preference-dialog-title">基金经理标记</h2><p>收藏与能力图标仅用于个人整理，不改变指标或评分。</p></div><button value="cancel" aria-label="关闭">×</button></div>
+      <label class="preference-favorite"><input id="preference-favorite" type="checkbox"><span class="favorite-glyph" aria-hidden="true">⭐</span><span>星标收藏</span></label>
+      <fieldset class="preference-tags"><legend>能力属性</legend><label><input type="checkbox" value="offense"><svg><use href="#i-offense"/></svg>进攻</label><label><input type="checkbox" value="defense"><svg><use href="#i-defense"/></svg>防守</label><label><input type="checkbox" value="composite"><svg><use href="#i-composite"/></svg>综合</label></fieldset>
+      <p class="inline-status" id="preference-suggestion"></p>
+      <div class="dialog-actions"><button type="button" class="secondary-button" id="preference-reset">恢复系统建议</button><button value="save" class="primary-button" id="preference-save">保存标记</button></div>
+    </form>
+  </dialog>
+
+  <dialog class="fund-holdings-drawer" id="fund-preview-dialog" aria-labelledby="fund-preview-title">
+    <div class="dialog-shell fund-preview-shell">
+      <div class="dialog-heading">
+        <div><h2 id="fund-preview-title">基金持仓</h2><p id="fund-preview-meta">正在载入最新披露持仓</p></div>
+        <button type="button" id="fund-preview-close" aria-label="关闭基金持仓">×</button>
+      </div>
+      <div class="fund-preview-content" id="fund-preview-content" aria-live="polite">
+        <div class="preview-loading"><strong>正在载入前十大持仓</strong><span>首次打开需要读取持仓数据。</span></div>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="manager-preview-dialog" id="manager-preview-dialog" aria-labelledby="manager-preview-title">
+    <div class="dialog-shell">
+      <div class="dialog-heading">
+        <div><h2 id="manager-preview-title">基金经理雷达图</h2><p id="manager-preview-meta">按东方财富经理ID精确匹配</p></div>
+        <button type="button" id="manager-preview-close" aria-label="关闭基金经理雷达图">×</button>
+      </div>
+      <div class="manager-preview-toolbar">
+        <div class="period-tabs" id="manager-preview-periods" role="group" aria-label="雷达图时间维度">
+          <button data-period="1y">近1年</button><button data-period="2y">近2年</button><button class="active" data-period="3y">近3年</button><button data-period="5y">近5年</button>
+        </div>
+        <button type="button" class="primary-button" id="manager-preview-detail">查看详细</button>
+      </div>
+      <div class="manager-preview-body">
+        <div class="radar-wrap"><svg id="manager-preview-radar" viewBox="0 0 640 430" role="img" aria-labelledby="manager-preview-chart-title manager-preview-chart-desc"><title id="manager-preview-chart-title">基金经理六维能力雷达图</title><desc id="manager-preview-chart-desc">所选基金经理在当前时间窗口的标准化指标</desc></svg><p class="chart-status" id="manager-preview-status"></p></div>
+        <div class="radar-legend" id="manager-preview-legend"></div>
+      </div>
+    </div>
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>

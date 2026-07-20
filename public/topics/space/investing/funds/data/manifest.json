@@ -1,6 +1,6 @@
 {
-  "schema_version": "fund-dashboard-data-v1.1.0",
-  "generated_at": "2026-07-18T19:01:20+00:00",
+  "schema_version": "fund-dashboard-data-v2.0.0",
+  "generated_at": "2026-07-20T05:33:12+00:00",
   "dashboard_enabled": true,
   "capabilities": {
     "custom_returns": true
@@ -10,7 +10,10 @@
     "funds": 3227,
     "managers": 1734,
     "manager_details": 15630,
-    "manager_profiles": 1734
+    "manager_profiles": 1734,
+    "holding_records": 32250,
+    "funds_with_holdings": 3225,
+    "funds_missing_holdings": 2
   },
   "identity_rules": {
     "manager": "eastmoney_manager_id",
@@ -49,6 +52,11 @@
       "name": "outputs/019f652b-3e7c-7ff3-8cf2-b91fedf10b7b/dashboard_analytics/raw/h00300_akshare.json",
       "bytes": 492745,
       "sha256": "7ddcbc8490bd8ca977e5768d1b47396b4e42290a75fbbc12a408f5a2a1267937"
+    },
+    {
+      "name": "fund_manager_metric_definitions.json",
+      "bytes": 8186,
+      "sha256": "a2a772f1b2c2720e64b13c187f523efbe05cb04ab0043dde30f25b3011d09a30"
     }
   ],
   "source_metadata": {
@@ -141,6 +149,27 @@
     "end_date": "2026-07-17",
     "records": 5233
   },
+  "holdings": {
+    "holding_records": 32250,
+    "funds_with_holdings": 3225,
+    "funds_missing_holdings": 2,
+    "report_dates": [
+      "2026-03-31",
+      "2026-06-30"
+    ],
+    "file": "holdings.json",
+    "identity_rule": "security_code; security name is display-only",
+    "manager_weight_rule": "sum of disclosed weights across valid included funds divided by the number of valid included funds; absence from top ten counts as zero"
+  },
+  "guide": {
+    "file": "guide.json",
+    "sections": [
+      "指标定义",
+      "数据说明",
+      "指标公式与来源",
+      "打分逻辑"
+    ]
+  },
   "dashboard_analytics_quality_checks": [
     {
       "check_name": "formal_scores_published",
@@ -232,7 +261,7 @@
         "path": "manager_details_00.json",
         "rows": 1154,
         "bytes": 3588634,
-        "sha256": "837ed1eab79678b96fdd83116db339b91c3452d36b2b9af8950cf748b52ef6f8"
+        "sha256": "09766f4f6356f583144499de98873d23165b117b5c65771c5b3d6cbd6ffd8608"
       },
       {
         "index": 1,
@@ -243,7 +272,7 @@
         "path": "manager_details_01.json",
         "rows": 939,
         "bytes": 2918306,
-        "sha256": "7b21387730c1b0340ddf686c9dd246191e3e1a56ed6aaf11242a3e9244ea96a4"
+        "sha256": "849ab23be06780fac46bd00f54019b57624246d2ab5185774576d65a205bd8c4"
       },
       {
         "index": 2,
@@ -254,7 +283,7 @@
         "path": "manager_details_02.json",
         "rows": 870,
         "bytes": 2696397,
-        "sha256": "8d60b81a5d8ca8c42e8416c7aec62b56425172d1da82aaf2cc3be5af32e2b092"
+        "sha256": "09265e9e1744dfdfcfb42016cd97c1d7d9b18c148d2176d6018961d5ed7e1b18"
       },
       {
         "index": 3,
@@ -265,7 +294,7 @@
         "path": "manager_details_03.json",
         "rows": 980,
         "bytes": 3062605,
-        "sha256": "551e956b1f444a36e565cfc06269afceef16dffe8b4a89689bbdce813bed94cb"
+        "sha256": "9d4ce7c5876ae43a6c9902ba803d9eb70c558266504470553dc52a8bf6168b9d"
       },
       {
         "index": 4,
@@ -276,7 +305,7 @@
         "path": "manager_details_04.json",
         "rows": 1157,
         "bytes": 3607826,
-        "sha256": "951f402c221bb65c510c41bed735813a8a6b023d3faf6874b914bd5ea8afd0d5"
+        "sha256": "cb2ba27a044303471e14b5b60ea30fad346ddb7e4b27d47df15479d982395698"
       },
       {
         "index": 5,
@@ -287,7 +316,7 @@
         "path": "manager_details_05.json",
         "rows": 900,
         "bytes": 2854942,
-        "sha256": "c293cca5ce43ffad02bee1945adf99fb4ec00ec762d89df83aeaaca5adf1c347"
+        "sha256": "e301c22b9a919c4ce76a966f733a0f9c7903b032cec60838ba26a563ab2d3464"
       },
       {
         "index": 6,
@@ -298,7 +327,7 @@
         "path": "manager_details_06.json",
         "rows": 970,
         "bytes": 3066858,
-        "sha256": "66ce5275d01c9837fb68b93b2686574a7b6e9a150826cb9dc88b355a62575f2c"
+        "sha256": "a1347328b12ea19aced41c9a8d3db7d40179cbb20b86bdb484cc756a2a564907"
       },
       {
         "index": 7,
@@ -309,7 +338,7 @@
         "path": "manager_details_07.json",
         "rows": 851,
         "bytes": 2660147,
-        "sha256": "9c06076b9d1adfcc76afe78c4185f055a0ac37ced27ca25cbb3d76e722c83a30"
+        "sha256": "61ff61c27a074cc5f9a99660ef35eca2f013db8e73481deb551d846b03d66a0b"
       },
       {
         "index": 8,
@@ -320,7 +349,7 @@
         "path": "manager_details_08.json",
         "rows": 976,
         "bytes": 3047169,
-        "sha256": "e2b22c9db4cdaa70d5a712aca58f7cf52cb153f42d7b8012fb7a7048a1f24117"
+        "sha256": "81f9b6e89ee558753359ff097e9dcff8386d86ba46c8aee0de8c6df69467d9c3"
       },
       {
         "index": 9,
@@ -331,7 +360,7 @@
         "path": "manager_details_09.json",
         "rows": 1020,
         "bytes": 3236788,
-        "sha256": "10e8adb11158eecb0d97c0b1a9eaadd14b0d954a4321e063b6dd6256e95ec7a6"
+        "sha256": "3907bed0a04bf564aaa5421454b7b08f330a9b1ca61daccdbae813ad1ee63dbe"
       },
       {
         "index": 10,
@@ -342,7 +371,7 @@
         "path": "manager_details_10.json",
         "rows": 1147,
         "bytes": 3570382,
-        "sha256": "49a6744e10018f29e61f1665a2f498061d69b5751b005ac1c53b2a8c44c161f2"
+        "sha256": "d29af9b81704261617d2ff2194c8758f3c472f2c2e5de1c2355381f9550ccebb"
       },
       {
         "index": 11,
@@ -353,7 +382,7 @@
         "path": "manager_details_11.json",
         "rows": 1073,
         "bytes": 3398623,
-        "sha256": "e8567b21586969eb77f750d3c25a91d9d57c84702137cbb4e0eb8dcb0229d368"
+        "sha256": "8737fb69f8d87a369bf6fdf2924284d245da650a12299d5deb474837b1c70715"
       },
       {
         "index": 12,
@@ -364,7 +393,7 @@
         "path": "manager_details_12.json",
         "rows": 918,
         "bytes": 2882784,
-        "sha256": "a23e6e5a48c29936732a9d85acd0f882f7a6b0cd51ba90caac372ac9df6b6fd7"
+        "sha256": "170734c16c4cac8d97cd6d08cb61919d99e77229187d15608bc2077089362d98"
       },
       {
         "index": 13,
@@ -375,7 +404,7 @@
         "path": "manager_details_13.json",
         "rows": 878,
         "bytes": 2841625,
-        "sha256": "4c86847b54203bb0403de2f519493bb742059fe66971bf7bb6e8baad5790b593"
+        "sha256": "b04216b452603aa5cd7114f62dd240f7e72fab73c3ca08c25e10516ed33aec4a"
       },
       {
         "index": 14,
@@ -386,7 +415,7 @@
         "path": "manager_details_14.json",
         "rows": 870,
         "bytes": 2743686,
-        "sha256": "f9a55071df797c9b34ee4f2183fbb397a527bffd066e8dada9cf62a5d873b71f"
+        "sha256": "089b934ba42097350ba3f73ec4d3f40b3ea5ee8a60edee593efaa90b5beecaa3"
       },
       {
         "index": 15,
@@ -397,7 +426,7 @@
         "path": "manager_details_15.json",
         "rows": 927,
         "bytes": 2853098,
-        "sha256": "9d6654e4ad29606fe24c8493c3cb754f8b410ff5773d6b9f43d3e8fb94d24b58"
+        "sha256": "6e6b603ee67e8325c59b344e650f8b99347db6716e033e68fd193c149b20e56a"
       }
     ]
   },
@@ -406,120 +435,133 @@
       "name": "funds.json",
       "rows": 3227,
       "bytes": 10158242,
-      "sha256": "77a17bc715ed30436d63d1e826a0f0af7a7d214e0366bf7885f40c49959a9c28"
+      "sha256": "9dde682cebcf75bd144a0450c463dcf085ed33940c513d8ee832a197297f928b"
     },
     {
       "name": "managers.json",
       "rows": 1734,
       "bytes": 12434181,
-      "sha256": "0e69528d6f6d2361ff6d3fd9dcc80595a1ee1180af97675b9a327500329a8fb9"
+      "sha256": "0917f9ff96ae5d111815478d3371fcf02fd230341e10826d76ed7c322bf475b3"
     },
     {
       "name": "manager_profiles.json",
       "rows": 1734,
       "bytes": 2413565,
-      "sha256": "5393a5bcad86f7841c57f5b1eb024cfb6ecdcf4e393cb53bb6885f8014a49812"
+      "sha256": "fa4a00d7f95e15d045ef4776d6b22bbfab1be125ade6bae11e4f5ff60723ad16"
+    },
+    {
+      "name": "holdings.json",
+      "bytes": 8320673,
+      "sha256": "9067a45dda6d2936fc47c76d6d021e496f7b17c3ca7cdd5bfdd3d215801d72e0",
+      "rows": 3227,
+      "records": 32250
+    },
+    {
+      "name": "guide.json",
+      "bytes": 18453,
+      "sha256": "ad05bde1489072652941cedb0658379b3c53de61a72c797ad89ca68420f7b5be",
+      "rows": 56
     },
     {
       "name": "manager_details_00.json",
       "rows": 1154,
       "bytes": 3588634,
-      "sha256": "837ed1eab79678b96fdd83116db339b91c3452d36b2b9af8950cf748b52ef6f8"
+      "sha256": "09766f4f6356f583144499de98873d23165b117b5c65771c5b3d6cbd6ffd8608"
     },
     {
       "name": "manager_details_01.json",
       "rows": 939,
       "bytes": 2918306,
-      "sha256": "7b21387730c1b0340ddf686c9dd246191e3e1a56ed6aaf11242a3e9244ea96a4"
+      "sha256": "849ab23be06780fac46bd00f54019b57624246d2ab5185774576d65a205bd8c4"
     },
     {
       "name": "manager_details_02.json",
       "rows": 870,
       "bytes": 2696397,
-      "sha256": "8d60b81a5d8ca8c42e8416c7aec62b56425172d1da82aaf2cc3be5af32e2b092"
+      "sha256": "09265e9e1744dfdfcfb42016cd97c1d7d9b18c148d2176d6018961d5ed7e1b18"
     },
     {
       "name": "manager_details_03.json",
       "rows": 980,
       "bytes": 3062605,
-      "sha256": "551e956b1f444a36e565cfc06269afceef16dffe8b4a89689bbdce813bed94cb"
+      "sha256": "9d4ce7c5876ae43a6c9902ba803d9eb70c558266504470553dc52a8bf6168b9d"
     },
     {
       "name": "manager_details_04.json",
       "rows": 1157,
       "bytes": 3607826,
-      "sha256": "951f402c221bb65c510c41bed735813a8a6b023d3faf6874b914bd5ea8afd0d5"
+      "sha256": "cb2ba27a044303471e14b5b60ea30fad346ddb7e4b27d47df15479d982395698"
     },
     {
       "name": "manager_details_05.json",
       "rows": 900,
       "bytes": 2854942,
-      "sha256": "c293cca5ce43ffad02bee1945adf99fb4ec00ec762d89df83aeaaca5adf1c347"
+      "sha256": "e301c22b9a919c4ce76a966f733a0f9c7903b032cec60838ba26a563ab2d3464"
     },
     {
       "name": "manager_details_06.json",
       "rows": 970,
       "bytes": 3066858,
-      "sha256": "66ce5275d01c9837fb68b93b2686574a7b6e9a150826cb9dc88b355a62575f2c"
+      "sha256": "a1347328b12ea19aced41c9a8d3db7d40179cbb20b86bdb484cc756a2a564907"
     },
     {
       "name": "manager_details_07.json",
       "rows": 851,
       "bytes": 2660147,
-      "sha256": "9c06076b9d1adfcc76afe78c4185f055a0ac37ced27ca25cbb3d76e722c83a30"
+      "sha256": "61ff61c27a074cc5f9a99660ef35eca2f013db8e73481deb551d846b03d66a0b"
     },
     {
       "name": "manager_details_08.json",
       "rows": 976,
       "bytes": 3047169,
-      "sha256": "e2b22c9db4cdaa70d5a712aca58f7cf52cb153f42d7b8012fb7a7048a1f24117"
+      "sha256": "81f9b6e89ee558753359ff097e9dcff8386d86ba46c8aee0de8c6df69467d9c3"
     },
     {
       "name": "manager_details_09.json",
       "rows": 1020,
       "bytes": 3236788,
-      "sha256": "10e8adb11158eecb0d97c0b1a9eaadd14b0d954a4321e063b6dd6256e95ec7a6"
+      "sha256": "3907bed0a04bf564aaa5421454b7b08f330a9b1ca61daccdbae813ad1ee63dbe"
     },
     {
       "name": "manager_details_10.json",
       "rows": 1147,
       "bytes": 3570382,
-      "sha256": "49a6744e10018f29e61f1665a2f498061d69b5751b005ac1c53b2a8c44c161f2"
+      "sha256": "d29af9b81704261617d2ff2194c8758f3c472f2c2e5de1c2355381f9550ccebb"
     },
     {
       "name": "manager_details_11.json",
       "rows": 1073,
       "bytes": 3398623,
-      "sha256": "e8567b21586969eb77f750d3c25a91d9d57c84702137cbb4e0eb8dcb0229d368"
+      "sha256": "8737fb69f8d87a369bf6fdf2924284d245da650a12299d5deb474837b1c70715"
     },
     {
       "name": "manager_details_12.json",
       "rows": 918,
       "bytes": 2882784,
-      "sha256": "a23e6e5a48c29936732a9d85acd0f882f7a6b0cd51ba90caac372ac9df6b6fd7"
+      "sha256": "170734c16c4cac8d97cd6d08cb61919d99e77229187d15608bc2077089362d98"
     },
     {
       "name": "manager_details_13.json",
       "rows": 878,
       "bytes": 2841625,
-      "sha256": "4c86847b54203bb0403de2f519493bb742059fe66971bf7bb6e8baad5790b593"
+      "sha256": "b04216b452603aa5cd7114f62dd240f7e72fab73c3ca08c25e10516ed33aec4a"
     },
     {
       "name": "manager_details_14.json",
       "rows": 870,
       "bytes": 2743686,
-      "sha256": "f9a55071df797c9b34ee4f2183fbb397a527bffd066e8dada9cf62a5d873b71f"
+      "sha256": "089b934ba42097350ba3f73ec4d3f40b3ea5ee8a60edee593efaa90b5beecaa3"
     },
     {
       "name": "manager_details_15.json",
       "rows": 927,
       "bytes": 2853098,
-      "sha256": "9d6654e4ad29606fe24c8493c3cb754f8b410ff5773d6b9f43d3e8fb94d24b58"
+      "sha256": "6e6b603ee67e8325c59b344e650f8b99347db6716e033e68fd193c149b20e56a"
     }
   ],
   "public_safety_scan": {
     "status": "pass",
-    "files_scanned": 20,
+    "files_scanned": 22,
     "absolute_paths": 0,
     "secrets": 0
   }
