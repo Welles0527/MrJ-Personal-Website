@@ -28,7 +28,7 @@ const state = {
   profile: { primaryId: null, compareId: null, period: "1y", page: 1, pageSize: 25, sort: ["relation", "asc"] },
   preview: { fundTrigger: null, managerTrigger: null, managerId: null, radarPeriod: "3y" },
   holdingsView: { selectedIds: [], query: "", relation: "all", fundType: "all", periodMode: "all", stockQuery: "", minOverlap: "2", minWeight: 0, rows: [], selectedStock: null },
-  guideView: { tab: "indicators" }
+  guideView: { tab: "data_notes" }
 };
 
 const aliases = {
@@ -302,7 +302,11 @@ function bindStaticEvents() {
     const button = event.target.closest("button[data-guide-tab]");
     if (!button) return;
     state.guideView.tab = button.dataset.guideTab;
-    document.querySelectorAll("#guide-tabs button").forEach(item => item.classList.toggle("active", item === button));
+    document.querySelectorAll("#guide-tabs button").forEach(item => {
+      const active = item === button;
+      item.classList.toggle("active", active);
+      item.setAttribute("aria-selected", String(active));
+    });
     renderGuide();
   });
   document.getElementById("preference-save").addEventListener("click", savePreferenceEditor);
@@ -1887,75 +1891,239 @@ function renderGuide() {
   if (!root || !state.guide) return;
   root.replaceChildren();
   const tab = state.guideView.tab;
-  if (tab === "indicators") return renderGuideCards(root, state.guide.indicators || [], "指标定义");
+  if (tab === "indicators") return renderGuideIndicators(root, state.guide.indicators || []);
   if (tab === "data_notes") return renderGuideNotes(root, state.guide.data_notes || []);
   if (tab === "formulas") return renderGuideFormulaTable(root, state.guide.formulas || []);
   renderGuideScoring(root, state.guide.scoring || {});
 }
 
-function renderGuideCards(root, rows, title) {
-  const groups = new Map();
-  rows.forEach(row => { const key = row.category || "其他"; if (!groups.has(key)) groups.set(key, []); groups.get(key).push(row); });
-  groups.forEach((items, group) => {
-    const section = el("section", { class: "guide-section" });
-    section.append(el("h2", { text: group }));
-    const grid = el("div", { class: "definition-grid" });
-    items.forEach(item => grid.append(el("article", { class: "definition-card" }, el("div", { class: "definition-head" }, el("h3", { text: item.name }), el("span", { text: item.direction || "中性" })), el("p", { text: item.plain_language || "说明待补充" }), el("small", { text: `适用维度：${item.dimension || "未说明"} · ${item.status || "状态未说明"}` }))));
-    section.append(grid); root.append(section);
+function guideCategoryClass(category) {
+  if (category.includes("进攻")) return "offense";
+  if (category.includes("防御")) return "defense";
+  if (category.includes("综合")) return "composite";
+  if (category.includes("复杂")) return "complexity";
+  return "context";
+}
+
+function normalizeGuideIndicatorCategory(category) {
+  return category === "当前管理复杂度" ? "综合指标" : category;
+}
+
+function renderGuideIndicators(root, rows) {
+  const formulas = new Map((state.guide.formulas || []).map(item => [item.name, item]));
+  const categories = [...new Set(rows.map(row => normalizeGuideIndicatorCategory(row.category || "其他")))];
+  let selectedCategory = "全部";
+
+  const heading = el("header", { class: "guide-page-heading" },
+    el("div", {}, el("h1", { text: "指标定义与计算逻辑" }), el("p", { text: "按指标类型筛选，并查看每项指标的作用、判断方向和现行计算口径。" })),
+    el("span", { class: "guide-count", text: `${rows.length} 项指标` })
+  );
+  const search = el("label", { class: "search-box guide-search" }, icon("i-search"), el("input", { type: "search", placeholder: "搜索指标名称、作用或公式", "aria-label": "搜索指标定义与计算逻辑" }));
+  const filters = el("div", { class: "indicator-filters", role: "group", "aria-label": "指标类型筛选" });
+  ["全部", ...categories].forEach(category => {
+    const button = el("button", { type: "button", class: `${category === "全部" ? "active " : ""}${category === "全部" ? "all" : guideCategoryClass(category)}`, text: category });
+    button.addEventListener("click", () => {
+      selectedCategory = category;
+      filters.querySelectorAll("button").forEach(item => item.classList.toggle("active", item === button));
+      draw();
+    });
+    filters.append(button);
   });
-  if (!rows.length) root.append(el("p", { class: "missing", text: `${title}尚未生成` }));
+  const controls = el("div", { class: "indicator-controls" }, filters, search);
+  const shell = el("div", { class: "table-shell indicator-table-shell" });
+  const scroll = el("div", { class: "table-scroll" });
+  const table = el("table", { class: "indicator-table" });
+  const head = el("thead", {}, el("tr", {}, ...["指标类型", "指标名称", "指标作用", "如何看指标", "计算公式"].map(label => el("th", { text: label }))));
+  const body = el("tbody");
+
+  const draw = () => {
+    body.replaceChildren();
+    const needle = normalizeSearch(search.querySelector("input").value);
+    const filtered = rows.filter(row => {
+      const formula = formulas.get(row.name);
+      const category = normalizeGuideIndicatorCategory(row.category || "其他");
+      const matchesCategory = selectedCategory === "全部" || category === selectedCategory;
+      const haystack = normalizeSearch([category, row.name, row.plain_language, row.direction, formula?.logic].filter(Boolean).join(" "));
+      return matchesCategory && (!needle || haystack.includes(needle));
+    });
+    filtered.forEach(row => {
+      const category = normalizeGuideIndicatorCategory(row.category || "其他");
+      const tone = guideCategoryClass(category);
+      const formula = formulas.get(row.name);
+      body.append(el("tr", { class: `indicator-row ${tone}` },
+        el("td", {}, el("span", { class: `indicator-type ${tone}`, text: category })),
+        el("td", { class: "indicator-name", text: row.name }),
+        el("td", { class: "indicator-purpose", text: row.plain_language || "说明待补充" }),
+        el("td", { class: "indicator-direction", text: row.direction || "中性" }),
+        el("td", { class: "indicator-formula", text: formula?.logic || "当前配置未提供计算公式" })
+      ));
+    });
+    if (!filtered.length) body.append(el("tr", { class: "table-message" }, el("td", { colSpan: 5, text: "没有符合条件的指标" })));
+    heading.querySelector(".guide-count").textContent = `${filtered.length} / ${rows.length} 项指标`;
+  };
+
+  search.querySelector("input").addEventListener("input", draw);
+  draw();
+  table.append(head, body); scroll.append(table); shell.append(scroll); root.append(heading, controls, shell);
 }
 
 function renderGuideNotes(root, rows) {
+  const kpiSpecs = [
+    { noteIndex: 0, label: "基金", unit: "只", icon: "i-pie" },
+    { noteIndex: 1, label: "经理", unit: "位", icon: "i-profile" },
+    { noteIndex: 2, label: "关系", unit: "条", icon: "i-network" },
+    { noteIndex: 4, label: "持仓覆盖", unit: "只", icon: "i-defense" }
+  ];
+  const extractCount = index => (rows[index]?.summary || "").match(/[\d,]+/)?.[0] || "—";
+  const heading = el("header", { class: "guide-page-heading" }, el("div", {}, el("h1", { text: "数据说明" }), el("p", { text: "当前数据范围、覆盖情况与采集规则。" })));
+  const overview = el("section", { class: "data-overview", "aria-label": "数据覆盖概览" });
+  kpiSpecs.forEach(spec => overview.append(el("div", { class: "data-overview-item" },
+    el("span", { class: "data-overview-icon" }, icon(spec.icon)),
+    el("div", {}, el("strong", { text: spec.label }), el("p", {}, el("b", { text: extractCount(spec.noteIndex) }), el("span", { text: spec.unit })))
+  )));
   const grid = el("div", { class: "data-note-grid" });
   rows.forEach((item, index) => {
-    grid.append(el("article", { class: "data-note" }, el("span", { text: String(index + 1).padStart(2, "0") }), el("div", {}, el("h2", { text: item.topic }), el("p", { text: item.summary }))));
+    grid.append(el("article", { class: "data-note" },
+      el("header", {}, el("span", { text: String(index + 1).padStart(2, "0") }), el("h2", { text: item.topic })),
+      el("p", { text: item.summary })
+    ));
   });
-  root.append(grid);
+  root.append(heading, overview, grid);
 }
 
 function renderGuideFormulaTable(root, rows) {
-  const search = el("label", { class: "search-box guide-search" }, icon("i-search"), el("input", { type: "search", placeholder: "搜索指标、公式或来源" }));
-  const shell = el("div", { class: "table-shell" });
+  const heading = el("header", { class: "guide-page-heading" }, el("div", {}, el("h1", { text: "指标口径与来源" }), el("p", { text: "核对指标性质、适用维度、现行计算口径与数据来源。" })), el("span", { class: "guide-count", text: `${rows.length} 条口径` }));
+  const search = el("label", { class: "search-box guide-search" }, icon("i-search"), el("input", { type: "search", placeholder: "搜索指标名称、口径或来源", "aria-label": "搜索指标口径与来源" }));
+  const shell = el("div", { class: "table-shell formula-table-shell" });
   const scroll = el("div", { class: "table-scroll" });
-  const table = el("table");
-  const head = el("thead", {}, el("tr", {}, ...["分类", "指标", "性质", "适用维度", "公式或逻辑", "数据来源", "归因范围"].map(label => el("th", { text: label }))));
+  const table = el("table", { class: "formula-table" });
+  const head = el("thead", {}, el("tr", {}, ...["分类", "指标名称", "性质", "适用维度", "公式或逻辑", "数据来源"].map(label => el("th", { text: label }))));
   const body = el("tbody");
   const draw = query => {
     body.replaceChildren();
     const needle = normalizeSearch(query);
-    rows.filter(row => !needle || normalizeSearch(Object.values(row).join(" ")).includes(needle)).forEach(row => body.append(el("tr", {}, el("td", { text: row.category }), el("td", { text: row.name }), el("td", {}, el("span", { class: `source-badge ${row.nature === "计算生成" ? "computed" : "direct"}`, text: row.nature })), el("td", { text: row.dimension }), el("td", { text: row.logic }), el("td", { text: row.source }), el("td", { text: row.attribution }))));
+    rows.filter(row => !needle || normalizeSearch(Object.values(row).join(" ")).includes(needle)).forEach(row => body.append(el("tr", {}, el("td", { text: simplifyGuideFormulaCategory(row.category) }), el("td", { text: row.name }), el("td", {}, el("span", { class: `source-badge ${row.nature === "计算生成" ? "computed" : "direct"}`, text: row.nature })), el("td", { text: row.dimension }), el("td", { text: row.logic }), el("td", { text: row.source }))));
   };
   search.querySelector("input").addEventListener("input", event => draw(event.target.value));
-  draw(""); table.append(head, body); scroll.append(table); shell.append(scroll); root.append(search, shell);
+  draw(""); table.append(head, body); scroll.append(table); shell.append(scroll); root.append(heading, search, shell);
+}
+
+function simplifyGuideFormulaCategory(category) {
+  return ({
+    "基金基础字段": "基础字段",
+    "基金池判定": "基金池",
+    "区间收益快照": "收益快照",
+    "进攻型指标": "进攻型",
+    "防御指标": "防御型",
+    "综合指标": "综合型",
+    "非收益指标": "非收益",
+    "当前管理复杂度": "综合型"
+  })[category] || category || "其他";
 }
 
 function renderGuideScoring(root, scoring) {
-  const flow = el("div", { class: "score-flow" });
-  (scoring.flow || []).forEach((step, index) => { flow.append(el("div", { class: "score-flow-step" }, el("span", { text: String(index + 1) }), el("strong", { text: step }))); if (index < scoring.flow.length - 1) flow.append(el("b", { class: "flow-arrow", text: "→" })); });
-  root.append(flow);
-  const components = el("div", { class: "score-component-grid" });
+  const sampleScores = {
+    "年化收益率": 80,
+    "年化超额收益": 70,
+    "上行捕获率": 60,
+    "同类排名分位": 60,
+    "最大回撤反向分位": 50,
+    "下行捕获率反向分位": 80,
+    "同类中位基准Alpha": 65,
+    "沪深300全收益Alpha": 60,
+    "夏普比率": 70,
+    "卡玛比率": 80
+  };
+  const flowLabels = [
+    ["确定维度", "选择7个评分维度", "i-composite"],
+    ["设定权重", "为各维度分配权重", "i-calculator"],
+    ["数据归一化", "将数据标准化处理", "i-kpi"],
+    ["计算进攻分", "评估进攻相关维度得分", "i-offense"],
+    ["计算防守分", "评估防守相关维度得分", "i-defense"],
+    ["计算综合分", "综合进攻分与防守分", "i-composite"],
+    ["输出结果", "生成评分与建议", "i-list"]
+  ];
+  const heading = el("header", { class: "scoring-heading" },
+    el("div", {}, el("span", { class: "scoring-heading-icon" }, icon("i-score")), el("div", {}, el("h1", { text: "评分维度权重分布" }), el("p", { text: "根据7条评分维度计算进攻分、防守分和综合分；权重可用于试算，但不会绕过固定资格与防守门槛。" }))),
+    el("span", { class: "score-scheme", text: "当前方案：默认方案" })
+  );
+  const workspace = el("div", { class: "scoring-workspace" });
+  const flow = el("aside", { class: "score-flow-panel" }, el("h2", { text: "打分演绎流程" }));
+  const flowList = el("ol");
+  flowLabels.forEach(([name, description, iconId], index) => flowList.append(el("li", { class: iconId === "i-offense" ? "offense" : "" },
+    el("span", { class: "score-flow-index", text: String(index + 1) }),
+    el("span", { class: "score-flow-icon" }, icon(iconId)),
+    el("div", {}, el("strong", { text: name }), el("small", { text: description }))
+  )));
+  flow.append(flowList);
+
+  const canvas = el("div", { class: "scoring-canvas" });
+  const overview = el("section", { class: "score-overview" });
+  overview.append(el("header", {}, el("h2", {}, icon("i-composite"), "评分总览"), el("span", { text: "权重总计：100%" })));
+  const weightBar = el("div", { class: "score-weight-bar", role: "img", "aria-label": "进攻分40%，防守分30%，综合分30%" });
   (scoring.components || []).forEach(component => {
-    const card = el("article", { class: `score-component ${component.key}` }, el("div", { class: "score-component-title" }, icon(`i-${component.key === "composite" ? "composite" : component.key}`), el("div", {}, el("h2", { text: component.name }), el("strong", { text: `占正式总分${(component.weight * 100).toFixed(0)}%` }))));
+    const segment = el("div", { class: `score-weight-segment ${component.key}` }, el("strong", { text: `${(component.weight * 100).toFixed(0)}%` }), el("span", { text: component.name }));
+    segment.style.width = `${component.weight * 100}%`;
+    weightBar.append(segment);
+  });
+  overview.append(weightBar, el("div", { class: "score-weight-scale" }, ...["0%", "25%", "50%", "75%", "100%"].map(value => el("span", { text: value }))));
+  canvas.append(overview);
+
+  const components = el("div", { class: "score-component-grid" });
+  const componentScores = new Map();
+  (scoring.components || []).forEach(component => {
+    const score = component.metrics.reduce((total, metric) => total + (sampleScores[metric.name] ?? 0) * metric.weight, 0);
+    componentScores.set(component.key, score);
+    const description = component.key === "offense" ? "衡量进攻效率与得分能力" : component.key === "defense" ? "衡量防守强度与失分控制" : "衡量整体表现与稳定性";
+    const card = el("article", { class: `score-component ${component.key}` },
+      el("header", {},
+        el("div", { class: "score-component-title" }, icon(`i-${component.key === "composite" ? "composite" : component.key}`), el("div", {}, el("h2", {}, component.name, el("span", { text: `（${(component.weight * 100).toFixed(0)}%）` })), el("p", { text: description }))),
+        el("div", { class: "score-current" }, el("small", { text: "算例得分" }), el("strong", { text: score.toFixed(1) }))
+      )
+    );
     const list = el("ul");
     component.metrics.forEach(metric => list.append(el("li", {}, el("span", { text: metric.name }), el("b", { text: `${(metric.weight * 100).toFixed(0)}%` }))));
-    card.append(list); components.append(card);
+    const meter = el("div", { class: "score-component-meter" }, el("span", { text: "0%" }), el("i"), el("span", { text: "100%" }));
+    meter.querySelector("i").style.setProperty("--score-position", `${score}%`);
+    card.append(list, meter); components.append(card);
   });
-  root.append(components);
+  canvas.append(components);
+
   const lower = el("div", { class: "scoring-lower" });
-  const gates = el("section", { class: "guide-section gates" }, el("h2", { text: "固定资格与防守门槛" }), el("p", { text: "权重可以试算，下面这些条件不能绕过。" }));
-  const gateList = el("div", { class: "gate-list" });
-  (scoring.eligibility || []).forEach(item => {
-    gateList.append(el("div", {}, icon("i-defense"), el("span", {}, el("strong", { text: item.name }), el("small", { text: item.rule }))));
+  const gates = el("section", { class: "score-gates" }, el("h2", {}, icon("i-defense"), "固定资格与防守门槛"));
+  const gateColumns = el("div", { class: "gate-columns" });
+  [["固定资格", (scoring.eligibility || []).slice(0, 2)], ["防守门槛", (scoring.eligibility || []).slice(2)]].forEach(([title, items]) => {
+    const column = el("div", {}, el("h3", { text: title }), el("ul"));
+    items.forEach(item => column.querySelector("ul").append(el("li", {}, el("span", { text: "✓" }), `${item.name} ${item.rule}`)));
+    gateColumns.append(column);
   });
-  gates.append(gateList);
-  const example = scoring.example || {};
-  const exampleCard = el("section", { class: "guide-section example" }, el("h2", { text: "简单算例" }), el("p", { text: `假设进攻${example.offense ?? 80}分、防守${example.defense ?? 70}分、综合${example.composite ?? 60}分。` }), el("div", { class: "formula-line", text: `${example.calculation || "80×40% + 70×30% + 60×30%"} = ${example.total ?? 71}分` }), el("p", { text: scoring.trial_note || "试算权重只改变试算排序。" }));
-  lower.append(gates, exampleCard); root.append(lower);
-  const ratings = el("section", { class: "guide-section ratings" }, el("h2", { text: "ABCD评级" }));
-  const ratingGrid = el("div", { class: "rating-grid" });
-  (scoring.ratings || []).forEach(item => ratingGrid.append(el("div", {}, el("strong", { text: item.rating }), el("span", { text: item.range }))));
-  ratings.append(ratingGrid); root.append(ratings);
+  gates.append(gateColumns);
+
+  const metrics = (scoring.components || []).flatMap(component => component.metrics);
+  const example = el("section", { class: "score-example" }, el("h2", {}, icon("i-calculator"), "算例说明"), el("p", { text: "根据示例给出的各项指标得分如下（均已归一化为百分制）：" }));
+  const exampleScroll = el("div", { class: "score-example-scroll" });
+  const exampleTable = el("table");
+  exampleTable.append(
+    el("thead", {}, el("tr", {}, el("th", { text: "维度" }), ...metrics.map(metric => el("th", { text: metric.name })))),
+    el("tbody", {},
+      el("tr", {}, el("th", { text: "得分" }), ...metrics.map(metric => el("td", { text: sampleScores[metric.name] ?? "—" }))),
+      el("tr", {}, el("th", { text: "权重" }), ...metrics.map(metric => el("td", { text: `${(metric.weight * 100).toFixed(0)}%` })))
+    )
+  );
+  exampleScroll.append(exampleTable);
+  const calculations = el("div", { class: "score-calculations" });
+  (scoring.components || []).forEach(component => {
+    const expression = component.metrics.map(metric => `${sampleScores[metric.name] ?? 0}×${(metric.weight * 100).toFixed(0)}%`).join(" + ");
+    calculations.append(el("p", { class: component.key }, el("strong", { text: `${component.name} = ` }), `${expression} = ${componentScores.get(component.key).toFixed(1)}分`));
+  });
+  const interpretation = el("ul", { class: "score-interpretation" },
+    el("li", { text: "进攻分反映进攻能力" }),
+    el("li", { text: "防守分反映风险控制能力" }),
+    el("li", { text: "综合分反映整体表现" })
+  );
+  example.append(exampleScroll, el("div", { class: "score-example-bottom" }, calculations, interpretation));
+  lower.append(gates, example); canvas.append(lower);
+  workspace.append(flow, canvas); root.append(heading, workspace, el("p", { class: "score-disclaimer", text: "评分结果仅供参考，不构成任何投资建议；请结合实际情况审慎决策。" }));
 }
 
 async function loadCustomReturns() {
@@ -2127,7 +2295,7 @@ function showToast(message) {
   showToast.timer = setTimeout(() => { toast.hidden = true; }, 3600);
 }
 
-function icon(id) { const svg = el("svg", { "aria-hidden": "true" }); svg.append(svgEl("use", { href: `#${id}` })); return svg; }
+function icon(id) { const svg = svgEl("svg", { "aria-hidden": "true" }); svg.append(svgEl("use", { href: `#${id}` })); return svg; }
 function el(tag, attrs = {}, ...children) {
   const node = document.createElement(tag);
   Object.entries(attrs).forEach(([key, value]) => {
