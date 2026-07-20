@@ -518,16 +518,27 @@ export function mountTodoWorkspace(root: HTMLElement) {
 
   const renderOverviewLanes = () => {
     const todayKey = toDateKey(currentDate);
-    const todos = filterTodos(allTodosForDateKey(todayKey));
+    const todayTodos = filterTodos(allTodosForDateKey(todayKey));
+    const upcomingTodos = filterTodos(allTodosForPlacement('upcoming'));
     overviewLanes.innerHTML = `<section class="todo-overview-lane todo-today-overview-lane" aria-label="今日待办" data-drop-date="${todayKey}">
       <header class="todo-overview-lane-header">
         <div>
           <h3 class="todo-overview-lane-title">今日待办</h3>
-          <span class="todo-overview-lane-count">${dateDescription(currentDate)} · ${todos.length} 项</span>
+          <span class="todo-overview-lane-count">${dateDescription(currentDate)} · ${todayTodos.length} 项</span>
         </div>
         <button class="todo-lane-add" type="button" data-action="open-create" data-date="${todayKey}" aria-label="新增今日待办">＋</button>
       </header>
-      ${todos.length ? `<ul class="todo-overview-list">${todos.map((todo, index) => renderOverviewTodo(todo, index, todos.length, { showMeta: true })).join('')}</ul>` : '<p class="todo-overview-empty">今天暂无待办</p>'}
+      ${todayTodos.length ? `<ul class="todo-overview-list">${todayTodos.map((todo, index) => renderOverviewTodo(todo, index, todayTodos.length, { showMeta: true })).join('')}</ul>` : '<p class="todo-overview-empty">今天暂无待办</p>'}
+    </section>
+    <section class="todo-overview-lane" aria-label="近期待办" data-drop-placement="upcoming">
+      <header class="todo-overview-lane-header">
+        <div>
+          <h3 class="todo-overview-lane-title">近期待办</h3>
+          <span class="todo-overview-lane-count">未排期 · ${upcomingTodos.length} 项</span>
+        </div>
+        <button class="todo-lane-add" type="button" data-action="open-create" data-placement="upcoming" aria-label="新增近期待办">＋</button>
+      </header>
+      ${upcomingTodos.length ? `<ul class="todo-overview-list">${upcomingTodos.map((todo, index) => renderOverviewTodo(todo, index, upcomingTodos.length, { showMeta: true })).join('')}</ul>` : '<p class="todo-overview-empty">暂无待办</p>'}
     </section>`;
   };
 
@@ -758,16 +769,23 @@ export function mountTodoWorkspace(root: HTMLElement) {
   const activateSession = async (session: CloudSession, successMessage?: string) => {
     setAuthenticatedHeader(session);
     const api = await getCloudApi();
+    const cloudTodos = normalizeTodoList(await api.loadCloudTodos(session.uid)) ?? [];
+    // Read local state after the async cloud request so tasks created while it was in flight are not overwritten.
     const localTodos = state.todos;
     const pendingUpsertIds = loadIdQueue(PENDING_UPSERT_KEY);
     const pendingDeleteIds = loadIdQueue(PENDING_DELETE_KEY);
-    const cloudTodos = normalizeTodoList(await api.loadCloudTodos(session.uid)) ?? [];
     const cloudTodoIds = new Set(cloudTodos.map((todo) => todo.id));
+    pendingUpsertIds.forEach((todoId) => {
+      if (cloudTodoIds.has(todoId)) removeQueuedId(PENDING_UPSERT_KEY, todoId);
+    });
     const visibleCloudTodos = cloudTodos.filter((todo) => !pendingDeleteIds.has(todo.id));
     const localUpdates = localUpdatesForExistingCloudTodos(localTodos, visibleCloudTodos);
-    const pendingUpserts = localTodos.filter((todo) => pendingUpsertIds.has(todo.id));
+    const localOnlyTodos = localTodos.filter((todo) => !cloudTodoIds.has(todo.id) && !pendingDeleteIds.has(todo.id));
+    localOnlyTodos.forEach((todo) => enqueueId(PENDING_UPSERT_KEY, todo.id));
+    const pendingUpserts = localTodos.filter((todo) => pendingUpsertIds.has(todo.id) || localOnlyTodos.some((item) => item.id === todo.id));
     const syncUpserts = [...new Map([...localUpdates, ...pendingUpserts].map((todo) => [todo.id, todo])).values()];
-    state.todos = mergeCloudTodosWithLocalUpdates(localTodos, visibleCloudTodos, pendingUpsertIds);
+    const forceLocalIds = new Set([...pendingUpsertIds, ...localOnlyTodos.map((todo) => todo.id)]);
+    state.todos = mergeCloudTodosWithLocalUpdates(localTodos, visibleCloudTodos, forceLocalIds);
     persist(state.todos);
     render();
     if (loginModal.open) loginModal.close();
