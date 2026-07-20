@@ -12,9 +12,9 @@
   <meta name="color-scheme" content="dark light">
   <meta name="description" content="中国主动权益基金与基金经理研究看板">
   <title>主动权益研究终端</title>
-  <link rel="stylesheet" href="./app.css?v=20260720v8">
+  <link rel="stylesheet" href="./app.css?v=20260720v9">
   <script src="./fund-preferences-cloud.js?v=20260720v3" defer></script>
-  <script src="./app.js?v=20260720v8" defer></script>
+  <script src="./app.js?v=20260720v9" defer></script>
 </head>
 <body>
   <svg class="svg-defs" aria-hidden="true">
@@ -51,7 +51,7 @@
     </a>
     <nav class="dashboard-nav" aria-label="主看板">
       <button class="dashboard-tab kpi" data-view="kpi"><svg><use href="#i-kpi"/></svg><span>基金经理KPI<small>经理客观指标</small></span></button>
-      <button class="dashboard-tab score" data-view="score"><svg><use href="#i-score"/></svg><span>基金经理打分排行<small>风险偏好试算</small></span></button>
+      <button class="dashboard-tab score" data-view="score"><svg><use href="#i-score"/></svg><span>基金经理打分排行<small>默认或自定义权重</small></span></button>
       <button class="dashboard-tab profile" data-view="profile"><svg><use href="#i-profile"/></svg><span>基金经理能力对比<small>履历与能力对照</small></span></button>
       <button class="dashboard-tab fund" data-view="funds" aria-current="page"><svg><use href="#i-fund"/></svg><span>基金看板<small>产品客观数据</small></span></button>
       <button class="dashboard-tab holdings" data-view="holdings"><svg><use href="#i-holdings"/></svg><span>持仓分析<small>经理共同持股</small></span></button>
@@ -117,6 +117,7 @@
       <div class="workspace">
         <aside class="filter-rail" id="kpi-filter-rail" aria-label="KPI筛选">
           <div class="rail-heading"><strong>指标筛选</strong><button class="rail-close" data-close-rail="kpi" aria-label="收起筛选">×</button></div>
+          <div class="filter-rail-tools"><button type="button" class="secondary-button" data-toggle-filter-groups="kpi" aria-expanded="false">全部展开</button><button type="button" class="secondary-button" data-default-filters="kpi">默认筛选</button></div>
           <div id="kpi-filters" class="filter-groups"></div>
           <div class="filter-actions"><button class="secondary-button" data-reset-filters="kpi">清空全部</button></div>
         </aside>
@@ -124,7 +125,7 @@
           <header class="section-heading compact"><div><h1 id="kpi-title">基金经理KPI</h1><p>原始指标的筛选与排序，不带主观权重。</p></div></header>
           <div class="toolbar">
             <button class="secondary-button filter-toggle" data-open-rail="kpi"><svg><use href="#i-filter"/></svg>筛选</button>
-            <label class="search-box"><svg><use href="#i-search"/></svg><input id="manager-search" type="search" placeholder="搜索经理、ID、公司或当前基金"><button type="button" data-clear="manager-search" aria-label="清空搜索">×</button></label>
+            <label class="search-box"><svg><use href="#i-search"/></svg><input id="manager-search" type="search" placeholder="搜索经理、ID、公司或当前管理基金"><button type="button" data-clear="manager-search" aria-label="清空搜索">×</button></label>
             <button class="secondary-button" id="column-picker-open" type="button"><svg><use href="#i-columns"/></svg><span id="column-picker-label">字段</span></button>
             <button class="secondary-button export-button" data-export="kpi"><svg><use href="#i-export"/></svg>导出</button>
           </div>
@@ -136,34 +137,44 @@
 
     <section class="view" id="view-score" data-view-panel="score" aria-labelledby="score-title" hidden>
       <div class="score-banner">
-        <div><span class="model-badge formal">正式模型</span><strong>40 / 30 / 30</strong><small>进攻 / 防守 / 综合</small></div>
-        <div><span class="model-badge" id="trial-model-badge">试算模型</span><strong id="trial-weight-summary">40 / 30 / 30</strong><small id="trial-model-status">与正式权重一致</small></div>
-        <div><span>正式可评分</span><strong id="score-eligible-count">…</strong><small>固定资格与风险门槛</small></div>
-        <div><span>当前结果</span><strong id="score-filtered-count">…</strong><small>随试算权重更新</small></div>
+        <div><span class="model-badge formal">默认权重</span><strong>40 / 30 / 30</strong><small>进攻 / 防守 / 综合，固定不变</small></div>
+        <div><span class="model-badge" id="active-model-badge">当前方案</span><strong id="active-weight-summary">40 / 30 / 30</strong><small id="active-model-status">已应用默认权重</small></div>
+        <div><span>可评分</span><strong id="score-eligible-count">…</strong><small>固定资格与风险门槛</small></div>
+        <div><span>当前结果</span><strong id="score-filtered-count">…</strong><small>随已应用权重更新</small></div>
       </div>
       <div class="score-layout">
         <aside class="filter-rail" id="score-filter-rail" aria-label="打分筛选">
           <div class="rail-heading"><strong>排行筛选</strong><button class="rail-close" data-close-rail="score" aria-label="收起筛选">×</button></div>
+          <div class="filter-rail-tools"><button type="button" class="secondary-button" data-toggle-filter-groups="score" aria-expanded="false">全部展开</button><button type="button" class="secondary-button" data-default-filters="score">默认筛选</button></div>
           <div id="score-filters" class="filter-groups"></div>
           <div class="filter-actions"><button class="secondary-button" data-reset-filters="score">清空全部</button></div>
         </aside>
         <div class="content-area score-content">
-          <header class="section-heading compact"><div><h1 id="score-title">基金经理打分排行</h1><p>调整风险偏好只改变试算排名，不改变原始指标与固定门槛。</p></div></header>
+          <header class="section-heading compact"><div><h1 id="score-title">基金经理打分排行</h1><p>选择默认或自定义权重并应用；原始指标与固定门槛保持不变。</p></div></header>
           <section class="weight-console" aria-labelledby="weight-title">
-            <div class="weight-console-head"><div><h2 id="weight-title">风险偏好权重</h2><p>拖动或输入数值，合计100%后点击应用，排名才会重新计算。</p></div><div class="weight-actions"><button class="secondary-button" id="weight-reset">恢复正式权重</button><button class="primary-button" id="weight-apply" disabled>应用权重并重新排名</button></div></div>
-            <div class="weight-grid">
-              <div class="weight-control offense"><label for="weight-offense"><svg><use href="#i-offense"/></svg><span>进攻能力</span></label><input id="weight-offense" type="range" min="0" max="100" step="1" value="40"><div><input id="weight-offense-number" type="number" min="0" max="100" step="1" value="40" aria-label="进攻能力权重"><span>%</span></div></div>
-              <div class="weight-control defense"><label for="weight-defense"><svg><use href="#i-defense"/></svg><span>防守能力</span></label><input id="weight-defense" type="range" min="0" max="100" step="1" value="30"><div><input id="weight-defense-number" type="number" min="0" max="100" step="1" value="30" aria-label="防守能力权重"><span>%</span></div></div>
-              <div class="weight-control composite"><label for="weight-composite"><svg><use href="#i-composite"/></svg><span>综合能力</span></label><input id="weight-composite" type="range" min="0" max="100" step="1" value="30"><div><input id="weight-composite-number" type="number" min="0" max="100" step="1" value="30" aria-label="综合能力权重"><span>%</span></div></div>
+            <div class="weight-console-head"><div><h2 id="weight-title">风险偏好权重</h2><p>先选择权重方案，再点击应用；自定义方案的三项权重合计必须为100%。</p></div><div class="weight-actions"><button class="primary-button" id="weight-apply" disabled>应用所选权重</button></div></div>
+            <div class="weight-mode-grid">
+              <section class="weight-mode-option selected" id="weight-mode-default-panel">
+                <label class="weight-mode-heading"><input type="radio" name="weight-mode" value="default" checked><span><strong>默认权重</strong><small>固定比例，不可修改</small></span></label>
+                <div class="locked-weights" aria-label="默认权重：进攻40%，防守30%，综合30%"><span class="offense"><b>40%</b>进攻</span><span class="defense"><b>30%</b>防守</span><span class="composite"><b>30%</b>综合</span></div>
+              </section>
+              <section class="weight-mode-option" id="weight-mode-custom-panel">
+                <div class="weight-mode-heading-row"><label class="weight-mode-heading"><input type="radio" name="weight-mode" value="custom"><span><strong>自定义权重</strong><small>按风险偏好自由调整</small></span></label><button type="button" class="secondary-button compact-button" id="weight-custom-reset">重置</button></div>
+                <div class="weight-grid">
+                  <div class="weight-control offense"><label for="weight-offense"><svg><use href="#i-offense"/></svg><span>进攻能力</span></label><input id="weight-offense" type="range" min="0" max="100" step="1" value="40" disabled><div><input id="weight-offense-number" type="number" min="0" max="100" step="1" value="40" aria-label="进攻能力权重" disabled><span>%</span></div></div>
+                  <div class="weight-control defense"><label for="weight-defense"><svg><use href="#i-defense"/></svg><span>防守能力</span></label><input id="weight-defense" type="range" min="0" max="100" step="1" value="30" disabled><div><input id="weight-defense-number" type="number" min="0" max="100" step="1" value="30" aria-label="防守能力权重" disabled><span>%</span></div></div>
+                  <div class="weight-control composite"><label for="weight-composite"><svg><use href="#i-composite"/></svg><span>综合能力</span></label><input id="weight-composite" type="range" min="0" max="100" step="1" value="30" disabled><div><input id="weight-composite-number" type="number" min="0" max="100" step="1" value="30" aria-label="综合能力权重" disabled><span>%</span></div></div>
+                </div>
+                <div class="weight-total valid" id="weight-total" role="status"><span>自定义合计</span><strong>100%</strong><small>选择后可应用</small></div>
+              </section>
             </div>
-            <div class="weight-total valid" id="weight-total" role="status"><span>权重合计</span><strong>100%</strong><small>已应用</small></div>
           </section>
           <div class="toolbar">
             <button class="secondary-button filter-toggle" data-open-rail="score"><svg><use href="#i-filter"/></svg>筛选</button>
             <label class="search-box"><svg><use href="#i-search"/></svg><input id="score-search" type="search" placeholder="搜索经理、ID或公司"><button type="button" data-clear="score-search" aria-label="清空搜索">×</button></label>
-            <button class="secondary-button export-button" data-export="score"><svg><use href="#i-export"/></svg>导出试算结果</button>
+            <button class="secondary-button export-button" data-export="score"><svg><use href="#i-export"/></svg>导出当前结果</button>
           </div>
-          <div class="model-notice" id="score-data-notice" role="status"><svg><use href="#i-info"/></svg><span>正在检查正式评分数据…</span></div>
+          <div class="model-notice" id="score-data-notice" role="status"><svg><use href="#i-info"/></svg><span>正在检查评分数据…</span></div>
           <div class="table-shell"><div class="table-scroll"><table><thead id="score-table-head"></thead><tbody id="score-table-body"></tbody></table></div><div class="table-footer" id="score-table-footer"></div></div>
         </div>
       </div>
@@ -316,17 +327,19 @@
       </div>
       <div class="manager-preview-toolbar">
         <div class="period-tabs" id="manager-preview-periods" role="group" aria-label="雷达图时间维度">
-          <button data-period="1y">近1年</button><button data-period="2y">近2年</button><button class="active" data-period="3y">近3年</button><button data-period="5y">近5年</button>
+          <button id="manager-preview-funds-toggle" type="button" aria-pressed="false">当前管理基金</button><button data-period="1y">近1年</button><button data-period="2y">近2年</button><button class="active" data-period="3y">近3年</button><button data-period="5y">近5年</button>
         </div>
         <button type="button" class="primary-button" id="manager-preview-detail">查看详细</button>
       </div>
-      <div class="manager-preview-body">
+      <section class="manager-preview-funds" id="manager-preview-funds" hidden aria-labelledby="manager-preview-funds-title"></section>
+      <div class="manager-preview-body" id="manager-preview-radar-body">
         <div class="radar-wrap"><svg id="manager-preview-radar" viewBox="0 0 640 430" role="img" aria-labelledby="manager-preview-chart-title manager-preview-chart-desc"><title id="manager-preview-chart-title">基金经理六维能力雷达图</title><desc id="manager-preview-chart-desc">所选基金经理在当前时间窗口的标准化指标</desc></svg><p class="chart-status" id="manager-preview-status"></p></div>
         <div class="radar-legend" id="manager-preview-legend"></div>
       </div>
     </div>
   </dialog>
 
+  <div class="indicator-tooltip" id="indicator-tooltip" role="tooltip" hidden><strong></strong><p></p><small></small></div>
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 </body>
 </html>
