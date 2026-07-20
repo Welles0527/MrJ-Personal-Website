@@ -170,6 +170,8 @@ const FILTER_DEFS = [
   { key: "maxDrawdown", label: "最大回撤", category: "defense", icon: "defense", options: [["ltNeg50", "<-50%"], ["neg50to40", "-50%至-40%"], ["neg40to30", "-40%至-30%"], ["neg30to20", "-30%至-20%"], ["gteNeg20", "≥-20%"], ["missing", "不可计算 / 数据不足"]] }
 ];
 
+const KPI_FILTER_DEFS = FILTER_DEFS.filter(def => def.key !== "ability");
+
 const SCORE_FILTER_DEFS = [
   ...FILTER_DEFS.flatMap(def => def.key === "maxDrawdown" ? [
     def,
@@ -182,7 +184,6 @@ const SCORE_FILTER_DEFS = [
 ];
 
 const DEFAULT_FILTER_SELECTIONS = {
-  ability: ["offense", "defense", "composite"],
   fundType: ["stock", "mixed"],
   poolScale: ["2to10", "10to50", "50to100", "gte100"],
   experience: ["2to5", "5to10", "gte10"],
@@ -192,6 +193,7 @@ const DEFAULT_FILTER_SELECTIONS = {
 };
 
 const SCORE_DEFAULT_FILTER_SELECTIONS = {
+  ability: ["offense", "defense", "composite"],
   ...DEFAULT_FILTER_SELECTIONS,
   rating: ["A", "B"],
   defenseGate: ["pass"]
@@ -266,7 +268,7 @@ async function init() {
     return;
   }
   renderColumnPicker();
-  renderFilters("kpi", FILTER_DEFS);
+  renderFilters("kpi", KPI_FILTER_DEFS);
   renderFilters("score", SCORE_FILTER_DEFS);
   applyDefaultFilters("kpi", false);
   applyDefaultFilters("score", false);
@@ -1211,24 +1213,38 @@ function renderActiveFilters(scope) {
   const root = document.getElementById(`${scope}-active-filters`);
   if (!root) return;
   root.replaceChildren();
-  const defs = scope === "kpi" ? FILTER_DEFS : SCORE_FILTER_DEFS;
+  const defs = scope === "kpi" ? KPI_FILTER_DEFS : SCORE_FILTER_DEFS;
+  const categoryLabels = { base: "基础筛选", offense: "进攻筛选", defense: "防守筛选", score: "评分筛选" };
+  const groups = new Map();
   let count = 0;
-  state[scope].filters.forEach((values, key) => values.forEach(value => {
-    const def = defs.find(item => item.key === key);
+  defs.forEach(def => {
+    const values = state[scope].filters.get(def.key);
+    if (!values?.size) return;
+    if (!groups.has(def.category)) {
+      const valuesRoot = el("span", { class: "active-filter-values" });
+      const row = el("div", { class: `active-filter-row ${def.category}`, "aria-label": categoryLabels[def.category] || "筛选条件" },
+        el("span", { class: "active-filter-group-label", text: categoryLabels[def.category] || "筛选" }),
+        valuesRoot
+      );
+      groups.set(def.category, valuesRoot);
+      root.append(row);
+    }
+    values.forEach(value => {
     const label = def?.options.find(item => item[0] === value)?.[1] || value;
-    const chip = el("span", { class: "filter-chip" }, `${def?.label || key}：${label}`);
-    annotateIndicatorElement(chip, key);
+    const chip = el("span", { class: "filter-chip" }, `${def.label || def.key}：${label}`);
+    annotateIndicatorElement(chip, def.key);
     const remove = el("button", { type: "button", text: "×", "aria-label": `删除${label}` });
     remove.addEventListener("click", () => {
-      state[scope].filters.get(key)?.delete(value);
-      const checkbox = document.getElementById(`${scope}-${key}-${value}`);
+      state[scope].filters.get(def.key)?.delete(value);
+      const checkbox = document.getElementById(`${scope}-${def.key}-${value}`);
       if (checkbox) checkbox.checked = false;
       scope === "kpi" ? renderKpi() : renderScore();
     });
     chip.append(remove);
-    root.append(chip);
+    groups.get(def.category).append(chip);
     count += 1;
-  }));
+    });
+  });
   if (!count) root.append(el("span", { class: "missing", text: "未应用分组筛选" }));
 }
 

@@ -12,9 +12,9 @@
   <meta name="color-scheme" content="dark light">
   <meta name="description" content="中国主动权益基金与基金经理研究看板">
   <title>主动权益研究终端</title>
-  <link rel="stylesheet" href="./app.css?v=20260720v9">
+  <link rel="stylesheet" href="./app.css?v=20260720v11">
   <script src="./fund-preferences-cloud.js?v=20260720v3" defer></script>
-  <script src="./app.js?v=20260720v9" defer></script>
+  <script src="./app.js?v=20260720v10" defer></script>
 </head>
 <body>
   <svg class="svg-defs" aria-hidden="true">
@@ -220,6 +220,10 @@
         <aside class="holdings-selector">
           <div class="panel-heading"><div><h2>报告期</h2><p>按季度筛选纳入持仓分析的基金披露数据。</p></div></div>
           <label class="holdings-period-filter" for="holdings-report-period"><span>选择报告期</span><select id="holdings-report-period"><option value="all">全部报告期</option></select></label>
+          <div class="holdings-side-filters" aria-label="共同持股筛选门槛">
+            <label for="holdings-min-overlap"><span>最低共同经理数</span><select id="holdings-min-overlap"><option value="2">至少2位</option><option value="3">至少3位</option><option value="4">至少4位</option><option value="all">全部已选经理</option></select></label>
+            <label for="holdings-min-weight"><span>最低平均权重</span><span class="holdings-weight-input"><input id="holdings-min-weight" type="number" min="0" max="100" step="0.1" value="0"><b>%</b></span></label>
+          </div>
         </aside>
         <div class="holdings-main">
           <div class="holdings-selection-actions">
@@ -228,8 +232,6 @@
           </div>
           <div class="selected-managers" id="holdings-selected-managers"><span class="missing">尚未选择基金经理</span></div>
           <div class="holdings-toolbar">
-            <label>最低共同经理数<select id="holdings-min-overlap"><option value="2">至少2位</option><option value="3">至少3位</option><option value="4">至少4位</option><option value="all">全部已选经理</option></select></label>
-            <label>最低平均权重<input id="holdings-min-weight" type="number" min="0" max="100" step="0.1" value="0">%</label>
             <label class="search-box stock-search"><svg><use href="#i-search"/></svg><input id="holdings-stock-search" type="search" placeholder="搜索股票代码或名称"></label>
           </div>
           <div class="holdings-alert" id="holdings-alert" hidden></div>
