@@ -4,7 +4,8 @@ const DATA_ROOT = "./data";
 const STORAGE = {
   theme: "fund-dashboard-theme-v1",
   kpiColumns: "fund-dashboard-kpi-columns-v1",
-  managerPreferences: "fund-dashboard-manager-preferences-v2"
+  managerPreferences: "fund-dashboard-manager-preferences-v2",
+  sharedAuth: "mywebsite.site-auth-session.v1"
 };
 
 const state = {
@@ -27,7 +28,7 @@ const state = {
   score: { query: "", sort: ["trialRank", "asc"], page: 1, pageSize: 25, filters: new Map(), draftWeights: [40, 30, 30], appliedWeights: [40, 30, 30], weightsDirty: false },
   profile: { primaryId: null, compareId: null, period: "1y", page: 1, pageSize: 25, sort: ["relation", "asc"] },
   preview: { fundTrigger: null, managerTrigger: null, managerId: null, radarPeriod: "3y" },
-  holdingsView: { selectedIds: [], query: "", relation: "all", fundType: "all", periodMode: "all", stockQuery: "", minOverlap: "2", minWeight: 0, rows: [], selectedStock: null },
+  holdingsView: { selectedIds: [], query: "", reportPeriod: "all", stockQuery: "", minOverlap: "2", minWeight: 0, rows: [], selectedStock: null },
   guideView: { tab: "data_notes" }
 };
 
@@ -290,13 +291,27 @@ function bindStaticEvents() {
     syncPeriodTabs("radar-periods", state.profile.period);
     renderProfileRadar();
   });
-  ["relation", "fund-type", "period-mode", "min-overlap", "min-weight"].forEach(key => {
+  ["report-period", "min-overlap", "min-weight"].forEach(key => {
     document.getElementById(`holdings-${key}`).addEventListener("change", event => {
-      const stateKey = key === "fund-type" ? "fundType" : key === "period-mode" ? "periodMode" : key === "min-overlap" ? "minOverlap" : key === "min-weight" ? "minWeight" : key;
+      const stateKey = key === "report-period" ? "reportPeriod" : key === "min-overlap" ? "minOverlap" : key === "min-weight" ? "minWeight" : key;
       state.holdingsView[stateKey] = key === "min-weight" ? Math.max(0, Number(event.target.value) || 0) : event.target.value;
       renderHoldingsAnalysis();
     });
   });
+  const holdingsManagerDialog = document.getElementById("holdings-manager-dialog");
+  document.getElementById("holdings-manager-open").addEventListener("click", () => {
+    state.holdingsView.query = "";
+    document.getElementById("holdings-manager-search").value = "";
+    renderHoldingsFavorites();
+    renderHoldingsManagerOptions();
+    holdingsManagerDialog.showModal();
+    document.getElementById("holdings-manager-search").focus();
+  });
+  document.getElementById("holdings-manager-close").addEventListener("click", () => holdingsManagerDialog.close());
+  holdingsManagerDialog.addEventListener("click", event => { if (event.target === holdingsManagerDialog) holdingsManagerDialog.close(); });
+  document.getElementById("holdings-manager-clear").addEventListener("click", clearHoldingsManagers);
+  window.addEventListener("site-auth-change", event => renderSharedAuthStatus(event.detail));
+  window.addEventListener("storage", event => { if (event.key === STORAGE.sharedAuth) initializePreferenceSync(); });
   document.getElementById("holding-drilldown-close").addEventListener("click", () => { state.holdingsView.selectedStock = null; document.getElementById("holding-drilldown").hidden = true; });
   document.getElementById("guide-tabs").addEventListener("click", event => {
     const button = event.target.closest("button[data-guide-tab]");
@@ -618,9 +633,14 @@ function savePreferencesLocal() {
 async function initializePreferenceSync() {
   updatePreferenceSyncState("local");
   const bridge = window.FundPreferenceCloud;
-  if (!bridge?.getSession) return;
+  if (!bridge?.getSession) {
+    renderSharedAuthStatus(null);
+    return;
+  }
+  let session = null;
   try {
-    const session = await bridge.getSession();
+    session = await bridge.getSession();
+    renderSharedAuthStatus(session);
     if (!session?.uid) return updatePreferenceSyncState("signed-out");
     updatePreferenceSyncState("syncing");
     const remote = await bridge.load();
@@ -636,8 +656,19 @@ async function initializePreferenceSync() {
     await bridge.save(Object.fromEntries(state.preferences));
     updatePreferenceSyncState("synced");
   } catch (error) {
+    if (!session?.uid) renderSharedAuthStatus(null, "暂时无法确认登录状态");
     updatePreferenceSyncState("pending", error?.message);
   }
+}
+
+function renderSharedAuthStatus(session, detail = "") {
+  const link = document.getElementById("fund-auth-link");
+  if (!link) return;
+  const signedIn = Boolean(session?.uid);
+  setText("fund-auth-status", signedIn ? session.account || "已登录" : "登录主站账号");
+  setText("fund-auth-detail", detail || (signedIn ? "已共享主站登录" : "共享登录，无需注册"));
+  link.dataset.status = signedIn ? "signed-in" : "signed-out";
+  link.setAttribute("aria-label", signedIn ? `主站账号${session.account || "已登录"}` : "使用主站共享账号登录");
 }
 
 function updatePreferenceSyncState(status, detail = "") {
@@ -1268,7 +1299,7 @@ function renderCell(record, column, value, table) {
     const manager = table === "score" ? record.manager : record;
     cell.classList.add("manager-cell");
     const identity = el("span", { class: "manager-identity" }, managerNameButton(manager), el("span", { class: "manager-id", text: manager.id || "ID未提供" }));
-    cell.append(identity, renderManagerPreferenceControls(manager, true));
+    cell.append(el("div", { class: "manager-cell-content" }, identity, renderManagerPreferenceControls(manager, true)));
     return cell;
   }
   if (column.kind === "relation") {
@@ -1658,6 +1689,7 @@ function renderRadarLegend(primary, primaryRadar, compare, compareRadar, rootId 
 }
 
 function renderHoldings() {
+  renderHoldingsReportPeriods();
   renderHoldingsFavorites();
   renderHoldingsManagerOptions();
   renderSelectedManagers();
@@ -1666,6 +1698,22 @@ function renderHoldings() {
 
 function holdingsFundRows() {
   return Array.isArray(state.holdings?.funds) ? state.holdings.funds : [];
+}
+
+function formatReportPeriodLabel(reportDate) {
+  const match = String(reportDate || "").match(/^(\d{4})-(\d{2})/);
+  if (!match) return reportDate || "报告期未提供";
+  return `${match[1]} Q${Math.ceil(Number(match[2]) / 3)}`;
+}
+
+function renderHoldingsReportPeriods() {
+  const select = document.getElementById("holdings-report-period");
+  if (!select || !state.holdings) return;
+  const configured = Array.isArray(state.holdings.meta?.report_dates) ? state.holdings.meta.report_dates : [];
+  const dates = [...new Set([...configured, ...holdingsFundRows().map(fund => fund.report_date).filter(Boolean)])].sort();
+  if (state.holdingsView.reportPeriod !== "all" && !dates.includes(state.holdingsView.reportPeriod)) state.holdingsView.reportPeriod = "all";
+  select.replaceChildren(el("option", { value: "all", text: "全部报告期" }), ...dates.map(date => el("option", { value: date, text: formatReportPeriodLabel(date) })));
+  select.value = state.holdingsView.reportPeriod;
 }
 
 function renderHoldingsFavorites() {
@@ -1688,8 +1736,12 @@ function renderHoldingsManagerOptions() {
   if (!root || !state.managers) return;
   root.replaceChildren();
   const needle = normalizeSearch(state.holdingsView.query);
+  if (!needle) {
+    root.append(el("p", { class: "missing holdings-search-prompt", text: "输入基金经理姓名、ID或公司开始搜索。" }));
+    return;
+  }
   const selected = new Set(state.holdingsView.selectedIds);
-  const managers = state.managers.filter(manager => !needle || normalizeSearch([manager.name, manager.id, manager.company].join(" ")).includes(needle)).slice(0, 50);
+  const managers = state.managers.filter(manager => normalizeSearch([manager.name, manager.id, manager.company].join(" ")).includes(needle)).slice(0, 50);
   managers.forEach(manager => {
     const row = el("div", { class: "holdings-manager-option" });
     const identity = el("div", {}, managerNameButton(manager), el("small", { text: `${manager.id} · ${manager.company || "公司未提供"}` }));
@@ -1713,10 +1765,18 @@ function removeHoldingsManager(managerId) {
   renderHoldings();
 }
 
+function clearHoldingsManagers() {
+  state.holdingsView.selectedIds = [];
+  state.holdingsView.selectedStock = null;
+  renderHoldings();
+  showToast("已清除全部基金经理。");
+}
+
 function renderSelectedManagers() {
   const root = document.getElementById("holdings-selected-managers");
   root.replaceChildren();
   const selected = selectedHoldingManagers();
+  document.getElementById("holdings-manager-clear").disabled = !selected.length;
   if (!selected.length) return root.append(el("span", { class: "missing", text: "尚未选择基金经理" }));
   selected.forEach(manager => {
     const chip = el("span", { class: "selected-manager-chip" });
@@ -1735,15 +1795,11 @@ function selectedHoldingManagers() {
 
 function includedHoldingFunds() {
   const selected = new Set(state.holdingsView.selectedIds);
-  const filtered = holdingsFundRows().filter(fund => {
+  return holdingsFundRows().filter(fund => {
     if (!arrayValue(fund.manager_ids).some(id => selected.has(String(id)))) return false;
-    if (state.holdingsView.relation !== "all" && fund.relationship !== state.holdingsView.relation) return false;
-    if (state.holdingsView.fundType !== "all" && normalizeFundType(fund.fund_type) !== state.holdingsView.fundType) return false;
+    if (state.holdingsView.reportPeriod !== "all" && fund.report_date !== state.holdingsView.reportPeriod) return false;
     return true;
   });
-  if (state.holdingsView.periodMode !== "latest") return filtered;
-  const latest = filtered.map(fund => fund.report_date).filter(Boolean).sort().at(-1);
-  return latest ? filtered.filter(fund => fund.status !== "available" || fund.report_date === latest) : filtered;
 }
 
 function buildHoldingsAnalysis() {
@@ -1968,13 +2024,28 @@ function renderGuideIndicators(root, rows) {
 }
 
 function renderGuideNotes(root, rows) {
+  const sourceCutoff = state.manifest?.source_metadata?.source_fetched_through;
+  const generatedAt = state.manifest?.generated_at;
+  const holdingDates = Array.isArray(state.manifest?.holdings?.report_dates) ? state.manifest.holdings.report_dates : [];
+  const reportLabels = holdingDates.map(date => `${formatReportPeriodLabel(date)}（${date}）`).join("、");
+  const displayRows = rows.map(item => {
+    if (item.topic === "数据采集顺序") return {
+      topic: "数据截止日期",
+      summary: `源数据抓取截至${formatDateOnly(sourceCutoff)}（北京时间），页面构建于${formatDateOnly(generatedAt)}；仍按天天基金Skill和东方财富、AKShare、网页补充的顺序采集。`
+    };
+    if (item.topic === "持仓时点") return {
+      ...item,
+      summary: `基金持仓为${reportLabels || "最新可获得报告期"}的定期报告前十大持仓披露，不是实时交易仓位；可按报告期筛选，缺失有效持仓的基金不进入权重分母。`
+    };
+    return item;
+  });
   const kpiSpecs = [
     { noteIndex: 0, label: "基金", unit: "只", icon: "i-pie" },
     { noteIndex: 1, label: "经理", unit: "位", icon: "i-profile" },
     { noteIndex: 2, label: "关系", unit: "条", icon: "i-network" },
     { noteIndex: 4, label: "持仓覆盖", unit: "只", icon: "i-defense" }
   ];
-  const extractCount = index => (rows[index]?.summary || "").match(/[\d,]+/)?.[0] || "—";
+  const extractCount = index => (displayRows[index]?.summary || "").match(/[\d,]+/)?.[0] || "—";
   const heading = el("header", { class: "guide-page-heading" }, el("div", {}, el("h1", { text: "数据说明" }), el("p", { text: "当前数据范围、覆盖情况与采集规则。" })));
   const overview = el("section", { class: "data-overview", "aria-label": "数据覆盖概览" });
   kpiSpecs.forEach(spec => overview.append(el("div", { class: "data-overview-item" },
@@ -1982,7 +2053,7 @@ function renderGuideNotes(root, rows) {
     el("div", {}, el("strong", { text: spec.label }), el("p", {}, el("b", { text: extractCount(spec.noteIndex) }), el("span", { text: spec.unit })))
   )));
   const grid = el("div", { class: "data-note-grid" });
-  rows.forEach((item, index) => {
+  displayRows.forEach((item, index) => {
     grid.append(el("article", { class: "data-note" },
       el("header", {}, el("span", { text: String(index + 1).padStart(2, "0") }), el("h2", { text: item.topic })),
       el("p", { text: item.summary })
@@ -2271,6 +2342,7 @@ function formatIntervals(intervals) {
 function formatPercent(value) { return Number.isFinite(value) ? `${value.toFixed(1)}%` : "待补采"; }
 function formatInteger(value) { return Number.isFinite(Number(value)) ? new Intl.NumberFormat("zh-CN", { maximumFractionDigits: 0 }).format(Number(value)) : "待补采"; }
 function formatDateTime(value) { const date = new Date(value); return Number.isNaN(date.getTime()) ? String(value) : new Intl.DateTimeFormat("zh-CN", { dateStyle: "medium", timeStyle: "short" }).format(date); }
+function formatDateOnly(value) { const date = new Date(value); return Number.isNaN(date.getTime()) ? String(value || "未提供") : new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", year: "numeric", month: "long", day: "numeric" }).format(date); }
 function median(values) { const clean = values.filter(Number.isFinite).sort((a, b) => a - b); if (!clean.length) return null; const mid = Math.floor(clean.length / 2); return clean.length % 2 ? clean[mid] : (clean[mid - 1] + clean[mid]) / 2; }
 function finite(value) { if (value === null || value === undefined || value === "") return null; const number = Number(value); return Number.isFinite(number) ? number : null; }
 function percentValue(value) { const number = finite(value); return Number.isFinite(number) ? number * 100 : null; }

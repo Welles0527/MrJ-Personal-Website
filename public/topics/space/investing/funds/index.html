@@ -12,9 +12,9 @@
   <meta name="color-scheme" content="dark light">
   <meta name="description" content="中国主动权益基金与基金经理研究看板">
   <title>主动权益研究终端</title>
-  <link rel="stylesheet" href="./app.css?v=20260720v7">
+  <link rel="stylesheet" href="./app.css?v=20260720v8">
   <script src="./fund-preferences-cloud.js?v=20260720v3" defer></script>
-  <script src="./app.js?v=20260720v7" defer></script>
+  <script src="./app.js?v=20260720v8" defer></script>
 </head>
 <body>
   <svg class="svg-defs" aria-hidden="true">
@@ -50,14 +50,18 @@
       <span><strong>主动权益研究</strong><small>基金与经理决策终端</small></span>
     </a>
     <nav class="dashboard-nav" aria-label="主看板">
-      <button class="dashboard-tab fund" data-view="funds" aria-current="page"><svg><use href="#i-fund"/></svg><span>基金看板<small>产品客观数据</small></span></button>
       <button class="dashboard-tab kpi" data-view="kpi"><svg><use href="#i-kpi"/></svg><span>基金经理KPI<small>经理客观指标</small></span></button>
       <button class="dashboard-tab score" data-view="score"><svg><use href="#i-score"/></svg><span>基金经理打分排行<small>风险偏好试算</small></span></button>
-      <button class="dashboard-tab profile" data-view="profile"><svg><use href="#i-profile"/></svg><span>单个基金经理全数据<small>履历与对比</small></span></button>
+      <button class="dashboard-tab profile" data-view="profile"><svg><use href="#i-profile"/></svg><span>基金经理能力对比<small>履历与能力对照</small></span></button>
+      <button class="dashboard-tab fund" data-view="funds" aria-current="page"><svg><use href="#i-fund"/></svg><span>基金看板<small>产品客观数据</small></span></button>
       <button class="dashboard-tab holdings" data-view="holdings"><svg><use href="#i-holdings"/></svg><span>持仓分析<small>经理共同持股</small></span></button>
       <button class="dashboard-tab guide" data-view="guide"><svg><use href="#i-guide"/></svg><span>网站说明<small>口径与打分逻辑</small></span></button>
     </nav>
     <div class="header-actions">
+      <a class="site-auth-pill" id="fund-auth-link" href="https://www.magicj.cn/officialwebsite/topics/space/planning/todo/" aria-label="使用主站共享账号登录">
+        <svg><use href="#i-profile"/></svg>
+        <span><strong id="fund-auth-status">主站账号</strong><small id="fund-auth-detail">共享登录，无需注册</small></span>
+      </a>
       <span class="freshness" id="data-freshness">数据待载入</span>
       <button class="icon-text-button" id="theme-toggle" type="button"><svg><use href="#i-theme"/></svg><span>切换浅色</span></button>
     </div>
@@ -166,8 +170,8 @@
     </section>
 
     <section class="view" id="view-profile" data-view-panel="profile" aria-labelledby="profile-title" hidden>
-      <div class="profile-search-band">
-        <div><h1 id="profile-title">单个基金经理全数据</h1><p>同名经理通过姓名 + 东方财富ID + 公司精确匹配。</p></div>
+        <div class="profile-search-band">
+        <div><h1 id="profile-title">基金经理能力对比</h1><p>同名经理通过姓名 + 东方财富ID + 公司精确匹配。</p></div>
         <div class="manager-combobox" data-combobox="primary">
           <label for="profile-manager-search">选择基金经理</label>
           <div class="search-box"><svg><use href="#i-search"/></svg><input id="profile-manager-search" type="search" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="profile-manager-options" placeholder="输入姓名、ID或公司"></div>
@@ -203,17 +207,16 @@
       </div>
       <div class="holdings-layout">
         <aside class="holdings-selector">
-          <div class="panel-heading"><div><h2>添加基金经理</h2><p>始终按东方财富经理ID区分同名经理。</p></div></div>
-          <label class="search-box"><svg><use href="#i-search"/></svg><input id="holdings-manager-search" type="search" placeholder="搜索姓名、ID或公司"></label>
-          <div class="favorite-shortcuts" id="holdings-favorites"></div>
-          <div class="holdings-manager-options" id="holdings-manager-options"></div>
+          <div class="panel-heading"><div><h2>报告期</h2><p>按季度筛选纳入持仓分析的基金披露数据。</p></div></div>
+          <label class="holdings-period-filter" for="holdings-report-period"><span>选择报告期</span><select id="holdings-report-period"><option value="all">全部报告期</option></select></label>
         </aside>
         <div class="holdings-main">
+          <div class="holdings-selection-actions">
+            <button class="primary-button" id="holdings-manager-open" type="button"><svg><use href="#i-search"/></svg>搜索基金经理名字</button>
+            <button class="secondary-button" id="holdings-manager-clear" type="button" disabled>一键清除</button>
+          </div>
           <div class="selected-managers" id="holdings-selected-managers"><span class="missing">尚未选择基金经理</span></div>
           <div class="holdings-toolbar">
-            <label>管理关系<select id="holdings-relation"><option value="all">全部</option><option value="solo">仅单人</option><option value="joint">仅共同管理</option></select></label>
-            <label>基金类型<select id="holdings-fund-type"><option value="all">全部</option><option value="股票型">股票型</option><option value="偏股混合型">偏股型</option></select></label>
-            <label>报告期一致性<select id="holdings-period-mode"><option value="all">允许混合报告期</option><option value="latest">仅最新报告期</option></select></label>
             <label>最低共同经理数<select id="holdings-min-overlap"><option value="2">至少2位</option><option value="3">至少3位</option><option value="4">至少4位</option><option value="all">全部已选经理</option></select></label>
             <label>最低平均权重<input id="holdings-min-weight" type="number" min="0" max="100" step="0.1" value="0">%</label>
             <label class="search-box stock-search"><svg><use href="#i-search"/></svg><input id="holdings-stock-search" type="search" placeholder="搜索股票代码或名称"></label>
@@ -272,6 +275,15 @@
       <div class="manager-combobox" data-combobox="compare"><label for="compare-manager-search">对比经理</label><div class="search-box"><svg><use href="#i-search"/></svg><input id="compare-manager-search" type="search" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="compare-manager-options" placeholder="输入姓名、ID或公司"></div><div class="combobox-options" id="compare-manager-options" role="listbox" hidden></div></div>
       <p class="inline-status">对比只使用同一时间维度且可比的指标。</p>
     </form>
+  </dialog>
+
+  <dialog class="holdings-manager-dialog" id="holdings-manager-dialog" aria-labelledby="holdings-manager-dialog-title">
+    <div class="dialog-shell">
+      <div class="dialog-heading"><div><h2 id="holdings-manager-dialog-title">搜索基金经理名字</h2><p>按姓名、东方财富经理ID或基金公司搜索并添加。</p></div><button type="button" id="holdings-manager-close" aria-label="关闭">×</button></div>
+      <label class="search-box dialog-search"><svg><use href="#i-search"/></svg><input id="holdings-manager-search" type="search" autocomplete="off" placeholder="输入姓名、ID或公司"><button type="button" data-clear="holdings-manager-search" aria-label="清空搜索">×</button></label>
+      <div class="favorite-shortcuts" id="holdings-favorites"></div>
+      <div class="holdings-manager-options" id="holdings-manager-options"></div>
+    </div>
   </dialog>
 
   <dialog class="preference-dialog" id="preference-dialog">
