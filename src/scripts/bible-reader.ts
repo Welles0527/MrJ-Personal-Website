@@ -1096,7 +1096,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     renderAll(verse);
   };
 
-  const resumeLastRead = () => {
+  const resumeSelectedChapter = () => {
     if (fullTextStatus === 'loading') {
       notify('圣经全文正在载入，请稍后继续阅读。');
       return;
@@ -1106,13 +1106,19 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       return;
     }
 
-    const savedBook = bookBySlug(state.lastRead.book);
-    if (!savedBook) {
-      notify('没有找到上次阅读的经卷。');
+    const sample = currentSample();
+    if (!sample) {
+      notify('没有找到当前章节的经文。');
       return;
     }
 
-    gotoReference(savedBook.slug, state.lastRead.chapter, state.lastRead.verse ?? 1);
+    const firstUnreadVerse = sample.verses.findIndex((_, index) => !isReadVerse(currentBook, currentChapter, index + 1)) + 1;
+    if (!firstUnreadVerse) {
+      notify(`${currentBookInfo().title} ${currentChapter}章已经全部读完。`);
+      return;
+    }
+
+    gotoReference(currentBook, currentChapter, firstUnreadVerse);
   };
 
   const aliases = data.books
@@ -1551,7 +1557,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       else notify('该章正文暂未导入，无法朗读。');
     }
     if (trigger.dataset.action === 'replay-chapter' && lastSpeechText) speak(lastSpeechText);
-    if (trigger.dataset.action === 'resume-reading') resumeLastRead();
+    if (trigger.dataset.action === 'resume-reading') resumeSelectedChapter();
     if (trigger.dataset.action === 'stop-reading') {
       stopSpeech();
       notify('已停止朗读。');
