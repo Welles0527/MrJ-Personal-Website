@@ -172,7 +172,10 @@ const FILTER_DEFS = [
   { key: "maxDrawdown", label: "最大回撤", category: "defense", icon: "defense", options: [["ltNeg50", "<-50%"], ["neg50to40", "-50%至-40%"], ["neg40to30", "-40%至-30%"], ["neg30to20", "-30%至-20%"], ["gteNeg20", "≥-20%"], ["missing", "不可计算 / 数据不足"]] }
 ];
 
-const KPI_FILTER_DEFS = FILTER_DEFS.filter(def => def.key !== "ability");
+const KPI_FILTER_DEFS = FILTER_DEFS.flatMap(def => def.key === "experience" ? [
+  def,
+  { key: "sampleYears", label: "单人管理年数", category: "base", icon: "base", options: [["lt2", "<2年"], ["2to5", "2-5年"], ["5to10", "5-10年"], ["gte10", "≥10年"], ["missing", "不可计算 / 数据不足"]] }
+] : [def]);
 
 const SCORE_FILTER_DEFS = [
   ...FILTER_DEFS.flatMap(def => def.key === "maxDrawdown" ? [
@@ -1253,6 +1256,7 @@ function managerMatchesFilter(manager, key, option) {
   if (!Number.isFinite(value)) return option === "missing";
   if (key === "poolScale") return matchesPositiveBins(value, option, [2, 10, 50, 100]);
   if (key === "experience") return matchesPositiveBins(value, option, [2, 5, 10], true);
+  if (key === "sampleYears") return matchesPositiveBins(value, option, [2, 5, 10], true);
   if (key === "annualReturn" || key === "annualExcess") return matchesReturnBin(value, option);
   if (key === "maxDrawdown") return matchesDrawdownBin(value, option);
   return true;
