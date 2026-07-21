@@ -4,6 +4,8 @@ const DATA_ROOT = "./data";
 const STORAGE = {
   theme: "fund-dashboard-theme-v1",
   kpiColumns: "fund-dashboard-kpi-columns-v1",
+  kpiDefaultFilters: "fund-dashboard-kpi-default-filters-v1",
+  scoreDefaultFilters: "fund-dashboard-score-default-filters-v1",
   managerPreferences: "fund-dashboard-manager-preferences-v2",
   managerNotes: "fund-dashboard-manager-notes-v1",
   sharedAuth: "mywebsite.site-auth-session.v1"
@@ -346,6 +348,8 @@ function bindStaticEvents() {
   document.querySelectorAll("[data-close-rail]").forEach(button => button.addEventListener("click", () => document.getElementById(`${button.dataset.closeRail}-filter-rail`).classList.remove("is-open")));
   document.querySelectorAll("[data-reset-filters]").forEach(button => button.addEventListener("click", () => resetFilters(button.dataset.resetFilters)));
   document.querySelectorAll("[data-default-filters]").forEach(button => button.addEventListener("click", () => applyDefaultFilters(button.dataset.defaultFilters)));
+  document.querySelectorAll("[data-save-default-filters]").forEach(button => button.addEventListener("click", () => saveDefaultFilters(button.dataset.saveDefaultFilters)));
+  document.querySelectorAll("[data-system-default-filters]").forEach(button => button.addEventListener("click", () => restoreSystemDefaultFilters(button.dataset.systemDefaultFilters)));
   document.querySelectorAll("[data-toggle-filter-groups]").forEach(button => button.addEventListener("click", () => toggleFilterGroups(button.dataset.toggleFilterGroups)));
   document.getElementById("column-picker-open").addEventListener("click", () => document.getElementById("column-dialog").showModal());
   document.getElementById("column-defaults").addEventListener("click", restoreDefaultColumns);
@@ -1313,7 +1317,50 @@ function renderFilters(scope, defs) {
 }
 
 function defaultFilterSelections(scope) {
+  return savedDefaultFilterSelections(scope) ?? systemDefaultFilterSelections(scope);
+}
+
+function systemDefaultFilterSelections(scope) {
   return scope === "score" ? SCORE_DEFAULT_FILTER_SELECTIONS : DEFAULT_FILTER_SELECTIONS;
+}
+
+function defaultFilterStorageKey(scope) {
+  return scope === "score" ? STORAGE.scoreDefaultFilters : STORAGE.kpiDefaultFilters;
+}
+
+function filterDefinitions(scope) {
+  return scope === "score" ? SCORE_FILTER_DEFS : KPI_FILTER_DEFS;
+}
+
+function savedDefaultFilterSelections(scope) {
+  const raw = localStorage.getItem(defaultFilterStorageKey(scope));
+  if (raw === null) return null;
+  try {
+    const saved = JSON.parse(raw);
+    if (!saved || typeof saved !== "object" || Array.isArray(saved)) return null;
+    return Object.fromEntries(filterDefinitions(scope).map(def => {
+      const allowed = new Set(def.options.map(([value]) => value));
+      const values = Array.isArray(saved[def.key]) ? saved[def.key].filter(value => allowed.has(value)) : [];
+      return [def.key, values];
+    }).filter(([, values]) => values.length));
+  } catch {
+    return null;
+  }
+}
+
+function saveDefaultFilters(scope) {
+  const selections = Object.fromEntries(filterDefinitions(scope).map(def => {
+    const selected = state[scope].filters.get(def.key);
+    return [def.key, selected ? [...selected] : []];
+  }).filter(([, values]) => values.length));
+  localStorage.setItem(defaultFilterStorageKey(scope), JSON.stringify(selections));
+  showToast(`${scope === "score" ? "排行" : "指标"}筛选已保存为个人默认`);
+}
+
+function restoreSystemDefaultFilters(scope) {
+  localStorage.removeItem(defaultFilterStorageKey(scope));
+  applyDefaultFilters(scope);
+  showToast(`已恢复${scope === "score" ? "排行" : "指标"}筛选的系统默认`);
 }
 
 function applyDefaultFilters(scope, shouldRender = true) {
@@ -1622,7 +1669,10 @@ function renderDataTable(config) {
     body.append(row);
   } else {
     pageRecords.forEach((record, index) => {
-      const row = el("tr");
+      const row = el("tr", {
+        class: typeof config.rowClass === "function" ? config.rowClass(record) : "",
+        title: typeof config.rowTitle === "function" ? config.rowTitle(record) : ""
+      });
       config.columns.forEach(column => {
         const value = config.value(record, column.key, { sequence: start + index + 1 });
         row.append(renderCell(record, column, value, config.table));
@@ -1952,7 +2002,18 @@ function renderProfileFunds() {
   const rows = dedupeProfileFunds(profileManagerDetails(state.profile.primaryId).map(normalizeProfileFund));
   if (!state.profile.sort) state.profile.sort = ["tenure", "desc"];
   const sorted = sortRecords(rows, state.profile.sort, profileFundSortValue);
-  renderDataTable({ table: "profile", columns: PROFILE_FUND_COLUMNS, records: sorted, stateKey: "profile", headId: "profile-fund-table-head", bodyId: "profile-fund-table-body", footerId: "profile-fund-table-footer", value: profileFundValue });
+  renderDataTable({
+    table: "profile",
+    columns: PROFILE_FUND_COLUMNS,
+    records: sorted,
+    stateKey: "profile",
+    headId: "profile-fund-table-head",
+    bodyId: "profile-fund-table-body",
+    footerId: "profile-fund-table-footer",
+    value: profileFundValue,
+    rowClass: row => profileFundMutedReason(row) ? "profile-fund-muted" : "",
+    rowTitle: profileFundMutedReason
+  });
 }
 
 function normalizeProfileFund(raw) {
@@ -1967,8 +2028,9 @@ function normalizeProfileFund(raw) {
     code: stringValue(raw.representative_code ?? raw.fund_code),
     name: stringValue(raw.fund_name ?? raw.name),
     type: normalizeFundType(raw.type ?? raw.fund_type),
+    equityWeight: finite(raw.benchmark_equity_weight ?? raw.stock_weight ?? raw.equity_weight),
     tenure: intervals.length ? formatIntervals(intervals) : stringValue(raw.tenure_intervals_text) || "任职区间待补采",
-    tenureEnd: profileTenureEnd(intervals, current),
+    tenureStart: profileTenureStart(intervals, raw),
     tenureDays: finite(raw.solo_days),
     tenureReturn: finite(raw.tenure_return),
     annualReturn: percentValue(metricValue(metrics, "annualReturn")),
@@ -1991,12 +2053,21 @@ function dedupeProfileFunds(rows) {
 }
 
 function profileFundValue(row, key) { return row[key]; }
-function profileFundSortValue(row, key) { return key === "tenure" ? row.tenureEnd : row[key]; }
+function profileFundSortValue(row, key) { return key === "tenure" ? row.tenureStart : row[key]; }
 
-function profileTenureEnd(intervals, current) {
-  if (current) return Number.MAX_SAFE_INTEGER;
-  const timestamps = intervals.map(item => Date.parse(item?.end_date ?? item?.end ?? "")).filter(Number.isFinite);
-  return timestamps.length ? Math.max(...timestamps) : 0;
+function profileFundMutedReason(row) {
+  if (row.type.includes("债券")) return "债券基金";
+  if (row.type.includes("混合") && Number.isFinite(row.equityWeight) && row.equityWeight < 60) {
+    return `混合型基金股票权重 ${row.equityWeight}%（低于60%）`;
+  }
+  return "";
+}
+
+function profileTenureStart(intervals, raw) {
+  const timestamps = [raw.start_date, raw.current_start, ...intervals.map(item => item?.start_date ?? item?.start)]
+    .map(value => Date.parse(value ?? ""))
+    .filter(Number.isFinite);
+  return timestamps.length ? Math.min(...timestamps) : Number.NEGATIVE_INFINITY;
 }
 
 async function renderProfileRadar() {
