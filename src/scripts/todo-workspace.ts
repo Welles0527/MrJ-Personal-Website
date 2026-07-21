@@ -703,6 +703,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
       applyCloudSnapshot(session, result.todos);
       if (cloudSession?.uid === session.uid) markSyncSuccess(session);
       startCloudVersionUpgrade(session, result.todos);
+      if (cloudWatcher && result.todos.length > cloudWatcher.capacity) void startCloudWatcher(session);
     })();
     cloudRefresh = { uid: session.uid, promise: request };
     try {
@@ -716,10 +717,14 @@ export function mountTodoWorkspace(root: HTMLElement) {
     closeCloudWatcher();
     const revision = cloudWatchRevision;
     const api = await getCloudApi();
-    cloudWatcher = api.watchCloudTodos(session.uid, (cloudTodos) => {
+    const todoCount = state.todos.length + state.trash.length;
+    cloudWatcher = api.watchCloudTodos(session.uid, todoCount, () => {
       if (revision !== cloudWatchRevision) return;
-      applyCloudSnapshot(session, cloudTodos);
-      if (cloudSession?.uid === session.uid) markSyncSuccess(session);
+      void refreshCloudState(session).catch((error) => {
+        if (revision !== cloudWatchRevision || cloudSession?.uid !== session.uid) return;
+        markSyncFailure(session);
+        notify(error instanceof Error ? error.message : '刷新云端待办失败。');
+      });
     }, (error) => {
       if (revision !== cloudWatchRevision || cloudSession?.uid !== session.uid) return;
       cloudWatcher = null;

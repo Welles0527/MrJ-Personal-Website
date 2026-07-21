@@ -54,10 +54,13 @@ export type CloudTodoMutationReceipt = {
 };
 
 export type CloudTodoWatcher = {
+  pageCount: number;
+  capacity: number;
   close: () => Promise<unknown> | unknown;
 };
 
 const TODO_COLLECTION = 'officialWebsiteTodos';
+const TODO_WATCH_PAGE_SIZE = 100;
 const db = getCloudDb();
 
 const validSyncVersion = (value: unknown): value is number => Number.isInteger(value) && Number(value) >= 1;
@@ -161,30 +164,61 @@ export const loadCloudTodo = async (ownerId: string, todoId: string) => {
 
 export const watchCloudTodos = (
   ownerId: string,
+  todoCount: number,
   onChange: (todos: CloudTodo[]) => void,
   onError: (error: Error) => void
-): CloudTodoWatcher => db.collection(TODO_COLLECTION).where({ ownerId }).limit(1000).watch({
-  onChange: (snapshot) => {
-    const records = Array.isArray(snapshot.docs) ? snapshot.docs as CloudTodoRecord[] : [];
-    const todos = records
-      .filter((todo) => todo?.ownerId === ownerId && typeof todo.id === 'string')
-      .map(todoFromRecord);
-    logSync('watch_snapshot', {
-      user_id: ownerId,
-      task_count: todos.length,
-      read_at: new Date().toISOString()
-    });
-    onChange(todos);
-  },
-  onError: (error: unknown) => {
-    console.warn('[todo-sync]', {
-      event: 'watch_failed',
-      user_id: ownerId,
-      error: cloudErrorMessage(error, '云端待办实时同步已中断。')
-    });
-    onError(new Error(cloudErrorMessage(error, '云端待办实时同步已中断。')));
+): CloudTodoWatcher => {
+  const pageCount = Math.max(1, Math.ceil(todoCount / TODO_WATCH_PAGE_SIZE));
+  const watchers: CloudTodoWatcher[] = [];
+  let closed = false;
+  let failed = false;
+
+  const close = async () => {
+    if (closed) return;
+    closed = true;
+    await Promise.all(watchers.map((watcher) => Promise.resolve(watcher.close()).catch(() => undefined)));
+  };
+
+  for (let pageIndex = 0; pageIndex < pageCount; pageIndex += 1) {
+    const watcher = db.collection(TODO_COLLECTION)
+      .where({ ownerId })
+      .skip(pageIndex * TODO_WATCH_PAGE_SIZE)
+      .limit(TODO_WATCH_PAGE_SIZE)
+      .watch({
+        onChange: (snapshot) => {
+          if (closed) return;
+          const records = Array.isArray(snapshot.docs) ? snapshot.docs as CloudTodoRecord[] : [];
+          const todos = records
+            .filter((todo) => todo?.ownerId === ownerId && typeof todo.id === 'string')
+            .map(todoFromRecord);
+          logSync('watch_snapshot', {
+            user_id: ownerId,
+            page_index: pageIndex,
+            page_count: pageCount,
+            task_count: todos.length,
+            read_at: new Date().toISOString()
+          });
+          onChange(todos);
+        },
+        onError: (error: unknown) => {
+          if (closed || failed) return;
+          failed = true;
+          console.warn('[todo-sync]', {
+            event: 'watch_failed',
+            user_id: ownerId,
+            page_index: pageIndex,
+            page_count: pageCount,
+            error: cloudErrorMessage(error, '云端待办实时同步已中断。')
+          });
+          void close();
+          onError(new Error(cloudErrorMessage(error, '云端待办实时同步已中断。')));
+        }
+      }) as CloudTodoWatcher;
+    watchers.push(watcher);
   }
-}) as CloudTodoWatcher;
+
+  return { pageCount, capacity: pageCount * TODO_WATCH_PAGE_SIZE, close };
+};
 
 export const upsertCloudTodo = async (
   ownerId: string,
