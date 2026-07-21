@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#07110f" />
+    <meta
+      name="description"
+      content="基于官方公告、Codex 服务状态、用户里程碑和产品发布信号的 Codex 额度重置观察看板。"
+    />
+    <title>Codex Reset Radar</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%2307110f'/%3E%3Cpath d='M12 43h9V28h-9zm16 0h9V14h-9zm16 0h9V22h-9z' fill='%2373f2b4'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">跳到主要内容</a>
+
+    <div class="noise" aria-hidden="true"></div>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#top" aria-label="Codex Reset Radar 首页">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span>
+            <b>RESET / WATCH</b>
+            <small>CODEX LIMIT INTELLIGENCE</small>
+          </span>
+        </a>
+
+        <div class="top-actions">
+          <p class="last-check">
+            <span class="pulse-dot" aria-hidden="true"></span>
+            上次检查 <time id="lastChecked">尚未检查</time>
+          </p>
+          <button class="button button-ghost" id="openSignals" type="button">更新观察信号</button>
+          <button class="button button-primary" id="refreshSignals" type="button" aria-label="刷新今日信号">
+            <span class="refresh-icon" aria-hidden="true">↻</span>
+            刷新今日信号
+          </button>
+        </div>
+      </header>
+
+      <main id="main">
+        <section class="hero" id="top" aria-labelledby="pageTitle">
+          <div class="hero-copy">
+            <p class="eyebrow">CODEx 额度重置观测站 / 非官方</p>
+            <h1 id="pageTitle">下一次重置，<br /><em>现在有信号吗？</em></h1>
+            <p class="lede">
+              把公告、故障、用户里程碑和新品发布压缩成一张每日雷达。结论只反映公开信号，
+              <strong>不代表 OpenAI 承诺。</strong>
+            </p>
+          </div>
+
+          <article class="forecast-card" aria-labelledby="forecastHeading">
+            <div class="score-orbit" id="scoreOrbit" style="--score: 12">
+              <svg viewBox="0 0 120 120" role="img" aria-label="重置信号评分">
+                <circle class="orbit-track" cx="60" cy="60" r="51"></circle>
+                <circle class="orbit-value" cx="60" cy="60" r="51"></circle>
+              </svg>
+              <span class="score-number" id="scoreNumber">12</span>
+              <span class="score-unit">/ 100</span>
+            </div>
+            <div class="forecast-copy">
+              <span class="signal-level low" id="signalLevel">低信号</span>
+              <h2 id="forecastHeading">暂无可验证重置窗口</h2>
+              <p id="forecastReason">未发现 Tibo 的新预告，Codex 当前正常，10M 里程碑尚未确认。</p>
+              <div class="forecast-window">
+                <span>重点观察</span>
+                <strong id="watchWindow">新公告 / 10M / Codex 故障恢复</strong>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <section class="status-ribbon" aria-label="实时概览">
+          <div>
+            <span class="status-kicker">CODEX STATUS</span>
+            <strong id="codexStatus">正在连接…</strong>
+          </div>
+          <div>
+            <span class="status-kicker">LATEST RESET</span>
+            <strong><time datetime="2026-07-17">2026.07.17</time> · 全量重置</strong>
+          </div>
+          <div>
+            <span class="status-kicker">NEXT MILESTONE</span>
+            <strong><span id="nextMilestone">10M</span> · 尚未公开确认</strong>
+          </div>
+          <div>
+            <span class="status-kicker">DATA CONFIDENCE</span>
+            <strong id="confidenceText">状态实时 · 其余人工核验</strong>
+          </div>
+        </section>
+
+        <section class="section-block" aria-labelledby="signalsHeading">
+          <div class="section-heading">
+            <div>
+              <p class="section-index">01 / SIGNAL BOARD</p>
+              <h2 id="signalsHeading">四个信号，一眼判断</h2>
+            </div>
+            <p>评分是启发式强度，不是概率。官方公告始终拥有最高权重。</p>
+          </div>
+
+          <div class="signal-grid">
+            <article class="signal-card signal-card-primary" id="tiboCard">
+              <header>
+                <span class="signal-code">S-01</span>
+                <span class="source-tag manual">人工核验</span>
+              </header>
+              <div class="signal-icon" aria-hidden="true">⌁</div>
+              <h3>Tibo 官方动态</h3>
+              <strong id="tiboState">暂无新预告</strong>
+              <p id="tiboDetail">最近记录：7 月 17 日已执行周末重置。</p>
+              <footer>
+                <span id="tiboPoints">+0 分</span>
+                <a id="tiboLink" href="https://x.com/thsottiaux" target="_blank" rel="noreferrer">打开动态 ↗</a>
+              </footer>
+            </article>
+
+            <article class="signal-card" id="statusCard">
+              <header>
+                <span class="signal-code">S-02</span>
+                <span class="source-tag live">官方实时</span>
+              </header>
+              <div class="signal-icon" aria-hidden="true">≋</div>
+              <h3>Codex 服务状态</h3>
+              <strong id="statusState">正在获取</strong>
+              <p id="statusDetail">只计算 Codex 组件；GPT 等其他产品的异常不会加分。</p>
+              <footer>
+                <span id="statusPoints">等待数据</span>
+                <a href="https://status.openai.com/" target="_blank" rel="noreferrer">官方状态页 ↗</a>
+              </footer>
+            </article>
+
+            <article class="signal-card" id="milestoneCard">
+              <header>
+                <span class="signal-code">S-03</span>
+                <span class="source-tag verified">来源留档</span>
+              </header>
+              <div class="signal-icon" aria-hidden="true">↗</div>
+              <h3>用户里程碑</h3>
+              <strong><span id="currentUsers">9</span>M / <span id="targetUsers">10</span>M</strong>
+              <p id="milestoneDetail">9M 于 7 月 15 日公开；当前没有连续用户数数据源。</p>
+              <div class="milestone-track" aria-label="已公开用户里程碑进度">
+                <span id="milestoneFill" style="width: 90%"></span>
+              </div>
+              <footer>
+                <span id="milestonePoints">+8 分</span>
+                <a id="milestoneLink" href="https://x.com/thsottiaux/status/2077607697487188198" target="_blank" rel="noreferrer">里程碑来源 ↗</a>
+              </footer>
+            </article>
+
+            <article class="signal-card" id="launchCard">
+              <header>
+                <span class="signal-code">S-04</span>
+                <span class="source-tag manual">人工核验</span>
+              </header>
+              <div class="signal-icon" aria-hidden="true">✦</div>
+              <h3>新品 / 新模型</h3>
+              <strong id="launchState">暂无新信号</strong>
+              <p id="launchDetail">GPT-5.6 Sol 发布期重置已经发生，不重复计入今日信号。</p>
+              <footer>
+                <span id="launchPoints">+0 分</span>
+                <a id="launchLink" href="https://help.openai.com/en/articles/6825453-chatgpt-release-notes" target="_blank" rel="noreferrer">发布说明 ↗</a>
+              </footer>
+            </article>
+          </div>
+        </section>
+
+        <section class="analysis-grid section-block" aria-label="里程碑与每日动作">
+          <article class="growth-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="section-index">02 / MILESTONE VELOCITY</p>
+                <h2>公开用户里程碑</h2>
+              </div>
+              <span class="panel-note">不是实时用户计数</span>
+            </div>
+
+            <div class="growth-chart" aria-label="2026 年 4 月到 7 月 Codex 公开活跃用户里程碑">
+              <div class="chart-rule"><span>10M</span></div>
+              <div class="chart-rule"><span>8M</span></div>
+              <div class="chart-rule"><span>6M</span></div>
+              <div class="chart-rule"><span>4M</span></div>
+              <svg viewBox="0 0 720 260" role="img" aria-labelledby="chartTitle chartDesc">
+                <title id="chartTitle">Codex 公开活跃用户里程碑曲线</title>
+                <desc id="chartDesc">从 2026 年 4 月 7 日的 3M 上升到 7 月 15 日的 9M。</desc>
+                <defs>
+                  <linearGradient id="lineGradient" x1="0" y1="1" x2="1" y2="0">
+                    <stop offset="0" stop-color="#73f2b4" />
+                    <stop offset="1" stop-color="#ffe66a" />
+                  </linearGradient>
+                  <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#73f2b4" stop-opacity=".26" />
+                    <stop offset="1" stop-color="#73f2b4" stop-opacity="0" />
+                  </linearGradient>
+                </defs>
+                <path class="area" d="M44 208 L156 180 L328 152 L508 124 L552 96 L596 68 L640 40 L640 232 L44 232 Z"></path>
+                <path class="line" d="M44 208 L156 180 L328 152 L508 124 L552 96 L596 68 L640 40"></path>
+                <g class="plot-points">
+                  <circle cx="44" cy="208" r="6"></circle><text x="44" y="194">3M</text>
+                  <circle cx="156" cy="180" r="6"></circle><text x="156" y="166">4M</text>
+                  <circle cx="328" cy="152" r="6"></circle><text x="328" y="138">5M</text>
+                  <circle cx="508" cy="124" r="6"></circle><text x="508" y="110">6M</text>
+                  <circle cx="552" cy="96" r="6"></circle><text x="552" y="82">7M</text>
+                  <circle cx="596" cy="68" r="6"></circle><text x="596" y="54">8M</text>
+                  <circle class="latest-point" cx="640" cy="40" r="8"></circle><text x="640" y="24">9M</text>
+                </g>
+              </svg>
+              <div class="chart-dates" aria-hidden="true"><span>04.07</span><span>04.21</span><span>05.31</span><span>07.12</span><span>07.15</span></div>
+            </div>
+
+            <div class="chart-callout">
+              <strong>接近下一整数里程碑，但无法计算实时百分比。</strong>
+              <p>公开序列在 7 月 12–15 日从 6M 快速升至 9M；截至今日尚无 10M 的可验证公告。</p>
+            </div>
+          </article>
+
+          <aside class="checklist-panel" aria-labelledby="checklistHeading">
+            <div class="panel-heading">
+              <div>
+                <p class="section-index">03 / 60-SECOND CHECK</p>
+                <h2 id="checklistHeading">每日 60 秒</h2>
+              </div>
+            </div>
+            <ol class="daily-list">
+              <li>
+                <span>01</span>
+                <div><strong>点“刷新今日信号”</strong><p>自动读取 Codex 官方组件与近期事件。</p></div>
+              </li>
+              <li>
+                <span>02</span>
+                <div><strong>看 Tibo 最新动态</strong><p>如出现 reset / tomorrow / limits，录入观察信号。</p></div>
+              </li>
+              <li>
+                <span>03</span>
+                <div><strong>确认里程碑或发布</strong><p>只在有来源链接时更新，避免把传闻计分。</p></div>
+              </li>
+            </ol>
+            <button class="button button-ghost button-wide mobile-signal-button" id="openSignalsMobile" type="button">更新观察信号</button>
+            <button class="button button-wide" id="copySummary" type="button">复制今日简报</button>
+            <p class="copy-feedback" id="copyFeedback" aria-live="polite"></p>
+          </aside>
+        </section>
+
+        <section class="section-block" aria-labelledby="historyHeading">
+          <div class="section-heading compact">
+            <div>
+              <p class="section-index">04 / VERIFIED HISTORY</p>
+              <h2 id="historyHeading">最近重置脉冲</h2>
+            </div>
+            <p>“已执行”与“预告”分开记录，避免重复计数。</p>
+          </div>
+
+          <div class="timeline">
+            <article>
+              <time datetime="2026-07-17">07.17</time>
+              <span class="timeline-dot hard"></span>
+              <div><span class="event-tag">全量重置</span><h3>周末再次重置</h3><p>适用于付费 Codex 与 ChatGPT Work 用户。</p><a href="https://x.com/thsottiaux/status/2078320950488297917" target="_blank" rel="noreferrer">来源 ↗</a></div>
+            </article>
+            <article>
+              <time datetime="2026-07-15">07.15</time>
+              <span class="timeline-dot milestone"></span>
+              <div><span class="event-tag">9M 里程碑</span><h3>9M 活跃用户重置</h3><p>9M 公告伴随一次已执行的全量重置。</p><a href="https://x.com/thsottiaux/status/2077607697487188198" target="_blank" rel="noreferrer">来源 ↗</a></div>
+            </article>
+            <article>
+              <time datetime="2026-07-14">07.14</time>
+              <span class="timeline-dot milestone"></span>
+              <div><span class="event-tag">8M 里程碑</span><h3>8M 活跃用户重置</h3><p>整数百万里程碑连续触发。</p><a href="https://x.com/thsottiaux/status/2077114635308986427" target="_blank" rel="noreferrer">来源 ↗</a></div>
+            </article>
+            <article>
+              <time datetime="2026-07-13">07.13</time>
+              <span class="timeline-dot banked"></span>
+              <div><span class="event-tag">7M 里程碑</span><h3>发放可储存重置</h3><p>这是可自行使用的 banked reset，不等于立即全量重置。</p><a href="https://x.com/thsottiaux/status/2076735790567338203" target="_blank" rel="noreferrer">来源 ↗</a></div>
+            </article>
+            <article>
+              <time datetime="2026-07-12">07.12</time>
+              <span class="timeline-dot hard"></span>
+              <div><span class="event-tag">6M 里程碑</span><h3>6M 活跃用户重置</h3><p>全量重置，并伴随短期规则调整。</p><a href="https://x.com/thsottiaux/status/2076365965915467978" target="_blank" rel="noreferrer">来源 ↗</a></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="method-note" aria-labelledby="methodHeading">
+          <div>
+            <p class="section-index">HOW TO READ</p>
+            <h2 id="methodHeading">这是一台信号仪，不是一只水晶球。</h2>
+          </div>
+          <p>
+            Tibo 明确预告权重最高；Codex 自身故障只提供相关性线索；用户数与发布事件必须有公开来源。
+            “24 小时内重置”及“每增加 100 万用户重置”属于历史观察规律，并非 OpenAI 的持续承诺。
+          </p>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <span>RESET / WATCH · LOCAL DASHBOARD</span>
+        <nav aria-label="数据来源">
+          <a href="https://status.openai.com/" target="_blank" rel="noreferrer">OpenAI Status</a>
+          <a href="https://x.com/thsottiaux" target="_blank" rel="noreferrer">Tibo / X</a>
+          <a href="https://help.openai.com/en/articles/6825453-chatgpt-release-notes" target="_blank" rel="noreferrer">Release Notes</a>
+        </nav>
+      </footer>
+    </div>
+
+    <dialog class="signal-dialog" id="signalDialog">
+      <form method="dialog" id="signalForm">
+        <header>
+          <div>
+            <p class="section-index">MANUAL SIGNAL INPUT</p>
+            <h2>更新人工观察信号</h2>
+          </div>
+          <button class="dialog-close" type="button" id="closeSignals" aria-label="关闭">×</button>
+        </header>
+
+        <p class="dialog-intro">这里的数据只保存在本机浏览器中。请仅录入你已经打开来源确认过的信息。</p>
+
+        <div class="form-grid">
+          <label>
+            <span>Tibo 信号</span>
+            <select id="tiboSignal" name="tiboSignal">
+              <option value="none">暂无新预告</option>
+              <option value="hint">暗示可能重置</option>
+              <option value="tomorrow">明确预告明天重置</option>
+              <option value="immediate">明确说正在 / 已按下重置</option>
+            </select>
+          </label>
+          <label>
+            <span>Tibo 来源链接</span>
+            <input id="tiboUrl" name="tiboUrl" type="url" placeholder="https://x.com/thsottiaux/status/..." />
+          </label>
+          <label>
+            <span>最新公开用户数（百万）</span>
+            <input id="manualUsers" name="manualUsers" type="number" min="1" max="99" step="1" value="9" />
+          </label>
+          <label>
+            <span>里程碑来源链接</span>
+            <input id="milestoneUrl" name="milestoneUrl" type="url" placeholder="公开公告链接" />
+          </label>
+          <label>
+            <span>新品 / 模型信号</span>
+            <select id="launchSignal" name="launchSignal">
+              <option value="none">暂无新发布</option>
+              <option value="announced">已预告、尚未发布</option>
+              <option value="launched">过去 48 小时内已发布</option>
+            </select>
+          </label>
+          <label>
+            <span>发布来源链接</span>
+            <input id="manualLaunchUrl" name="manualLaunchUrl" type="url" placeholder="OpenAI 官方发布说明" />
+          </label>
+        </div>
+
+        <label class="full-field">
+          <span>观察备注</span>
+          <textarea id="manualNote" name="manualNote" rows="3" placeholder="例如：公告明确写了 tomorrow morning，时间为北京时间……"></textarea>
+        </label>
+
+        <footer>
+          <button class="button button-ghost danger" id="resetManual" type="button">恢复初始记录</button>
+          <div>
+            <button class="button button-ghost" id="cancelSignals" type="button">取消</button>
+            <button class="button button-primary" value="save" type="submit">保存并重算</button>
+          </div>
+        </footer>
+      </form>
+    </dialog>
+
+    <script src="./app.js" defer></script>
+  </body>
+</html>
