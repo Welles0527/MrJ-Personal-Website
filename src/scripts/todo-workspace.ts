@@ -252,6 +252,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
   let draggedWithCopy = false;
   let cloudWatcher: import('./todo-cloud').CloudTodoWatcher | null = null;
   let cloudRefresh: { uid: string; promise: Promise<void> } | null = null;
+  let cloudVersionUpgrade: { uid: string; promise: Promise<void> } | null = null;
   let cloudWatchRetryTimer: number | undefined;
   let cloudWatchRevision = 0;
   const localMigrationOrigin = LOCAL_MIGRATION_ORIGIN;
@@ -675,16 +676,33 @@ export function mountTodoWorkspace(root: HTMLElement) {
     if (trashModal.open) renderTrashList();
   };
 
+  const startCloudVersionUpgrade = (session: CloudSession, cloudTodos: CloudTodo[]) => {
+    if (cloudVersionUpgrade?.uid === session.uid) return;
+    const request = (async () => {
+      const upgradedCount = await (await getCloudApi()).upgradeCloudTodoVersions(session.uid, cloudTodos);
+      if (upgradedCount) console.info('[todo-sync]', { event: 'legacy_versions_upgraded', user_id: session.uid, task_count: upgradedCount });
+    })();
+    cloudVersionUpgrade = { uid: session.uid, promise: request };
+    void request.catch((error) => {
+      console.warn('[todo-sync]', {
+        event: 'legacy_version_upgrade_failed',
+        user_id: session.uid,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }).finally(() => {
+      if (cloudVersionUpgrade?.promise === request) cloudVersionUpgrade = null;
+    });
+  };
+
   const refreshCloudState = async (session = cloudSession) => {
     if (!session) return;
     if (cloudRefresh?.uid === session.uid) return cloudRefresh.promise;
     const request = (async () => {
       const api = await getCloudApi();
-      let result = await api.loadCloudTodos(session.uid);
-      const upgradedCount = await api.upgradeCloudTodoVersions(session.uid, result.todos);
-      if (upgradedCount) result = await api.loadCloudTodos(session.uid);
+      const result = await api.loadCloudTodos(session.uid);
       applyCloudSnapshot(session, result.todos);
       if (cloudSession?.uid === session.uid) markSyncSuccess(session);
+      startCloudVersionUpgrade(session, result.todos);
     })();
     cloudRefresh = { uid: session.uid, promise: request };
     try {
