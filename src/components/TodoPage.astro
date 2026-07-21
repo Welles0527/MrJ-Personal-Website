@@ -28,6 +28,10 @@ const navItems: NavItem[] = [
     <title>To-Do-List</title>
   </head>
   <body>
+    <div class="site-update-notice" role="status" aria-live="polite" data-site-update-notice hidden>
+      <span>网站已有新版本。</span>
+      <button type="button" data-site-update-refresh>刷新并更新</button>
+    </div>
     <div class="todo-shell" data-todo-app>
       <div class="todo-backdrop" data-sidebar-backdrop hidden></div>
 
@@ -76,7 +80,11 @@ const navItems: NavItem[] = [
           </div>
 
           <div class="todo-header-actions" aria-label="页面操作">
-            <span class="todo-account" data-auth-status>正在检查登录状态…</span>
+            <span class="todo-sync-summary">
+              <span class="todo-account" data-auth-status>正在检查登录状态…</span>
+              <small class="todo-last-sync" data-last-sync>尚未完成云端校验</small>
+            </span>
+            <button class="todo-account-button todo-sync-retry" type="button" data-action="retry-sync" data-sync-retry hidden>重试同步</button>
             <button class="todo-account-button" type="button" data-action="open-login" data-login-open hidden>登录</button>
             <button class="todo-account-button" type="button" data-action="sign-out" data-sign-out hidden>退出登录</button>
             <span class="todo-utility" aria-label="搜索（视觉图标）" title="搜索">⌕</span>
@@ -260,6 +268,50 @@ const navItems: NavItem[] = [
 
       const todoRoot = document.querySelector<HTMLElement>('[data-todo-app]');
       if (todoRoot) mountTodoWorkspace(todoRoot);
+    </script>
+
+    <script>
+      if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+        const pwaBasePath = import.meta.env.BASE_URL.endsWith('/')
+          ? import.meta.env.BASE_URL
+          : `${import.meta.env.BASE_URL}/`;
+        const updateNotice = document.querySelector<HTMLElement>('[data-site-update-notice]');
+        const updateButton = document.querySelector<HTMLButtonElement>('[data-site-update-refresh]');
+        const hadController = Boolean(navigator.serviceWorker.controller);
+        let registration: ServiceWorkerRegistration | null = null;
+
+        const showUpdateNotice = () => {
+          if (updateNotice) updateNotice.hidden = false;
+        };
+
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (hadController) showUpdateNotice();
+        });
+
+        updateButton?.addEventListener('click', () => {
+          registration?.waiting?.postMessage({ type: 'SKIP_WAITING' });
+          window.location.reload();
+        });
+
+        navigator.serviceWorker.register(`${pwaBasePath}sw.js`, {
+          scope: pwaBasePath,
+          updateViaCache: 'none'
+        }).then((nextRegistration) => {
+          registration = nextRegistration;
+          if (nextRegistration.waiting && navigator.serviceWorker.controller) showUpdateNotice();
+
+          nextRegistration.addEventListener('updatefound', () => {
+            const worker = nextRegistration.installing;
+            worker?.addEventListener('statechange', () => {
+              if (worker.state === 'installed' && navigator.serviceWorker.controller) showUpdateNotice();
+            });
+          });
+
+          return nextRegistration.update();
+        }).catch((error) => {
+          console.warn('[site-update] Service Worker update check failed.', error);
+        });
+      }
     </script>
 
     <style is:global>
@@ -535,6 +587,7 @@ const navItems: NavItem[] = [
       }
 
       .todo-account {
+        display: block;
         max-width: 16rem;
         overflow: hidden;
         color: #5f3c20;
@@ -542,6 +595,57 @@ const navItems: NavItem[] = [
         font-weight: 800;
         text-overflow: ellipsis;
         white-space: nowrap;
+      }
+
+      .site-update-notice {
+        position: fixed;
+        z-index: 1000;
+        right: 1rem;
+        bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        max-width: calc(100vw - 2rem);
+        padding: 0.72rem 0.85rem;
+        border: 1px solid rgba(245, 199, 125, 0.35);
+        border-radius: 0.72rem;
+        background: #43240f;
+        color: #fff1d2;
+        box-shadow: 0 12px 30px rgba(35, 15, 2, 0.32);
+        font-size: 0.86rem;
+      }
+
+      .site-update-notice[hidden] { display: none; }
+
+      .site-update-notice button {
+        flex: 0 0 auto;
+        border: 0;
+        border-radius: 999px;
+        padding: 0.45rem 0.75rem;
+        background: #f5c77d;
+        color: #43240f;
+        font: inherit;
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      .todo-sync-summary {
+        display: grid;
+        gap: 0.12rem;
+        min-width: 0;
+      }
+
+      .todo-last-sync {
+        color: #8a6749;
+        font-size: 0.67rem;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .todo-sync-retry {
+        border-color: rgba(173, 69, 35, 0.28);
+        background: rgba(255, 233, 218, 0.84);
+        color: #8d321d;
       }
 
       .todo-account-button,
@@ -1277,6 +1381,9 @@ const navItems: NavItem[] = [
 
       .todo-modal {
         width: min(92vw, 550px);
+        max-width: calc(100vw - 1.5rem);
+        box-sizing: border-box;
+        overflow-x: hidden;
         border: 1px solid rgba(103, 58, 18, 0.22);
         border-radius: 0.72rem;
         padding: 0;
@@ -1292,6 +1399,8 @@ const navItems: NavItem[] = [
 
       .todo-form,
       .todo-delete-content {
+        min-width: 0;
+        box-sizing: border-box;
         padding: 1.45rem;
         background:
           repeating-linear-gradient(0deg, transparent 0 38px, rgba(122, 76, 34, 0.06) 39px 40px),
@@ -1400,6 +1509,7 @@ const navItems: NavItem[] = [
         color: var(--muted);
         font-size: 0.86rem;
         line-height: 1.6;
+        overflow-wrap: anywhere;
       }
 
       .todo-login-copy { margin: 0 0 1rem; }
@@ -1567,7 +1677,8 @@ const navItems: NavItem[] = [
           font-size: 1rem;
         }
         .todo-header-actions { gap: 0.42rem; }
-        .todo-account { flex-basis: 100%; max-width: 100%; }
+        .todo-sync-summary { flex-basis: 100%; max-width: 100%; }
+        .todo-account { max-width: 100%; }
         .todo-utility { width: 2.35rem; height: 2.35rem; }
         .todo-filter-section { align-items: stretch; flex-direction: column; gap: 0.44rem; }
         .todo-filter-list { width: 100%; }
@@ -1610,8 +1721,13 @@ const navItems: NavItem[] = [
         }
         .todo-day-column { min-height: 24rem; }
         .todo-form-grid { grid-template-columns: 1fr; }
-        .todo-modal-actions { display: grid; grid-template-columns: 1fr 1fr; }
-        .todo-modal-actions button { width: 100%; }
+        .todo-modal-actions { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+        .todo-modal-actions button { width: 100%; min-width: 0; }
+      }
+
+      @media (max-width: 420px) {
+        .todo-modal { width: calc(100vw - 1.5rem); }
+        .todo-login-modal .todo-modal-actions { grid-template-columns: 1fr; }
       }
     </style>
   </body>

@@ -9,7 +9,7 @@ const getCloudApi = () => {
 type TodoCategory = CloudTodoCategory;
 type TodoPlacement = CloudTodoPlacement;
 type TodoFilter = 'all' | TodoCategory;
-type Todo = Omit<CloudTodo, 'placement'> & { placement: TodoPlacement };
+type Todo = Omit<CloudTodo, 'placement' | 'deletedAt'> & { placement: TodoPlacement };
 type TrashTodo = Todo & { deletedAt: string };
 
 type TodoState = {
@@ -22,13 +22,9 @@ type TodoState = {
   weekIndex: number;
   editingId: string | null;
   pendingDeleteId: string | null;
-  storageMessage: string | null;
 };
 
 const STORAGE_KEY = 'mywebsite.weekly-todos.v1';
-const TRASH_KEY = 'mywebsite.weekly-todos-trash.v1';
-const PENDING_UPSERT_KEY = 'mywebsite.weekly-todo-upserts.v1';
-const PENDING_DELETE_KEY = 'mywebsite.weekly-todo-deletes.v1';
 const LOCAL_MIGRATION_ORIGIN = 'http://localhost:4321';
 const LOCAL_MIGRATION_PATH = '/officialwebsite/topics/space/planning/todo';
 const OFFICIAL_WEBSITE_ORIGIN = 'https://www.magicj.cn';
@@ -120,7 +116,12 @@ const normalizeTodo = (value: unknown): Todo | null => {
     completed: item.completed,
     note: item.note,
     createdAt: item.createdAt,
-    updatedAt: item.updatedAt
+    updatedAt: item.updatedAt,
+    syncVersion: typeof item.syncVersion === 'number'
+      && Number.isInteger(item.syncVersion)
+      && item.syncVersion >= 1
+      ? item.syncVersion
+      : undefined
   };
 };
 
@@ -133,33 +134,6 @@ const normalizeTrashTodo = (value: unknown): TrashTodo | null => {
   if (!todo || !value || typeof value !== 'object') return null;
   const deletedAt = (value as Record<string, unknown>).deletedAt;
   return typeof deletedAt === 'string' ? { ...todo, deletedAt } : null;
-};
-
-const createExamples = (anchor: Date): Todo[] => {
-  const monday = startOfWeek(anchor);
-  const now = new Date().toISOString();
-  const examples: Array<Pick<Todo, 'title' | 'category' | 'important' | 'completed' | 'note'> & { offset: number }> = [
-    { offset: 0, title: '整理本周工作重点', category: 'work', important: true, completed: false, note: '明确三件最重要的事。' },
-    { offset: 1, title: '完成课程笔记', category: 'study', important: false, completed: true, note: '' },
-    { offset: 2, title: '更新预算记录', category: 'other', important: false, completed: false, note: '' },
-    { offset: 3, title: '安排一次深度学习', category: 'study', important: true, completed: false, note: '预留 90 分钟无干扰时间。' },
-    { offset: 4, title: '整理下周工作计划', category: 'work', important: false, completed: false, note: '' },
-    { offset: 5, title: '户外散步 30 分钟', category: 'health', important: false, completed: false, note: '' },
-    { offset: 6, title: '和家人共进晚餐', category: 'life', important: false, completed: false, note: '' }
-  ];
-  return examples.map((example) => ({
-    id: createId(),
-    title: example.title,
-    date: toDateKey(addDays(monday, example.offset)),
-    category: example.category,
-    placement: 'upcoming',
-    sortOrder: Date.parse(now) + example.offset,
-    important: example.important,
-    completed: example.completed,
-    note: example.note,
-    createdAt: now,
-    updatedAt: now
-  }));
 };
 
 const escapeHtml = (value: string) => value
@@ -250,6 +224,8 @@ export function mountTodoWorkspace(root: HTMLElement) {
   const migrationConfirm = getElement<HTMLButtonElement>('[data-action="confirm-migration"]');
   const signUpButton = getElement<HTMLButtonElement>('[data-action="sign-up"]');
   const authStatus = getElement<HTMLElement>('[data-auth-status]');
+  const lastSyncStatus = getElement<HTMLElement>('[data-last-sync]');
+  const syncRetryButton = getElement<HTMLButtonElement>('[data-sync-retry]');
   const loginButton = getElement<HTMLButtonElement>('[data-login-open]');
   const signOutButton = getElement<HTMLButtonElement>('[data-sign-out]');
   const loginMessage = getElement<HTMLElement>('[data-login-message]');
@@ -274,127 +250,22 @@ export function mountTodoWorkspace(root: HTMLElement) {
   let completeEmailSignUp: ((verificationCode: string) => Promise<CloudSession>) | null = null;
   let draggedTodoId: string | null = null;
   let draggedWithCopy = false;
+  let cloudWatcher: import('./todo-cloud').CloudTodoWatcher | null = null;
+  let cloudRefresh: { uid: string; promise: Promise<void> } | null = null;
+  let cloudWatchRetryTimer: number | undefined;
+  let cloudWatchRevision = 0;
   const localMigrationOrigin = LOCAL_MIGRATION_ORIGIN;
 
-  const persist = (todos: Todo[]) => {
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
-  const loadIdQueue = (key: string) => {
-    try {
-      const stored = window.localStorage.getItem(key);
-      if (!stored) return new Set<string>();
-      const parsed: unknown = JSON.parse(stored);
-      return new Set(Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : []);
-    } catch {
-      return new Set<string>();
-    }
-  };
-
-  const persistIdQueue = (key: string, ids: Set<string>) => {
-    try {
-      window.localStorage.setItem(key, JSON.stringify([...ids]));
-    } catch {
-      // Visible todo data is saved separately; sync queue persistence is best-effort.
-    }
-  };
-
-  const enqueueId = (key: string, id: string) => {
-    const ids = loadIdQueue(key);
-    ids.add(id);
-    persistIdQueue(key, ids);
-  };
-
-  const removeQueuedId = (key: string, id: string) => {
-    const ids = loadIdQueue(key);
-    ids.delete(id);
-    persistIdQueue(key, ids);
-  };
-
-  const loadTodos = () => {
-    try {
-      const stored = window.localStorage.getItem(STORAGE_KEY);
-      if (stored === null) {
-        const examples = createExamples(currentDate);
-        return { todos: examples, storageMessage: persist(examples) ? null : '浏览器存储不可用，示例数据仅保留到本次会话。' };
-      }
-      const parsed: unknown = JSON.parse(stored);
-      if (!Array.isArray(parsed)) {
-        const examples = createExamples(currentDate);
-        return { todos: examples, storageMessage: persist(examples) ? '本地待办数据异常，已安全恢复为示例数据。' : '本地待办数据异常，已使用临时示例数据。' };
-      }
-      const todos = normalizeTodoList(parsed) ?? [];
-      const storageMessage = todos.length === parsed.length ? null : '部分本地待办数据格式异常，已跳过无法识别的项目。';
-      return { todos, storageMessage };
-    } catch {
-      const examples = createExamples(currentDate);
-      return { todos: examples, storageMessage: '无法读取本地待办数据，已使用临时示例数据。' };
-    }
-  };
-
-  const loadTrash = () => {
-    try {
-      const stored = window.localStorage.getItem(TRASH_KEY);
-      if (!stored) return [];
-      const parsed: unknown = JSON.parse(stored);
-      return Array.isArray(parsed) ? parsed.map(normalizeTrashTodo).filter((todo): todo is TrashTodo => Boolean(todo)) : [];
-    } catch {
-      return [];
-    }
-  };
-
-  const persistTrash = (trash: TrashTodo[]) => {
-    try {
-      window.localStorage.setItem(TRASH_KEY, JSON.stringify(trash));
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
-  const timestamp = (value: string) => {
-    const parsed = Date.parse(value);
-    return Number.isNaN(parsed) ? 0 : parsed;
-  };
-
-  const localUpdatesForExistingCloudTodos = (localTodos: Todo[], cloudTodos: Todo[]) => {
-    const cloudById = new Map(cloudTodos.map((todo) => [todo.id, todo]));
-    return localTodos.filter((todo) => {
-      const cloudTodo = cloudById.get(todo.id);
-      return cloudTodo ? timestamp(todo.updatedAt) > timestamp(cloudTodo.updatedAt) : false;
-    });
-  };
-
-  const mergeCloudTodosWithLocalUpdates = (localTodos: Todo[], cloudTodos: Todo[], forceLocalIds = new Set<string>()) => {
-    const localById = new Map(localTodos.map((todo) => [todo.id, todo]));
-    const cloudIds = new Set(cloudTodos.map((todo) => todo.id));
-    const merged = cloudTodos.map((cloudTodo) => {
-      const localTodo = localById.get(cloudTodo.id);
-      return localTodo && (forceLocalIds.has(localTodo.id) || timestamp(localTodo.updatedAt) > timestamp(cloudTodo.updatedAt)) ? localTodo : cloudTodo;
-    });
-    localTodos.forEach((localTodo) => {
-      if (forceLocalIds.has(localTodo.id) && !cloudIds.has(localTodo.id)) merged.push(localTodo);
-    });
-    return merged.sort(compareTodos);
-  };
-
-  const loaded = loadTodos();
   const state: TodoState = {
-    todos: loaded.todos,
-    trash: loadTrash(),
+    todos: [],
+    trash: [],
     filter: 'all',
     selectedDate: currentDate,
     viewYear: currentDate.getFullYear(),
     viewMonth: currentDate.getMonth(),
     weekIndex: weekIndexForDate(currentDate, currentDate.getFullYear(), currentDate.getMonth()),
     editingId: null,
-    pendingDeleteId: null,
-    storageMessage: loaded.storageMessage
+    pendingDeleteId: null
   };
 
   const getWeeks = () => monthWeeks(state.viewYear, state.viewMonth);
@@ -417,6 +288,34 @@ export function mountTodoWorkspace(root: HTMLElement) {
     toast.hidden = false;
     window.clearTimeout(toastTimer);
     toastTimer = window.setTimeout(() => { toast.hidden = true; }, 2600);
+  };
+
+  const syncTimeLabel = (value: string) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '时间未知';
+    return new Intl.DateTimeFormat('zh-CN', {
+      timeZone: 'Asia/Shanghai',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    }).format(date);
+  };
+
+  const setSyncStatus = (message: string, options: { lastSyncAt?: string; retry?: boolean } = {}) => {
+    authStatus.textContent = message;
+    if (options.lastSyncAt) lastSyncStatus.textContent = `最后同步：${syncTimeLabel(options.lastSyncAt)}`;
+    syncRetryButton.hidden = !options.retry;
+  };
+
+  const markSyncSuccess = (session: CloudSession, syncedAt = new Date().toISOString()) => {
+    setSyncStatus(`已同步：${session.account}`, { lastSyncAt: syncedAt, retry: false });
+  };
+
+  const markSyncFailure = (session: CloudSession, message = '同步失败') => {
+    setSyncStatus(`${message}：${session.account}`, { retry: true });
   };
 
   const closeSidebar = () => {
@@ -704,13 +603,6 @@ export function mountTodoWorkspace(root: HTMLElement) {
     return `${dateDescription(date)} ${hours}:${minutes}`;
   };
 
-  const moveTodoToTrash = (todo: Todo) => {
-    const deletedAt = new Date().toISOString();
-    const trashed: TrashTodo = { ...todo, deletedAt };
-    state.trash = [trashed, ...state.trash.filter((item) => item.id !== todo.id)];
-    return persistTrash(state.trash);
-  };
-
   const renderTrashList = () => {
     if (!state.trash.length) {
       trashList.innerHTML = '<p class="todo-trash-empty">回收站为空。</p>';
@@ -737,16 +629,10 @@ export function mountTodoWorkspace(root: HTMLElement) {
       : [...state.todos, todo];
   };
 
-  const saveState = (successMessage: string) => {
-    const saved = persist(state.todos);
-    render();
-    notify(saved ? successMessage : `${successMessage} 浏览器存储不可用，当前会话已更新。`);
-    return saved;
-  };
-
   const showLogin = (message = '', options: { open?: boolean } = {}) => {
     loginMessage.textContent = message;
-    authStatus.textContent = '未登录';
+    setSyncStatus('未登录', { retry: false });
+    lastSyncStatus.textContent = '登录后校验云端数据';
     loginButton.hidden = false;
     signOutButton.hidden = true;
     if (options.open !== false && !loginModal.open) loginModal.showModal();
@@ -754,9 +640,81 @@ export function mountTodoWorkspace(root: HTMLElement) {
 
   const setAuthenticatedHeader = (session: CloudSession) => {
     cloudSession = session;
-    authStatus.textContent = `已登录：${session.account}`;
+    setSyncStatus(`已登录：${session.account}`, { retry: false });
     loginButton.hidden = true;
     signOutButton.hidden = false;
+  };
+
+  const closeCloudWatcher = () => {
+    cloudWatchRevision += 1;
+    window.clearTimeout(cloudWatchRetryTimer);
+    cloudWatchRetryTimer = undefined;
+    const watcher = cloudWatcher;
+    cloudWatcher = null;
+    if (watcher) void Promise.resolve(watcher.close()).catch(() => undefined);
+  };
+
+  const applyCloudSnapshot = (session: CloudSession, cloudTodos: CloudTodo[]) => {
+    if (cloudSession?.uid !== session.uid) return;
+    const activeById = new Map<string, Todo>();
+    const trashById = new Map<string, TrashTodo>();
+
+    cloudTodos.forEach((cloudTodo) => {
+      const trashTodo = normalizeTrashTodo(cloudTodo);
+      if (trashTodo) {
+        trashById.set(trashTodo.id, trashTodo);
+        return;
+      }
+      const todo = normalizeTodo(cloudTodo);
+      if (todo) activeById.set(todo.id, todo);
+    });
+
+    state.todos = [...activeById.values()].sort(compareTodos);
+    state.trash = [...trashById.values()].sort((first, second) => second.deletedAt.localeCompare(first.deletedAt));
+    render();
+    if (trashModal.open) renderTrashList();
+  };
+
+  const refreshCloudState = async (session = cloudSession) => {
+    if (!session) return;
+    if (cloudRefresh?.uid === session.uid) return cloudRefresh.promise;
+    const request = (async () => {
+      const api = await getCloudApi();
+      let result = await api.loadCloudTodos(session.uid);
+      const upgradedCount = await api.upgradeCloudTodoVersions(session.uid, result.todos);
+      if (upgradedCount) result = await api.loadCloudTodos(session.uid);
+      applyCloudSnapshot(session, result.todos);
+      if (cloudSession?.uid === session.uid) markSyncSuccess(session);
+    })();
+    cloudRefresh = { uid: session.uid, promise: request };
+    try {
+      await request;
+    } finally {
+      if (cloudRefresh?.promise === request) cloudRefresh = null;
+    }
+  };
+
+  const startCloudWatcher = async (session: CloudSession) => {
+    closeCloudWatcher();
+    const revision = cloudWatchRevision;
+    const api = await getCloudApi();
+    cloudWatcher = api.watchCloudTodos(session.uid, (cloudTodos) => {
+      if (revision !== cloudWatchRevision) return;
+      applyCloudSnapshot(session, cloudTodos);
+      if (cloudSession?.uid === session.uid) markSyncSuccess(session);
+    }, (error) => {
+      if (revision !== cloudWatchRevision || cloudSession?.uid !== session.uid) return;
+      cloudWatcher = null;
+      markSyncFailure(session, '同步中断');
+      notify(error.message);
+      window.clearTimeout(cloudWatchRetryTimer);
+      cloudWatchRetryTimer = window.setTimeout(() => {
+        if (cloudSession?.uid !== session.uid) return;
+        void refreshCloudState(session)
+          .then(() => startCloudWatcher(session))
+          .catch(() => { markSyncFailure(session); });
+      }, 3000);
+    });
   };
 
   const resetEmailSignUp = () => {
@@ -768,81 +726,54 @@ export function mountTodoWorkspace(root: HTMLElement) {
 
   const activateSession = async (session: CloudSession, successMessage?: string) => {
     setAuthenticatedHeader(session);
-    const api = await getCloudApi();
-    const cloudTodos = normalizeTodoList(await api.loadCloudTodos(session.uid)) ?? [];
-    // Read local state after the async cloud request so tasks created while it was in flight are not overwritten.
-    const localTodos = state.todos;
-    const pendingUpsertIds = loadIdQueue(PENDING_UPSERT_KEY);
-    const pendingDeleteIds = loadIdQueue(PENDING_DELETE_KEY);
-    const cloudTodoIds = new Set(cloudTodos.map((todo) => todo.id));
-    pendingUpsertIds.forEach((todoId) => {
-      if (cloudTodoIds.has(todoId)) removeQueuedId(PENDING_UPSERT_KEY, todoId);
-    });
-    const visibleCloudTodos = cloudTodos.filter((todo) => !pendingDeleteIds.has(todo.id));
-    const localUpdates = localUpdatesForExistingCloudTodos(localTodos, visibleCloudTodos);
-    const localOnlyTodos = localTodos.filter((todo) => !cloudTodoIds.has(todo.id) && !pendingDeleteIds.has(todo.id));
-    localOnlyTodos.forEach((todo) => enqueueId(PENDING_UPSERT_KEY, todo.id));
-    const pendingUpserts = localTodos.filter((todo) => pendingUpsertIds.has(todo.id) || localOnlyTodos.some((item) => item.id === todo.id));
-    const syncUpserts = [...new Map([...localUpdates, ...pendingUpserts].map((todo) => [todo.id, todo])).values()];
-    const forceLocalIds = new Set([...pendingUpsertIds, ...localOnlyTodos.map((todo) => todo.id)]);
-    state.todos = mergeCloudTodosWithLocalUpdates(localTodos, visibleCloudTodos, forceLocalIds);
-    persist(state.todos);
+    state.todos = [];
+    state.trash = [];
     render();
+    setSyncStatus(`正在同步：${session.account}`, { retry: false });
+    await refreshCloudState(session);
+    await startCloudWatcher(session);
     if (loginModal.open) loginModal.close();
-    notify(successMessage || '已连接云端待办。');
-    if (syncUpserts.length) await Promise.allSettled(syncUpserts.map(async (todo) => {
-      await api.upsertCloudTodo(session.uid, todo);
-      removeQueuedId(PENDING_UPSERT_KEY, todo.id);
-    }));
-    const syncDeleteIds = [...pendingDeleteIds].filter((todoId) => {
-      if (cloudTodoIds.has(todoId)) return true;
-      removeQueuedId(PENDING_DELETE_KEY, todoId);
-      return false;
-    });
-    if (syncDeleteIds.length) await Promise.allSettled(syncDeleteIds.map(async (todoId) => {
-      await api.removeCloudTodo(todoId);
-      removeQueuedId(PENDING_DELETE_KEY, todoId);
-    }));
+    notify(successMessage || '已连接云端待办，跨浏览器实时同步已开启。');
   };
 
-  const saveCloudTodo = async (todo: Todo, successMessage: string, options: { optimistic?: boolean } = {}) => {
+  const saveCloudTodo = async (todo: Todo, successMessage: string, expectedUpdatedAt?: string) => {
     if (!cloudSession) {
       showLogin('请先登录后再保存待办。');
       return false;
     }
-    if (options.optimistic) {
-      upsertTodoInState(todo);
-      persist(state.todos);
-      render();
-      enqueueId(PENDING_UPSERT_KEY, todo.id);
-      notify('已保存到本地，正在同步云端。');
+    const session = cloudSession;
+    setSyncStatus(`正在同步：${session.account}`, { retry: false });
+    const receipt = await (await getCloudApi()).upsertCloudTodo(session.uid, todo, expectedUpdatedAt);
+    if (cloudSession?.uid !== session.uid) return false;
+    const verifiedTodo = normalizeTodo(receipt.todo) || todo;
+    upsertTodoInState(verifiedTodo);
+    render();
+    markSyncSuccess(session);
+    notify(successMessage);
+    void refreshCloudState(session).catch(() => undefined);
+    return true;
+  };
+
+  const retryCloudSync = async () => {
+    if (!cloudSession) {
+      showLogin('请先登录后再重试同步。');
+      return;
     }
+    const session = cloudSession;
+    setSyncStatus(`正在重试：${session.account}`, { retry: false });
     try {
-      await (await getCloudApi()).upsertCloudTodo(cloudSession.uid, todo);
-      removeQueuedId(PENDING_UPSERT_KEY, todo.id);
-      if (!options.optimistic) upsertTodoInState(todo);
-      if (options.optimistic) {
-        notify(successMessage);
-      } else {
-        saveState(successMessage);
-      }
-      return true;
+      await refreshCloudState(session);
+      if (!cloudWatcher) await startCloudWatcher(session);
+      markSyncSuccess(session);
+      notify('云端数据已重新读取并校验。');
     } catch (error) {
-      if (!options.optimistic) throw error;
-      notify('已保存到本地；云端暂未同步，刷新后会继续保留。');
-      return true;
+      markSyncFailure(session);
+      throw error;
     }
   };
 
-  const saveMovedTodo = async (todo: Todo, successMessage: string, localMessage = '移动已保存到本地；登录后会同步到云端。') => {
-    if (cloudSession) return saveCloudTodo(todo, successMessage, { optimistic: true });
-    upsertTodoInState(todo);
-    persist(state.todos);
-    render();
-    enqueueId(PENDING_UPSERT_KEY, todo.id);
-    notify(localMessage);
-    return true;
-  };
+  const saveMovedTodo = async (todo: Todo, successMessage: string, expectedUpdatedAt?: string) =>
+    saveCloudTodo(todo, successMessage, expectedUpdatedAt);
 
   const clearDropTargets = () => {
     root.querySelectorAll('.is-drop-target, .is-dragging').forEach((element) => {
@@ -862,7 +793,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
       return;
     }
     const nextTodo: Todo = { ...todo, date: dateKey, sortOrder: nextDateSortOrder(dateKey), updatedAt: new Date().toISOString() };
-    const saved = await saveMovedTodo(nextTodo, '待办已移动并同步到云端。');
+    const saved = await saveMovedTodo(nextTodo, '待办已移动并同步到云端。', todo.updatedAt);
     if (!saved) return;
     selectDate(date);
     render();
@@ -872,7 +803,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
     const todo = state.todos.find((item) => item.id === todoId);
     if (!todo || (!todo.date && todo.placement === placement)) return;
     const nextTodo: Todo = { ...todo, date: '', placement, sortOrder: nextSortOrder(placement), updatedAt: new Date().toISOString() };
-    await saveMovedTodo(nextTodo, '待办已移动并同步到云端。');
+    await saveMovedTodo(nextTodo, '待办已移动并同步到云端。', todo.updatedAt);
   };
 
   const copyTodoToDate = async (todoId: string, dateKey: string) => {
@@ -886,7 +817,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
       sortOrder: nextDateSortOrder(dateKey),
       updatedAt: new Date().toISOString()
     };
-    const saved = await saveMovedTodo(copiedTodo, '待办已复制并同步到云端。', '待办已复制到本地；登录后会同步到云端。');
+    const saved = await saveMovedTodo(copiedTodo, '待办已复制并同步到云端。');
     if (!saved) return;
     selectDate(date);
     render();
@@ -903,33 +834,40 @@ export function mountTodoWorkspace(root: HTMLElement) {
       sortOrder: nextSortOrder(placement),
       updatedAt: new Date().toISOString()
     };
-    await saveMovedTodo(copiedTodo, '待办已复制并同步到云端。', '待办已复制到本地；登录后会同步到云端。');
+    await saveMovedTodo(copiedTodo, '待办已复制并同步到云端。');
   };
 
   const persistReorderedTodos = async (orderedTodos: Todo[], message = '待办顺序已更新。') => {
+    if (!cloudSession) {
+      showLogin('请先登录后再调整待办顺序。');
+      return false;
+    }
     const now = new Date().toISOString();
+    const expectedUpdatedAtById = new Map(orderedTodos.map((todo) => [
+      todo.id,
+      state.todos.find((current) => current.id === todo.id)?.updatedAt
+    ]));
     const reorderedTodos = orderedTodos.map((todo, index) => ({
       ...todo,
       sortOrder: (index + 1) * 1000,
       updatedAt: now
     }));
-    const reorderedById = new Map(reorderedTodos.map((todo) => [todo.id, todo]));
-    state.todos = state.todos.map((todo) => reorderedById.get(todo.id) ?? todo);
-    persist(state.todos);
-    reorderedTodos.forEach((todo) => enqueueId(PENDING_UPSERT_KEY, todo.id));
-    render();
-    notify(message);
-
-    if (!cloudSession) return;
     const session = cloudSession;
     try {
       const api = await getCloudApi();
-      await Promise.all(reorderedTodos.map((todo) => api.upsertCloudTodo(session.uid, todo)));
-      reorderedTodos.forEach((todo) => removeQueuedId(PENDING_UPSERT_KEY, todo.id));
-      notify('待办顺序已同步到云端。');
-    } catch {
-      notify('顺序已保存到本地；云端暂未同步。');
+      await Promise.all(reorderedTodos.map((todo) =>
+        api.upsertCloudTodo(session.uid, todo, expectedUpdatedAtById.get(todo.id))));
+    } catch (error) {
+      await refreshCloudState(session).catch(() => undefined);
+      throw error;
     }
+    if (cloudSession?.uid !== session.uid) return false;
+    const reorderedById = new Map(reorderedTodos.map((todo) => [todo.id, todo]));
+    state.todos = state.todos.map((todo) => reorderedById.get(todo.id) ?? todo);
+    render();
+    markSyncSuccess(session);
+    notify(`${message} 已同步到云端。`);
+    return true;
   };
 
   const moveOverviewTodo = async (todoId: string, direction: -1 | 1) => {
@@ -984,6 +922,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
   };
 
   const showCloudError = (error: unknown, fallback: string) => {
+    if (cloudSession) markSyncFailure(cloudSession);
     notify(error instanceof Error ? error.message : fallback);
   };
 
@@ -1034,6 +973,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
       return;
     }
     const session = cloudSession;
+    const currentById = new Map(state.todos.map((todo) => [todo.id, todo]));
     const merged = new Map(state.todos.map((todo) => [todo.id, todo]));
     let added = 0;
     let updated = 0;
@@ -1051,10 +991,14 @@ export function mountTodoWorkspace(root: HTMLElement) {
       }
     });
     const nextTodos = [...merged.values()].sort(compareTodos);
-    for (const todo of nextTodos) await (await getCloudApi()).upsertCloudTodo(session.uid, todo);
+    for (const todo of nextTodos) {
+      await (await getCloudApi()).upsertCloudTodo(session.uid, todo, currentById.get(todo.id)?.updatedAt);
+    }
+    if (cloudSession?.uid !== session.uid) return;
     state.todos = nextTodos;
     closeMigrationDialog();
-    saveState(`旧数据已合并：新增 ${added} 项，更新 ${updated} 项，保留当前 ${kept} 项。`);
+    render();
+    notify(`旧数据已合并到云端：新增 ${added} 项，更新 ${updated} 项，保留当前 ${kept} 项。`);
   };
 
   const exportBackup = () => {
@@ -1301,9 +1245,20 @@ export function mountTodoWorkspace(root: HTMLElement) {
     if (action === 'close-trash') {
       if (trashModal.open) trashModal.close();
     }
+    if (action === 'retry-sync') {
+      try {
+        await retryCloudSync();
+      } catch (error) {
+        showCloudError(error, '重新读取云端待办失败。');
+      }
+    }
     if (action === 'restore-trash') {
       const trashTodo = state.trash.find((item) => item.id === trigger.dataset.todoId);
       if (!trashTodo) return;
+      if (!cloudSession) {
+        showLogin('请先登录后再恢复待办。');
+        return;
+      }
       const restoredTodo: Todo = {
         id: trashTodo.id,
         title: trashTodo.title,
@@ -1317,30 +1272,40 @@ export function mountTodoWorkspace(root: HTMLElement) {
         createdAt: trashTodo.createdAt,
         updatedAt: new Date().toISOString()
       };
-      state.trash = state.trash.filter((item) => item.id !== trashTodo.id);
-      persistTrash(state.trash);
-      upsertTodoInState(restoredTodo);
-      enqueueId(PENDING_UPSERT_KEY, restoredTodo.id);
-      const restoredDate = parseDateKey(restoredTodo.date);
-      if (restoredDate) selectDate(restoredDate);
-      saveState('待办已从回收站恢复。');
-      renderTrashList();
-      if (cloudSession) {
-        try {
-          await (await getCloudApi()).upsertCloudTodo(cloudSession.uid, restoredTodo);
-          removeQueuedId(PENDING_UPSERT_KEY, restoredTodo.id);
-        } catch {
-          notify('待办已本地恢复；云端暂未同步。');
-        }
+      const session = cloudSession;
+      try {
+        await (await getCloudApi()).upsertCloudTodo(session.uid, restoredTodo, trashTodo.updatedAt);
+        if (cloudSession?.uid !== session.uid) return;
+        state.trash = state.trash.filter((item) => item.id !== trashTodo.id);
+        upsertTodoInState(restoredTodo);
+        const restoredDate = parseDateKey(restoredTodo.date);
+        if (restoredDate) selectDate(restoredDate);
+        render();
+        renderTrashList();
+        markSyncSuccess(session);
+        notify('待办已从云端回收站恢复。');
+      } catch (error) {
+        showCloudError(error, '恢复云端待办失败。');
       }
     }
     if (action === 'delete-trash') {
       const trashTodo = state.trash.find((item) => item.id === trigger.dataset.todoId);
       if (!trashTodo) return;
-      state.trash = state.trash.filter((item) => item.id !== trashTodo.id);
-      persistTrash(state.trash);
-      renderTrashList();
-      notify('已从回收站彻底删除。');
+      if (!cloudSession) {
+        showLogin('请先登录后再彻底删除待办。');
+        return;
+      }
+      const session = cloudSession;
+      try {
+        await (await getCloudApi()).removeCloudTodo(session.uid, trashTodo.id, trashTodo.updatedAt);
+        if (cloudSession?.uid !== session.uid) return;
+        state.trash = state.trash.filter((item) => item.id !== trashTodo.id);
+        renderTrashList();
+        markSyncSuccess(session);
+        notify('已从云端回收站彻底删除。');
+      } catch (error) {
+        showCloudError(error, '彻底删除云端待办失败。');
+      }
     }
     if (action === 'set-filter' && (isCategory(trigger.dataset.category) || trigger.dataset.category === 'all')) {
       state.filter = trigger.dataset.category as TodoFilter;
@@ -1384,8 +1349,13 @@ export function mountTodoWorkspace(root: HTMLElement) {
       if (todo) {
         const nextTodo = { ...todo, completed: !todo.completed, updatedAt: new Date().toISOString() };
         try {
-          await saveCloudTodo(nextTodo, nextTodo.completed ? '待办已完成并同步到云端。' : '待办已恢复并同步到云端。', { optimistic: true });
+          await saveCloudTodo(
+            nextTodo,
+            nextTodo.completed ? '待办已完成并同步到云端。' : '待办已恢复并同步到云端。',
+            todo.updatedAt
+          );
         } catch (error) {
+          render();
           showCloudError(error, '更新云端待办失败。');
         }
       }
@@ -1396,26 +1366,27 @@ export function mountTodoWorkspace(root: HTMLElement) {
       if (!pendingTodos.length) return;
       const now = new Date().toISOString();
       const pendingIds = new Set(pendingTodos.map((todo) => todo.id));
+      const expectedUpdatedAtById = new Map(pendingTodos.map((todo) => [todo.id, todo.updatedAt]));
       const completedTodos = pendingTodos.map((todo) => ({ ...todo, completed: true, updatedAt: now }));
-
-      state.todos = state.todos.map((todo) => pendingIds.has(todo.id)
-        ? { ...todo, completed: true, updatedAt: now }
-        : todo);
-      persist(state.todos);
-      completedTodos.forEach((todo) => enqueueId(PENDING_UPSERT_KEY, todo.id));
-      render();
-      notify('今天的可见待办已全部完成。');
-
-      if (cloudSession) {
-        const session = cloudSession;
-        try {
-          const api = await getCloudApi();
-          await Promise.all(completedTodos.map((todo) => api.upsertCloudTodo(session.uid, todo)));
-          completedTodos.forEach((todo) => removeQueuedId(PENDING_UPSERT_KEY, todo.id));
-          saveState('今天的待办已同步完成。');
-        } catch {
-          notify('已保存到本地；云端暂未同步，刷新后会继续保留。');
-        }
+      if (!cloudSession) {
+        showLogin('请先登录后再完成待办。');
+        return;
+      }
+      const session = cloudSession;
+      try {
+        const api = await getCloudApi();
+        await Promise.all(completedTodos.map((todo) =>
+          api.upsertCloudTodo(session.uid, todo, expectedUpdatedAtById.get(todo.id))));
+        if (cloudSession?.uid !== session.uid) return;
+        state.todos = state.todos.map((todo) => pendingIds.has(todo.id)
+          ? { ...todo, completed: true, updatedAt: now }
+          : todo);
+        render();
+        markSyncSuccess(session);
+        notify('今天的待办已全部同步完成。');
+      } catch (error) {
+        await refreshCloudState(session).catch(() => undefined);
+        showCloudError(error, '批量完成云端待办失败。');
       }
     }
     if (action === 'edit-todo') {
@@ -1437,19 +1408,22 @@ export function mountTodoWorkspace(root: HTMLElement) {
       }
       const deletingId = state.pendingDeleteId;
       const deletingTodo = state.todos.find((todo) => todo.id === deletingId);
-      const trashSaved = deletingTodo ? moveTodoToTrash(deletingTodo) : true;
-      state.todos = state.todos.filter((todo) => todo.id !== deletingId);
-      state.pendingDeleteId = null;
-      enqueueId(PENDING_DELETE_KEY, deletingId);
-      removeQueuedId(PENDING_UPSERT_KEY, deletingId);
-      if (deleteModal.open) deleteModal.close();
-      saveState(trashSaved ? '待办已移入回收站，正在同步云端。' : '待办已移入本次会话回收站；浏览器存储不可用。');
+      if (!deletingTodo) return;
+      const session = cloudSession;
+      const deletedAt = new Date().toISOString();
+      const deletedTodo = { ...deletingTodo, updatedAt: deletedAt, deletedAt };
       try {
-        await (await getCloudApi()).removeCloudTodo(deletingId);
-        removeQueuedId(PENDING_DELETE_KEY, deletingId);
-        saveState('待办已移入回收站，云端已同步删除。');
-      } catch {
-        notify('待办已进入回收站；云端暂未同步，刷新后会继续隐藏。');
+        await (await getCloudApi()).upsertCloudTodo(session.uid, deletedTodo, deletingTodo.updatedAt);
+        if (cloudSession?.uid !== session.uid) return;
+        state.todos = state.todos.filter((todo) => todo.id !== deletingId);
+        state.trash = [deletedTodo, ...state.trash.filter((todo) => todo.id !== deletingId)];
+        state.pendingDeleteId = null;
+        if (deleteModal.open) deleteModal.close();
+        render();
+        markSyncSuccess(session);
+        notify('待办已移入云端回收站。');
+      } catch (error) {
+        showCloudError(error, '删除云端待办失败。');
       }
     }
     if (action === 'open-login') {
@@ -1457,9 +1431,11 @@ export function mountTodoWorkspace(root: HTMLElement) {
     }
     if (action === 'sign-out') {
       try {
+        closeCloudWatcher();
         await (await getCloudApi()).signOut();
         cloudSession = null;
         state.todos = [];
+        state.trash = [];
         render();
         showLogin('已退出登录。');
       } catch (error) {
@@ -1528,7 +1504,11 @@ export function mountTodoWorkspace(root: HTMLElement) {
       updatedAt: now
     };
     try {
-      const saved = await saveCloudTodo(nextTodo, existing ? '待办已更新并同步到云端。' : '待办已添加并同步到云端。', { optimistic: true });
+      const saved = await saveCloudTodo(
+        nextTodo,
+        existing ? '待办已更新并同步到云端。' : '待办已添加并同步到云端。',
+        existing?.updatedAt
+      );
       if (!saved) return;
       if (date) selectDate(date);
       render();
@@ -1607,7 +1587,11 @@ export function mountTodoWorkspace(root: HTMLElement) {
     try {
       const api = await getCloudApi();
       const remembered = api.getRememberedSession();
-      if (remembered) setAuthenticatedHeader(remembered);
+      if (remembered) {
+        setSyncStatus(`正在同步：${remembered.account}`, { retry: false });
+        loginButton.hidden = true;
+        signOutButton.hidden = false;
+      }
       const session = await api.getCloudSession();
       if (session) {
         await activateSession(session);
@@ -1616,15 +1600,38 @@ export function mountTodoWorkspace(root: HTMLElement) {
       }
     } catch (error) {
       if (cloudSession) {
-        notify('已读取当前登录状态；云端同步暂不可用，请稍后刷新重试。');
+        markSyncFailure(cloudSession);
+        state.todos = [];
+        state.trash = [];
+        render();
+        notify('云端同步暂不可用，已停止显示和修改本地旧数据。');
         return;
       }
       showLogin(error instanceof Error ? error.message : '无法连接云端服务，请检查网络后重试。');
     }
   };
 
+  const refreshWhenActive = () => {
+    if (!cloudSession) return;
+    const session = cloudSession;
+    setSyncStatus(`正在同步：${session.account}`, { retry: false });
+    void refreshCloudState(session)
+      .then(async () => {
+        if (!cloudWatcher) await startCloudWatcher(session);
+      })
+      .catch((error) => {
+        if (cloudSession?.uid !== session.uid) return;
+        markSyncFailure(session);
+        notify(error instanceof Error ? error.message : '刷新云端待办失败。');
+      });
+  };
+
   compactQuery.addEventListener('change', render);
+  window.addEventListener('focus', refreshWhenActive);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') refreshWhenActive();
+  });
+  window.addEventListener('beforeunload', closeCloudWatcher);
   render();
-  if (state.storageMessage) notify(state.storageMessage);
   void initialiseCloud();
 }
