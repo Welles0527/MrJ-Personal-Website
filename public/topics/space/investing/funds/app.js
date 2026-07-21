@@ -5,6 +5,7 @@ const STORAGE = {
   theme: "fund-dashboard-theme-v1",
   kpiColumns: "fund-dashboard-kpi-columns-v1",
   managerPreferences: "fund-dashboard-manager-preferences-v2",
+  managerNotes: "fund-dashboard-manager-notes-v1",
   sharedAuth: "mywebsite.site-auth-session.v1"
 };
 
@@ -21,13 +22,14 @@ const state = {
   guide: null,
   loads: new Map(),
   preferences: new Map(),
+  managerNotes: new Map(),
   preferenceEditorId: null,
   preferenceSync: "local",
   fund: { type: "all", query: "", sort: ["return1y", "desc"], page: 1, pageSize: 50, custom: null },
   kpi: { query: "", sort: ["manager", "asc"], page: 1, pageSize: 25, filters: new Map(), columns: [] },
   score: { query: "", sort: ["rank", "asc"], page: 1, pageSize: 25, filters: new Map(), draftMode: "default", appliedMode: "default", draftWeights: [40, 30, 30], appliedWeights: [40, 30, 30], weightsDirty: false },
-  profile: { primaryId: null, compareId: null, period: "1y", page: 1, pageSize: 25, sort: ["relation", "asc"] },
-  preview: { fundTrigger: null, managerTrigger: null, managerId: null, radarPeriod: "3y" },
+  profile: { primaryId: null, compareId: null, period: "1y", page: 1, pageSize: 25, sort: ["tenure", "desc"] },
+  preview: { fundTrigger: null, managerTrigger: null, managerId: null, radarPeriod: "3y", managerFundReference: null, managerFundLoading: false, managerFundError: "" },
   holdingsView: { selectedIds: [], query: "", reportPeriod: "all", stockQuery: "", minOverlap: "2", minWeight: 0, rows: [], selectedStock: null },
   guideView: { tab: "data_notes" }
 };
@@ -302,6 +304,14 @@ function restorePreferences() {
   } catch {
     state.preferences = new Map();
   }
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE.managerNotes) || "{}");
+    Object.entries(saved && typeof saved === "object" ? saved : {}).forEach(([managerId, note]) => {
+      if (managerId && note && typeof note === "object") state.managerNotes.set(managerId, { text: stringValue(note.text), updatedAt: stringValue(note.updatedAt) });
+    });
+  } catch {
+    state.managerNotes = new Map();
+  }
 }
 
 function bindStaticEvents() {
@@ -402,6 +412,12 @@ function bindStaticEvents() {
     setManagerPreviewMode("funds");
     renderManagerPreviewFunds();
   });
+  document.getElementById("manager-preview-note").addEventListener("click", () => {
+    setManagerPreviewMode("notes");
+    renderManagerPreviewNote();
+  });
+  document.getElementById("manager-preview-note-save").addEventListener("click", saveManagerPreviewNote);
+  document.getElementById("manager-preview-note-clear").addEventListener("click", clearManagerPreviewNote);
   document.getElementById("manager-preview-detail").addEventListener("click", openManagerDetailFromPreview);
 }
 
@@ -695,6 +711,9 @@ async function openManagerPreview(managerId, trigger) {
   state.preview.managerTrigger = trigger;
   state.preview.managerId = String(managerId);
   state.preview.radarPeriod = "3y";
+  state.preview.managerFundReference = null;
+  state.preview.managerFundLoading = false;
+  state.preview.managerFundError = "";
   setManagerPreviewMode("radar");
   setText("manager-preview-title", "正在载入基金经理");
   setText("manager-preview-meta", `经理ID ${managerId}`);
@@ -702,6 +721,7 @@ async function openManagerPreview(managerId, trigger) {
   document.getElementById("manager-preview-radar").replaceChildren();
   document.getElementById("manager-preview-legend").replaceChildren();
   document.getElementById("manager-preview-funds").replaceChildren();
+  document.getElementById("manager-preview-note").disabled = true;
   document.getElementById("manager-preview-detail").disabled = true;
   if (!dialog.open) dialog.showModal();
   try {
@@ -710,6 +730,7 @@ async function openManagerPreview(managerId, trigger) {
     if (!manager) throw new Error("未找到对应东方财富经理ID");
     setText("manager-preview-title", manager.name || "姓名未提供");
     setText("manager-preview-meta", `ID ${manager.id} · ${manager.company || "公司未提供"}`);
+    document.getElementById("manager-preview-note").disabled = false;
     document.getElementById("manager-preview-detail").disabled = false;
     renderManagerPreviewFunds();
     renderManagerPreviewRadar();
@@ -721,12 +742,44 @@ async function openManagerPreview(managerId, trigger) {
 
 function setManagerPreviewMode(mode) {
   const showingFunds = mode === "funds";
+  const showingNotes = mode === "notes";
   const fundsButton = document.getElementById("manager-preview-funds-toggle");
+  const noteButton = document.getElementById("manager-preview-note");
   fundsButton.classList.toggle("active", showingFunds);
   fundsButton.setAttribute("aria-pressed", String(showingFunds));
+  noteButton.classList.toggle("active", showingNotes);
+  noteButton.setAttribute("aria-pressed", String(showingNotes));
   document.getElementById("manager-preview-funds").hidden = !showingFunds;
-  document.getElementById("manager-preview-radar-body").hidden = showingFunds;
-  if (!showingFunds) syncPeriodTabs("manager-preview-periods", state.preview.radarPeriod);
+  document.getElementById("manager-preview-note-panel").hidden = !showingNotes;
+  document.getElementById("manager-preview-radar-body").hidden = showingFunds || showingNotes;
+  if (!showingFunds && !showingNotes) syncPeriodTabs("manager-preview-periods", state.preview.radarPeriod);
+}
+
+function renderManagerPreviewNote() {
+  const manager = state.managers?.find(item => item.id === state.preview.managerId);
+  if (!manager) return;
+  const note = state.managerNotes.get(manager.id);
+  setText("manager-preview-note-title", `${manager.name} · 我的备注`);
+  document.getElementById("manager-preview-note-text").value = note?.text || "";
+  setText("manager-preview-note-status", note?.updatedAt ? `上次保存：${formatDateTime(note.updatedAt)}` : "尚未保存备注");
+}
+
+function saveManagerPreviewNote() {
+  const managerId = state.preview.managerId;
+  if (!managerId) return;
+  const text = document.getElementById("manager-preview-note-text").value.trim();
+  const updatedAt = new Date().toISOString();
+  if (text) state.managerNotes.set(managerId, { text, updatedAt });
+  else state.managerNotes.delete(managerId);
+  localStorage.setItem(STORAGE.managerNotes, JSON.stringify(Object.fromEntries(state.managerNotes)));
+  setText("manager-preview-note-status", text ? `已保存：${formatDateTime(updatedAt)}` : "备注已清空");
+  showToast(text ? "经理备注已保存" : "经理备注已清空");
+}
+
+function clearManagerPreviewNote() {
+  document.getElementById("manager-preview-note-text").value = "";
+  saveManagerPreviewNote();
+  document.getElementById("manager-preview-note-text").focus();
 }
 
 function renderManagerPreviewFunds() {
@@ -744,11 +797,104 @@ function renderManagerPreviewFunds() {
     return;
   }
   const list = el("ul", { class: "manager-preview-fund-list" });
-  manager.currentFunds.forEach((name, index) => list.append(el("li", {},
-    el("span", { class: "manager-preview-fund-index", text: String(index + 1).padStart(2, "0") }),
-    el("div", {}, el("strong", { text: name }), el("small", { text: manager.currentFundIds[index] || "基金代码未提供" }))
-  )));
-  root.append(list);
+  manager.currentFunds.forEach((name, index) => {
+    const fundId = manager.currentFundIds[index];
+    const reference = { id: fundId, code: fundId, name, managerIds: [manager.id], managerNames: [manager.name] };
+    const selected = stringValue(state.preview.managerFundReference?.id) === stringValue(fundId);
+    const link = el("button", {
+      type: "button",
+      class: `entity-link fund-link manager-preview-fund-link${selected ? " active" : ""}`,
+      text: name,
+      title: `在右侧查看${name}的前十大持仓`,
+      "aria-label": `在基金名称右侧查看${name}的前十大持仓`,
+      "aria-pressed": String(selected)
+    });
+    link.addEventListener("click", event => {
+      event.stopPropagation();
+      openManagerFundInline(reference);
+    });
+    list.append(el("li", { class: selected ? "selected" : "" },
+      el("span", { class: "manager-preview-fund-index", text: String(index + 1).padStart(2, "0") }),
+      el("div", {},
+        link,
+        el("small", { text: fundId || "基金代码未提供" })
+      )
+    ));
+  });
+  const detail = el("section", { class: "manager-inline-fund-detail", "aria-live": "polite" });
+  renderManagerFundInlineDetail(detail, state.preview.managerFundReference);
+  root.append(el("div", { class: "manager-preview-fund-layout" }, list, detail));
+}
+
+async function openManagerFundInline(reference) {
+  state.preview.managerFundReference = reference;
+  state.preview.managerFundLoading = true;
+  state.preview.managerFundError = "";
+  renderManagerPreviewFunds();
+  try {
+    await loadHoldings();
+  } catch (error) {
+    state.preview.managerFundError = error.message;
+  } finally {
+    state.preview.managerFundLoading = false;
+    renderManagerPreviewFunds();
+  }
+}
+
+function renderManagerFundInlineDetail(root, reference) {
+  root.replaceChildren();
+  if (!reference) {
+    root.append(previewEmptyState("选择一只基金", "点击左侧基金名称，在这里查看基金信息和前十大持仓。"));
+    return;
+  }
+  if (state.preview.managerFundLoading) {
+    root.append(el("div", { class: "preview-loading compact" }, el("strong", { text: reference.name }), el("span", { text: "正在载入前十大持仓…" })));
+    return;
+  }
+  if (state.preview.managerFundError) {
+    root.append(previewEmptyState("持仓数据加载失败", state.preview.managerFundError));
+    return;
+  }
+
+  const fund = findHoldingFund(reference);
+  const name = stringValue(fund?.fund_name) || reference.name || "基金名称未提供";
+  const code = stringValue(fund?.fund_code) || reference.code || reference.id || "代码未提供";
+  const type = normalizeFundType(fund?.fund_type || reference.type) || "类型未提供";
+  const reportDate = stringValue(fund?.report_date);
+  const holdings = arrayValue(fund?.holdings);
+  const status = !fund ? "不在当前持仓数据范围" : fund.status === "available" && holdings.length ? "已取得最新披露持仓" : "暂无有效持仓";
+
+  root.append(el("header", { class: "manager-inline-fund-heading" },
+    el("div", {}, el("h4", { text: name }), el("small", { text: `${code} · ${type}` })),
+    el("span", { text: reportDate ? `报告期 ${reportDate}` : "报告期未提供" })
+  ));
+  const summary = el("dl", { class: "manager-inline-fund-summary" });
+  [["基金代码", code], ["基金类型", type], ["持仓报告期", reportDate || "未提供"], ["数据状态", status]].forEach(([label, value]) => summary.append(el("div", {}, el("dt", { text: label }), el("dd", { text: value }))));
+  root.append(summary);
+
+  const managerNames = arrayValue(fund?.manager_names || reference.managerNames);
+  root.append(el("div", { class: "manager-inline-fund-managers" }, el("span", { text: "基金经理" }), el("strong", { text: managerNames.join("、") || "经理信息未提供" })));
+  if (!fund) {
+    root.append(previewEmptyState("暂无结构化持仓", "该基金可能属于当前持仓数据范围外产品。"));
+    return;
+  }
+  if (fund.status !== "available" || !holdings.length) {
+    root.append(previewEmptyState("暂无有效持仓", "现有结构化数据中没有可展示的前十大持仓。"));
+    return;
+  }
+
+  const section = el("section", { class: "manager-inline-holdings" }, el("div", { class: "manager-inline-holdings-heading" }, el("h4", { text: "前十大持仓" }), el("span", { text: `${holdings.slice(0, 10).length} 项` })));
+  const list = el("ol", { class: "manager-inline-holdings-grid" });
+  holdings.slice(0, 10).forEach((holding, index) => {
+    const weight = finite(holding.weight);
+    list.append(el("li", {},
+      el("b", { text: String(index + 1) }),
+      el("span", {}, el("strong", { text: stringValue(holding.security_name) || "名称未提供" }), el("small", { text: stringValue(holding.security_code) || "代码未提供" })),
+      el("em", { text: Number.isFinite(weight) ? formatPercent(weight * 100) : "未提供" })
+    ));
+  });
+  section.append(list);
+  root.append(section);
 }
 
 function renderManagerPreviewRadar() {
@@ -767,6 +913,7 @@ async function openManagerDetailFromPreview() {
   state.profile.primaryId = manager.id;
   state.profile.compareId = null;
   state.profile.period = state.preview.radarPeriod;
+  state.profile.sort = ["tenure", "desc"];
   syncPeriodTabs("radar-periods", state.profile.period);
   const input = document.getElementById("profile-manager-search");
   input.value = `${manager.name} · ${manager.id} · ${manager.company || "公司未提供"}`;
@@ -1021,7 +1168,7 @@ function renderFunds() {
   const filtered = state.funds.filter(fund => {
     if (state.fund.type !== "all" && fund.type !== state.fund.type) return false;
     if (!query) return true;
-    return normalizeSearch([fund.code, fund.name, fund.company, ...fund.managers].join(" ")).includes(query);
+    return searchMatches([fund.code, fund.name, fund.company, ...fund.managers].join(" "), query);
   });
   setText("fund-kpi-filtered", formatInteger(filtered.length));
   const sorted = sortRecords(filtered, state.fund.sort, fundValue);
@@ -1085,7 +1232,7 @@ function metricValue(metrics, aliasKey) {
 function filterManagers(managers, query, filters) {
   const needle = normalizeSearch(query);
   return managers.filter(manager => {
-    if (needle && !normalizeSearch([manager.name, manager.id, manager.company, ...manager.currentFunds].join(" ")).includes(needle)) return false;
+    if (needle && !searchMatches([manager.name, manager.id, manager.company, ...manager.currentFunds].join(" "), needle)) return false;
     return [...filters.entries()].every(([key, selected]) => selected.size === 0 || [...selected].some(option => managerMatchesFilter(manager, key, option)));
   });
 }
@@ -1115,7 +1262,7 @@ function filterScoreRecords(records, query, filters) {
   const needle = normalizeSearch(query);
   return records.filter(record => {
     const manager = record.manager;
-    if (needle && !normalizeSearch([manager.name, manager.id, manager.company, ...manager.currentFunds].join(" ")).includes(needle)) return false;
+    if (needle && !searchMatches([manager.name, manager.id, manager.company, ...manager.currentFunds].join(" "), needle)) return false;
     return [...filters.entries()].every(([key, selected]) => selected.size === 0 || [...selected].some(option => scoreRecordMatchesFilter(record, key, option)));
   });
 }
@@ -1453,7 +1600,7 @@ function restoreDefaultColumns() {
 
 function filterColumnPicker(event) {
   const query = normalizeSearch(event.target.value);
-  document.querySelectorAll(".column-option").forEach(label => { label.hidden = query && !normalizeSearch(label.textContent).includes(query); });
+  document.querySelectorAll(".column-option").forEach(label => { label.hidden = query && !searchMatches(label.textContent, query); });
 }
 
 function renderDataTable(config) {
@@ -1710,24 +1857,24 @@ function renderManagerOptions(kind, query) {
   const needle = normalizeSearch(query);
   let matches = (state.managers || []).filter(manager => {
     if (kind === "compare" && manager.id === state.profile.primaryId) return false;
-    return !needle || normalizeSearch([manager.name, manager.id, manager.company, ...manager.currentFunds].join(" ")).includes(needle);
+    return !needle || searchMatches([manager.name, manager.id, manager.company, ...manager.currentFunds].join(" "), needle);
   }).slice(0, 40);
   if (!matches.length) optionsRoot.append(el("div", { class: "table-message" }, el("span", { text: "没有匹配的基金经理" })));
   matches.forEach(manager => {
-    const option = el("div", { class: "combobox-option", role: "option" });
+    const selected = kind === "primary" ? state.profile.primaryId === manager.id : state.profile.compareId === manager.id;
+    const option = el("button", { type: "button", class: "combobox-option", role: "option", "aria-selected": String(selected) });
     const left = el("span");
-    left.append(managerNameButton(manager), el("small", { class: "option-id", text: manager.id ? `ID ${manager.id}` : "ID未提供" }));
+    left.append(el("strong", { text: manager.name || "姓名未提供" }), el("small", { class: "option-id", text: manager.id ? `ID ${manager.id}` : "ID未提供" }));
     const right = el("span");
     right.append(el("strong", { text: manager.company || "公司未提供" }));
-    const currentFunds = manager.currentFunds.slice(0, 2).map((name, index) => fundNameButton({ id: manager.currentFundIds[index], code: manager.currentFundIds[index], name }, { className: "compact-fund-link" }));
-    right.append(currentFunds.length ? entityList(currentFunds) : el("small", { text: "当前基金未提供" }));
-    const choose = el("button", { type: "button", class: "secondary-button option-select", text: kind === "primary" ? "选中" : "对比" });
-    choose.addEventListener("click", async () => {
+    right.append(el("small", { text: manager.currentFunds.slice(0, 2).join(" · ") || "当前基金未提供" }));
+    option.addEventListener("click", async () => {
       optionsRoot.hidden = true;
       input.setAttribute("aria-expanded", "false");
       input.value = `${manager.name} · ${manager.id} · ${manager.company}`;
       if (kind === "primary") {
         state.profile.primaryId = manager.id;
+        state.profile.sort = ["tenure", "desc"];
         if (state.profile.compareId === manager.id) state.profile.compareId = null;
         document.getElementById("compare-manager-open").disabled = false;
         await renderProfile();
@@ -1737,7 +1884,7 @@ function renderManagerOptions(kind, query) {
         await renderProfileRadar();
       }
     });
-    option.append(left, right, choose);
+    option.append(left, right);
     optionsRoot.append(option);
   });
   optionsRoot.hidden = false;
@@ -1799,8 +1946,8 @@ function profileManagerDetails(managerId) {
 function renderProfileFunds() {
   if (!state.profile.primaryId) return;
   const rows = dedupeProfileFunds(profileManagerDetails(state.profile.primaryId).map(normalizeProfileFund));
-  if (!state.profile.sort) state.profile.sort = ["relation", "asc"];
-  const sorted = sortRecords(rows, state.profile.sort, profileFundValue);
+  if (!state.profile.sort) state.profile.sort = ["tenure", "desc"];
+  const sorted = sortRecords(rows, state.profile.sort, profileFundSortValue);
   renderDataTable({ table: "profile", columns: PROFILE_FUND_COLUMNS, records: sorted, stateKey: "profile", headId: "profile-fund-table-head", bodyId: "profile-fund-table-body", footerId: "profile-fund-table-footer", value: profileFundValue });
 }
 
@@ -1817,6 +1964,7 @@ function normalizeProfileFund(raw) {
     name: stringValue(raw.fund_name ?? raw.name),
     type: normalizeFundType(raw.type ?? raw.fund_type),
     tenure: intervals.length ? formatIntervals(intervals) : stringValue(raw.tenure_intervals_text) || "任职区间待补采",
+    tenureEnd: profileTenureEnd(intervals, current),
     tenureDays: finite(raw.solo_days),
     tenureReturn: finite(raw.tenure_return),
     annualReturn: percentValue(metricValue(metrics, "annualReturn")),
@@ -1839,6 +1987,13 @@ function dedupeProfileFunds(rows) {
 }
 
 function profileFundValue(row, key) { return row[key]; }
+function profileFundSortValue(row, key) { return key === "tenure" ? row.tenureEnd : row[key]; }
+
+function profileTenureEnd(intervals, current) {
+  if (current) return Number.MAX_SAFE_INTEGER;
+  const timestamps = intervals.map(item => Date.parse(item?.end_date ?? item?.end ?? "")).filter(Number.isFinite);
+  return timestamps.length ? Math.max(...timestamps) : 0;
+}
 
 async function renderProfileRadar() {
   if (!state.profile.primaryId || !state.managers) return;
@@ -1985,7 +2140,7 @@ function renderHoldingsManagerOptions() {
     return;
   }
   const selected = new Set(state.holdingsView.selectedIds);
-  const managers = state.managers.filter(manager => normalizeSearch([manager.name, manager.id, manager.company].join(" ")).includes(needle)).slice(0, 50);
+  const managers = state.managers.filter(manager => searchMatches([manager.name, manager.id, manager.company].join(" "), needle)).slice(0, 50);
   managers.forEach(manager => {
     const row = el("div", { class: "holdings-manager-option" });
     const identity = el("div", {}, managerNameButton(manager), el("small", { text: `${manager.id} · ${manager.company || "公司未提供"}` }));
@@ -2088,7 +2243,7 @@ function buildHoldingsAnalysis() {
   const minWeight = Math.max(0, Number(state.holdingsView.minWeight) || 0) / 100;
   const stocks = [...aggregate.values()].map(stock => ({ ...stock, holderCount: stock.managers.size, coverage: managerCount ? stock.managers.size / managerCount : 0 }))
     .filter(stock => stock.holderCount >= minimum)
-    .filter(stock => !stockNeedle || normalizeSearch(`${stock.code}${stock.name}`).includes(stockNeedle))
+    .filter(stock => !stockNeedle || searchMatches(`${stock.code}${stock.name}`, stockNeedle))
     .filter(stock => stock.averageWeightSum >= minWeight)
     .sort((a, b) => b.holderCount - a.holderCount || b.averageWeightSum - a.averageWeightSum || a.code.localeCompare(b.code));
   return { managers, includedFunds, byManager, stocks, minimum };
@@ -2250,7 +2405,7 @@ function renderGuideIndicators(root, rows) {
       const category = normalizeGuideIndicatorCategory(row.category || "其他");
       const matchesCategory = selectedCategory === "全部" || category === selectedCategory;
       const haystack = normalizeSearch([category, row.name, row.plain_language, row.direction, formula?.logic].filter(Boolean).join(" "));
-      return matchesCategory && (!needle || haystack.includes(needle));
+      return matchesCategory && (!needle || searchMatches(haystack, needle));
     });
     filtered.forEach(row => {
       const category = normalizeGuideIndicatorCategory(row.category || "其他");
@@ -2323,7 +2478,7 @@ function renderGuideFormulaTable(root, rows) {
   const draw = query => {
     body.replaceChildren();
     const needle = normalizeSearch(query);
-    rows.filter(row => !needle || normalizeSearch(Object.values(row).join(" ")).includes(needle)).forEach(row => body.append(el("tr", {}, el("td", { text: simplifyGuideFormulaCategory(row.category) }), annotateIndicatorElement(el("td", { text: row.name }), row.name), el("td", {}, el("span", { class: `source-badge ${row.nature === "计算生成" ? "computed" : "direct"}`, text: row.nature })), el("td", { text: row.dimension }), el("td", { text: row.logic }), el("td", { text: row.source }))));
+    rows.filter(row => !needle || searchMatches(Object.values(row).join(" "), needle)).forEach(row => body.append(el("tr", {}, el("td", { text: simplifyGuideFormulaCategory(row.category) }), annotateIndicatorElement(el("td", { text: row.name }), row.name), el("td", {}, el("span", { class: `source-badge ${row.nature === "计算生成" ? "computed" : "direct"}`, text: row.nature })), el("td", { text: row.dimension }), el("td", { text: row.logic }), el("td", { text: row.source }))));
   };
   search.querySelector("input").addEventListener("input", event => draw(event.target.value));
   draw(""); table.append(head, body); scroll.append(table); shell.append(scroll); root.append(heading, search, shell);
@@ -2484,7 +2639,7 @@ function exportCurrent(scope) {
   if (scope === "funds") {
     columns = FUND_COLUMNS.filter(column => column.key !== "sequence");
     const query = normalizeSearch(state.fund.query);
-    records = state.funds.filter(fund => (state.fund.type === "all" || fund.type === state.fund.type) && (!query || normalizeSearch([fund.code, fund.name, fund.company, ...fund.managers].join(" ")).includes(query)));
+    records = state.funds.filter(fund => (state.fund.type === "all" || fund.type === state.fund.type) && (!query || searchMatches([fund.code, fund.name, fund.company, ...fund.managers].join(" "), query)));
     value = fundValue; filename = "基金看板_当前结果.csv";
   } else if (scope === "kpi") {
     columns = state.kpi.columns.map(key => KPI_FIELDS.find(field => field.key === key)).filter(Boolean);
@@ -2600,6 +2755,18 @@ function percentValue(value) { const number = finite(value); return Number.isFin
 function stringValue(value) { return value === null || value === undefined ? "" : String(value).trim(); }
 function arrayValue(value) { if (Array.isArray(value)) return value.filter(item => item !== null && item !== undefined && item !== ""); if (value === null || value === undefined || value === "") return []; return String(value).split(/[；;,|]/).map(item => item.trim()).filter(Boolean); }
 function normalizeSearch(value) { return String(value || "").normalize("NFKC").toLocaleLowerCase("zh-CN").replace(/\s+/g, ""); }
+function searchMatches(value, query) {
+  const haystack = normalizeSearch(value);
+  const needle = normalizeSearch(query);
+  if (!needle) return true;
+  if (haystack.includes(needle)) return true;
+  let index = 0;
+  for (const character of haystack) {
+    if (character === needle[index]) index += 1;
+    if (index === needle.length) return true;
+  }
+  return false;
+}
 function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
 function setText(id, value) { const node = document.getElementById(id); if (node) node.textContent = value; }
 

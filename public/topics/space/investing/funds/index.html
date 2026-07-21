@@ -12,9 +12,9 @@
   <meta name="color-scheme" content="dark light">
   <meta name="description" content="中国主动权益基金与基金经理研究看板">
   <title>主动权益研究终端</title>
-  <link rel="stylesheet" href="./app.css?v=20260720v11">
+  <link rel="stylesheet" href="./app.css?v=20260722v13">
   <script src="./fund-preferences-cloud.js?v=20260720v3" defer></script>
-  <script src="./app.js?v=20260720v10" defer></script>
+  <script src="./app.js?v=20260722v13" defer></script>
 </head>
 <body>
   <svg class="svg-defs" aria-hidden="true">
@@ -90,7 +90,7 @@
           </div>
         </header>
         <div class="toolbar">
-          <label class="search-box"><svg><use href="#i-search"/></svg><input id="fund-search" type="search" placeholder="搜索基金代码、名称、经理或公司"><button type="button" data-clear="fund-search" aria-label="清空搜索">×</button></label>
+          <label class="search-box"><svg><use href="#i-search"/></svg><input id="fund-search" type="search" placeholder="模糊搜索基金代码、名称、经理或公司"><button type="button" data-clear="fund-search" aria-label="清空搜索">×</button></label>
           <div class="date-range" aria-label="自定义收益区间">
             <input id="custom-start" type="date" aria-label="开始日期">
             <span>至</span>
@@ -125,7 +125,7 @@
           <header class="section-heading compact"><div><h1 id="kpi-title">基金经理KPI</h1><p>原始指标的筛选与排序，不带主观权重。</p></div></header>
           <div class="toolbar">
             <button class="secondary-button filter-toggle" data-open-rail="kpi"><svg><use href="#i-filter"/></svg>筛选</button>
-            <label class="search-box"><svg><use href="#i-search"/></svg><input id="manager-search" type="search" placeholder="搜索经理、ID、公司或当前管理基金"><button type="button" data-clear="manager-search" aria-label="清空搜索">×</button></label>
+            <label class="search-box"><svg><use href="#i-search"/></svg><input id="manager-search" type="search" placeholder="模糊搜索经理、ID、公司或当前管理基金"><button type="button" data-clear="manager-search" aria-label="清空搜索">×</button></label>
             <button class="secondary-button" id="column-picker-open" type="button"><svg><use href="#i-columns"/></svg><span id="column-picker-label">字段</span></button>
             <button class="secondary-button export-button" data-export="kpi"><svg><use href="#i-export"/></svg>导出</button>
           </div>
@@ -171,7 +171,7 @@
           </section>
           <div class="toolbar">
             <button class="secondary-button filter-toggle" data-open-rail="score"><svg><use href="#i-filter"/></svg>筛选</button>
-            <label class="search-box"><svg><use href="#i-search"/></svg><input id="score-search" type="search" placeholder="搜索经理、ID或公司"><button type="button" data-clear="score-search" aria-label="清空搜索">×</button></label>
+            <label class="search-box"><svg><use href="#i-search"/></svg><input id="score-search" type="search" placeholder="模糊搜索经理、ID或公司"><button type="button" data-clear="score-search" aria-label="清空搜索">×</button></label>
             <button class="secondary-button export-button" data-export="score"><svg><use href="#i-export"/></svg>导出当前结果</button>
           </div>
           <div class="model-notice" id="score-data-notice" role="status"><svg><use href="#i-info"/></svg><span>正在检查评分数据…</span></div>
@@ -182,10 +182,10 @@
 
     <section class="view" id="view-profile" data-view-panel="profile" aria-labelledby="profile-title" hidden>
         <div class="profile-search-band">
-        <div><h1 id="profile-title">基金经理能力对比</h1><p>同名经理通过姓名 + 东方财富ID + 公司精确匹配。</p></div>
+        <div><h1 id="profile-title">基金经理能力对比</h1><p>支持姓名、ID、公司或基金名称模糊搜索；点击候选行即可选中。</p></div>
         <div class="manager-combobox" data-combobox="primary">
           <label for="profile-manager-search">选择基金经理</label>
-          <div class="search-box"><svg><use href="#i-search"/></svg><input id="profile-manager-search" type="search" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="profile-manager-options" placeholder="输入姓名、ID或公司"></div>
+          <div class="search-box"><svg><use href="#i-search"/></svg><input id="profile-manager-search" type="search" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="profile-manager-options" placeholder="模糊搜索姓名、ID、公司或基金"></div>
           <div class="combobox-options" id="profile-manager-options" role="listbox" hidden></div>
         </div>
         <button class="secondary-button" id="compare-manager-open" disabled>+ 增加对比经理</button>
@@ -232,7 +232,7 @@
           </div>
           <div class="selected-managers" id="holdings-selected-managers"><span class="missing">尚未选择基金经理</span></div>
           <div class="holdings-toolbar">
-            <label class="search-box stock-search"><svg><use href="#i-search"/></svg><input id="holdings-stock-search" type="search" placeholder="搜索股票代码或名称"></label>
+            <label class="search-box stock-search"><svg><use href="#i-search"/></svg><input id="holdings-stock-search" type="search" placeholder="模糊搜索股票代码或名称"></label>
           </div>
           <div class="holdings-alert" id="holdings-alert" hidden></div>
           <div class="status-strip holdings-kpis">
@@ -285,7 +285,7 @@
   <dialog class="compare-dialog" id="compare-dialog">
     <form method="dialog" class="dialog-shell small">
       <div class="dialog-heading"><div><h2>增加对比经理</h2><p>最多同时对比两位经理。</p></div><button value="cancel" aria-label="关闭">×</button></div>
-      <div class="manager-combobox" data-combobox="compare"><label for="compare-manager-search">对比经理</label><div class="search-box"><svg><use href="#i-search"/></svg><input id="compare-manager-search" type="search" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="compare-manager-options" placeholder="输入姓名、ID或公司"></div><div class="combobox-options" id="compare-manager-options" role="listbox" hidden></div></div>
+      <div class="manager-combobox" data-combobox="compare"><label for="compare-manager-search">对比经理</label><div class="search-box"><svg><use href="#i-search"/></svg><input id="compare-manager-search" type="search" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="compare-manager-options" placeholder="模糊搜索姓名、ID、公司或基金"></div><div class="combobox-options" id="compare-manager-options" role="listbox" hidden></div></div>
       <p class="inline-status">对比只使用同一时间维度且可比的指标。</p>
     </form>
   </dialog>
@@ -293,7 +293,7 @@
   <dialog class="holdings-manager-dialog" id="holdings-manager-dialog" aria-labelledby="holdings-manager-dialog-title">
     <div class="dialog-shell">
       <div class="dialog-heading"><div><h2 id="holdings-manager-dialog-title">搜索基金经理名字</h2><p>按姓名、东方财富经理ID或基金公司搜索并添加。</p></div><button type="button" id="holdings-manager-close" aria-label="关闭">×</button></div>
-      <label class="search-box dialog-search"><svg><use href="#i-search"/></svg><input id="holdings-manager-search" type="search" autocomplete="off" placeholder="输入姓名、ID或公司"><button type="button" data-clear="holdings-manager-search" aria-label="清空搜索">×</button></label>
+      <label class="search-box dialog-search"><svg><use href="#i-search"/></svg><input id="holdings-manager-search" type="search" autocomplete="off" placeholder="模糊搜索姓名、ID或公司"><button type="button" data-clear="holdings-manager-search" aria-label="清空搜索">×</button></label>
       <div class="favorite-shortcuts" id="holdings-favorites"></div>
       <div class="holdings-manager-options" id="holdings-manager-options"></div>
     </div>
@@ -331,8 +331,14 @@
         <div class="period-tabs" id="manager-preview-periods" role="group" aria-label="雷达图时间维度">
           <button id="manager-preview-funds-toggle" type="button" aria-pressed="false">当前管理基金</button><button data-period="1y">近1年</button><button data-period="2y">近2年</button><button class="active" data-period="3y">近3年</button><button data-period="5y">近5年</button>
         </div>
-        <button type="button" class="primary-button" id="manager-preview-detail">查看详细</button>
+        <div class="manager-preview-actions"><button type="button" class="secondary-button" id="manager-preview-note" aria-pressed="false" disabled>我的备注</button><button type="button" class="primary-button" id="manager-preview-detail">查看详细</button></div>
       </div>
+      <section class="manager-preview-note-panel" id="manager-preview-note-panel" hidden aria-labelledby="manager-preview-note-title">
+        <div><h3 id="manager-preview-note-title">我的备注</h3><p>按基金经理保存于当前浏览器。</p></div>
+        <label for="manager-preview-note-text">备注内容</label>
+        <textarea id="manager-preview-note-text" maxlength="2000" placeholder="记录你的关注重点、跟踪结论或后续事项……"></textarea>
+        <div class="manager-preview-note-actions"><span id="manager-preview-note-status">尚未保存备注</span><button type="button" class="secondary-button" id="manager-preview-note-clear">清空</button><button type="button" class="primary-button" id="manager-preview-note-save">保存备注</button></div>
+      </section>
       <section class="manager-preview-funds" id="manager-preview-funds" hidden aria-labelledby="manager-preview-funds-title"></section>
       <div class="manager-preview-body" id="manager-preview-radar-body">
         <div class="radar-wrap"><svg id="manager-preview-radar" viewBox="0 0 640 430" role="img" aria-labelledby="manager-preview-chart-title manager-preview-chart-desc"><title id="manager-preview-chart-title">基金经理六维能力雷达图</title><desc id="manager-preview-chart-desc">所选基金经理在当前时间窗口的标准化指标</desc></svg><p class="chart-status" id="manager-preview-status"></p></div>
