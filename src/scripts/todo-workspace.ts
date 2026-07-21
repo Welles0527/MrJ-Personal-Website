@@ -1533,9 +1533,9 @@ export function mountTodoWorkspace(root: HTMLElement) {
         existing?.updatedAt
       );
       if (!saved) return;
+      closeForm();
       if (date) selectDate(date);
       render();
-      closeForm();
     } catch (error) {
       showCloudError(error, '保存云端待办失败。');
     }
