@@ -12,9 +12,9 @@
   <meta name="color-scheme" content="dark light">
   <meta name="description" content="中国主动权益基金与基金经理研究看板">
   <title>主动权益研究终端</title>
-  <link rel="stylesheet" href="./app.css?v=20260722v13">
+  <link rel="stylesheet" href="./app.css?v=20260722v21">
   <script src="./fund-preferences-cloud.js?v=20260720v3" defer></script>
-  <script src="./app.js?v=20260722v15" defer></script>
+  <script src="./app.js?v=20260722v21" defer></script>
 </head>
 <body>
   <svg class="svg-defs" aria-hidden="true">
@@ -42,6 +42,9 @@
     <symbol id="i-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></symbol>
     <symbol id="i-calculator" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h1M12 12h1M16 12h1M8 16h1M12 16h1M16 16h1"/></symbol>
     <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></symbol>
+    <symbol id="i-personnel" viewBox="0 0 24 24"><circle cx="9" cy="7" r="3"/><path d="M3 19c.5-4 2.5-6 6-6 1.6 0 2.9.4 3.9 1.2M16 8a5 5 0 014 7.8M20 12V8h-4M20 17a5 5 0 01-7.8 3M12 16v4h4"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5M18.5 9A7 7 0 006 7l-2 5M5.5 15A7 7 0 0018 17l2-5"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M7 9l5 5 5-5"/></symbol>
   </svg>
 
   <header class="app-header">
@@ -53,6 +56,7 @@
       <button class="dashboard-tab kpi" data-view="kpi"><svg><use href="#i-kpi"/></svg><span>基金经理KPI<small>经理客观指标</small></span></button>
       <button class="dashboard-tab score" data-view="score"><svg><use href="#i-score"/></svg><span>基金经理打分排行<small>默认或自定义权重</small></span></button>
       <button class="dashboard-tab profile" data-view="profile"><svg><use href="#i-profile"/></svg><span>基金经理能力对比<small>履历与能力对照</small></span></button>
+      <button class="dashboard-tab personnel" data-view="personnel"><svg><use href="#i-personnel"/></svg><span>人事变动<small>任职与舆情监测</small></span><b class="dashboard-alert-badge" id="personnel-nav-badge" hidden>0</b></button>
       <button class="dashboard-tab fund" data-view="funds" aria-current="page"><svg><use href="#i-fund"/></svg><span>基金看板<small>产品客观数据</small></span></button>
       <button class="dashboard-tab holdings" data-view="holdings"><svg><use href="#i-holdings"/></svg><span>持仓分析<small>经理共同持股</small></span></button>
       <button class="dashboard-tab guide" data-view="guide"><svg><use href="#i-guide"/></svg><span>网站说明<small>口径与打分逻辑</small></span></button>
@@ -117,7 +121,7 @@
       <div class="workspace">
         <aside class="filter-rail" id="kpi-filter-rail" aria-label="KPI筛选">
           <div class="rail-heading"><strong>指标筛选</strong><button class="rail-close" data-close-rail="kpi" aria-label="收起筛选">×</button></div>
-          <div class="filter-rail-tools"><button type="button" class="secondary-button" data-toggle-filter-groups="kpi" aria-expanded="false">全部展开</button><button type="button" class="secondary-button" data-default-filters="kpi">默认筛选</button></div>
+          <div class="filter-rail-tools"><button type="button" class="secondary-button" data-toggle-filter-groups="kpi" aria-expanded="false">全部展开</button><button type="button" class="secondary-button" data-default-filters="kpi">应用默认</button><button type="button" class="secondary-button" data-save-default-filters="kpi">保存为默认</button><button type="button" class="secondary-button" data-system-default-filters="kpi">恢复系统默认</button></div>
           <div id="kpi-filters" class="filter-groups"></div>
           <div class="filter-actions"><button class="secondary-button" data-reset-filters="kpi">清空全部</button></div>
         </aside>
@@ -145,7 +149,7 @@
       <div class="score-layout">
         <aside class="filter-rail" id="score-filter-rail" aria-label="打分筛选">
           <div class="rail-heading"><strong>排行筛选</strong><button class="rail-close" data-close-rail="score" aria-label="收起筛选">×</button></div>
-          <div class="filter-rail-tools"><button type="button" class="secondary-button" data-toggle-filter-groups="score" aria-expanded="false">全部展开</button><button type="button" class="secondary-button" data-default-filters="score">默认筛选</button></div>
+          <div class="filter-rail-tools"><button type="button" class="secondary-button" data-toggle-filter-groups="score" aria-expanded="false">全部展开</button><button type="button" class="secondary-button" data-default-filters="score">应用默认</button><button type="button" class="secondary-button" data-save-default-filters="score">保存为默认</button><button type="button" class="secondary-button" data-system-default-filters="score">恢复系统默认</button></div>
           <div id="score-filters" class="filter-groups"></div>
           <div class="filter-actions"><button class="secondary-button" data-reset-filters="score">清空全部</button></div>
         </aside>
@@ -172,8 +176,13 @@
           <div class="toolbar">
             <button class="secondary-button filter-toggle" data-open-rail="score"><svg><use href="#i-filter"/></svg>筛选</button>
             <label class="search-box"><svg><use href="#i-search"/></svg><input id="score-search" type="search" placeholder="模糊搜索经理、ID或公司"><button type="button" data-clear="score-search" aria-label="清空搜索">×</button></label>
+            <button class="secondary-button note-list-button" id="score-note-list-toggle" type="button" aria-expanded="false"><svg><use href="#i-list"/></svg>清单 <b id="score-note-list-count">0</b></button>
             <button class="secondary-button export-button" data-export="score"><svg><use href="#i-export"/></svg>导出当前结果</button>
           </div>
+          <section class="score-note-list" id="score-note-list" hidden aria-labelledby="score-note-list-title">
+            <div class="panel-heading"><div><h2 id="score-note-list-title">我的经理备注清单</h2><p>仅显示已保存备注的基金经理；点击姓名可打开经理详情。</p></div><button class="secondary-button" id="score-note-list-close" type="button">收起</button></div>
+            <div class="score-note-list-body" id="score-note-list-body"></div>
+          </section>
           <div class="model-notice" id="score-data-notice" role="status"><svg><use href="#i-info"/></svg><span>正在检查评分数据…</span></div>
           <div class="table-shell"><div class="table-scroll"><table><thead id="score-table-head"></thead><tbody id="score-table-body"></tbody></table></div><div class="table-footer" id="score-table-footer"></div></div>
         </div>
@@ -248,6 +257,45 @@
           </section>
           <section class="holding-drilldown" id="holding-drilldown" hidden aria-labelledby="holding-drilldown-title"><div class="panel-heading"><div><h2 id="holding-drilldown-title">股票持仓明细</h2><p id="holding-drilldown-summary"></p></div><button type="button" class="secondary-button" id="holding-drilldown-close">关闭</button></div><div class="table-shell"><div class="table-scroll"><table><thead id="holding-detail-head"></thead><tbody id="holding-detail-body"></tbody></table></div></div></section>
         </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-personnel" data-view-panel="personnel" aria-labelledby="personnel-title" hidden>
+      <div class="personnel-shell">
+        <header class="personnel-heading">
+          <div><div class="personnel-title-row"><h1 id="personnel-title">人事变动监测</h1><span class="indicator-info" title="产品关系变化来自东方财富公开页面；舆情仅作为核验线索。">?</span></div><p>仅监测已收藏基金经理</p></div>
+          <div class="personnel-refresh-meta"><span>最后成功刷新：<b id="personnel-last-refresh">尚未刷新</b></span><button class="primary-button" id="personnel-refresh" type="button"><svg><use href="#i-refresh"/></svg>刷新最新情况</button></div>
+          <button class="secondary-button personnel-source-button" id="personnel-source-button" type="button"><svg><use href="#i-info"/></svg>数据来源与规则说明</button>
+        </header>
+        <div class="personnel-controls">
+          <div class="personnel-summary" id="personnel-summary" role="group" aria-label="变动摘要">
+            <button class="active" data-personnel-summary="all">全部 <b id="personnel-count-all">0</b></button>
+            <button class="critical" data-personnel-summary="priority">重点变动 <b id="personnel-count-priority">0</b></button>
+            <button class="warning" data-personnel-summary="verify">需要核验 <b id="personnel-count-verify">0</b></button>
+            <button class="stable" data-personnel-summary="unchanged">暂无变化 <b id="personnel-count-unchanged">0</b></button>
+          </div>
+          <div class="personnel-filter-bar">
+            <label class="search-box"><svg><use href="#i-search"/></svg><input id="personnel-search" type="search" placeholder="搜索经理、公司或基金"><button type="button" data-clear="personnel-search" aria-label="清空搜索">×</button></label>
+            <div class="personnel-type-filters" id="personnel-type-filters">
+              <button class="active" data-personnel-filter="all">全部</button>
+              <button data-personnel-filter="suspected_departure"><svg><use href="#i-personnel"/></svg>离任风险</button>
+              <button data-personnel-filter="management_change"><svg><use href="#i-list"/></svg>产品变化</button>
+              <button data-personnel-filter="co_manager_change"><svg><use href="#i-network"/></svg>共同管理变化</button>
+              <button data-personnel-filter="news_update"><svg><use href="#i-info"/></svg>舆情更新</button>
+            </div>
+          </div>
+        </div>
+        <div class="personnel-table-shell">
+          <div class="table-scroll"><table class="personnel-table"><thead><tr><th>状态</th><th>基金经理 / 公司</th><th>当前管理产品<small>数量 / 主要产品</small></th><th>共同管理人<small>当前 / 变动</small></th><th>最近变动<small>与上次刷新相比</small></th><th>舆情摘要<small>最新舆情</small></th><th>信息时间<small>数据 / 舆情 / 刷新</small></th><th></th></tr></thead><tbody id="personnel-table-body"></tbody></table></div>
+          <div class="personnel-empty" id="personnel-empty" hidden><svg><use href="#i-star"/></svg><h2>尚未收藏基金经理</h2><p>请先在其他看板将经理标为收藏，再回到这里监测其任职与公开舆情变化。</p></div>
+        </div>
+        <section class="personnel-detail" id="personnel-detail" hidden>
+          <nav class="personnel-detail-tabs" aria-label="经理变动详情"><button class="active"><svg><use href="#i-personnel"/></svg>当前任职状态</button><button><svg><use href="#i-clock"/></svg>变化时间线</button><button><svg><use href="#i-info"/></svg>舆情与证据</button></nav>
+          <div class="personnel-detail-card" id="personnel-status-card"></div>
+          <div class="personnel-detail-card" id="personnel-timeline-card"></div>
+          <div class="personnel-detail-card" id="personnel-evidence-card"></div>
+        </section>
+        <p class="personnel-rule-note" id="personnel-rule-note" hidden>关系数据来自东方财富基金经理与基金公开页面；新闻检索只作舆情线索。“所有产品关系消失”仅标为疑似离任，必须结合基金公司公告核验。</p>
       </div>
     </section>
 
