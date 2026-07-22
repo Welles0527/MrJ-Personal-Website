@@ -31,8 +31,9 @@ const state = {
   kpi: { query: "", sort: ["manager", "asc"], page: 1, pageSize: 25, filters: new Map(), columns: [] },
   score: { query: "", sort: ["rank", "asc"], page: 1, pageSize: 25, filters: new Map(), draftMode: "default", appliedMode: "default", draftWeights: [40, 30, 30], appliedWeights: [40, 30, 30], weightsDirty: false },
   profile: { primaryId: null, compareId: null, period: "1y", page: 1, pageSize: 25, sort: ["tenure", "desc"] },
-  preview: { fundTrigger: null, managerTrigger: null, managerId: null, radarPeriod: "3y", managerFundReference: null, managerFundLoading: false, managerFundError: "" },
+  preview: { fundTrigger: null, fundCode: null, fundTrendRequest: 0, managerTrigger: null, managerId: null, radarPeriod: "3y", managerFundReference: null, managerFundLoading: false, managerFundError: "" },
   holdingsView: { selectedIds: [], query: "", reportPeriod: "all", stockQuery: "", minOverlap: "2", minWeight: 0, rows: [], selectedStock: null },
+  personnel: { records: [], query: "", summary: "all", filter: "all", selectedId: null, loading: false, loaded: false, source: "" },
   guideView: { tab: "data_notes" }
 };
 
@@ -71,6 +72,9 @@ const aliases = {
   academic: ["academic_background", "academic_text", "学术背景（能力圈）"],
   conduct: ["personal_conduct", "个人品行"]
 };
+
+const FUND_TREND_SHARDS = 32;
+const FUND_TENURE_COLORS = ["#f97316", "#14b8a6", "#8b5cf6", "#eab308", "#ef4444", "#06b6d4"];
 
 const KPI_FIELDS = [
   { key: "manager", label: "基金经理", group: "基础信息", kind: "manager", fixed: true },
@@ -180,7 +184,10 @@ const KPI_FILTER_DEFS = FILTER_DEFS.flatMap(def => def.key === "experience" ? [
 ] : [def]);
 
 const SCORE_FILTER_DEFS = [
-  ...FILTER_DEFS.flatMap(def => def.key === "maxDrawdown" ? [
+  ...FILTER_DEFS.flatMap(def => def.key === "favorite" ? [
+    def,
+    { key: "reviewed", label: "审阅状态", category: "base", icon: "list", options: [["reviewed", "已审阅"], ["unreviewed", "未审阅"]] }
+  ] : def.key === "maxDrawdown" ? [
     def,
     { key: "defenseGate", label: "防守固定门槛", category: "defense", icon: "defense", options: [["pass", "通过"], ["fail", "未通过"], ["pending", "指标不足，无法判断"]] }
   ] : [def]),
@@ -334,6 +341,7 @@ function bindStaticEvents() {
   bindSearch("fund-search", value => { state.fund.query = value; state.fund.page = 1; renderFunds(); });
   bindSearch("manager-search", value => { state.kpi.query = value; state.kpi.page = 1; renderKpi(); });
   bindSearch("score-search", value => { state.score.query = value; state.score.page = 1; renderScore(); });
+  bindSearch("personnel-search", value => { state.personnel.query = value; renderPersonnel(); });
   bindSearch("holdings-manager-search", value => { state.holdingsView.query = value; renderHoldingsManagerOptions(); });
   bindSearch("holdings-stock-search", value => { state.holdingsView.stockQuery = value; renderHoldingsAnalysis(); });
   document.getElementById("fund-type-tabs").addEventListener("click", event => {
@@ -356,6 +364,25 @@ function bindStaticEvents() {
   document.getElementById("column-search").addEventListener("input", filterColumnPicker);
   document.getElementById("custom-return-apply").addEventListener("click", loadCustomReturns);
   document.querySelectorAll("[data-export]").forEach(button => button.addEventListener("click", () => exportCurrent(button.dataset.export)));
+  document.getElementById("score-note-list-toggle").addEventListener("click", () => toggleScoreNoteList());
+  document.getElementById("score-note-list-close").addEventListener("click", () => toggleScoreNoteList(false));
+  document.getElementById("personnel-refresh").addEventListener("click", () => loadPersonnelMonitor(true));
+  document.getElementById("personnel-source-button").addEventListener("click", () => {
+    const note = document.getElementById("personnel-rule-note");
+    note.hidden = !note.hidden;
+  });
+  document.getElementById("personnel-summary").addEventListener("click", event => {
+    const button = event.target.closest("button[data-personnel-summary]");
+    if (!button) return;
+    state.personnel.summary = button.dataset.personnelSummary;
+    renderPersonnel();
+  });
+  document.getElementById("personnel-type-filters").addEventListener("click", event => {
+    const button = event.target.closest("button[data-personnel-filter]");
+    if (!button) return;
+    state.personnel.filter = button.dataset.personnelFilter;
+    renderPersonnel();
+  });
   bindWeightControls();
   bindCombobox("primary");
   bindCombobox("compare");
@@ -520,7 +547,7 @@ function hideIndicatorTooltip() {
 }
 
 async function activateView(name) {
-  const view = ["funds", "kpi", "score", "profile", "holdings", "guide"].includes(name) ? name : "funds";
+  const view = ["funds", "kpi", "score", "profile", "personnel", "holdings", "guide"].includes(name) ? name : "funds";
   state.activeView = view;
   document.querySelectorAll("[data-view-panel]").forEach(panel => {
     const active = panel.dataset.viewPanel === view;
@@ -537,6 +564,7 @@ async function activateView(name) {
     if (view === "kpi") { if (!state.managers) renderTableMessage("kpi-table-body", state.kpi.columns.length, "正在载入基金经理KPI…", "按东方财富经理ID读取完整经理清单。"); await loadManagers(); renderKpi(); }
     if (view === "score") { if (!state.managers) renderTableMessage("score-table-body", SCORE_COLUMNS.length, "正在检查评分资格…", "缺失必需指标的经理不会生成分数。"); await loadManagers(); renderScore(); }
     if (view === "profile") { await loadManagers(); prepareProfileSearch(); if (state.profile.primaryId) await renderProfile(); }
+    if (view === "personnel") { await loadManagers(); await loadPersonnelMonitor(false); }
     if (view === "holdings") { await Promise.all([loadManagers(), loadHoldings()]); renderHoldings(); }
     if (view === "guide") { await loadGuide(); renderGuide(); }
   } catch (error) {
@@ -630,6 +658,17 @@ async function loadHoldings() {
   return state.holdings;
 }
 
+async function loadFundTrend(fundCode) {
+  const code = stringValue(fundCode);
+  if (!code) return null;
+  const numericCode = /^\d+$/.test(code) ? BigInt(code) : null;
+  const index = numericCode === null
+    ? [...code].reduce((total, character) => total + character.codePointAt(0), 0) % FUND_TREND_SHARDS
+    : Number(numericCode % BigInt(FUND_TREND_SHARDS));
+  const payload = await loadOnce(`fundTrendShard${index}`, () => fetchJson(`${DATA_ROOT}/fund_trends_${String(index).padStart(2, "0")}.json`));
+  return payload?.funds?.[code] || null;
+}
+
 async function loadGuide() {
   if (state.guide) return state.guide;
   state.guide = await loadOnce("guide", () => fetchJson(filePath("guide.json")));
@@ -649,7 +688,9 @@ function bindPreviewDialog(dialogId, closeId, triggerKey) {
 
 async function openFundPreview(reference, trigger) {
   const dialog = document.getElementById("fund-preview-dialog");
+  const request = ++state.preview.fundTrendRequest;
   state.preview.fundTrigger = trigger;
+  state.preview.fundCode = stringValue(reference.code);
   setText("fund-preview-title", reference.name || "基金持仓");
   setText("fund-preview-meta", [reference.code, reference.type].filter(Boolean).join(" · ") || "正在匹配基金策略ID");
   document.getElementById("fund-preview-content").replaceChildren(el("div", { class: "preview-loading" }, el("strong", { text: "正在载入前十大持仓" }), el("span", { text: "首次打开需要读取持仓数据。" })));
@@ -657,8 +698,14 @@ async function openFundPreview(reference, trigger) {
   try {
     await loadHoldings();
     renderFundPreview(reference);
+    const fund = findHoldingFund(reference);
+    const code = stringValue(fund?.fund_code) || stringValue(reference.code);
+    const trend = await loadFundTrend(code);
+    if (request === state.preview.fundTrendRequest && state.preview.fundCode === stringValue(reference.code)) renderFundTrend(trend);
   } catch (error) {
-    document.getElementById("fund-preview-content").replaceChildren(previewEmptyState("持仓数据加载失败", error.message));
+    const trendSection = document.getElementById("fund-preview-trend");
+    if (trendSection) renderFundTrend(null, error.message);
+    else document.getElementById("fund-preview-content").replaceChildren(previewEmptyState("持仓数据加载失败", error.message));
   }
 }
 
@@ -692,21 +739,123 @@ function renderFundPreview(reference) {
   else managerRow.append(el("span", { class: "missing", text: "经理信息未提供" }));
   root.append(managerRow);
 
-  if (!fund) return root.append(previewEmptyState("不在当前持仓数据范围", "该基金可能属于历史基金或当前基金池外产品。本次不按名称猜测，也不临时补采。"));
-  const holdings = arrayValue(fund.holdings);
-  if (fund.status !== "available" || !holdings.length) return root.append(previewEmptyState("暂无有效持仓", "现有结构化数据中没有可展示的前十大持仓。"));
+  if (!fund) {
+    root.append(previewEmptyState("不在当前持仓数据范围", "该基金可能属于历史基金或当前基金池外产品。本次不按名称猜测，也不临时补采。"));
+  } else {
+    const holdings = arrayValue(fund.holdings);
+    if (fund.status !== "available" || !holdings.length) {
+      root.append(previewEmptyState("暂无有效持仓", "现有结构化数据中没有可展示的前十大持仓。"));
+    } else {
+      const section = el("section", { class: "fund-preview-holdings" }, el("div", { class: "preview-section-heading" }, el("h3", { text: "前十大持仓" }), el("span", { text: reportDate ? `报告期 ${reportDate}` : "报告期未提供" })));
+      const table = el("table");
+      table.append(el("thead", {}, el("tr", {}, el("th", { text: "序号" }), el("th", { text: "股票" }), el("th", { text: "持仓权重" }))));
+      const body = el("tbody");
+      holdings.slice(0, 10).forEach((holding, index) => {
+        const weight = finite(holding.weight);
+        body.append(el("tr", {}, el("td", { class: "numeric", text: String(index + 1) }), el("td", {}, el("strong", { text: stringValue(holding.security_name) || "名称未提供" }), el("small", { text: stringValue(holding.security_code) || "代码未提供" })), el("td", { class: `numeric${Number.isFinite(weight) ? "" : " missing"}`, text: Number.isFinite(weight) ? formatPercent(weight * 100) : "未提供" })));
+      });
+      table.append(body);
+      section.append(el("div", { class: "table-scroll" }, table));
+      root.append(section);
+    }
+  }
+  root.append(el("section", { class: "fund-preview-trend", id: "fund-preview-trend" }, el("div", { class: "preview-section-heading" }, el("h3", { text: "历年走势" }), el("span", { text: "正在读取月度净值" })), el("div", { class: "trend-loading" }, el("span", { text: "正在对齐基金与沪深300全收益数据…" }))));
+}
 
-  const section = el("section", { class: "fund-preview-holdings" }, el("div", { class: "preview-section-heading" }, el("h3", { text: "前十大持仓" }), el("span", { text: reportDate ? `报告期 ${reportDate}` : "报告期未提供" })));
-  const table = el("table");
-  table.append(el("thead", {}, el("tr", {}, el("th", { text: "序号" }), el("th", { text: "股票" }), el("th", { text: "持仓权重" }))));
-  const body = el("tbody");
-  holdings.slice(0, 10).forEach((holding, index) => {
-    const weight = finite(holding.weight);
-    body.append(el("tr", {}, el("td", { class: "numeric", text: String(index + 1) }), el("td", {}, el("strong", { text: stringValue(holding.security_name) || "名称未提供" }), el("small", { text: stringValue(holding.security_code) || "代码未提供" })), el("td", { class: `numeric${Number.isFinite(weight) ? "" : " missing"}`, text: Number.isFinite(weight) ? formatPercent(weight * 100) : "未提供" })));
+function renderFundTrend(trend, errorMessage = "") {
+  const section = document.getElementById("fund-preview-trend");
+  if (!section) return;
+  section.replaceChildren();
+  const points = arrayValue(trend?.points).filter(point => Array.isArray(point) && point.length >= 3 && Number.isFinite(Number(point[1])) && Number.isFinite(Number(point[2])));
+  const heading = el("div", { class: "preview-section-heading" }, el("h3", { text: "历年走势" }), el("span", { text: points.length ? `${formatTrendMonth(points[0][0])}—${formatTrendMonth(points.at(-1)[0])}` : "暂无可比数据" }));
+  section.append(heading);
+  if (points.length < 2) {
+    section.append(el("div", { class: "trend-empty" }, icon("i-info"), el("strong", { text: "暂无足够走势数据" }), el("span", { text: errorMessage || "至少需要两个基金与沪深300均有有效记录的共同月份。" })));
+    return;
+  }
+  section.append(el("div", { class: "fund-trend-legend", "aria-label": "走势折线图例" }, el("span", { class: "fund" }, "基金累计收益"), el("span", { class: "benchmark" }, "沪深300全收益")));
+  const tenureGroups = groupFundTenures(arrayValue(trend.tenures));
+  section.append(createFundTrendChart(points, tenureGroups));
+  if (tenureGroups.length) {
+    const legend = el("div", { class: "fund-tenure-legend", "aria-label": "基金经理任职区间" });
+    tenureGroups.forEach((group, index) => {
+      const ranges = group.intervals.map(interval => `${formatTrendMonth(interval.start)}—${interval.end ? formatTrendMonth(interval.end) : "至今"}`).join("；");
+      legend.append(el("div", {}, el("span", { class: "tenure-swatch", style: `--tenure-color:${FUND_TENURE_COLORS[index % FUND_TENURE_COLORS.length]}` }), el("span", {}, el("strong", { text: group.name }), el("small", { text: ranges }))));
+    });
+    section.append(legend);
+  }
+  section.append(el("p", { class: "fund-trend-note", text: "按每月最后一个有效累计收益净值取样；两条曲线均从首个共同月份归一为0%。彩色区间表示基金经理任职期。" }));
+}
+
+function groupFundTenures(tenures) {
+  const groups = new Map();
+  tenures.forEach(item => {
+    const start = stringValue(item.start);
+    if (!start) return;
+    const key = stringValue(item.manager_id) || stringValue(item.manager_name);
+    if (!groups.has(key)) groups.set(key, { id: key, name: stringValue(item.manager_name) || key || "经理未提供", intervals: [] });
+    groups.get(key).intervals.push({ start, end: stringValue(item.end) || null, current: item.current === true });
   });
-  table.append(body);
-  section.append(el("div", { class: "table-scroll" }, table));
-  root.append(section);
+  return [...groups.values()].sort((a, b) => a.intervals[0].start.localeCompare(b.intervals[0].start));
+}
+
+function createFundTrendChart(points, tenureGroups) {
+  const width = 720;
+  const height = 320;
+  const margin = { top: 22, right: 18, bottom: 46, left: 54 };
+  const plotWidth = width - margin.left - margin.right;
+  const plotHeight = height - margin.top - margin.bottom;
+  const timestamps = points.map(point => Date.parse(`${point[0]}-01T00:00:00Z`));
+  const values = points.flatMap(point => [Number(point[1]), Number(point[2]), 0]);
+  const minimum = Math.min(...values);
+  const maximum = Math.max(...values);
+  const padding = Math.max(5, (maximum - minimum) * 0.1);
+  const yMin = minimum - padding;
+  const yMax = maximum + padding;
+  const xMin = timestamps[0];
+  const xMax = timestamps.at(-1);
+  const x = value => margin.left + (value - xMin) / Math.max(1, xMax - xMin) * plotWidth;
+  const y = value => margin.top + (yMax - value) / Math.max(1, yMax - yMin) * plotHeight;
+  const svg = svgEl("svg", { class: "fund-trend-chart", viewBox: `0 0 ${width} ${height}`, role: "img", "aria-label": "基金历年累计收益与沪深300全收益对比走势图" });
+  svg.append(svgEl("title", { text: "基金与沪深300全收益历年走势" }), svgEl("desc", { text: "折线以首个共同月份为零点，背景色表示不同基金经理的任职区间。" }));
+
+  tenureGroups.forEach((group, index) => {
+    const color = FUND_TENURE_COLORS[index % FUND_TENURE_COLORS.length];
+    group.intervals.forEach(interval => {
+      const start = clamp(Date.parse(`${interval.start.slice(0, 7)}-01T00:00:00Z`), xMin, xMax);
+      const endValue = interval.end ? Date.parse(`${interval.end.slice(0, 7)}-01T00:00:00Z`) : xMax;
+      const end = clamp(Number.isFinite(endValue) ? endValue : xMax, xMin, xMax);
+      if (end <= start) return;
+      svg.append(svgEl("rect", { class: "trend-tenure-band", x: x(start), y: margin.top, width: Math.max(1, x(end) - x(start)), height: plotHeight, fill: color }));
+    });
+  });
+
+  for (let index = 0; index < 5; index += 1) {
+    const value = yMin + (yMax - yMin) * index / 4;
+    const position = y(value);
+    svg.append(svgEl("line", { class: "trend-grid-line", x1: margin.left, y1: position, x2: width - margin.right, y2: position }));
+    svg.append(svgEl("text", { class: "trend-axis-label y", x: margin.left - 9, y: position + 4, "text-anchor": "end", text: `${Math.round(value)}%` }));
+  }
+
+  const tickIndexes = [...new Set(Array.from({ length: Math.min(5, points.length) }, (_, index) => Math.round(index * (points.length - 1) / Math.max(1, Math.min(5, points.length) - 1))))];
+  tickIndexes.forEach(index => {
+    const position = x(timestamps[index]);
+    svg.append(svgEl("line", { class: "trend-axis-tick", x1: position, y1: height - margin.bottom, x2: position, y2: height - margin.bottom + 5 }));
+    svg.append(svgEl("text", { class: "trend-axis-label x", x: position, y: height - 17, "text-anchor": "middle", text: String(points[index][0]).slice(0, 4) }));
+  });
+
+  const linePath = seriesIndex => points.map((point, index) => `${index ? "L" : "M"}${x(timestamps[index]).toFixed(2)},${y(Number(point[seriesIndex])).toFixed(2)}`).join(" ");
+  svg.append(svgEl("path", { class: "trend-line benchmark", d: linePath(2) }));
+  svg.append(svgEl("path", { class: "trend-line fund", d: linePath(1) }));
+  const last = points.length - 1;
+  svg.append(svgEl("circle", { class: "trend-end-point benchmark", cx: x(timestamps[last]), cy: y(Number(points[last][2])), r: 4 }));
+  svg.append(svgEl("circle", { class: "trend-end-point fund", cx: x(timestamps[last]), cy: y(Number(points[last][1])), r: 4 }));
+  return svg;
+}
+
+function formatTrendMonth(value) {
+  const match = String(value || "").match(/^(\d{4})-(\d{2})/);
+  return match ? `${match[1]}年${Number(match[2])}月` : String(value || "未提供");
 }
 
 function previewEmptyState(title, detail) {
@@ -780,6 +929,7 @@ function saveManagerPreviewNote() {
   else state.managerNotes.delete(managerId);
   localStorage.setItem(STORAGE.managerNotes, JSON.stringify(Object.fromEntries(state.managerNotes)));
   setText("manager-preview-note-status", text ? `已保存：${formatDateTime(updatedAt)}` : "备注已清空");
+  renderScoreNoteList();
   showToast(text ? "经理备注已保存" : "经理备注已清空");
 }
 
@@ -938,6 +1088,7 @@ function normalizePreference(managerId, raw = {}) {
   return {
     managerId: String(managerId),
     favorite: raw.favorite === true,
+    reviewed: raw.reviewed === true,
     attributeOverride: Array.isArray(raw.attributeOverride) ? [...new Set(raw.attributeOverride.filter(tag => ["offense", "defense", "composite"].includes(tag)))] : null,
     updatedAt: stringValue(raw.updatedAt) || new Date(0).toISOString(),
     schemaVersion: "fund-manager-preferences-v1"
@@ -1040,10 +1191,11 @@ function rerenderPreferenceConsumers() {
     if (state.activeView === "score") renderScore();
     if (state.activeView === "profile" && state.profile.primaryId) renderProfilePreferenceActions();
     if (state.activeView === "holdings") renderHoldings();
+    if (state.activeView === "personnel") loadPersonnelMonitor(false);
   }
 }
 
-function renderManagerPreferenceControls(manager, compact = false) {
+function renderManagerPreferenceControls(manager, compact = false, showReview = false) {
   const root = el("span", { class: `manager-preferences${compact ? " compact" : ""}` });
   const preference = preferenceFor(manager.id);
   const star = el("button", { type: "button", class: `favorite-button${preference.favorite ? " active" : ""}`, "aria-label": preference.favorite ? `取消收藏${manager.name}` : `收藏${manager.name}`, title: preference.favorite ? "取消收藏" : "星标收藏" });
@@ -1057,6 +1209,21 @@ function renderManagerPreferenceControls(manager, compact = false) {
   tags.forEach(tag => { const chip = el("span", { class: `ability-chip ${tag}`, title: labels[tag] }); chip.append(icon(`i-${tag}`)); if (!compact) chip.append(document.createTextNode(labels[tag])); tagRoot.append(chip); });
   tagRoot.addEventListener("click", event => { event.stopPropagation(); openPreferenceEditor(manager.id); });
   root.append(tagRoot);
+  if (showReview) {
+    const review = el("button", {
+      type: "button",
+      class: `review-button${preference.reviewed ? " active" : ""}`,
+      "aria-pressed": String(preference.reviewed),
+      "aria-label": preference.reviewed ? `将${manager.name}标记为未审阅` : `将${manager.name}标记为已审阅`,
+      title: preference.reviewed ? "已审阅，点击取消" : "未审阅，点击标记"
+    });
+    review.append(el("span", { "aria-hidden": "true", text: preference.reviewed ? "☑" : "□" }));
+    review.addEventListener("click", event => {
+      event.stopPropagation();
+      persistPreference(manager.id, { reviewed: !preference.reviewed });
+    });
+    root.append(review);
+  }
   return root;
 }
 
@@ -1246,6 +1413,7 @@ function filterManagers(managers, query, filters) {
 
 function managerMatchesFilter(manager, key, option) {
   if (key === "favorite") return option === "favorite" && preferenceFor(manager.id).favorite;
+  if (key === "reviewed") return option === "reviewed" ? preferenceFor(manager.id).reviewed : !preferenceFor(manager.id).reviewed;
   if (key === "ability") return effectiveTags(manager).includes(option);
   if (key === "fundType") {
     if (option === "stock") return manager.fundTypes.includes("股票型");
@@ -1448,6 +1616,7 @@ function renderActiveFilters(scope) {
 
 function renderScore() {
   if (!state.managers) return renderTableMessage("score-table-body", SCORE_COLUMNS.length, "正在载入评分数据…");
+  renderScoreNoteList();
   const scored = buildScoreRecords(state.managers);
   const eligible = scored.filter(item => item.eligible && Number.isFinite(item.total));
   setText("score-eligible-count", formatInteger(eligible.length));
@@ -1464,6 +1633,256 @@ function renderScore() {
   }
   const sorted = sortRecords(filtered, state.score.sort, scoreValue);
   renderDataTable({ table: "score", columns: SCORE_COLUMNS, records: sorted, stateKey: "score", headId: "score-table-head", bodyId: "score-table-body", footerId: "score-table-footer", value: scoreValue });
+}
+
+function toggleScoreNoteList(force) {
+  const panel = document.getElementById("score-note-list");
+  const open = typeof force === "boolean" ? force : panel.hidden;
+  panel.hidden = !open;
+  document.getElementById("score-note-list-toggle").setAttribute("aria-expanded", String(open));
+  if (open) renderScoreNoteList();
+}
+
+function renderScoreNoteList() {
+  const count = [...state.managerNotes.values()].filter(note => stringValue(note?.text)).length;
+  setText("score-note-list-count", String(count));
+  const root = document.getElementById("score-note-list-body");
+  if (!root || !state.managers) return;
+  root.replaceChildren();
+  const rows = [...state.managerNotes.entries()]
+    .filter(([, note]) => stringValue(note?.text))
+    .map(([managerId, note]) => ({ manager: state.managers.find(item => item.id === String(managerId)), note }))
+    .filter(item => item.manager)
+    .sort((a, b) => stringValue(b.note.updatedAt).localeCompare(stringValue(a.note.updatedAt)));
+  if (!rows.length) {
+    root.append(el("p", { class: "missing", text: "还没有保存过基金经理备注。请点击经理姓名，在“我的备注”中记录信息。" }));
+    return;
+  }
+  rows.forEach(({ manager, note }) => {
+    const tags = el("div", { class: "score-note-tags", "aria-label": "能力属性" });
+    const labels = { offense: "进攻", defense: "防守", composite: "综合" };
+    effectiveTags(manager).forEach(tag => {
+      const chip = el("span", { class: `score-note-tag ${tag}` });
+      chip.append(icon(`i-${tag}`), document.createTextNode(labels[tag]));
+      tags.append(chip);
+    });
+    if (!tags.childElementCount) tags.append(el("span", { class: "missing", text: "暂无属性" }));
+    const row = el("article", { class: "score-note-row" });
+    row.append(managerNameButton(manager, { className: "manager-name-link" }), tags, el("p", { class: "score-note-text", text: note.text }), el("time", { class: "score-note-time", text: note.updatedAt ? formatDateTime(note.updatedAt) : "" }));
+    root.append(row);
+  });
+}
+
+function favoriteManagerIds() {
+  return (state.managers || []).filter(manager => preferenceFor(manager.id).favorite).map(manager => manager.id);
+}
+
+async function loadPersonnelMonitor(refresh = false) {
+  if (state.personnel.loading) return;
+  const ids = favoriteManagerIds();
+  state.personnel.loading = true;
+  const button = document.getElementById("personnel-refresh");
+  button.disabled = true;
+  button.classList.add("is-loading");
+  try {
+    if (!ids.length) {
+      state.personnel.records = [];
+      state.personnel.loaded = true;
+      renderPersonnel();
+      return;
+    }
+    const response = await fetch("/api/personnel-monitor", {
+      method: "POST",
+      cache: "no-store",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ manager_ids: ids, refresh })
+    });
+    if (!response.ok) throw new Error(`人事监测接口返回 ${response.status}`);
+    const payload = await response.json();
+    state.personnel.records = arrayValue(payload.records).map(normalizePersonnelRecord);
+    state.personnel.loaded = true;
+    state.personnel.source = stringValue(payload.source);
+    if (refresh) setText("personnel-last-refresh", formatDateTime(payload.generated_at || new Date().toISOString()));
+    else {
+      const latest = state.personnel.records.map(item => item.refreshTime).filter(Boolean).sort().at(-1);
+      setText("personnel-last-refresh", latest ? formatDateTime(latest) : "尚未执行实时刷新");
+    }
+    renderPersonnel();
+    if (refresh) showToast("已刷新收藏经理的任职关系与公开舆情线索");
+  } catch (error) {
+    if (!state.personnel.loaded) state.personnel.records = buildLocalPersonnelFallback(ids);
+    state.personnel.loaded = true;
+    renderPersonnel();
+    showToast(`刷新未完成：${error.message}`);
+  } finally {
+    state.personnel.loading = false;
+    button.disabled = false;
+    button.classList.remove("is-loading");
+  }
+}
+
+function normalizePersonnelRecord(raw) {
+  const managerId = stringValue(raw.manager_id);
+  const manager = state.managers?.find(item => item.id === managerId);
+  return {
+    raw,
+    managerId,
+    manager,
+    name: stringValue(raw.manager_name) || manager?.name || managerId,
+    company: stringValue(raw.company) || manager?.company || "公司待核验",
+    status: stringValue(raw.status) || "unchanged",
+    statusLabel: stringValue(raw.status_label) || "暂无变化",
+    currentFunds: arrayValue(raw.current_funds),
+    coManagers: arrayValue(raw.co_managers),
+    news: arrayValue(raw.news),
+    timeline: arrayValue(raw.timeline),
+    changes: raw.changes || {},
+    latestChange: raw.latest_change || {},
+    relationshipTime: stringValue(raw.relationship_time),
+    newsTime: stringValue(raw.news_time),
+    refreshTime: stringValue(raw.refresh_time),
+    sourceStatus: stringValue(raw.source_status),
+    error: stringValue(raw.error)
+  };
+}
+
+function buildLocalPersonnelFallback(ids) {
+  return ids.map(managerId => {
+    const manager = state.managers.find(item => item.id === managerId);
+    return normalizePersonnelRecord({
+      manager_id: managerId,
+      manager_name: manager?.name,
+      company: manager?.company,
+      status: "unchanged",
+      status_label: "暂无变化",
+      current_funds: arrayValue(manager?.currentFunds).map((name, index) => ({ code: arrayValue(manager?.currentFundIds)[index] || "", name })),
+      co_managers: [], news: [], timeline: [], source_status: "local",
+      latest_change: { title: "等待连接本地监测接口", kind: "stable" }
+    });
+  });
+}
+
+const PERSONNEL_STATUS = {
+  suspected_departure: { tone: "critical", label: "疑似离任" },
+  management_change: { tone: "warning", label: "管理关系变化" },
+  co_manager_change: { tone: "info", label: "共同管理变化" },
+  news_update: { tone: "news", label: "舆情更新" },
+  unchanged: { tone: "stable", label: "暂无变化" }
+};
+
+function personnelVisibleRecords() {
+  const query = normalizeSearch(state.personnel.query);
+  return state.personnel.records.filter(record => {
+    const changes = record.changes || {};
+    const requiresVerification = record.status === "suspected_departure" || record.sourceStatus === "partial" || Boolean(record.error);
+    const priority = ["suspected_departure", "management_change", "co_manager_change"].includes(record.status);
+    if (state.personnel.summary === "priority" && !priority) return false;
+    if (state.personnel.summary === "verify" && !requiresVerification) return false;
+    if (state.personnel.summary === "unchanged" && record.status !== "unchanged") return false;
+    if (state.personnel.filter !== "all" && record.status !== state.personnel.filter) return false;
+    return !query || searchMatches([record.name, record.company, ...record.currentFunds.map(item => item.name || item.code), ...record.coManagers.map(item => item.name)].join(" "), query);
+  });
+}
+
+function renderPersonnel() {
+  const records = state.personnel.records;
+  const priority = records.filter(item => ["suspected_departure", "management_change", "co_manager_change"].includes(item.status)).length;
+  const verify = records.filter(item => item.status === "suspected_departure" || item.sourceStatus === "partial" || item.error).length;
+  const unchanged = records.filter(item => item.status === "unchanged").length;
+  setText("personnel-count-all", String(records.length));
+  setText("personnel-count-priority", String(priority));
+  setText("personnel-count-verify", String(verify));
+  setText("personnel-count-unchanged", String(unchanged));
+  const badge = document.getElementById("personnel-nav-badge");
+  badge.textContent = String(priority);
+  badge.hidden = priority === 0;
+  document.querySelectorAll("[data-personnel-summary]").forEach(button => button.classList.toggle("active", button.dataset.personnelSummary === state.personnel.summary));
+  document.querySelectorAll("[data-personnel-filter]").forEach(button => button.classList.toggle("active", button.dataset.personnelFilter === state.personnel.filter));
+  const body = document.getElementById("personnel-table-body");
+  const empty = document.getElementById("personnel-empty");
+  body.replaceChildren();
+  empty.hidden = records.length > 0;
+  document.querySelector(".personnel-table").hidden = records.length === 0;
+  if (!records.length) {
+    document.getElementById("personnel-detail").hidden = true;
+    return;
+  }
+  personnelVisibleRecords().forEach(record => body.append(renderPersonnelRow(record)));
+  if (!body.childElementCount) body.append(el("tr", {}, el("td", { colspan: 8, class: "table-message", text: "当前筛选条件下没有记录。" })));
+  if (state.personnel.selectedId) {
+    const selected = records.find(item => item.managerId === state.personnel.selectedId);
+    if (selected) renderPersonnelDetail(selected);
+  }
+}
+
+function renderPersonnelRow(record) {
+  const status = PERSONNEL_STATUS[record.status] || PERSONNEL_STATUS.unchanged;
+  const changes = record.changes || {};
+  const fundDelta = arrayValue(changes.funds_added).length - arrayValue(changes.funds_removed).length;
+  const coDelta = arrayValue(changes.co_managers_added).length - arrayValue(changes.co_managers_removed).length;
+  const tr = el("tr", { class: `status-${status.tone}` });
+  const managerCell = el("div", { class: "personnel-manager" });
+  managerCell.append(el("span", { class: "personnel-avatar", text: record.name.slice(0, 1) || "?" }));
+  const identity = el("span");
+  if (record.manager) identity.append(managerNameButton(record.manager)); else identity.append(el("strong", { text: record.name }));
+  identity.append(el("small", { text: record.company }));
+  managerCell.append(identity);
+  if (record.manager) managerCell.append(renderManagerPreferenceControls(record.manager, true));
+  const fundCell = el("div");
+  fundCell.append(el("span", { class: "personnel-count", text: `${record.currentFunds.length}只` }), fundDelta ? el("span", { class: "personnel-delta", text: `较上次 ${fundDelta > 0 ? "+" : ""}${fundDelta}` }) : el("span", { class: "personnel-delta", text: "较上次 --" }));
+  fundCell.append(el("small", { class: "personnel-cell-sub", text: record.currentFunds.slice(0, 2).map(item => item.name || item.code).join("、") || "--" }));
+  const coCell = el("div");
+  coCell.append(el("span", { class: "personnel-count", text: record.coManagers.length ? `${record.coManagers.length}人` : "--" }), coDelta ? el("span", { class: "personnel-delta", text: `${coDelta > 0 ? "新增 +" : "减少 "}${coDelta}` }) : el("span", { class: "personnel-delta", text: "较上次 --" }));
+  coCell.append(el("small", { class: "personnel-cell-sub", text: record.coManagers.slice(0, 3).map(item => item.name).join("、") || "--" }));
+  const changeCell = el("div");
+  changeCell.append(el("strong", { class: `personnel-cell-title ${status.tone}`, text: `${record.latestChange.date || ""} ${record.latestChange.title || "与上次记录一致"}`.trim() }), el("small", { class: "personnel-cell-sub", text: record.sourceStatus === "live" ? "公开页面刷新差异" : "现有数据快照" }));
+  const news = record.news[0];
+  const newsCell = el("div");
+  newsCell.append(el("strong", { class: `personnel-cell-title ${news ? status.tone : ""}`, text: news?.title || "暂无舆情更新" }), el("small", { class: "personnel-cell-sub", text: news ? `${news.source || "公开新闻"} · 需人工核验` : "--" }));
+  const times = el("span", { class: "personnel-times" });
+  times.append(document.createTextNode(`数据：${shortPersonnelTime(record.relationshipTime)}\n舆情：${shortPersonnelTime(record.newsTime)}\n刷新：${shortPersonnelTime(record.refreshTime)}`));
+  const toggle = el("button", { type: "button", class: "personnel-row-toggle", "aria-expanded": String(state.personnel.selectedId === record.managerId), "aria-label": `展开${record.name}详情` });
+  toggle.append(icon("i-chevron"));
+  toggle.addEventListener("click", () => {
+    state.personnel.selectedId = state.personnel.selectedId === record.managerId ? null : record.managerId;
+    renderPersonnel();
+    if (state.personnel.selectedId) renderPersonnelDetail(record);
+  });
+  tr.append(el("td", {}, el("span", { class: `personnel-status ${status.tone}`, text: record.statusLabel || status.label })), el("td", {}, managerCell), el("td", {}, fundCell), el("td", {}, coCell), el("td", {}, changeCell), el("td", {}, newsCell), el("td", {}, times), el("td", {}, toggle));
+  return tr;
+}
+
+function shortPersonnelTime(value) {
+  if (!value) return "--";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value).slice(0, 16);
+  return new Intl.DateTimeFormat("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }).format(date).replace("/", "-");
+}
+
+function renderPersonnelDetail(record) {
+  const panel = document.getElementById("personnel-detail");
+  panel.hidden = false;
+  const status = PERSONNEL_STATUS[record.status] || PERSONNEL_STATUS.unchanged;
+  const statusCard = document.getElementById("personnel-status-card");
+  statusCard.replaceChildren(el("h2", { class: `personnel-cell-title ${status.tone}`, text: "当前任职状态" }));
+  const facts = el("dl", { class: "personnel-facts" });
+  [["当前公司", record.company], ["当前管理基金", `${record.currentFunds.length}只`], ["管理状态", record.statusLabel], ["数据截至时间", record.relationshipTime ? formatDateTime(record.relationshipTime) : "待实时刷新"]].forEach(([term, value]) => facts.append(el("div", {}, el("dt", { text: term }), el("dd", { text: value }))));
+  statusCard.append(facts);
+  const timelineCard = document.getElementById("personnel-timeline-card");
+  timelineCard.replaceChildren(el("h2", { text: "变化时间线（最近）" }));
+  const timeline = el("ol", { class: "personnel-timeline" });
+  record.timeline.slice(0, 4).forEach(item => timeline.append(el("li", {}, el("time", { text: item.date || "日期待核验" }), el("strong", { text: item.title || "任职记录" }), el("small", { text: item.detail || item.source || "" }))));
+  if (!timeline.childElementCount) timeline.append(el("li", {}, el("strong", { text: "暂无可展示的历史变动" }), el("small", { text: "点击刷新后与上次成功记录进行比较。" })));
+  timelineCard.append(timeline);
+  const evidenceCard = document.getElementById("personnel-evidence-card");
+  evidenceCard.replaceChildren(el("h2", { text: "舆情与证据（最新3条）" }));
+  const evidence = el("ul", { class: "personnel-evidence-list" });
+  record.news.slice(0, 3).forEach(item => {
+    const link = el("a", { href: item.url || "#", target: "_blank", rel: "noopener", text: item.title || "公开报道" });
+    evidence.append(el("li", {}, el("span", { class: "personnel-evidence-kind", text: item.level === "official" ? "正式公告" : "媒体报道" }), link, el("time", { text: shortPersonnelTime(item.published_at) })));
+  });
+  if (!evidence.childElementCount) evidence.append(el("li", {}, el("span", { class: "personnel-evidence-kind", text: "暂无" }), el("span", { class: "missing", text: "暂未检索到新的公开舆情线索" })));
+  evidenceCard.append(evidence);
 }
 
 function buildScoreRecords(managers) {
@@ -1741,7 +2160,7 @@ function renderCell(record, column, value, table) {
     const manager = table === "score" ? record.manager : record;
     cell.classList.add("manager-cell");
     const identity = el("span", { class: "manager-identity" }, managerNameButton(manager), el("span", { class: "manager-id", text: manager.id || "ID未提供" }));
-    cell.append(el("div", { class: "manager-cell-content" }, identity, renderManagerPreferenceControls(manager, true)));
+    cell.append(el("div", { class: "manager-cell-content" }, identity, renderManagerPreferenceControls(manager, true, table === "score")));
     return cell;
   }
   if (column.kind === "relation") {
