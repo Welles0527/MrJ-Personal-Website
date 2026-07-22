@@ -9,6 +9,7 @@ type AuthBlock = {
 };
 
 const todoLoginUrl = '/officialwebsite/topics/space/planning/todo';
+const sessionStorageKey = 'mywebsite.site-auth-session.v1';
 
 const findBlocks = (root: ParentNode): AuthBlock[] => [...root.querySelectorAll<HTMLElement>('[data-site-auth]')]
   .map((element) => {
@@ -38,6 +39,17 @@ export const mountSiteAuthStatus = async (root: ParentNode = document) => {
   const blocks = findBlocks(root);
   if (!blocks.length) return;
 
+  let sessionCheck: Promise<void> | null = null;
+  const reconcileSession = () => {
+    if (sessionCheck) return sessionCheck;
+    const fallback = getRememberedSession();
+    sessionCheck = getCloudSession()
+      .then((session) => { renderBlocks(blocks, session); })
+      .catch(() => { renderBlocks(blocks, fallback); })
+      .finally(() => { sessionCheck = null; });
+    return sessionCheck;
+  };
+
   const remembered = getRememberedSession();
   blocks.forEach((block) => {
     block.status.textContent = remembered ? `已登录：${remembered.account}` : '正在检查登录状态…';
@@ -45,16 +57,22 @@ export const mountSiteAuthStatus = async (root: ParentNode = document) => {
   });
   if (remembered) renderBlocks(blocks, remembered);
 
-  try {
-    const session = await getCloudSession();
-    renderBlocks(blocks, session);
-  } catch {
-    renderBlocks(blocks, remembered);
-  }
+  await reconcileSession();
 
   window.addEventListener('site-auth-change', (event) => {
     const session = event instanceof CustomEvent ? event.detail as CloudSession | null : null;
     renderBlocks(blocks, session);
+  });
+
+  window.addEventListener('storage', (event) => {
+    if (event.key && event.key !== sessionStorageKey) return;
+    renderBlocks(blocks, getRememberedSession());
+    void reconcileSession();
+  });
+
+  window.addEventListener('focus', () => { void reconcileSession(); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') void reconcileSession();
   });
 
   blocks.forEach((block) => {

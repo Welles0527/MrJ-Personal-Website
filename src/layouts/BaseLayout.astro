@@ -30,6 +30,10 @@ const basePath = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_U
     <title>{title}</title>
   </head>
   <body>
+    <div class="site-update-notice" role="status" aria-live="polite" data-site-update-notice hidden>
+      <span>网站已有新版本。</span>
+      <button type="button" data-site-update-refresh>刷新并更新</button>
+    </div>
     <div class:list={['app-shell', { 'app-shell--bare': bare }]}>
       {!bare && <Sidebar activeTheme={activeTheme} />}
       <main class="main-content">
@@ -53,11 +57,76 @@ const basePath = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_U
         const pwaBasePath = import.meta.env.BASE_URL.endsWith('/')
           ? import.meta.env.BASE_URL
           : `${import.meta.env.BASE_URL}/`;
+        const updateNotice = document.querySelector<HTMLElement>('[data-site-update-notice]');
+        const updateButton = document.querySelector<HTMLButtonElement>('[data-site-update-refresh]');
+        const hadController = Boolean(navigator.serviceWorker.controller);
+        let registration: ServiceWorkerRegistration | null = null;
+
+        const showUpdateNotice = () => {
+          if (updateNotice) updateNotice.hidden = false;
+        };
+
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (hadController) showUpdateNotice();
+        });
+
+        updateButton?.addEventListener('click', () => {
+          registration?.waiting?.postMessage({ type: 'SKIP_WAITING' });
+          window.location.reload();
+        });
 
         navigator.serviceWorker.register(`${pwaBasePath}sw.js`, {
-          scope: pwaBasePath
-        }).catch(() => {});
+          scope: pwaBasePath,
+          updateViaCache: 'none'
+        }).then((nextRegistration) => {
+          registration = nextRegistration;
+          if (nextRegistration.waiting && navigator.serviceWorker.controller) showUpdateNotice();
+
+          nextRegistration.addEventListener('updatefound', () => {
+            const worker = nextRegistration.installing;
+            worker?.addEventListener('statechange', () => {
+              if (worker.state === 'installed' && navigator.serviceWorker.controller) showUpdateNotice();
+            });
+          });
+
+          return nextRegistration.update();
+        }).catch((error) => {
+          console.warn('[site-update] Service Worker update check failed.', error);
+        });
       }
     </script>
+    <style>
+      .site-update-notice {
+        position: fixed;
+        z-index: 1000;
+        right: 1rem;
+        bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        max-width: calc(100vw - 2rem);
+        border: 1px solid rgba(255, 224, 166, 0.25);
+        border-radius: 0.75rem;
+        padding: 0.7rem 0.85rem;
+        background: #2d1607;
+        color: #fff1d2;
+        box-shadow: 0 12px 30px rgba(35, 15, 2, 0.32);
+        font-size: 0.86rem;
+      }
+
+      .site-update-notice[hidden] { display: none; }
+
+      .site-update-notice button {
+        flex: 0 0 auto;
+        border: 0;
+        border-radius: 999px;
+        padding: 0.45rem 0.75rem;
+        background: #f5c77d;
+        color: #341805;
+        font: inherit;
+        font-weight: 800;
+        cursor: pointer;
+      }
+    </style>
   </body>
 </html>
