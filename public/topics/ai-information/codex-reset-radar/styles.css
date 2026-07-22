@@ -459,6 +459,80 @@ textarea:focus-visible {
   white-space: nowrap;
 }
 
+.official-status-feature {
+  padding-top: 24px;
+}
+
+.official-status-link {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-height: 92px;
+  padding: 20px 24px;
+  border: 1px solid rgba(115, 242, 180, 0.3);
+  background:
+    linear-gradient(100deg, rgba(115, 242, 180, 0.11), rgba(115, 242, 180, 0.025) 58%, rgba(244, 205, 92, 0.07)),
+    rgba(6, 17, 14, 0.7);
+  color: var(--ink-soft);
+  text-decoration: none;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.official-status-link:hover,
+.official-status-link:focus-visible {
+  border-color: var(--mint);
+  background:
+    linear-gradient(100deg, rgba(115, 242, 180, 0.18), rgba(115, 242, 180, 0.04) 58%, rgba(244, 205, 92, 0.1)),
+    rgba(6, 17, 14, 0.86);
+  transform: translateY(-2px);
+}
+
+.official-status-mark {
+  display: inline-flex;
+  align-items: end;
+  gap: 4px;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  padding: 6px;
+  border: 1px solid rgba(115, 242, 180, 0.4);
+  background: rgba(115, 242, 180, 0.08);
+}
+
+.official-status-mark i {
+  display: block;
+  width: 5px;
+  background: var(--mint);
+}
+
+.official-status-mark i:nth-child(1) { height: 12px; }
+.official-status-mark i:nth-child(2) { height: 19px; }
+.official-status-mark i:nth-child(3) { height: 25px; }
+
+.official-status-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.official-status-copy strong {
+  color: var(--ink-soft);
+  font-family: var(--display);
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+}
+
+.official-status-copy small {
+  color: var(--ink-dim);
+  font-size: 0.82rem;
+}
+
+.official-status-arrow {
+  margin-left: auto;
+  color: var(--amber);
+  font-size: 1.55rem;
+}
+
 .status-good { color: var(--mint); }
 .status-warn { color: var(--amber); }
 .status-bad { color: var(--danger); }
