@@ -759,14 +759,24 @@ export function mountTodoWorkspace(root: HTMLElement) {
     notify(successMessage || '已连接云端待办，跨浏览器实时同步已开启。');
   };
 
-  const saveCloudTodo = async (todo: Todo, successMessage: string, expectedUpdatedAt?: string) => {
+  const saveCloudTodo = async (
+    todo: Todo,
+    successMessage: string,
+    expectedUpdatedAt?: string,
+    onMutationConfirmed?: () => void
+  ) => {
     if (!cloudSession) {
       showLogin('请先登录后再保存待办。');
       return false;
     }
     const session = cloudSession;
     setSyncStatus(`正在同步：${session.account}`, { retry: false });
-    const receipt = await (await getCloudApi()).upsertCloudTodo(session.uid, todo, expectedUpdatedAt);
+    const receipt = await (await getCloudApi()).upsertCloudTodo(
+      session.uid,
+      todo,
+      expectedUpdatedAt,
+      onMutationConfirmed
+    );
     if (cloudSession?.uid !== session.uid) return false;
     const verifiedTodo = normalizeTodo(receipt.todo) || todo;
     upsertTodoInState(verifiedTodo);
@@ -1530,7 +1540,8 @@ export function mountTodoWorkspace(root: HTMLElement) {
       const saved = await saveCloudTodo(
         nextTodo,
         existing ? '待办已更新并同步到云端。' : '待办已添加并同步到云端。',
-        existing?.updatedAt
+        existing?.updatedAt,
+        closeForm
       );
       if (!saved) return;
       closeForm();

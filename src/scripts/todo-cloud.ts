@@ -223,7 +223,8 @@ export const watchCloudTodos = (
 export const upsertCloudTodo = async (
   ownerId: string,
   todo: CloudTodo,
-  expectedUpdatedAt?: string
+  expectedUpdatedAt?: string,
+  onMutationConfirmed?: () => void
 ): Promise<CloudTodoMutationReceipt> => {
   let requestId: string | null = null;
   try {
@@ -273,6 +274,7 @@ export const upsertCloudTodo = async (
     }
     requestId = resultRequestId(result);
     if (!requestId) throw new Error('云端保存未返回 requestId，无法确认本次写入。');
+    onMutationConfirmed?.();
 
     const verification = await loadCloudTodo(ownerId, todo.id);
     if (!verification.todo) throw new Error('云端保存后未能回读该记录。');
