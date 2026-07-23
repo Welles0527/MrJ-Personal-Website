@@ -519,12 +519,6 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     notify(saved ? `${isDarkReading ? '深色' : '浅色'}阅读模式已启用。` : '阅读模式已切换，但当前浏览器无法长期保存。');
   };
 
-  const ensureBookIsReading = (bookSlug: string) => {
-    if (bookStatuses[bookSlug]) return;
-    bookStatuses = { ...bookStatuses, [bookSlug]: 'reading' };
-    writeBookStatuses(bookStatuses);
-  };
-
   const renderBooks = () => {
     const books = data.books.filter((book) => book.testament === selectedTestament);
     bookList.classList.toggle('is-grid', viewMode === 'grid');
@@ -589,7 +583,6 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     currentChapter = Math.min(Math.max(lastPosition?.chapter ?? 1, 1), nextBook.chapters);
     selectedTestament = nextBook.testament;
     directory.classList.remove('is-open');
-    ensureBookIsReading(nextBook.slug);
     renderAll(lastPosition?.verse ?? 1);
   };
 
@@ -1092,7 +1085,6 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     selectedTestament = nextBook.testament;
     searchResults.hidden = true;
     directory.classList.remove('is-open');
-    ensureBookIsReading(nextBook.slug);
     renderAll(verse);
   };
 
@@ -1605,7 +1597,6 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   indexReadingProgress();
   renderReadingTheme();
   renderDailyPlan();
-  ensureBookIsReading(currentBook);
   renderAll(Number(params.get('verse') || '') || undefined, { updateLastRead: false });
   void loadFullBibleText();
 }
