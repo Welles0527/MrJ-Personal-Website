@@ -1529,12 +1529,6 @@ export function mountTodoWorkspace(root: HTMLElement) {
       showLogin('请先登录后再保存待办。');
       return;
     }
-    const editingId = state.editingId;
-    const reopenFormAfterFailedSave = () => {
-      openForm(date ?? undefined, nextTodo, nextPlacement);
-      state.editingId = editingId;
-      formTitle.textContent = editingId ? '编辑待办' : '新增待办';
-    };
     closeForm();
     try {
       const saved = await saveCloudTodo(
@@ -1542,14 +1536,10 @@ export function mountTodoWorkspace(root: HTMLElement) {
         existing ? '待办已更新并同步到云端。' : '待办已添加并同步到云端。',
         existing?.updatedAt
       );
-      if (!saved) {
-        reopenFormAfterFailedSave();
-        return;
-      }
+      if (!saved) return;
       if (date) selectDate(date);
       render();
     } catch (error) {
-      reopenFormAfterFailedSave();
       showCloudError(error, '保存云端待办失败。');
     }
   });
