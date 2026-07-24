@@ -288,6 +288,7 @@ async function init() {
   applyDefaultFilters("score", false);
   await loadManifest();
   await initializePreferenceSync();
+  await initializeNoteSync();
   await activateView(viewFromHash());
 }
 
@@ -927,7 +928,8 @@ function saveManagerPreviewNote() {
   const updatedAt = new Date().toISOString();
   if (text) state.managerNotes.set(managerId, { text, updatedAt });
   else state.managerNotes.delete(managerId);
-  localStorage.setItem(STORAGE.managerNotes, JSON.stringify(Object.fromEntries(state.managerNotes)));
+  saveManagerNotesLocal();
+  void persistManagerNotesCloud();
   setText("manager-preview-note-status", text ? `已保存：${formatDateTime(updatedAt)}` : "备注已清空");
   renderScoreNoteList();
   showToast(text ? "经理备注已保存" : "经理备注已清空");
@@ -1119,6 +1121,54 @@ function savePreferencesLocal() {
   localStorage.setItem(STORAGE.managerPreferences, JSON.stringify(Object.fromEntries(state.preferences)));
 }
 
+function saveManagerNotesLocal() {
+  localStorage.setItem(STORAGE.managerNotes, JSON.stringify(Object.fromEntries(state.managerNotes)));
+}
+
+function normalizeManagerNote(raw) {
+  return {
+    text: stringValue(raw?.text),
+    updatedAt: stringValue(raw?.updatedAt)
+  };
+}
+
+async function initializeNoteSync() {
+  const bridge = window.FundNotesCloud;
+  if (!bridge?.getSession) return;
+  try {
+    const session = await bridge.getSession();
+    if (!session?.uid) return;
+    const remote = await bridge.load();
+    const remoteNotes = remote?.notes && typeof remote.notes === "object" ? remote.notes : {};
+    const ids = new Set([...state.managerNotes.keys(), ...Object.keys(remoteNotes)]);
+    ids.forEach(managerId => {
+      const local = state.managerNotes.get(managerId);
+      const cloud = remoteNotes[managerId] ? normalizeManagerNote(remoteNotes[managerId]) : null;
+      if (!local && cloud) state.managerNotes.set(managerId, cloud);
+      else if (local && cloud && Date.parse(cloud.updatedAt) > Date.parse(local.updatedAt)) state.managerNotes.set(managerId, cloud);
+    });
+    saveManagerNotesLocal();
+    await bridge.save(Object.fromEntries(state.managerNotes));
+    renderScoreNoteList();
+  } catch (error) {
+    updatePreferenceSyncState("pending", error?.message);
+  }
+}
+
+async function persistManagerNotesCloud() {
+  const bridge = window.FundNotesCloud;
+  if (!bridge?.getSession) return;
+  try {
+    const session = await bridge.getSession();
+    if (!session?.uid) return updatePreferenceSyncState("signed-out");
+    updatePreferenceSyncState("syncing");
+    await bridge.save(Object.fromEntries(state.managerNotes));
+    updatePreferenceSyncState("synced");
+  } catch (error) {
+    updatePreferenceSyncState("pending", error?.message);
+  }
+}
+
 async function initializePreferenceSync() {
   updatePreferenceSyncState("local");
   const bridge = window.FundPreferenceCloud;
@@ -1162,7 +1212,7 @@ function renderSharedAuthStatus(session, detail = "") {
 
 function updatePreferenceSyncState(status, detail = "") {
   state.preferenceSync = status;
-  const labels = { local: "收藏保存在本机", "signed-out": "未登录，收藏保存在本机", syncing: "正在同步收藏", synced: "收藏已与账号同步", pending: "收藏待同步" };
+  const labels = { local: "收藏与备注保存在本机", "signed-out": "未登录，收藏与备注保存在本机", syncing: "正在同步收藏与备注", synced: "收藏与备注已与账号同步", pending: "收藏与备注待同步" };
   const node = document.getElementById("preference-sync-state");
   if (node) { node.textContent = detail && status === "pending" ? `${labels[status]}：${detail}` : labels[status] || status; node.dataset.status = status; }
 }

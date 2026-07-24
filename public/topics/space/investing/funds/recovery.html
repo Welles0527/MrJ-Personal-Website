@@ -47,6 +47,11 @@
         <button class="secondary" id="copy" type="button">复制备份 JSON</button>
         <a class="secondary" href="./index.html#score">返回打分看板</a>
       </div>
+      <p>网站账号：<strong id="account">正在确认…</strong></p>
+      <div class="actions">
+        <input id="import-file" type="file" accept="application/json,.json">
+        <button id="import" type="button" disabled>导入备注到本机和云端</button>
+      </div>
       <p id="status" role="status"></p>
     </header>
 
@@ -60,12 +65,16 @@
       <div id="note-list"></div>
     </section>
   </main>
+  <script src="./fund-preferences-cloud.js?v=20260720v3"></script>
+  <script src="./fund-notes-cloud.js?v=20260725v1"></script>
   <script>
     "use strict";
 
     const PREFERENCE_KEY = "fund-dashboard-manager-preferences-v2";
     const NOTE_KEY = "fund-dashboard-manager-notes-v1";
     let snapshot = null;
+    let importSnapshot = null;
+    let signedInSession = null;
 
     function readObject(key) {
       try {
@@ -126,6 +135,28 @@
       return JSON.stringify(snapshot || {}, null, 2);
     }
 
+    function mergeNotes(current, incoming) {
+      const merged = { ...current };
+      Object.entries(incoming).forEach(([managerId, note]) => {
+        if (!note || typeof note !== "object" || !String(note.text || "").trim()) return;
+        const existing = merged[managerId];
+        if (!existing || Date.parse(note.updatedAt || 0) >= Date.parse(existing.updatedAt || 0)) {
+          merged[managerId] = { text: String(note.text).trim(), updatedAt: note.updatedAt || new Date().toISOString() };
+        }
+      });
+      return merged;
+    }
+
+    async function confirmAccount() {
+      try {
+        signedInSession = await window.FundNotesCloud?.getSession?.();
+      } catch {
+        signedInSession = null;
+      }
+      document.getElementById("account").textContent = signedInSession?.account || "未登录网站账号";
+      document.getElementById("import").disabled = !(signedInSession?.uid && importSnapshot);
+    }
+
     document.getElementById("origin").textContent = location.origin;
     document.getElementById("refresh").addEventListener("click", readSnapshot);
     document.getElementById("download").addEventListener("click", () => {
@@ -145,7 +176,40 @@
         document.getElementById("status").textContent = "浏览器不允许复制，请使用“下载恢复备份”。";
       }
     });
+    document.getElementById("import-file").addEventListener("change", async event => {
+      const file = event.target.files?.[0];
+      importSnapshot = null;
+      if (!file) return confirmAccount();
+      try {
+        const parsed = JSON.parse(await file.text());
+        if (!parsed.notes || typeof parsed.notes !== "object" || Array.isArray(parsed.notes)) {
+          throw new Error("备份中没有可导入的备注。");
+        }
+        importSnapshot = parsed;
+        document.getElementById("status").textContent = `已选择备份：${Object.keys(parsed.notes).length} 条备注。`;
+      } catch (error) {
+        document.getElementById("status").textContent = error.message || "无法读取该备份。";
+      }
+      await confirmAccount();
+    });
+    document.getElementById("import").addEventListener("click", async () => {
+      if (!signedInSession?.uid || !importSnapshot) return;
+      const button = document.getElementById("import");
+      button.disabled = true;
+      try {
+        const merged = mergeNotes(readObject(NOTE_KEY), importSnapshot.notes);
+        localStorage.setItem(NOTE_KEY, JSON.stringify(merged));
+        await window.FundNotesCloud.save(merged);
+        readSnapshot();
+        document.getElementById("status").textContent = `已将 ${Object.keys(importSnapshot.notes).length} 条备注导入本机，并同步到网站账号 ${signedInSession.account}。`;
+      } catch (error) {
+        document.getElementById("status").textContent = `导入未完成：${error.message || "云端保存失败"}`;
+      } finally {
+        button.disabled = !(signedInSession?.uid && importSnapshot);
+      }
+    });
     readSnapshot();
+    confirmAccount();
   </script>
 </body>
 </html>
