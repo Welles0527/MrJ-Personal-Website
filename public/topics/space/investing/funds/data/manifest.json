@@ -1,19 +1,19 @@
 {
   "schema_version": "fund-dashboard-data-v2.0.0",
-  "generated_at": "2026-07-20T05:33:12+00:00",
+  "generated_at": "2026-07-24T20:59:14+00:00",
   "dashboard_enabled": true,
   "capabilities": {
     "custom_returns": true
   },
   "custom_return_endpoint": "/api/custom-return?start={start}&end={end}",
   "counts": {
-    "funds": 3227,
-    "managers": 1734,
-    "manager_details": 15630,
-    "manager_profiles": 1734,
-    "holding_records": 32250,
-    "funds_with_holdings": 3225,
-    "funds_missing_holdings": 2
+    "funds": 3242,
+    "managers": 1742,
+    "manager_details": 15667,
+    "manager_profiles": 1742,
+    "holding_records": 32409,
+    "funds_with_holdings": 3242,
+    "funds_missing_holdings": 0
   },
   "identity_rules": {
     "manager": "eastmoney_manager_id",
@@ -23,64 +23,64 @@
   "attribution_rule": "manager performance uses is_solo=1 intervals only; joint management is retained as history but excluded from personal metrics",
   "missing_value_rule": "missing metrics are null with a status/reason; never coerced to zero",
   "workbook_validation": {
-    "funds": 3227,
-    "managers": 1734,
-    "manager_details": 15630
+    "funds": 3242,
+    "managers": 1742,
+    "manager_details": 15667
   },
   "source_files": [
     {
       "name": "outputs/019f652b-3e7c-7ff3-8cf2-b91fedf10b7b/股票型偏股混合型基金完整清单.xlsx",
-      "bytes": 9154610,
-      "sha256": "5525c469dcf97c335ed2f69f5c89293604bf8a46099c7edf882c32248d31598a"
+      "bytes": 7008798,
+      "sha256": "1f6fb67191224b351386c85c439187b391af3ff04442028f7aab516a7ebbcbbe"
     },
     {
       "name": "outputs/019f652b-3e7c-7ff3-8cf2-b91fedf10b7b/manager_metric_collection_v2/fund_manager_metrics_slim.sqlite",
-      "bytes": 102227968,
-      "sha256": "4fd5ce1633c35924b14e6dd84fee8829100788df90ac9de7361b7074b73987bc"
+      "bytes": 102514688,
+      "sha256": "16b9433771ce06dc21c78e69e4c1154a2bfee9a82039cbecf20acc21bd81b7c2"
     },
     {
       "name": "outputs/019f652b-3e7c-7ff3-8cf2-b91fedf10b7b/manager_metric_collection_v2/fund_manager_metric_data.sqlite",
-      "bytes": 1315061760,
-      "sha256": "f275e233ef9bbc9ead152c6ee7a11888744bcaa86e034cbf1eab294c2df1388a"
+      "bytes": 1322237952,
+      "sha256": "d9ea01895d4a8ac70e7a5d8bfc9b1416b6c3aa934b72da1b547898e7609f292f"
     },
     {
       "name": "outputs/019f652b-3e7c-7ff3-8cf2-b91fedf10b7b/dashboard_analytics/fund_dashboard_analytics.sqlite",
-      "bytes": 8003584,
-      "sha256": "b17992b7c478c59a41621e2cf4b4ac95bfbe9fc147197f25e0bf3a4ebda7bdf5"
+      "bytes": 8011776,
+      "sha256": "ac75ca8f43caed44569185362bce7f41a681bd3c2ae6fda85c19d59a16c716de"
     },
     {
       "name": "outputs/019f652b-3e7c-7ff3-8cf2-b91fedf10b7b/dashboard_analytics/raw/h00300_akshare.json",
-      "bytes": 492745,
-      "sha256": "7ddcbc8490bd8ca977e5768d1b47396b4e42290a75fbbc12a408f5a2a1267937"
+      "bytes": 493215,
+      "sha256": "511f0a9ffa132c1e1101a0343e9b57eab194ebe76d4ad48c913616438fbe2181"
     },
     {
       "name": "fund_manager_metric_definitions.json",
-      "bytes": 8186,
-      "sha256": "a2a772f1b2c2720e64b13c187f523efbe05cb04ab0043dde30f25b3011d09a30"
+      "bytes": 8168,
+      "sha256": "88c2236af82c6e432428b1ac7bb636b70489fcf10347e0db5b4964d6bfeac474"
     }
   ],
   "source_metadata": {
-    "generated_at": "2026-07-17T17:41:24+00:00",
-    "source_fetched_through": "2026-07-17T07:09:05+00:00",
+    "generated_at": "2026-07-24T20:55:11+00:00",
+    "source_fetched_through": "2026-07-24T20:51:18+00:00",
     "formula_version": "manager-metric-baseline-v1.3.0",
     "source_database": "outputs/019f652b-3e7c-7ff3-8cf2-b91fedf10b7b/manager_metric_collection_v2/fund_manager_metric_data.sqlite",
-    "source_database_bytes": 1315061760,
-    "source_database_sha256": "f275e233ef9bbc9ead152c6ee7a11888744bcaa86e034cbf1eab294c2df1388a",
-    "universe_snapshot": "outputs/019f652b-3e7c-7ff3-8cf2-b91fedf10b7b/manager_metric_collection_v2/input/fund_universe_clean.jsonl",
-    "universe_snapshot_sha256": "28a162852fe76ea32140a715a974e15cab9caac265ed17d88b8a8dec2f8129ce",
-    "raw_gz_files": 14778,
+    "source_database_bytes": 1322237952,
+    "source_database_sha256": "d9ea01895d4a8ac70e7a5d8bfc9b1416b6c3aa934b72da1b547898e7609f292f",
+    "universe_snapshot": "outputs/019f652b-3e7c-7ff3-8cf2-b91fedf10b7b/fund_universe_intermediate/fund_universe_clean.jsonl",
+    "universe_snapshot_sha256": "652f65480d5b6eea28f4a21d68b1d7656c993f4559b2e7270ad1535942f339b7",
+    "raw_gz_files": 14848,
     "quality_report_status": "pass",
     "risk_free_rate": 0.0,
     "manager_dedupe_rule": "Eastmoney unique manager_id",
     "joint_management_rule": "excluded from manager return/risk/holding attribution",
     "history_database": "outputs/019f652b-3e7c-7ff3-8cf2-b91fedf10b7b/manager_metric_collection_v2/manager_history_collection/manager_history_metrics.sqlite",
-    "history_database_sha256": "40d060f45a56d582df813db22e2ba2cedf4b9120bae0bc1fc9501b5d00f5af3e",
+    "history_database_sha256": "e815700635f3c7ba4113639e1dc4b772d7f115c186189dba36e2776a8e1713db",
     "history_quality_report_status": "pass",
     "direct_database": "outputs/019f652b-3e7c-7ff3-8cf2-b91fedf10b7b/manager_metric_collection_v2/direct_metrics/direct_metrics.sqlite",
-    "direct_database_sha256": "ca215b586529724ab0b854820d6f4ea12c99c515c5b7edb823b5d87284ff8dc1",
+    "direct_database_sha256": "35b683feff27a3544169aa46666a251b1591980d692f0f779c97145e279bca47",
     "direct_quality_report_status": "pass",
     "derived_database": "outputs/019f652b-3e7c-7ff3-8cf2-b91fedf10b7b/manager_metric_collection_v2/derived_metrics/derived_metric_data.sqlite",
-    "derived_database_sha256": "60a65cd8c6e3f1005067ddf2b4b4b7f324eeabea81e50d0af0df85de2a77c42d",
+    "derived_database_sha256": "8d6abdceb8dc3d46e72ec3afed6538ebda1ba66979992f12f28a1111eb80a33c",
     "derived_quality_report_status": "pass",
     "relative_benchmark_basis": "同基金类型日收益中位数组合；逐交易日对齐",
     "peer_rank_basis": "全部可用期年化收益在同基金类型样本中的分位",
@@ -89,39 +89,38 @@
     "holding_dispersion_formula": "median(1-sum(min(weight_a,weight_b))/sum(max(weight_a,weight_b)))",
     "effective_portfolio_rule": "股票集合重合率>=80%；确定性完全链接聚类",
     "holding_complexity_status_distribution": {
-      "已计算：仅当前基金池内当前单人管理产品": 741,
-      "当前无单人管理基金": 292,
-      "仅1只当前单人管理基金，离散度不适用": 676,
-      "当前单人管理基金不存在共同持仓报告期": 23,
+      "已计算：仅当前基金池内当前单人管理产品": 765,
+      "当前无单人管理基金": 293,
+      "仅1只当前单人管理基金，离散度不适用": 682,
       "至少1只当前单人管理基金有效持仓不足8只": 2
     },
     "counts": {
-      "funds": 3227,
-      "current_managers": 1734,
-      "current_relationships": 3654,
-      "manager_fund_metric_records": 5457,
-      "manager_fund_detail_records": 15630,
-      "holding_similarity_pair_records": 2297,
-      "managers_with_holding_dispersion": 741,
-      "managers_with_effective_portfolio_count": 1417,
-      "current_solo_relationships": 2828,
-      "current_joint_relationships": 826,
-      "historical_out_of_pool_metric_records": 553,
-      "history_candidate_strategies": 1827,
-      "history_benchmark_included": 562,
-      "history_benchmark_excluded": 1265,
-      "industry_profile_records": 3227,
-      "industry_funds_with_data": 3227,
-      "turnover_funds_with_data": 3112,
-      "direct_source_records": 6454,
-      "historical_tenures": 17418,
-      "manager_history_fund_records": 13172,
-      "manager_history_unique_funds": 8694,
-      "nav_rows_used_for_calculation": 5576433,
-      "latest_holding_rows": 32250,
-      "source_records": 14778,
+      "funds": 3242,
+      "current_managers": 1742,
+      "current_relationships": 3675,
+      "manager_fund_metric_records": 5462,
+      "manager_fund_detail_records": 15667,
+      "holding_similarity_pair_records": 2400,
+      "managers_with_holding_dispersion": 765,
+      "managers_with_effective_portfolio_count": 1447,
+      "current_solo_relationships": 2836,
+      "current_joint_relationships": 839,
+      "historical_out_of_pool_metric_records": 539,
+      "history_candidate_strategies": 1825,
+      "history_benchmark_included": 557,
+      "history_benchmark_excluded": 1268,
+      "industry_profile_records": 3242,
+      "industry_funds_with_data": 3242,
+      "turnover_funds_with_data": 3116,
+      "direct_source_records": 6484,
+      "historical_tenures": 17500,
+      "manager_history_fund_records": 13216,
+      "manager_history_unique_funds": 8713,
+      "nav_rows_used_for_calculation": 5605013,
+      "latest_holding_rows": 32409,
+      "source_records": 14848,
       "required_metric_blank_cells": 0,
-      "derived_price_records": 202467
+      "derived_price_records": 186436
     }
   },
   "source_workbook_flags": {
@@ -138,21 +137,21 @@
   "scoring_status": {
     "status": "formal",
     "reason": null,
-    "formal_scores_published": 331
+    "formal_scores_published": 336
   },
   "h00300": {
     "source": "AKShare stock_zh_index_hist_csindex",
     "source_url": "https://www.csindex.com.cn/csindex-home/perf/index-perf",
     "adapter_version": "1.18.64",
-    "fetched_at": "2026-07-18T18:22:32+00:00",
+    "fetched_at": "2026-07-24T20:56:05+00:00",
     "start_date": "2004-01-01",
-    "end_date": "2026-07-17",
-    "records": 5233
+    "end_date": "2026-07-24",
+    "records": 5238
   },
   "holdings": {
-    "holding_records": 32250,
-    "funds_with_holdings": 3225,
-    "funds_missing_holdings": 2,
+    "holding_records": 32409,
+    "funds_with_holdings": 3242,
+    "funds_missing_holdings": 0,
     "report_dates": [
       "2026-03-31",
       "2026-06-30"
@@ -174,28 +173,28 @@
     {
       "check_name": "formal_scores_published",
       "status": "pass",
-      "actual": "331",
+      "actual": "336",
       "expected": ">0",
       "note": "固定门槛与10项完整指标"
     },
     {
       "check_name": "fund_alpha_coverage",
       "status": "pass",
-      "actual": "3227",
+      "actual": "3242",
       "expected": ">0",
       "note": null
     },
     {
       "check_name": "h00300_latest_date",
       "status": "pass",
-      "actual": "2026-07-17",
-      "expected": ">=2026-07-16",
+      "actual": "2026-07-24",
+      "expected": ">=2026-07-24",
       "note": null
     },
     {
       "check_name": "h00300_records",
       "status": "pass",
-      "actual": "5233",
+      "actual": "5238",
       "expected": ">=1000",
       "note": null
     },
@@ -209,35 +208,35 @@
     {
       "check_name": "manager_alpha_coverage",
       "status": "pass",
-      "actual": "1472",
+      "actual": "1484",
       "expected": ">0",
       "note": null
     },
     {
       "check_name": "radar_1y_coverage",
       "status": "pass",
-      "actual": "1373",
+      "actual": "1384",
       "expected": ">0",
       "note": null
     },
     {
       "check_name": "radar_2y_coverage",
       "status": "pass",
-      "actual": "1404",
+      "actual": "1413",
       "expected": ">0",
       "note": null
     },
     {
       "check_name": "radar_3y_coverage",
       "status": "pass",
-      "actual": "1420",
+      "actual": "1429",
       "expected": ">0",
       "note": null
     },
     {
       "check_name": "radar_5y_coverage",
       "status": "pass",
-      "actual": "1434",
+      "actual": "1443",
       "expected": ">0",
       "note": null
     }
@@ -249,7 +248,7 @@
   ],
   "manager_detail_shards": {
     "count": 16,
-    "total_rows": 15630,
+    "total_rows": 15667,
     "rule": "int(manager_id) % 16",
     "files": [
       {
@@ -259,9 +258,9 @@
         "name": "manager_details_00.json",
         "file": "manager_details_00.json",
         "path": "manager_details_00.json",
-        "rows": 1154,
-        "bytes": 3588634,
-        "sha256": "09766f4f6356f583144499de98873d23165b117b5c65771c5b3d6cbd6ffd8608"
+        "rows": 1155,
+        "bytes": 3587206,
+        "sha256": "e7fdcacbee2aeca2e30bd14ccf3a42362fed2465d71de100e46dcfd77b2615e6"
       },
       {
         "index": 1,
@@ -270,9 +269,9 @@
         "name": "manager_details_01.json",
         "file": "manager_details_01.json",
         "path": "manager_details_01.json",
-        "rows": 939,
-        "bytes": 2918306,
-        "sha256": "849ab23be06780fac46bd00f54019b57624246d2ab5185774576d65a205bd8c4"
+        "rows": 943,
+        "bytes": 2928708,
+        "sha256": "0cab4bdf235bcedd6ee5a0f1b6e60a1c28c5cd5a8665e61d84317074e97f8935"
       },
       {
         "index": 2,
@@ -281,9 +280,9 @@
         "name": "manager_details_02.json",
         "file": "manager_details_02.json",
         "path": "manager_details_02.json",
-        "rows": 870,
-        "bytes": 2696397,
-        "sha256": "09265e9e1744dfdfcfb42016cd97c1d7d9b18c148d2176d6018961d5ed7e1b18"
+        "rows": 871,
+        "bytes": 2697615,
+        "sha256": "837b6e6c8852fa8587852aaa061c606749c3da743418fa04bd2a3e386b0ae70a"
       },
       {
         "index": 3,
@@ -292,9 +291,9 @@
         "name": "manager_details_03.json",
         "file": "manager_details_03.json",
         "path": "manager_details_03.json",
-        "rows": 980,
-        "bytes": 3062605,
-        "sha256": "9d4ce7c5876ae43a6c9902ba803d9eb70c558266504470553dc52a8bf6168b9d"
+        "rows": 981,
+        "bytes": 3059672,
+        "sha256": "62e74b47563098c60b5763d744eb125d9cf8530700ea03bc3f3ede820dafbb1d"
       },
       {
         "index": 4,
@@ -304,8 +303,8 @@
         "file": "manager_details_04.json",
         "path": "manager_details_04.json",
         "rows": 1157,
-        "bytes": 3607826,
-        "sha256": "cb2ba27a044303471e14b5b60ea30fad346ddb7e4b27d47df15479d982395698"
+        "bytes": 3604394,
+        "sha256": "2074bbcabc45bcd2b9ab1d8d4f0a3b366c347a9d7d0b3c58e0ed2d4d518af7c3"
       },
       {
         "index": 5,
@@ -314,9 +313,9 @@
         "name": "manager_details_05.json",
         "file": "manager_details_05.json",
         "path": "manager_details_05.json",
-        "rows": 900,
-        "bytes": 2854942,
-        "sha256": "e301c22b9a919c4ce76a966f733a0f9c7903b032cec60838ba26a563ab2d3464"
+        "rows": 901,
+        "bytes": 2859304,
+        "sha256": "797e5f5dd4eceb03449d21ea1956cdcee82263fbe797af53598cf872615ddd28"
       },
       {
         "index": 6,
@@ -325,9 +324,9 @@
         "name": "manager_details_06.json",
         "file": "manager_details_06.json",
         "path": "manager_details_06.json",
-        "rows": 970,
-        "bytes": 3066858,
-        "sha256": "a1347328b12ea19aced41c9a8d3db7d40179cbb20b86bdb484cc756a2a564907"
+        "rows": 972,
+        "bytes": 3073177,
+        "sha256": "926ce83ad4e38f094784ff59150683c55894a8e8fd7b5bc723e5db3c9022e961"
       },
       {
         "index": 7,
@@ -336,9 +335,9 @@
         "name": "manager_details_07.json",
         "file": "manager_details_07.json",
         "path": "manager_details_07.json",
-        "rows": 851,
-        "bytes": 2660147,
-        "sha256": "61ff61c27a074cc5f9a99660ef35eca2f013db8e73481deb551d846b03d66a0b"
+        "rows": 854,
+        "bytes": 2670185,
+        "sha256": "40e5edf23c55e612ac5e8e7a028d82f2fe70c538eab39af375e728dc29b8ceb6"
       },
       {
         "index": 8,
@@ -347,9 +346,9 @@
         "name": "manager_details_08.json",
         "file": "manager_details_08.json",
         "path": "manager_details_08.json",
-        "rows": 976,
-        "bytes": 3047169,
-        "sha256": "81f9b6e89ee558753359ff097e9dcff8386d86ba46c8aee0de8c6df69467d9c3"
+        "rows": 981,
+        "bytes": 3062061,
+        "sha256": "6881a30ea8b78c6f7501b84c20c3cbb97f3b014cd53a578c5f931c8c6a69dd88"
       },
       {
         "index": 9,
@@ -358,9 +357,9 @@
         "name": "manager_details_09.json",
         "file": "manager_details_09.json",
         "path": "manager_details_09.json",
-        "rows": 1020,
-        "bytes": 3236788,
-        "sha256": "3907bed0a04bf564aaa5421454b7b08f330a9b1ca61daccdbae813ad1ee63dbe"
+        "rows": 1022,
+        "bytes": 3235580,
+        "sha256": "437c6d133eaaa3369bfa50adeac2b8bf31ce1bb6a762f70065606c3f982ee093"
       },
       {
         "index": 10,
@@ -370,8 +369,8 @@
         "file": "manager_details_10.json",
         "path": "manager_details_10.json",
         "rows": 1147,
-        "bytes": 3570382,
-        "sha256": "d29af9b81704261617d2ff2194c8758f3c472f2c2e5de1c2355381f9550ccebb"
+        "bytes": 3566569,
+        "sha256": "10e4778784fd54f5d3b4f3d4c3a29ff3abd5c58b9f792b8db072974d0185f817"
       },
       {
         "index": 11,
@@ -380,9 +379,9 @@
         "name": "manager_details_11.json",
         "file": "manager_details_11.json",
         "path": "manager_details_11.json",
-        "rows": 1073,
-        "bytes": 3398623,
-        "sha256": "8737fb69f8d87a369bf6fdf2924284d245da650a12299d5deb474837b1c70715"
+        "rows": 1076,
+        "bytes": 3406205,
+        "sha256": "3c7ce3d55f3c171c08d0bb61b0374712be2b40645bcdc27f68544a988aaa37fc"
       },
       {
         "index": 12,
@@ -391,9 +390,9 @@
         "name": "manager_details_12.json",
         "file": "manager_details_12.json",
         "path": "manager_details_12.json",
-        "rows": 918,
-        "bytes": 2882784,
-        "sha256": "170734c16c4cac8d97cd6d08cb61919d99e77229187d15608bc2077089362d98"
+        "rows": 929,
+        "bytes": 2917941,
+        "sha256": "817657eb43113b34c5bfbba5f8eaca7d2fae83b51f81eb57d54815533d57af80"
       },
       {
         "index": 13,
@@ -402,9 +401,9 @@
         "name": "manager_details_13.json",
         "file": "manager_details_13.json",
         "path": "manager_details_13.json",
-        "rows": 878,
-        "bytes": 2841625,
-        "sha256": "b04216b452603aa5cd7114f62dd240f7e72fab73c3ca08c25e10516ed33aec4a"
+        "rows": 879,
+        "bytes": 2843572,
+        "sha256": "0b0cfa049fa539eac587c759bcc4b524bf943c7cbaed5b86a01f7846ecab7935"
       },
       {
         "index": 14,
@@ -413,9 +412,9 @@
         "name": "manager_details_14.json",
         "file": "manager_details_14.json",
         "path": "manager_details_14.json",
-        "rows": 870,
-        "bytes": 2743686,
-        "sha256": "089b934ba42097350ba3f73ec4d3f40b3ea5ee8a60edee593efaa90b5beecaa3"
+        "rows": 871,
+        "bytes": 2736070,
+        "sha256": "14d15984f607e3a5ca39b3034da939e9f6a985f7f2637f70f703ac88cfec6d1d"
       },
       {
         "index": 15,
@@ -424,139 +423,139 @@
         "name": "manager_details_15.json",
         "file": "manager_details_15.json",
         "path": "manager_details_15.json",
-        "rows": 927,
-        "bytes": 2853098,
-        "sha256": "6e6b603ee67e8325c59b344e650f8b99347db6716e033e68fd193c149b20e56a"
+        "rows": 928,
+        "bytes": 2856865,
+        "sha256": "fb12ee706675e3d302fe2c56daa71d826241fb5c6aeb301d03af01189e234a4d"
       }
     ]
   },
   "files": [
     {
       "name": "funds.json",
-      "rows": 3227,
-      "bytes": 10158242,
-      "sha256": "9dde682cebcf75bd144a0450c463dcf085ed33940c513d8ee832a197297f928b"
+      "rows": 3242,
+      "bytes": 10204493,
+      "sha256": "7563ed507e01632745a60e4d039d83c7d22fe7c148919ea7efce077ba8e1e383"
     },
     {
       "name": "managers.json",
-      "rows": 1734,
-      "bytes": 12434181,
-      "sha256": "0917f9ff96ae5d111815478d3371fcf02fd230341e10826d76ed7c322bf475b3"
+      "rows": 1742,
+      "bytes": 12476496,
+      "sha256": "e2d2c31fadc7fb0143ce2e9fdde60111a0f57f883d4a94375239dcc3b5cb64f8"
     },
     {
       "name": "manager_profiles.json",
-      "rows": 1734,
-      "bytes": 2413565,
-      "sha256": "fa4a00d7f95e15d045ef4776d6b22bbfab1be125ade6bae11e4f5ff60723ad16"
+      "rows": 1742,
+      "bytes": 2419682,
+      "sha256": "56a7b5134f43425f6af7bb7183ee69f70f88907093de46a79c2f4256425828f0"
     },
     {
       "name": "holdings.json",
-      "bytes": 8320673,
-      "sha256": "9067a45dda6d2936fc47c76d6d021e496f7b17c3ca7cdd5bfdd3d215801d72e0",
-      "rows": 3227,
-      "records": 32250
+      "bytes": 8360717,
+      "sha256": "11de74faae89d3c6e8f814a00230219f06138b72cb35bdf1a5143bceaf850de2",
+      "rows": 3242,
+      "records": 32409
     },
     {
       "name": "guide.json",
-      "bytes": 18453,
-      "sha256": "ad05bde1489072652941cedb0658379b3c53de61a72c797ad89ca68420f7b5be",
+      "bytes": 18417,
+      "sha256": "d40f63c737ddd5f545625ca0acacda2476c3c0f72bef62c7e7cc815ae190c4fc",
       "rows": 56
     },
     {
       "name": "manager_details_00.json",
-      "rows": 1154,
-      "bytes": 3588634,
-      "sha256": "09766f4f6356f583144499de98873d23165b117b5c65771c5b3d6cbd6ffd8608"
+      "rows": 1155,
+      "bytes": 3587206,
+      "sha256": "e7fdcacbee2aeca2e30bd14ccf3a42362fed2465d71de100e46dcfd77b2615e6"
     },
     {
       "name": "manager_details_01.json",
-      "rows": 939,
-      "bytes": 2918306,
-      "sha256": "849ab23be06780fac46bd00f54019b57624246d2ab5185774576d65a205bd8c4"
+      "rows": 943,
+      "bytes": 2928708,
+      "sha256": "0cab4bdf235bcedd6ee5a0f1b6e60a1c28c5cd5a8665e61d84317074e97f8935"
     },
     {
       "name": "manager_details_02.json",
-      "rows": 870,
-      "bytes": 2696397,
-      "sha256": "09265e9e1744dfdfcfb42016cd97c1d7d9b18c148d2176d6018961d5ed7e1b18"
+      "rows": 871,
+      "bytes": 2697615,
+      "sha256": "837b6e6c8852fa8587852aaa061c606749c3da743418fa04bd2a3e386b0ae70a"
     },
     {
       "name": "manager_details_03.json",
-      "rows": 980,
-      "bytes": 3062605,
-      "sha256": "9d4ce7c5876ae43a6c9902ba803d9eb70c558266504470553dc52a8bf6168b9d"
+      "rows": 981,
+      "bytes": 3059672,
+      "sha256": "62e74b47563098c60b5763d744eb125d9cf8530700ea03bc3f3ede820dafbb1d"
     },
     {
       "name": "manager_details_04.json",
       "rows": 1157,
-      "bytes": 3607826,
-      "sha256": "cb2ba27a044303471e14b5b60ea30fad346ddb7e4b27d47df15479d982395698"
+      "bytes": 3604394,
+      "sha256": "2074bbcabc45bcd2b9ab1d8d4f0a3b366c347a9d7d0b3c58e0ed2d4d518af7c3"
     },
     {
       "name": "manager_details_05.json",
-      "rows": 900,
-      "bytes": 2854942,
-      "sha256": "e301c22b9a919c4ce76a966f733a0f9c7903b032cec60838ba26a563ab2d3464"
+      "rows": 901,
+      "bytes": 2859304,
+      "sha256": "797e5f5dd4eceb03449d21ea1956cdcee82263fbe797af53598cf872615ddd28"
     },
     {
       "name": "manager_details_06.json",
-      "rows": 970,
-      "bytes": 3066858,
-      "sha256": "a1347328b12ea19aced41c9a8d3db7d40179cbb20b86bdb484cc756a2a564907"
+      "rows": 972,
+      "bytes": 3073177,
+      "sha256": "926ce83ad4e38f094784ff59150683c55894a8e8fd7b5bc723e5db3c9022e961"
     },
     {
       "name": "manager_details_07.json",
-      "rows": 851,
-      "bytes": 2660147,
-      "sha256": "61ff61c27a074cc5f9a99660ef35eca2f013db8e73481deb551d846b03d66a0b"
+      "rows": 854,
+      "bytes": 2670185,
+      "sha256": "40e5edf23c55e612ac5e8e7a028d82f2fe70c538eab39af375e728dc29b8ceb6"
     },
     {
       "name": "manager_details_08.json",
-      "rows": 976,
-      "bytes": 3047169,
-      "sha256": "81f9b6e89ee558753359ff097e9dcff8386d86ba46c8aee0de8c6df69467d9c3"
+      "rows": 981,
+      "bytes": 3062061,
+      "sha256": "6881a30ea8b78c6f7501b84c20c3cbb97f3b014cd53a578c5f931c8c6a69dd88"
     },
     {
       "name": "manager_details_09.json",
-      "rows": 1020,
-      "bytes": 3236788,
-      "sha256": "3907bed0a04bf564aaa5421454b7b08f330a9b1ca61daccdbae813ad1ee63dbe"
+      "rows": 1022,
+      "bytes": 3235580,
+      "sha256": "437c6d133eaaa3369bfa50adeac2b8bf31ce1bb6a762f70065606c3f982ee093"
     },
     {
       "name": "manager_details_10.json",
       "rows": 1147,
-      "bytes": 3570382,
-      "sha256": "d29af9b81704261617d2ff2194c8758f3c472f2c2e5de1c2355381f9550ccebb"
+      "bytes": 3566569,
+      "sha256": "10e4778784fd54f5d3b4f3d4c3a29ff3abd5c58b9f792b8db072974d0185f817"
     },
     {
       "name": "manager_details_11.json",
-      "rows": 1073,
-      "bytes": 3398623,
-      "sha256": "8737fb69f8d87a369bf6fdf2924284d245da650a12299d5deb474837b1c70715"
+      "rows": 1076,
+      "bytes": 3406205,
+      "sha256": "3c7ce3d55f3c171c08d0bb61b0374712be2b40645bcdc27f68544a988aaa37fc"
     },
     {
       "name": "manager_details_12.json",
-      "rows": 918,
-      "bytes": 2882784,
-      "sha256": "170734c16c4cac8d97cd6d08cb61919d99e77229187d15608bc2077089362d98"
+      "rows": 929,
+      "bytes": 2917941,
+      "sha256": "817657eb43113b34c5bfbba5f8eaca7d2fae83b51f81eb57d54815533d57af80"
     },
     {
       "name": "manager_details_13.json",
-      "rows": 878,
-      "bytes": 2841625,
-      "sha256": "b04216b452603aa5cd7114f62dd240f7e72fab73c3ca08c25e10516ed33aec4a"
+      "rows": 879,
+      "bytes": 2843572,
+      "sha256": "0b0cfa049fa539eac587c759bcc4b524bf943c7cbaed5b86a01f7846ecab7935"
     },
     {
       "name": "manager_details_14.json",
-      "rows": 870,
-      "bytes": 2743686,
-      "sha256": "089b934ba42097350ba3f73ec4d3f40b3ea5ee8a60edee593efaa90b5beecaa3"
+      "rows": 871,
+      "bytes": 2736070,
+      "sha256": "14d15984f607e3a5ca39b3034da939e9f6a985f7f2637f70f703ac88cfec6d1d"
     },
     {
       "name": "manager_details_15.json",
-      "rows": 927,
-      "bytes": 2853098,
-      "sha256": "6e6b603ee67e8325c59b344e650f8b99347db6716e033e68fd193c149b20e56a"
+      "rows": 928,
+      "bytes": 2856865,
+      "sha256": "fb12ee706675e3d302fe2c56daa71d826241fb5c6aeb301d03af01189e234a4d"
     }
   ],
   "public_safety_scan": {
