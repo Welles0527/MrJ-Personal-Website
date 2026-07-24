@@ -6,7 +6,6 @@ const STORAGE = {
   kpiColumns: "fund-dashboard-kpi-columns-v1",
   kpiDefaultFilters: "fund-dashboard-kpi-default-filters-v1",
   scoreDefaultFilters: "fund-dashboard-score-default-filters-v1",
-  managerPreferences: "fund-dashboard-manager-preferences-v2",
   managerNotes: "fund-dashboard-manager-notes-v1",
   sharedAuth: "mywebsite.site-auth-session.v1"
 };
@@ -298,6 +297,7 @@ function showDirectFileWarning() {
 }
 
 function restorePreferences() {
+  localStorage.removeItem("fund-dashboard-manager-preferences-v2");
   const savedTheme = localStorage.getItem(STORAGE.theme);
   const theme = savedTheme === "light" ? "light" : "dark";
   document.documentElement.dataset.theme = theme;
@@ -307,14 +307,6 @@ function restorePreferences() {
     state.kpi.columns = Array.isArray(saved) ? sanitizeColumns(saved) : [...DEFAULT_KPI_COLUMNS];
   } catch {
     state.kpi.columns = [...DEFAULT_KPI_COLUMNS];
-  }
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE.managerPreferences) || "{}");
-    Object.entries(saved && typeof saved === "object" ? saved : {}).forEach(([managerId, preference]) => {
-      if (managerId && preference && typeof preference === "object") state.preferences.set(managerId, normalizePreference(managerId, preference));
-    });
-  } catch {
-    state.preferences = new Map();
   }
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE.managerNotes) || "{}");
@@ -1115,12 +1107,8 @@ function effectiveTags(manager) {
   return preference.attributeOverride === null ? systemSuggestedTags(manager) : preference.attributeOverride;
 }
 
-function savePreferencesLocal() {
-  localStorage.setItem(STORAGE.managerPreferences, JSON.stringify(Object.fromEntries(state.preferences)));
-}
-
 async function initializePreferenceSync() {
-  updatePreferenceSyncState("local");
+  updatePreferenceSyncState("signed-out");
   const bridge = window.FundPreferenceCloud;
   if (!bridge?.getSession) {
     renderSharedAuthStatus(null);
@@ -1134,15 +1122,9 @@ async function initializePreferenceSync() {
     updatePreferenceSyncState("syncing");
     const remote = await bridge.load();
     const remotePreferences = remote?.preferences && typeof remote.preferences === "object" ? remote.preferences : {};
-    const ids = new Set([...state.preferences.keys(), ...Object.keys(remotePreferences)]);
-    ids.forEach(managerId => {
-      const local = state.preferences.get(managerId);
-      const cloud = remotePreferences[managerId] ? normalizePreference(managerId, remotePreferences[managerId]) : null;
-      if (!local && cloud) state.preferences.set(managerId, cloud);
-      else if (local && cloud && Date.parse(cloud.updatedAt) > Date.parse(local.updatedAt)) state.preferences.set(managerId, cloud);
-    });
-    savePreferencesLocal();
-    await bridge.save(Object.fromEntries(state.preferences));
+    state.preferences = new Map(
+      Object.entries(remotePreferences).map(([managerId, preference]) => [managerId, normalizePreference(managerId, preference)])
+    );
     updatePreferenceSyncState("synced");
   } catch (error) {
     if (!session?.uid) renderSharedAuthStatus(null, "暂时无法确认登录状态");
@@ -1162,23 +1144,24 @@ function renderSharedAuthStatus(session, detail = "") {
 
 function updatePreferenceSyncState(status, detail = "") {
   state.preferenceSync = status;
-  const labels = { local: "收藏保存在本机", "signed-out": "未登录，收藏保存在本机", syncing: "正在同步收藏", synced: "收藏已与账号同步", pending: "收藏待同步" };
+  const labels = { "signed-out": "登录后可使用云端收藏", syncing: "正在同步云端收藏", synced: "收藏已保存到当前账号", pending: "云端收藏同步失败" };
   const node = document.getElementById("preference-sync-state");
   if (node) { node.textContent = detail && status === "pending" ? `${labels[status]}：${detail}` : labels[status] || status; node.dataset.status = status; }
 }
 
 async function persistPreference(managerId, patch) {
-  const preference = normalizePreference(managerId, { ...preferenceFor(managerId), ...patch, updatedAt: new Date().toISOString() });
-  state.preferences.set(String(managerId), preference);
-  savePreferencesLocal();
-  rerenderPreferenceConsumers();
   const bridge = window.FundPreferenceCloud;
-  if (!bridge?.getSession) return updatePreferenceSyncState("local");
+  if (!bridge?.getSession) return updatePreferenceSyncState("signed-out");
   try {
     const session = await bridge.getSession();
     if (!session?.uid) return updatePreferenceSyncState("signed-out");
+    const preference = normalizePreference(managerId, { ...preferenceFor(managerId), ...patch, updatedAt: new Date().toISOString() });
+    const nextPreferences = new Map(state.preferences);
+    nextPreferences.set(String(managerId), preference);
     updatePreferenceSyncState("syncing");
-    await bridge.save(Object.fromEntries(state.preferences));
+    await bridge.save(Object.fromEntries(nextPreferences));
+    state.preferences = nextPreferences;
+    rerenderPreferenceConsumers();
     updatePreferenceSyncState("synced");
   } catch (error) {
     updatePreferenceSyncState("pending", error?.message);
