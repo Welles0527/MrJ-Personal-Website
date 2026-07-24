@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>基金经理本机记录恢复</title>
+  <style>
+    :root { color-scheme: dark; font-family: Inter, "Microsoft YaHei", sans-serif; background: #080d13; color: #eaf2fb; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: radial-gradient(circle at 80% 0, #102638 0, transparent 38%), #080d13; }
+    main { width: min(980px, calc(100% - 32px)); margin: 40px auto; }
+    header, section { border: 1px solid #263748; border-radius: 14px; background: rgba(14, 23, 32, .94); }
+    header { padding: 24px; }
+    h1 { margin: 0 0 8px; font-size: 28px; }
+    p { color: #9fb0c1; line-height: 1.7; }
+    .warning { color: #ffbe5c; }
+    .summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 18px 0; }
+    .metric { padding: 18px; border: 1px solid #2a4053; border-radius: 12px; background: #111b25; }
+    .metric strong { display: block; margin-top: 4px; font-size: 32px; color: #42a5ff; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    button, a { min-height: 42px; border: 1px solid #2e9df4; border-radius: 9px; padding: 9px 16px; background: #0d70bd; color: white; font: inherit; font-weight: 700; cursor: pointer; text-decoration: none; }
+    button.secondary, a.secondary { background: transparent; color: #b9dfff; }
+    section { margin-top: 16px; padding: 20px; }
+    h2 { margin: 0 0 14px; font-size: 19px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { padding: 10px; border-bottom: 1px solid #24313e; text-align: left; vertical-align: top; }
+    th { color: #9fb0c1; }
+    code { color: #75c4ff; }
+    .empty { padding: 22px 0; color: #758697; }
+    #status { min-height: 24px; color: #74d6a5; }
+    @media (max-width: 640px) { .summary { grid-template-columns: 1fr; } main { margin: 18px auto; } section { overflow-x: auto; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>基金经理本机记录恢复</h1>
+      <p>本页只读取当前地址 <code id="origin"></code> 的浏览器存储，不会自动修改、删除或上传数据。</p>
+      <p class="warning">不同地址的数据彼此隔离：127.0.0.1、www.magicj.cn 和 CloudBase 预览域名不会共享本机记录。</p>
+      <div class="summary">
+        <div class="metric">收藏／属性／审阅记录<strong id="preference-count">0</strong></div>
+        <div class="metric">备注记录<strong id="note-count">0</strong></div>
+      </div>
+      <div class="actions">
+        <button id="refresh" type="button">重新读取</button>
+        <button class="secondary" id="download" type="button">下载恢复备份</button>
+        <button class="secondary" id="copy" type="button">复制备份 JSON</button>
+        <a class="secondary" href="./index.html#score">返回打分看板</a>
+      </div>
+      <p id="status" role="status"></p>
+    </header>
+
+    <section>
+      <h2>可恢复的收藏、属性与审阅记录</h2>
+      <div id="preference-list"></div>
+    </section>
+
+    <section>
+      <h2>可恢复的备注</h2>
+      <div id="note-list"></div>
+    </section>
+  </main>
+  <script>
+    "use strict";
+
+    const PREFERENCE_KEY = "fund-dashboard-manager-preferences-v2";
+    const NOTE_KEY = "fund-dashboard-manager-notes-v1";
+    let snapshot = null;
+
+    function readObject(key) {
+      try {
+        const value = JSON.parse(localStorage.getItem(key) || "{}");
+        return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+      } catch {
+        return {};
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, character => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      })[character]);
+    }
+
+    function renderTable(rootId, rows, columns) {
+      const root = document.getElementById(rootId);
+      if (!rows.length) {
+        root.innerHTML = '<div class="empty">当前地址未找到记录。</div>';
+        return;
+      }
+      root.innerHTML = `<table><thead><tr>${columns.map(column => `<th>${escapeHtml(column.label)}</th>`).join("")}</tr></thead><tbody>${
+        rows.map(row => `<tr>${columns.map(column => `<td>${escapeHtml(column.value(row))}</td>`).join("")}</tr>`).join("")
+      }</tbody></table>`;
+    }
+
+    function readSnapshot() {
+      const preferences = readObject(PREFERENCE_KEY);
+      const notes = readObject(NOTE_KEY);
+      snapshot = {
+        schemaVersion: "fund-dashboard-local-recovery-v1",
+        sourceOrigin: location.origin,
+        exportedAt: new Date().toISOString(),
+        preferences,
+        notes
+      };
+      const preferenceRows = Object.entries(preferences).map(([managerId, value]) => ({ managerId, ...value }));
+      const noteRows = Object.entries(notes).map(([managerId, value]) => ({ managerId, ...value }));
+      document.getElementById("preference-count").textContent = preferenceRows.length;
+      document.getElementById("note-count").textContent = noteRows.length;
+      renderTable("preference-list", preferenceRows, [
+        { label: "经理 ID", value: row => row.managerId },
+        { label: "收藏", value: row => row.favorite ? "是" : "否" },
+        { label: "审阅", value: row => row.reviewed ? "已审阅" : "未审阅" },
+        { label: "能力属性", value: row => Array.isArray(row.attributeOverride) ? row.attributeOverride.join("、") || "无" : "系统建议" },
+        { label: "更新时间", value: row => row.updatedAt || "未知" }
+      ]);
+      renderTable("note-list", noteRows, [
+        { label: "经理 ID", value: row => row.managerId },
+        { label: "备注", value: row => row.text || "" },
+        { label: "更新时间", value: row => row.updatedAt || "未知" }
+      ]);
+      document.getElementById("status").textContent = `已读取 ${location.origin} 的本机记录。`;
+    }
+
+    function backupText() {
+      return JSON.stringify(snapshot || {}, null, 2);
+    }
+
+    document.getElementById("origin").textContent = location.origin;
+    document.getElementById("refresh").addEventListener("click", readSnapshot);
+    document.getElementById("download").addEventListener("click", () => {
+      const blob = new Blob([backupText()], { type: "application/json;charset=utf-8" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `fund-dashboard-recovery-${new Date().toISOString().slice(0, 10)}.json`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+      document.getElementById("status").textContent = "恢复备份已下载。";
+    });
+    document.getElementById("copy").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(backupText());
+        document.getElementById("status").textContent = "恢复备份 JSON 已复制。";
+      } catch {
+        document.getElementById("status").textContent = "浏览器不允许复制，请使用“下载恢复备份”。";
+      }
+    });
+    readSnapshot();
+  </script>
+</body>
+</html>
