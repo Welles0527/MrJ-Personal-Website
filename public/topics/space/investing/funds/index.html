@@ -12,10 +12,10 @@
   <meta name="color-scheme" content="dark light">
   <meta name="description" content="中国主动权益基金与基金经理研究看板">
   <title>主动权益研究终端</title>
-  <link rel="stylesheet" href="./app.css?v=20260722v21">
+  <link rel="stylesheet" href="./app.css?v=20260725v22">
   <script src="./fund-preferences-cloud.js?v=20260720v3" defer></script>
   <script src="./fund-notes-cloud.js?v=20260725v1" defer></script>
-  <script src="./app.js?v=20260725v4" defer></script>
+  <script src="./app.js?v=20260725v5" defer></script>
 </head>
 <body>
   <svg class="svg-defs" aria-hidden="true">
@@ -46,6 +46,7 @@
     <symbol id="i-personnel" viewBox="0 0 24 24"><circle cx="9" cy="7" r="3"/><path d="M3 19c.5-4 2.5-6 6-6 1.6 0 2.9.4 3.9 1.2M16 8a5 5 0 014 7.8M20 12V8h-4M20 17a5 5 0 01-7.8 3M12 16v4h4"/></symbol>
     <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5M18.5 9A7 7 0 006 7l-2 5M5.5 15A7 7 0 0018 17l2-5"/></symbol>
     <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M7 9l5 5 5-5"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"/><circle cx="12" cy="12" r="2.8"/></symbol>
   </svg>
 
   <header class="app-header">
@@ -380,7 +381,7 @@
         <div class="period-tabs" id="manager-preview-periods" role="group" aria-label="雷达图时间维度">
           <button id="manager-preview-funds-toggle" type="button" aria-pressed="false">当前管理基金</button><button data-period="1y">近1年</button><button data-period="2y">近2年</button><button class="active" data-period="3y">近3年</button><button data-period="5y">近5年</button>
         </div>
-        <div class="manager-preview-actions"><button type="button" class="secondary-button" id="manager-preview-note" aria-pressed="false" disabled>我的备注</button><button type="button" class="primary-button" id="manager-preview-detail">查看详细</button></div>
+        <div class="manager-preview-actions"><button type="button" class="secondary-button watch-button" id="manager-preview-watch" aria-pressed="false" disabled><svg><use href="#i-eye"/></svg><span>待观察</span></button><button type="button" class="secondary-button" id="manager-preview-industry" disabled>行业自定义</button><button type="button" class="secondary-button" id="manager-preview-note" aria-pressed="false" disabled>我的备注</button><button type="button" class="primary-button" id="manager-preview-detail">查看详细</button></div>
       </div>
       <section class="manager-preview-note-panel" id="manager-preview-note-panel" hidden aria-labelledby="manager-preview-note-title">
         <div><h3 id="manager-preview-note-title">我的备注</h3><p>按基金经理保存于当前浏览器。</p></div>
@@ -394,6 +395,18 @@
         <div class="radar-legend" id="manager-preview-legend"></div>
       </div>
     </div>
+  </dialog>
+
+  <dialog class="industry-dialog" id="industry-dialog" aria-labelledby="industry-dialog-title">
+    <form method="dialog" class="dialog-shell">
+      <div class="dialog-heading"><div><h2 id="industry-dialog-title">行业自定义</h2><p>填写该基金经理擅长的行业，保存后会显示在经理姓名旁。</p></div><button value="cancel" aria-label="关闭行业自定义">×</button></div>
+      <div class="industry-dialog-body">
+        <label for="industry-label-input">行业标签</label>
+        <input id="industry-label-input" type="text" maxlength="24" autocomplete="off" placeholder="例如：医药、科技、消费">
+        <p>最多24个字符；留空保存可移除标签。</p>
+      </div>
+      <div class="dialog-actions"><button value="cancel" class="secondary-button">取消</button><button type="button" class="primary-button" id="industry-label-save">保存行业标签</button></div>
+    </form>
   </dialog>
 
   <div class="indicator-tooltip" id="indicator-tooltip" role="tooltip" hidden><strong></strong><p></p><small></small></div>

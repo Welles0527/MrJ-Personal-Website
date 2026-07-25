@@ -452,6 +452,9 @@ function bindStaticEvents() {
     setManagerPreviewMode("notes");
     renderManagerPreviewNote();
   });
+  document.getElementById("manager-preview-watch").addEventListener("click", toggleManagerPreviewWatch);
+  document.getElementById("manager-preview-industry").addEventListener("click", openIndustryEditor);
+  document.getElementById("industry-label-save").addEventListener("click", saveIndustryLabel);
   document.getElementById("manager-preview-note-save").addEventListener("click", () => saveManagerPreviewNote({ closeDialog: true }));
   document.getElementById("manager-preview-note-clear").addEventListener("click", clearManagerPreviewNote);
   document.getElementById("manager-preview-detail").addEventListener("click", openManagerDetailFromPreview);
@@ -901,6 +904,8 @@ async function openManagerPreview(managerId, trigger) {
   document.getElementById("manager-preview-legend").replaceChildren();
   document.getElementById("manager-preview-funds").replaceChildren();
   document.getElementById("manager-preview-note").disabled = true;
+  document.getElementById("manager-preview-watch").disabled = true;
+  document.getElementById("manager-preview-industry").disabled = true;
   document.getElementById("manager-preview-detail").disabled = true;
   if (!dialog.open) dialog.showModal();
   try {
@@ -910,7 +915,10 @@ async function openManagerPreview(managerId, trigger) {
     setText("manager-preview-title", manager.name || "姓名未提供");
     setText("manager-preview-meta", `ID ${manager.id} · ${manager.company || "公司未提供"}`);
     document.getElementById("manager-preview-note").disabled = false;
+    document.getElementById("manager-preview-watch").disabled = false;
+    document.getElementById("manager-preview-industry").disabled = false;
     document.getElementById("manager-preview-detail").disabled = false;
+    renderManagerPreviewPreferenceActions();
     renderManagerPreviewFunds();
     renderManagerPreviewRadar();
   } catch (error) {
@@ -1104,6 +1112,8 @@ function normalizePreference(managerId, raw = {}) {
     managerId: String(managerId),
     favorite: raw.favorite === true,
     reviewed: raw.reviewed === true,
+    watched: raw.watched === true,
+    industryLabel: stringValue(raw.industryLabel).slice(0, 24),
     attributeOverride: Array.isArray(raw.attributeOverride) ? [...new Set(raw.attributeOverride.filter(tag => ["offense", "defense", "composite"].includes(tag)))] : null,
     updatedAt: stringValue(raw.updatedAt) || new Date(0).toISOString(),
     schemaVersion: "fund-manager-preferences-v1"
@@ -1315,6 +1325,12 @@ function renderManagerPreferenceControls(manager, compact = false, showReview = 
   tags.forEach(tag => { const chip = el("span", { class: `ability-chip ${tag}`, title: labels[tag] }); chip.append(icon(`i-${tag}`)); if (!compact) chip.append(document.createTextNode(labels[tag])); tagRoot.append(chip); });
   tagRoot.addEventListener("click", event => { event.stopPropagation(); openPreferenceEditor(manager.id); });
   root.append(tagRoot);
+  if (preference.watched) {
+    const marker = el("span", { class: "watch-marker", title: "待观察", "aria-label": `${manager.name}已标记待观察` });
+    marker.append(icon("i-eye"));
+    root.append(marker);
+  }
+  if (preference.industryLabel) root.append(el("span", { class: "industry-marker", text: preference.industryLabel, title: `擅长行业：${preference.industryLabel}` }));
   if (showReview) {
     const review = el("button", {
       type: "button",
@@ -1331,6 +1347,47 @@ function renderManagerPreferenceControls(manager, compact = false, showReview = 
     root.append(review);
   }
   return root;
+}
+
+function renderManagerPreviewPreferenceActions() {
+  const managerId = state.preview.managerId;
+  if (!managerId) return;
+  const preference = preferenceFor(managerId);
+  const watch = document.getElementById("manager-preview-watch");
+  watch.classList.toggle("active", preference.watched);
+  watch.setAttribute("aria-pressed", String(preference.watched));
+  watch.querySelector("span").textContent = preference.watched ? "取消观察" : "待观察";
+  const industry = document.getElementById("manager-preview-industry");
+  industry.textContent = preference.industryLabel ? `行业：${preference.industryLabel}` : "行业自定义";
+  industry.title = preference.industryLabel ? `当前行业标签：${preference.industryLabel}` : "添加擅长行业标签";
+}
+
+function toggleManagerPreviewWatch() {
+  const managerId = state.preview.managerId;
+  if (!managerId) return;
+  const preference = preferenceFor(managerId);
+  void persistPreference(managerId, { watched: !preference.watched }).then(() => renderManagerPreviewPreferenceActions());
+}
+
+function openIndustryEditor() {
+  const managerId = state.preview.managerId;
+  if (!managerId) return;
+  const manager = state.managers?.find(item => item.id === managerId);
+  setText("industry-dialog-title", `${manager?.name || "基金经理"} · 行业自定义`);
+  document.getElementById("industry-label-input").value = preferenceFor(managerId).industryLabel;
+  document.getElementById("industry-dialog").showModal();
+  document.getElementById("industry-label-input").focus();
+}
+
+function saveIndustryLabel() {
+  const managerId = state.preview.managerId;
+  if (!managerId) return;
+  const industryLabel = document.getElementById("industry-label-input").value.trim().slice(0, 24);
+  void persistPreference(managerId, { industryLabel }).then(() => {
+    document.getElementById("industry-dialog").close();
+    renderManagerPreviewPreferenceActions();
+    showToast(industryLabel ? "行业标签已保存" : "行业标签已移除");
+  });
 }
 
 function openPreferenceEditor(managerId) {
