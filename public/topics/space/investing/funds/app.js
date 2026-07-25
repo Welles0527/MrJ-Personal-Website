@@ -1,6 +1,7 @@
 "use strict";
 
 const DATA_ROOT = "./data";
+const FILTER_DEFAULTS_CLOUD_KEY = "__dashboardFilterDefaults";
 const STORAGE = {
   theme: "fund-dashboard-theme-v1",
   kpiColumns: "fund-dashboard-kpi-columns-v1",
@@ -27,6 +28,7 @@ const state = {
   managerNotes: new Map(),
   preferenceEditorId: null,
   preferenceSync: "local",
+  preferenceAccountId: null,
   fund: { type: "all", query: "", sort: ["return1y", "desc"], page: 1, pageSize: 50, custom: null },
   kpi: { query: "", sort: ["manager", "asc"], page: 1, pageSize: 25, filters: new Map(), columns: [] },
   score: { query: "", sort: ["rank", "asc"], page: 1, pageSize: 25, filters: new Map(), draftMode: "default", appliedMode: "default", draftWeights: [40, 30, 30], appliedWeights: [40, 30, 30], weightsDirty: false },
@@ -289,6 +291,7 @@ async function init() {
   await loadManifest();
   await initializePreferenceSync();
   await initializeNoteSync();
+  restoreNavigationContext();
   await activateView(viewFromHash());
 }
 
@@ -329,7 +332,7 @@ function restorePreferences() {
 
 function bindStaticEvents() {
   document.querySelectorAll(".dashboard-tab").forEach(button => button.addEventListener("click", () => {
-    location.hash = button.dataset.view;
+    openDashboardWindow(button.dataset.view);
   }));
   window.addEventListener("hashchange", () => activateView(viewFromHash()));
   document.getElementById("theme-toggle").addEventListener("click", toggleTheme);
@@ -356,9 +359,7 @@ function bindStaticEvents() {
   document.querySelectorAll("[data-open-rail]").forEach(button => button.addEventListener("click", () => document.getElementById(`${button.dataset.openRail}-filter-rail`).classList.add("is-open")));
   document.querySelectorAll("[data-close-rail]").forEach(button => button.addEventListener("click", () => document.getElementById(`${button.dataset.closeRail}-filter-rail`).classList.remove("is-open")));
   document.querySelectorAll("[data-reset-filters]").forEach(button => button.addEventListener("click", () => resetFilters(button.dataset.resetFilters)));
-  document.querySelectorAll("[data-default-filters]").forEach(button => button.addEventListener("click", () => applyDefaultFilters(button.dataset.defaultFilters)));
   document.querySelectorAll("[data-save-default-filters]").forEach(button => button.addEventListener("click", () => saveDefaultFilters(button.dataset.saveDefaultFilters)));
-  document.querySelectorAll("[data-system-default-filters]").forEach(button => button.addEventListener("click", () => restoreSystemDefaultFilters(button.dataset.systemDefaultFilters)));
   document.querySelectorAll("[data-toggle-filter-groups]").forEach(button => button.addEventListener("click", () => toggleFilterGroups(button.dataset.toggleFilterGroups)));
   document.getElementById("column-picker-open").addEventListener("click", () => document.getElementById("column-dialog").showModal());
   document.getElementById("column-defaults").addEventListener("click", restoreDefaultColumns);
@@ -451,7 +452,7 @@ function bindStaticEvents() {
     setManagerPreviewMode("notes");
     renderManagerPreviewNote();
   });
-  document.getElementById("manager-preview-note-save").addEventListener("click", saveManagerPreviewNote);
+  document.getElementById("manager-preview-note-save").addEventListener("click", () => saveManagerPreviewNote({ closeDialog: true }));
   document.getElementById("manager-preview-note-clear").addEventListener("click", clearManagerPreviewNote);
   document.getElementById("manager-preview-detail").addEventListener("click", openManagerDetailFromPreview);
 }
@@ -574,6 +575,27 @@ async function activateView(name) {
 }
 
 function viewFromHash() { return location.hash.replace(/^#/, "") || "funds"; }
+
+function dashboardUrl(view, parameters = {}) {
+  const url = new URL("./index.html", location.href);
+  Object.entries(parameters).forEach(([key, value]) => {
+    if (value !== null && value !== undefined && String(value)) url.searchParams.set(key, String(value));
+  });
+  url.hash = view;
+  return url.href;
+}
+
+function openDashboardWindow(view, parameters = {}) {
+  window.open(dashboardUrl(view, parameters), "_blank", "noopener,noreferrer");
+}
+
+function restoreNavigationContext() {
+  const parameters = new URLSearchParams(location.search);
+  const managerId = parameters.get("manager");
+  const period = parameters.get("period");
+  if (managerId) state.profile.primaryId = managerId;
+  if (["1y", "2y", "3y", "5y"].includes(period)) state.profile.period = period;
+}
 
 async function loadManifest() {
   try {
@@ -921,7 +943,7 @@ function renderManagerPreviewNote() {
   setText("manager-preview-note-status", note?.updatedAt ? `上次保存：${formatDateTime(note.updatedAt)}` : "尚未保存备注");
 }
 
-function saveManagerPreviewNote() {
+function saveManagerPreviewNote({ closeDialog = false } = {}) {
   const managerId = state.preview.managerId;
   if (!managerId) return;
   const text = document.getElementById("manager-preview-note-text").value.trim();
@@ -933,11 +955,12 @@ function saveManagerPreviewNote() {
   setText("manager-preview-note-status", text ? `已保存：${formatDateTime(updatedAt)}` : "备注已清空");
   renderScoreNoteList();
   showToast(text ? "经理备注已保存" : "经理备注已清空");
+  if (closeDialog) document.getElementById("manager-preview-dialog").close();
 }
 
 function clearManagerPreviewNote() {
   document.getElementById("manager-preview-note-text").value = "";
-  saveManagerPreviewNote();
+  saveManagerPreviewNote({ closeDialog: false });
   document.getElementById("manager-preview-note-text").focus();
 }
 
@@ -1063,23 +1086,13 @@ function renderManagerPreviewRadar() {
   drawRadar(manager, radar, null, null, { svgId: "manager-preview-radar", statusId: "manager-preview-status", legendId: "manager-preview-legend", allowRemoveCompare: false });
 }
 
-async function openManagerDetailFromPreview() {
+function openManagerDetailFromPreview() {
   const manager = state.managers?.find(item => item.id === state.preview.managerId);
   if (!manager) return;
   document.getElementById("manager-preview-dialog").close();
   const fundDialog = document.getElementById("fund-preview-dialog");
   if (fundDialog.open) fundDialog.close();
-  state.profile.primaryId = manager.id;
-  state.profile.compareId = null;
-  state.profile.period = state.preview.radarPeriod;
-  state.profile.sort = ["tenure", "desc"];
-  syncPeriodTabs("radar-periods", state.profile.period);
-  const input = document.getElementById("profile-manager-search");
-  input.value = `${manager.name} · ${manager.id} · ${manager.company || "公司未提供"}`;
-  document.getElementById("compare-manager-search").value = "";
-  document.getElementById("compare-manager-open").disabled = false;
-  if (state.activeView === "profile") await renderProfile();
-  else location.hash = "profile";
+  openDashboardWindow("profile", { manager: manager.id, period: state.preview.radarPeriod });
 }
 
 function syncPeriodTabs(rootId, period) {
@@ -1180,11 +1193,16 @@ async function initializePreferenceSync() {
   try {
     session = await bridge.getSession();
     renderSharedAuthStatus(session);
-    if (!session?.uid) return updatePreferenceSyncState("signed-out");
+    if (!session?.uid) {
+      state.preferenceAccountId = null;
+      return updatePreferenceSyncState("signed-out");
+    }
+    state.preferenceAccountId = String(session.uid);
     updatePreferenceSyncState("syncing");
     const remote = await bridge.load();
     const remotePreferences = remote?.preferences && typeof remote.preferences === "object" ? remote.preferences : {};
-    const ids = new Set([...state.preferences.keys(), ...Object.keys(remotePreferences)]);
+    mergeRemoteFilterDefaults(remotePreferences[FILTER_DEFAULTS_CLOUD_KEY]);
+    const ids = new Set([...state.preferences.keys(), ...Object.keys(remotePreferences).filter(managerId => managerId !== FILTER_DEFAULTS_CLOUD_KEY)]);
     ids.forEach(managerId => {
       const local = state.preferences.get(managerId);
       const cloud = remotePreferences[managerId] ? normalizePreference(managerId, remotePreferences[managerId]) : null;
@@ -1192,7 +1210,9 @@ async function initializePreferenceSync() {
       else if (local && cloud && Date.parse(cloud.updatedAt) > Date.parse(local.updatedAt)) state.preferences.set(managerId, cloud);
     });
     savePreferencesLocal();
-    await bridge.save(Object.fromEntries(state.preferences));
+    applyDefaultFilters("kpi", false);
+    applyDefaultFilters("score", false);
+    await bridge.save(preferenceCloudPayload());
     updatePreferenceSyncState("synced");
   } catch (error) {
     if (!session?.uid) renderSharedAuthStatus(null, "暂时无法确认登录状态");
@@ -1212,7 +1232,7 @@ function renderSharedAuthStatus(session, detail = "") {
 
 function updatePreferenceSyncState(status, detail = "") {
   state.preferenceSync = status;
-  const labels = { local: "收藏与备注保存在本机", "signed-out": "未登录，收藏与备注保存在本机", syncing: "正在同步收藏与备注", synced: "收藏与备注已与账号同步", pending: "收藏与备注待同步" };
+  const labels = { local: "收藏、备注与筛选默认保存在本机", "signed-out": "未登录，收藏、备注与筛选默认保存在本机", syncing: "正在同步收藏、备注与筛选默认", synced: "收藏、备注与筛选默认已与账号同步", pending: "收藏、备注与筛选默认待同步" };
   const node = document.getElementById("preference-sync-state");
   if (node) { node.textContent = detail && status === "pending" ? `${labels[status]}：${detail}` : labels[status] || status; node.dataset.status = status; }
 }
@@ -1228,11 +1248,47 @@ async function persistPreference(managerId, patch) {
     const session = await bridge.getSession();
     if (!session?.uid) return updatePreferenceSyncState("signed-out");
     updatePreferenceSyncState("syncing");
-    await bridge.save(Object.fromEntries(state.preferences));
+    await bridge.save(preferenceCloudPayload());
     updatePreferenceSyncState("synced");
   } catch (error) {
     updatePreferenceSyncState("pending", error?.message);
   }
+}
+
+function preferenceCloudPayload() {
+  const payload = Object.fromEntries(state.preferences);
+  payload[FILTER_DEFAULTS_CLOUD_KEY] = {
+    schemaVersion: "fund-dashboard-filter-defaults-v1",
+    kpi: filterDefaultEnvelope("kpi"),
+    score: filterDefaultEnvelope("score")
+  };
+  return payload;
+}
+
+function filterDefaultEnvelope(scope) {
+  const selections = savedDefaultFilterSelections(scope);
+  if (selections === null) return null;
+  return {
+    selections,
+    updatedAt: localStorage.getItem(`${defaultFilterStorageKey(scope)}:updated-at`) || new Date(0).toISOString()
+  };
+}
+
+function mergeRemoteFilterDefaults(raw) {
+  if (!raw || typeof raw !== "object") return;
+  ["kpi", "score"].forEach(scope => {
+    const remote = raw[scope];
+    if (!remote || typeof remote !== "object") return;
+    const remoteSelections = sanitizeFilterSelections(scope, remote.selections);
+    if (remoteSelections === null) return;
+    const local = filterDefaultEnvelope(scope);
+    const remoteTime = Date.parse(stringValue(remote.updatedAt)) || 0;
+    const localTime = Date.parse(stringValue(local?.updatedAt)) || 0;
+    if (!local || remoteTime > localTime) {
+      localStorage.setItem(defaultFilterStorageKey(scope), JSON.stringify(remoteSelections));
+      localStorage.setItem(`${defaultFilterStorageKey(scope)}:updated-at`, new Date(remoteTime || 0).toISOString());
+    }
+  });
 }
 
 function rerenderPreferenceConsumers() {
@@ -1543,7 +1599,8 @@ function systemDefaultFilterSelections(scope) {
 }
 
 function defaultFilterStorageKey(scope) {
-  return scope === "score" ? STORAGE.scoreDefaultFilters : STORAGE.kpiDefaultFilters;
+  const base = scope === "score" ? STORAGE.scoreDefaultFilters : STORAGE.kpiDefaultFilters;
+  return state.preferenceAccountId ? `${base}:${encodeURIComponent(state.preferenceAccountId)}` : base;
 }
 
 function filterDefinitions(scope) {
@@ -1554,31 +1611,48 @@ function savedDefaultFilterSelections(scope) {
   const raw = localStorage.getItem(defaultFilterStorageKey(scope));
   if (raw === null) return null;
   try {
-    const saved = JSON.parse(raw);
-    if (!saved || typeof saved !== "object" || Array.isArray(saved)) return null;
-    return Object.fromEntries(filterDefinitions(scope).map(def => {
-      const allowed = new Set(def.options.map(([value]) => value));
-      const values = Array.isArray(saved[def.key]) ? saved[def.key].filter(value => allowed.has(value)) : [];
-      return [def.key, values];
-    }).filter(([, values]) => values.length));
+    return sanitizeFilterSelections(scope, JSON.parse(raw));
   } catch {
     return null;
   }
 }
 
-function saveDefaultFilters(scope) {
+function sanitizeFilterSelections(scope, saved) {
+  if (!saved || typeof saved !== "object" || Array.isArray(saved)) return null;
+  return Object.fromEntries(filterDefinitions(scope).map(def => {
+    const allowed = new Set(def.options.map(([value]) => value));
+    const values = Array.isArray(saved[def.key]) ? saved[def.key].filter(value => allowed.has(value)) : [];
+    return [def.key, values];
+  }).filter(([, values]) => values.length));
+}
+
+async function saveDefaultFilters(scope) {
   const selections = Object.fromEntries(filterDefinitions(scope).map(def => {
     const selected = state[scope].filters.get(def.key);
     return [def.key, selected ? [...selected] : []];
   }).filter(([, values]) => values.length));
-  localStorage.setItem(defaultFilterStorageKey(scope), JSON.stringify(selections));
-  showToast(`${scope === "score" ? "排行" : "指标"}筛选已保存为个人默认`);
-}
-
-function restoreSystemDefaultFilters(scope) {
-  localStorage.removeItem(defaultFilterStorageKey(scope));
-  applyDefaultFilters(scope);
-  showToast(`已恢复${scope === "score" ? "排行" : "指标"}筛选的系统默认`);
+  const storageKey = defaultFilterStorageKey(scope);
+  localStorage.setItem(storageKey, JSON.stringify(selections));
+  localStorage.setItem(`${storageKey}:updated-at`, new Date().toISOString());
+  const bridge = window.FundPreferenceCloud;
+  if (!bridge?.getSession) {
+    updatePreferenceSyncState("local");
+    return showToast(`${scope === "score" ? "排行" : "KPI"}筛选已保持为本机默认`);
+  }
+  try {
+    const session = await bridge.getSession();
+    if (!session?.uid) {
+      updatePreferenceSyncState("signed-out");
+      return showToast(`${scope === "score" ? "排行" : "KPI"}筛选已保持为本机默认；登录后可按账号同步`);
+    }
+    updatePreferenceSyncState("syncing");
+    await bridge.save(preferenceCloudPayload());
+    updatePreferenceSyncState("synced");
+    showToast(`${scope === "score" ? "排行" : "KPI"}筛选已保持为账号默认`);
+  } catch (error) {
+    updatePreferenceSyncState("pending", error?.message);
+    showToast(`${scope === "score" ? "排行" : "KPI"}筛选已保存在本机，云端待同步`);
+  }
 }
 
 function applyDefaultFilters(scope, shouldRender = true) {
@@ -2417,6 +2491,7 @@ function renderManagerOptions(kind, query) {
 async function renderProfile() {
   const manager = state.managers?.find(item => item.id === state.profile.primaryId);
   if (!manager) return;
+  document.getElementById("profile-manager-search").value = `${manager.name} · ${manager.id} · ${manager.company || "公司未提供"}`;
   document.getElementById("profile-empty").hidden = true;
   document.getElementById("profile-content").hidden = false;
   setText("profile-monogram", manager.name.slice(0, 1) || "经");
@@ -3179,6 +3254,15 @@ async function loadCustomReturns() {
 }
 
 function exportCurrent(scope) {
+  const { csv, filename } = buildExportCsv(scope);
+  const blob = new Blob(["\ufeff", csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url; anchor.download = filename; anchor.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function buildExportCsv(scope) {
   let columns, records, value, filename;
   if (scope === "funds") {
     columns = FUND_COLUMNS.filter(column => column.key !== "sequence");
@@ -3195,17 +3279,18 @@ function exportCurrent(scope) {
     records = filterScoreRecords(built, state.score.query, state.score.filters);
     value = scoreValue; filename = "基金经理评分_当前结果.csv";
   }
+  if (scope === "kpi" || scope === "score") {
+    columns = [...columns, { key: "personalNote", label: "个人备注" }, { key: "noteUpdatedAt", label: "备注更新时间" }];
+  }
   const lines = [columns.map(column => csvCell(column.label)).join(",")];
   records.forEach(record => lines.push(columns.map(column => {
-    const raw = value(record, column.key);
+    const managerId = scope === "score" ? record.manager?.id : record.id;
+    const note = managerId ? state.managerNotes.get(String(managerId)) : null;
+    const raw = column.key === "personalNote" ? note?.text ?? "" : column.key === "noteUpdatedAt" ? (note?.updatedAt ? formatDateTime(note.updatedAt) : "") : value(record, column.key);
     const formatted = Array.isArray(raw) ? raw.join("；") : column.kind === "percent" ? formatPercent(raw) : raw ?? "";
     return csvCell(formatted);
   }).join(",")));
-  const blob = new Blob(["\ufeff", lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url; anchor.download = filename; anchor.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return { csv: lines.join("\r\n"), filename };
 }
 
 function csvCell(value) {
