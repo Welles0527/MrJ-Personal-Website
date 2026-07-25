@@ -21,6 +21,8 @@
   --risk: #ff766f;
   --warning: #f4a43f;
   --favorite: #f6c945;
+  --manager-favorite-name: #ffd84d;
+  --manager-reviewed-name: #74808a;
   --focus: #5bb8ff;
   --disabled: #59636d;
   --radius: 6px;
@@ -59,6 +61,8 @@ html[data-theme="light"] {
   --loss: #087344;
   --risk: #ae2f2a;
   --warning: #9d5d06;
+  --manager-favorite-name: #9a6800;
+  --manager-reviewed-name: #52606b;
   --focus: #066db6;
   --disabled: #8d979f;
 }
@@ -238,6 +242,9 @@ td.manager-cell { min-width: 164px; }
 .manager-cell-content { min-height: 28px; display: flex; align-items: center; justify-content: space-between; gap: 7px; }
 .manager-identity { min-width: 0; }
 .manager-name { display: block; color: var(--text); font-weight: 700; white-space: nowrap; }
+.manager-name.is-favorite { color: var(--manager-favorite-name); }
+.manager-name.is-reviewed { color: var(--manager-reviewed-name); }
+.manager-name.is-favorite:hover, .manager-name.is-reviewed:hover { color: inherit; text-decoration-color: currentColor; }
 .manager-id { display: block; color: var(--muted); font: 9px var(--mono); }
 .entity-link { max-width: 100%; border: 0; background: transparent; color: var(--text); padding: 0; font: inherit; text-align: left; text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 3px; transition: color 150ms ease-out, text-decoration-color 150ms ease-out; }
 .entity-link:hover { color: var(--orange); text-decoration-color: currentColor; }
@@ -550,6 +557,12 @@ html[data-theme="light"] .indicator-tooltip { background: var(--surface); }
 .indicator-tooltip strong { color: var(--orange); font-size: 12px; }
 .indicator-tooltip p { margin: 5px 0; color: var(--text-2); font-size: 10px; line-height: 1.55; }
 .indicator-tooltip small { color: var(--muted); font-size: 9px; }
+.manager-note-tooltip { position: fixed; z-index: var(--z-tooltip); width: min(360px, calc(100vw - 16px)); max-height: min(360px, calc(100vh - 16px)); overflow: hidden; border: 1px solid var(--line-strong); border-radius: var(--radius); background: #111922; color: var(--text); padding: 11px 12px; pointer-events: none; }
+html[data-theme="light"] .manager-note-tooltip { background: var(--surface); }
+.manager-note-tooltip strong, .manager-note-tooltip p, .manager-note-tooltip small { display: block; }
+.manager-note-tooltip strong { color: var(--favorite); font-size: 12px; }
+.manager-note-tooltip p { margin: 6px 0; color: var(--text-2); font-size: 11px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.manager-note-tooltip small { color: var(--muted); font-size: 9px; }
 
 @keyframes drawer-enter { from { transform: translateX(100%); } to { transform: translateX(0); } }
 

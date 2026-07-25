@@ -11,11 +11,11 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23f48120'/%3E%3Cpath d='M8 21h4V11H8zm6 0h4V7h-4zm6 0h4V14h-4z' fill='white'/%3E%3C/svg%3E">
   <meta name="color-scheme" content="dark light">
   <meta name="description" content="中国主动权益基金与基金经理研究看板">
-  <title>主动权益研究终端</title>
-  <link rel="stylesheet" href="./app.css?v=20260725v22">
+  <title>基金经理KPI</title>
+  <link rel="stylesheet" href="./app.css?v=20260726v6">
   <script src="./fund-preferences-cloud.js?v=20260720v3" defer></script>
   <script src="./fund-notes-cloud.js?v=20260725v1" defer></script>
-  <script src="./app.js?v=20260725v5" defer></script>
+  <script src="./app.js?v=20260726v6" defer></script>
 </head>
 <body>
   <svg class="svg-defs" aria-hidden="true">
@@ -55,11 +55,11 @@
       <span><strong>主动权益研究</strong><small>基金与经理决策终端</small></span>
     </a>
     <nav class="dashboard-nav" aria-label="主看板">
-      <button class="dashboard-tab kpi" data-view="kpi"><svg><use href="#i-kpi"/></svg><span>基金经理KPI<small>经理客观指标</small></span></button>
+      <button class="dashboard-tab kpi" data-view="kpi" aria-current="page"><svg><use href="#i-kpi"/></svg><span>基金经理KPI<small>经理客观指标</small></span></button>
       <button class="dashboard-tab score" data-view="score"><svg><use href="#i-score"/></svg><span>基金经理打分排行<small>默认或自定义权重</small></span></button>
       <button class="dashboard-tab profile" data-view="profile"><svg><use href="#i-profile"/></svg><span>基金经理能力对比<small>履历与能力对照</small></span></button>
       <button class="dashboard-tab personnel" data-view="personnel"><svg><use href="#i-personnel"/></svg><span>人事变动<small>任职与舆情监测</small></span><b class="dashboard-alert-badge" id="personnel-nav-badge" hidden>0</b></button>
-      <button class="dashboard-tab fund" data-view="funds" aria-current="page"><svg><use href="#i-fund"/></svg><span>基金看板<small>产品客观数据</small></span></button>
+      <button class="dashboard-tab fund" data-view="funds"><svg><use href="#i-fund"/></svg><span>基金看板<small>产品客观数据</small></span></button>
       <button class="dashboard-tab holdings" data-view="holdings"><svg><use href="#i-holdings"/></svg><span>持仓分析<small>经理共同持股</small></span></button>
       <button class="dashboard-tab guide" data-view="guide"><svg><use href="#i-guide"/></svg><span>网站说明<small>口径与打分逻辑</small></span></button>
     </nav>
@@ -79,7 +79,7 @@
   </div>
 
   <main>
-    <section class="view active" id="view-funds" data-view-panel="funds" aria-labelledby="funds-title">
+    <section class="view" id="view-funds" data-view-panel="funds" aria-labelledby="funds-title" hidden>
       <div class="status-strip" aria-live="polite">
         <div><span>基金池</span><strong id="fund-kpi-total">…</strong><small>有效主动权益策略</small></div>
         <div><span>股票型</span><strong id="fund-kpi-stock">…</strong><small>份额已合并</small></div>
@@ -113,7 +113,7 @@
       </div>
     </section>
 
-    <section class="view" id="view-kpi" data-view-panel="kpi" aria-labelledby="kpi-title" hidden>
+    <section class="view active" id="view-kpi" data-view-panel="kpi" aria-labelledby="kpi-title">
       <div class="status-strip">
         <div><span>基金经理</span><strong id="manager-kpi-total">…</strong><small>按东方财富经理ID去重</small></div>
         <div><span>年化收益中位数</span><strong id="manager-kpi-return">…</strong><small>单人管理期聚合口径</small></div>
@@ -410,6 +410,7 @@
   </dialog>
 
   <div class="indicator-tooltip" id="indicator-tooltip" role="tooltip" hidden><strong></strong><p></p><small></small></div>
+  <div class="manager-note-tooltip" id="manager-note-tooltip" role="tooltip" hidden><strong></strong><p></p><small></small></div>
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 </body>
 </html>

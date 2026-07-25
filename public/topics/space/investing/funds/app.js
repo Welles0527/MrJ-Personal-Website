@@ -2,6 +2,15 @@
 
 const DATA_ROOT = "./data";
 const FILTER_DEFAULTS_CLOUD_KEY = "__dashboardFilterDefaults";
+const VIEW_CHROME = {
+  funds: { title: "基金看板", color: "#f47b20", icon: "<path d='M7 22V10h4v12zm7 0V5h4v17zm7 0v-8h4v8z'/>" },
+  kpi: { title: "基金经理KPI", color: "#2e9aff", icon: "<path d='M5 21V7m0 14h22M8 17l6-6 5 4 7-8' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/>" },
+  score: { title: "基金经理打分排行", color: "#f4a43f", icon: "<path d='M16 5l3.2 6.5 7.2 1-5.2 5.1 1.2 7.2-6.4-3.4-6.4 3.4 1.2-7.2-5.2-5.1 7.2-1z'/>" },
+  profile: { title: "基金经理能力对比", color: "#23b26d", icon: "<circle cx='16' cy='11' r='5'/><path d='M6 28c.8-7 4.1-10 10-10s9.2 3 10 10z'/>" },
+  personnel: { title: "人事变动", color: "#f47b20", icon: "<circle cx='12' cy='10' r='4'/><path d='M4 26c.7-6 3.3-9 8-9 2.2 0 4 .6 5.4 1.8'/><path d='M22 8v8m-4-4h8' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round'/>" },
+  holdings: { title: "持仓分析", color: "#2e9aff", icon: "<path d='M6 23V12h4v11zm8 0V6h4v17zm8 0v-9h4v9z'/><circle cx='8' cy='10' r='2'/><circle cx='16' cy='4' r='2'/><circle cx='24' cy='12' r='2'/>" },
+  guide: { title: "网站说明", color: "#f47b20", icon: "<path d='M8 5h12l5 5v17H8z' fill='none' stroke='white' stroke-width='2.2'/><path d='M12 14h9M12 19h9M12 24h6' fill='none' stroke='white' stroke-width='2'/>" }
+};
 const STORAGE = {
   theme: "fund-dashboard-theme-v1",
   kpiColumns: "fund-dashboard-kpi-columns-v1",
@@ -13,7 +22,7 @@ const STORAGE = {
 };
 
 const state = {
-  activeView: "funds",
+  activeView: "kpi",
   manifest: null,
   funds: null,
   managers: null,
@@ -180,7 +189,10 @@ const FILTER_DEFS = [
   { key: "maxDrawdown", label: "最大回撤", category: "defense", icon: "defense", options: [["ltNeg50", "<-50%"], ["neg50to40", "-50%至-40%"], ["neg40to30", "-40%至-30%"], ["neg30to20", "-30%至-20%"], ["gteNeg20", "≥-20%"], ["missing", "不可计算 / 数据不足"]] }
 ];
 
-const KPI_FILTER_DEFS = FILTER_DEFS.flatMap(def => def.key === "experience" ? [
+const KPI_FILTER_DEFS = FILTER_DEFS.flatMap(def => def.key === "favorite" ? [
+  def,
+  { key: "reviewed", label: "审阅状态", category: "base", icon: "list", options: [["reviewed", "已审阅"], ["unreviewed", "未审阅"]] }
+] : def.key === "experience" ? [
   def,
   { key: "sampleYears", label: "单人管理年数", category: "base", icon: "base", options: [["lt2", "<2年"], ["2to5", "2-5年"], ["5to10", "5-10年"], ["gte10", "≥10年"], ["missing", "不可计算 / 数据不足"]] }
 ] : [def]);
@@ -265,6 +277,8 @@ const INDICATOR_NAME_ALIASES = new Map([
 
 let indicatorTooltipTimer = null;
 let indicatorTooltipTarget = null;
+let managerNoteTooltipTimer = null;
+let managerNoteTooltipTarget = null;
 
 const PERCENT_MANAGER_FIELDS = new Set([
   "annualReturn", "annualExcess", "upsideCapture", "peerRank", "heavyContribution",
@@ -278,6 +292,7 @@ async function init() {
   restorePreferences();
   bindStaticEvents();
   bindIndicatorTooltips();
+  bindManagerNoteTooltips();
   decorateIndicatorLabels(document);
   if (location.protocol === "file:") {
     showDirectFileWarning();
@@ -551,9 +566,63 @@ function hideIndicatorTooltip() {
   if (tooltip) tooltip.hidden = true;
 }
 
+function bindManagerNoteTooltips() {
+  const begin = (target, delay) => {
+    if (!target || target === managerNoteTooltipTarget) return;
+    hideManagerNoteTooltip();
+    const note = state.managerNotes.get(stringValue(target.dataset.managerId));
+    if (!stringValue(note?.text)) return;
+    managerNoteTooltipTarget = target;
+    managerNoteTooltipTimer = setTimeout(() => showManagerNoteTooltip(target), delay);
+  };
+  document.addEventListener("pointerover", event => begin(event.target.closest?.(".manager-link[data-manager-id]"), 2000));
+  document.addEventListener("pointerout", event => {
+    const target = event.target.closest?.(".manager-link[data-manager-id]");
+    if (target && target === managerNoteTooltipTarget && !target.contains(event.relatedTarget)) hideManagerNoteTooltip();
+  });
+  document.addEventListener("focusin", event => begin(event.target.closest?.(".manager-link[data-manager-id]"), 0));
+  document.addEventListener("focusout", event => {
+    const target = event.target.closest?.(".manager-link[data-manager-id]");
+    if (target && target === managerNoteTooltipTarget) hideManagerNoteTooltip();
+  });
+  document.addEventListener("pointerdown", hideManagerNoteTooltip);
+  window.addEventListener("scroll", hideManagerNoteTooltip, true);
+  window.addEventListener("resize", hideManagerNoteTooltip);
+}
+
+function showManagerNoteTooltip(target) {
+  if (!target?.isConnected || target !== managerNoteTooltipTarget) return;
+  const note = state.managerNotes.get(stringValue(target.dataset.managerId));
+  const text = stringValue(note?.text);
+  if (!text) return hideManagerNoteTooltip();
+  const tooltip = document.getElementById("manager-note-tooltip");
+  tooltip.querySelector("strong").textContent = `${target.textContent.trim()} · 我的备注`;
+  tooltip.querySelector("p").textContent = text.length > 500 ? `${text.slice(0, 500)}…` : text;
+  tooltip.querySelector("small").textContent = `${note.updatedAt ? `更新于 ${formatDateTime(note.updatedAt)} · ` : ""}点击经理姓名可查看完整备注`;
+  tooltip.hidden = false;
+  target.setAttribute("aria-describedby", "manager-note-tooltip");
+  const rect = target.getBoundingClientRect();
+  const gap = 8;
+  const left = clamp(rect.left + rect.width / 2 - tooltip.offsetWidth / 2, gap, window.innerWidth - tooltip.offsetWidth - gap);
+  const below = rect.bottom + gap;
+  const top = below + tooltip.offsetHeight <= window.innerHeight - gap ? below : Math.max(gap, rect.top - tooltip.offsetHeight - gap);
+  tooltip.style.left = `${left}px`;
+  tooltip.style.top = `${top}px`;
+}
+
+function hideManagerNoteTooltip() {
+  clearTimeout(managerNoteTooltipTimer);
+  managerNoteTooltipTimer = null;
+  if (managerNoteTooltipTarget?.getAttribute("aria-describedby") === "manager-note-tooltip") managerNoteTooltipTarget.removeAttribute("aria-describedby");
+  managerNoteTooltipTarget = null;
+  const tooltip = document.getElementById("manager-note-tooltip");
+  if (tooltip) tooltip.hidden = true;
+}
+
 async function activateView(name) {
-  const view = ["funds", "kpi", "score", "profile", "personnel", "holdings", "guide"].includes(name) ? name : "funds";
+  const view = ["funds", "kpi", "score", "profile", "personnel", "holdings", "guide"].includes(name) ? name : "kpi";
   state.activeView = view;
+  updateBrowserChrome(view);
   document.querySelectorAll("[data-view-panel]").forEach(panel => {
     const active = panel.dataset.viewPanel === view;
     panel.hidden = !active;
@@ -577,7 +646,20 @@ async function activateView(name) {
   }
 }
 
-function viewFromHash() { return location.hash.replace(/^#/, "") || "funds"; }
+function viewFromHash() { return location.hash.replace(/^#/, "") || "kpi"; }
+
+function updateBrowserChrome(view) {
+  const chrome = VIEW_CHROME[view] || VIEW_CHROME.funds;
+  document.title = chrome.title;
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='${chrome.color}'/><g fill='white'>${chrome.icon}</g></svg>`;
+  let favicon = document.querySelector('link[rel="icon"]');
+  if (!favicon) {
+    favicon = document.createElement("link");
+    favicon.rel = "icon";
+    document.head.append(favicon);
+  }
+  favicon.href = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
 
 function dashboardUrl(view, parameters = {}) {
   const url = new URL("./index.html", location.href);
@@ -2341,7 +2423,7 @@ function renderCell(record, column, value, table) {
     const manager = table === "score" ? record.manager : record;
     cell.classList.add("manager-cell");
     const identity = el("span", { class: "manager-identity" }, managerNameButton(manager), el("span", { class: "manager-id", text: manager.id || "ID未提供" }));
-    cell.append(el("div", { class: "manager-cell-content" }, identity, renderManagerPreferenceControls(manager, true, table === "score")));
+    cell.append(el("div", { class: "manager-cell-content" }, identity, renderManagerPreferenceControls(manager, true, table === "score" || table === "kpi")));
     return cell;
   }
   if (column.kind === "relation") {
@@ -2427,11 +2509,13 @@ function managerNameButton(manager, options = {}) {
   const id = stringValue(manager?.id ?? manager?.manager_id);
   const name = stringValue(manager?.name ?? manager?.manager_name) || "姓名未提供";
   if (!id) return el("span", { class: `manager-name${options.className ? ` ${options.className}` : ""}`, text: name, title: "经理ID未提供，无法打开雷达图" });
+  const preference = preferenceFor(id);
+  const preferenceClass = preference.favorite ? " is-favorite" : preference.reviewed ? " is-reviewed" : "";
   const button = el("button", {
     type: "button",
-    class: `entity-link manager-link manager-name${options.className ? ` ${options.className}` : ""}`,
+    class: `entity-link manager-link manager-name${preferenceClass}${options.className ? ` ${options.className}` : ""}`,
     text: name,
-    title: `查看${name}的六维能力雷达图`,
+    dataset: { managerId: id },
     "aria-label": `查看基金经理${name}，ID ${id}的六维能力雷达图`
   });
   button.addEventListener("click", event => {
@@ -3337,13 +3421,44 @@ function buildExportCsv(scope) {
     value = scoreValue; filename = "基金经理评分_当前结果.csv";
   }
   if (scope === "kpi" || scope === "score") {
-    columns = [...columns, { key: "personalNote", label: "个人备注" }, { key: "noteUpdatedAt", label: "备注更新时间" }];
+    columns = [
+      ...columns,
+      { key: "favoriteStatus", label: "收藏状态" },
+      { key: "offenseAttribute", label: "进攻属性" },
+      { key: "defenseAttribute", label: "防守属性" },
+      { key: "compositeAttribute", label: "综合属性" },
+      { key: "abilityAttributes", label: "能力属性汇总" },
+      { key: "abilityAttributeSource", label: "能力属性来源" },
+      { key: "watchStatus", label: "待观察状态" },
+      { key: "reviewStatus", label: "审阅状态" },
+      { key: "industryLabel", label: "自定义行业标签" },
+      { key: "preferenceUpdatedAt", label: "标记更新时间" },
+      { key: "personalNote", label: "个人备注" },
+      { key: "noteUpdatedAt", label: "备注更新时间" }
+    ];
   }
   const lines = [columns.map(column => csvCell(column.label)).join(",")];
   records.forEach(record => lines.push(columns.map(column => {
     const managerId = scope === "score" ? record.manager?.id : record.id;
     const note = managerId ? state.managerNotes.get(String(managerId)) : null;
-    const raw = column.key === "personalNote" ? note?.text ?? "" : column.key === "noteUpdatedAt" ? (note?.updatedAt ? formatDateTime(note.updatedAt) : "") : value(record, column.key);
+    const manager = scope === "score" ? record.manager : record;
+    const preference = managerId ? preferenceFor(String(managerId)) : null;
+    const tags = manager ? effectiveTags(manager) : [];
+    const exportPreferenceValues = {
+      favoriteStatus: preference?.favorite ? "已收藏" : "未收藏",
+      offenseAttribute: tags.includes("offense") ? "是" : "否",
+      defenseAttribute: tags.includes("defense") ? "是" : "否",
+      compositeAttribute: tags.includes("composite") ? "是" : "否",
+      abilityAttributes: tags.map(tag => ({ offense: "进攻", defense: "防守", composite: "综合" })[tag]).filter(Boolean).join("；"),
+      abilityAttributeSource: preference?.attributeOverride === null ? "系统建议" : "手动设置",
+      watchStatus: preference?.watched ? "待观察" : "未标记",
+      reviewStatus: preference?.reviewed ? "已审阅" : "未审阅",
+      industryLabel: preference?.industryLabel || "",
+      preferenceUpdatedAt: preference?.updatedAt && Date.parse(preference.updatedAt) > 0 ? formatDateTime(preference.updatedAt) : "",
+      personalNote: note?.text ?? "",
+      noteUpdatedAt: note?.updatedAt ? formatDateTime(note.updatedAt) : ""
+    };
+    const raw = Object.hasOwn(exportPreferenceValues, column.key) ? exportPreferenceValues[column.key] : value(record, column.key);
     const formatted = Array.isArray(raw) ? raw.join("；") : column.kind === "percent" ? formatPercent(raw) : raw ?? "";
     return csvCell(formatted);
   }).join(",")));
