@@ -25,17 +25,34 @@ const featuredSongs = [
   { title: "我要唱唱你的力量", artist: "KUA Worship", album: "KUA Worship 精选", moods: ["激情敬拜", "欢快感恩"], theme: "赞美与尊崇", duration: "05:12", rank: 12, reason: "现代华语现场敬拜的代表气质", cover: "red" },
 ];
 
-const baseSongs = worshipCatalog.length ? worshipCatalog : featuredSongs;
+const PRIMARY_MOODS = ["温暖治愈", "激情敬拜", "欢快感恩"];
+const normalizeCategoryMoods = (moods = [], theme = "") => {
+  const directMatches = [...new Set((Array.isArray(moods) ? moods : []).filter(mood => PRIMARY_MOODS.includes(mood)))];
+  if (directMatches.length) return directMatches;
+  const text = `${(Array.isArray(moods) ? moods : []).join(" ")} ${theme}`;
+  if (/欢快|感恩|喜乐|欢唱/.test(text)) return ["欢快感恩"];
+  if (/激情|敬拜|赞美|尊崇|宣告|庄严/.test(text)) return ["激情敬拜"];
+  return ["温暖治愈"];
+};
+const songKey = song => song?.isCustom ? `custom:${song.id}` : `catalog:${song?.artist || ""}::${song?.title || ""}`;
+const baseSongs = (worshipCatalog.length ? worshipCatalog : featuredSongs).map(song => ({
+  ...song,
+  moods: normalizeCategoryMoods(song.moods, song.theme),
+}));
 let customSongs = [];
+let categoryOverrides = {};
+let deletedCatalogKeys = new Set();
 let songs = [...baseSongs];
 const sourceMap = worshipSources;
 const queue = [...songs.slice(0, 12)];
-const state = { mood: "全部", query: "", viewMode: "discover", artist: "", current: songs[0], playing: false, favorites: new Set(), recents: [] };
+const state = { mood: "", query: "", viewMode: "discover", artist: "", current: songs[0], playing: false, favorites: new Set(), recents: [] };
 const $ = selector => document.querySelector(selector);
 const coverClass = song => `cover-${song.cover || "sun"}`;
 const isCurrent = song => state.current?.title === song.title && state.current?.artist === song.artist;
 const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[character]));
 let editingCustomSongId = null;
+let editingCategorySongKey = null;
+let songEditorReturnView = "mine";
 document.documentElement.dataset.worshipAppVersion = "content-hashed-assets-v1";
 
 function extractPlayableSource(sourceUrl) {
@@ -57,7 +74,7 @@ function extractPlayableSource(sourceUrl) {
 function normalizeCustomSong(song) {
   const source = extractPlayableSource(song?.sourceUrl || "");
   if (!source || !String(song?.title || "").trim() || !String(song?.artist || "").trim()) return null;
-  const moods = Array.isArray(song.moods) && song.moods.length ? song.moods.slice(0, 4) : ["温暖治愈"];
+  const moods = normalizeCategoryMoods(song.moods, song.theme);
   return {
     id: song.id || (crypto.randomUUID?.() || `mine-${Date.now()}-${Math.random().toString(36).slice(2)}`),
     title: String(song.title).trim(), artist: String(song.artist).trim(), album: String(song.album || "我的收藏").trim() || "我的收藏",
@@ -67,10 +84,38 @@ function normalizeCustomSong(song) {
   };
 }
 
+function rebuildSongs() {
+  const currentKey = songKey(state.current);
+  const catalogSongs = baseSongs
+    .filter(song => !deletedCatalogKeys.has(songKey(song)))
+    .map(song => {
+      const override = categoryOverrides[songKey(song)];
+      const moods = override ? normalizeCategoryMoods(override, song.theme) : song.moods;
+      return { ...song, moods, theme: moods.join(" · ") };
+    });
+  songs = [...catalogSongs, ...customSongs];
+  const refreshedQueue = queue
+    .map(item => songs.find(song => songKey(song) === songKey(item)))
+    .filter(Boolean);
+  queue.splice(0, queue.length, ...refreshedQueue);
+  if (!queue.length) queue.push(...songs.slice(0, 12));
+  state.current = songs.find(song => songKey(song) === currentKey) || songs[0];
+  if (!state.current) state.playing = false;
+}
+
+async function saveLibrarySettings() {
+  const categories = Object.fromEntries(
+    Object.entries(categoryOverrides)
+      .map(([key, moods]) => [key, normalizeCategoryMoods(moods)])
+      .filter(([, moods]) => moods.length),
+  );
+  await cloudStore.save("librarySettings", { categories, deleted: [...deletedCatalogKeys] });
+}
+
 function getFilteredSongs() {
   const query = state.query.trim().toLowerCase();
   return songs.filter(song => {
-    const moodMatch = state.mood === "全部" || song.moods.includes(state.mood) || song.theme.includes(state.mood);
+    const moodMatch = !state.mood || song.moods.includes(state.mood);
     const text = [song.title, song.artist, song.album, song.theme, ...song.moods].join(" ").toLowerCase();
     return moodMatch && text.includes(query);
   });
@@ -82,6 +127,7 @@ function getVisibleSongs() {
   if (state.viewMode === "singles") return filtered.filter(song => song.kind === "单曲");
   if (state.viewMode === "artist") return filtered.filter(song => song.artist === state.artist);
   if (state.viewMode === "all") return filtered;
+  if (state.viewMode === "library") return filtered;
   if (state.viewMode === "favorites") return filtered.filter(song => state.favorites.has(song.title));
   if (state.viewMode === "mine") return filtered.filter(song => song.isCustom);
   if (state.viewMode === "recent") {
@@ -98,37 +144,51 @@ function setProgress(percentage) {
 }
 
 function renderSongs() {
+  const homeArtists = $("#homeArtists");
+  $("#libraryAddButton").hidden = state.viewMode !== "library";
   if (state.viewMode === "artists") {
+    if (homeArtists) homeArtists.hidden = true;
     renderArtists();
     return;
   }
+  if (homeArtists) homeArtists.hidden = !["discover", "picked", "all"].includes(state.viewMode);
   const list = getVisibleSongs();
   $("#artistList").hidden = true;
   $("#songList").hidden = false;
   $("#songList").classList.remove("artist-grid");
-  $("#songList").innerHTML = list.map((song, index) => `
-    <article class="song-row ${isCurrent(song) ? "is-current" : ""}">
+  $("#songList").innerHTML = list.map((song, index) => {
+    const key = songKey(song);
+    const managementActions = state.viewMode === "library"
+      ? `<span class="library-song-actions"><button type="button" data-edit-categories="${escapeHtml(key)}">修改分类</button><button type="button" data-delete-library="${escapeHtml(key)}">删除</button></span>`
+      : "";
+    const customActions = song.isCustom && state.viewMode === "mine"
+      ? `<span class="custom-song-actions"><button type="button" data-edit-song="${escapeHtml(song.id)}">编辑</button><button type="button" data-delete-song="${escapeHtml(song.id)}">删除</button></span>`
+      : "";
+    return `
+    <article class="song-row ${state.viewMode === "library" ? "library-row" : ""} ${isCurrent(song) ? "is-current" : ""}">
       <span class="track-num">${String(song.rank ?? index + 1).padStart(2, "0")}</span>
       <div class="row-cover cover ${coverClass(song)}">${escapeHtml(song.title.slice(0, 4))}</div>
-      <div class="song-name"><button type="button" class="song-title-button" data-play="${escapeHtml(song.title)}" data-artist="${escapeHtml(song.artist)}" aria-label="播放${escapeHtml(song.title)}"><strong>${escapeHtml(song.title)}</strong><small>${escapeHtml(song.album)}</small></button>${song.isCustom ? `<span class="custom-song-actions"><button type="button" data-edit-song="${escapeHtml(song.id)}">编辑</button><button type="button" data-delete-song="${escapeHtml(song.id)}">删除</button></span>` : ""}</div>
+      <div class="song-name"><button type="button" class="song-title-button" data-play="${escapeHtml(song.title)}" data-artist="${escapeHtml(song.artist)}" aria-label="播放${escapeHtml(song.title)}"><strong>${escapeHtml(song.title)}</strong><small>${escapeHtml(song.album)}</small></button>${managementActions}${customActions}</div>
       <button type="button" class="artist" data-artist-filter="${escapeHtml(song.artist)}">${escapeHtml(song.artist)}</button>
       <div class="tags">${song.moods.slice(0, 2).map(mood => `<span>${escapeHtml(mood)}</span>`).join("")}</div>
       <span class="duration">${escapeHtml(song.duration)}</span>
       <button class="row-fav ${state.favorites.has(song.title) ? "filled" : ""}" data-favorite="${escapeHtml(song.title)}" aria-label="收藏${escapeHtml(song.title)}">${state.favorites.has(song.title) ? "♥" : "♡"}</button>
       <button class="row-play ${isCurrent(song) && state.playing ? "is-playing" : ""}" data-play="${escapeHtml(song.title)}" data-artist="${escapeHtml(song.artist)}" aria-label="${isCurrent(song) && state.playing ? "暂停" : "播放"}${escapeHtml(song.title)}">${isCurrent(song) && state.playing ? "Ⅱ" : "▶"}</button>
-    </article>`).join("");
+    </article>`;
+  }).join("");
   $("#emptyState").hidden = list.length > 0;
   updatePlayIndicators();
 }
 
 function renderArtists() {
   const query = state.query.trim().toLowerCase();
-  const artists = [...new Set(songs.map(song => song.artist))]
+  const moodSongs = state.mood ? songs.filter(song => song.moods.includes(state.mood)) : songs;
+  const artists = [...new Set(moodSongs.map(song => song.artist))]
     .filter(artist => artist.toLowerCase().includes(query));
   $("#songList").hidden = true;
   $("#artistList").hidden = false;
   $("#artistList").innerHTML = artists.map((artist, index) => {
-    const artistSongs = songs.filter(song => song.artist === artist);
+    const artistSongs = moodSongs.filter(song => song.artist === artist);
     const sample = artistSongs[0];
     return `<button type="button" class="artist-card" data-artist-filter="${escapeHtml(artist)}">
       <span class="artist-card-number">${String(index + 1).padStart(2, "0")}</span>
@@ -149,7 +209,7 @@ function renderQueue() {
 function updatePlayIndicators() {
   document.querySelectorAll("[data-play]").forEach(node => {
     const active = node.dataset.play === state.current.title && node.dataset.artist === state.current.artist;
-    if (node.matches(".row-play,.queue-play,.big-play,.feature-play")) {
+    if (node.matches(".row-play,.queue-play,.big-play,.feature-play,.queue-main-play")) {
       node.textContent = active && state.playing ? "Ⅱ" : "▶";
       node.classList.toggle("is-playing", active && state.playing);
       node.setAttribute("aria-label", `${active && state.playing ? "暂停" : "播放"}${node.dataset.play}`);
@@ -211,6 +271,11 @@ function playSong(title, artist) {
   $("#playerTitle").textContent = song.title; $("#playerArtist").textContent = song.artist;
   [$("#nowTitle"), $("#playerTitle")].forEach(node => { node.dataset.play = song.title; node.dataset.artist = song.artist; });
   [$("#nowArtist"), $("#playerArtist")].forEach(node => { node.dataset.artistFilter = song.artist; });
+  const queuePlayToggle = $("#queuePlayToggle");
+  if (queuePlayToggle) {
+    queuePlayToggle.dataset.play = song.title;
+    queuePlayToggle.dataset.artist = song.artist;
+  }
   $(".mini-heart").dataset.favorite = song.title;
   $("#dialogSong").textContent = song.title; $("#dialogArtist").textContent = song.artist;
   const source = song.source || sourceMap[`${song.artist}::${song.title}`] || {};
@@ -231,7 +296,10 @@ function playSong(title, artist) {
     playerShell.classList.remove("is-playing");
     $("#sourceLink").href = song.sourceUrl || `https://www.youtube.com/results?search_query=${encodeURIComponent(`${song.artist} ${song.title}`)}`;
   }
-  document.querySelectorAll(".player-cover,.now-card .cover").forEach(node => { node.className = `cover ${coverClass(song)}`; node.textContent = song.title.slice(0, 4); });
+  document.querySelectorAll(".player-cover,.now-card .cover").forEach(node => {
+    node.className = `cover ${node.classList.contains("player-cover") ? "player-cover " : ""}${coverClass(song)}`;
+    node.textContent = "";
+  });
   state.playing = Boolean(source.youtubeId || source.bvid); setProgress(state.playing ? 47 : 0); renderSongs(); renderQueue(); updatePlayIndicators();
 }
 
@@ -249,23 +317,30 @@ function togglePlayback() {
 }
 
 async function loadSavedState() {
-  const [savedFavorites, savedRecents, savedCustomSongs] = await Promise.all([
+  const [savedFavorites, savedRecents, savedCustomSongs, savedLibrarySettings] = await Promise.all([
     cloudStore.load("favorites", []), cloudStore.load("recent", []), cloudStore.load("customSongs", []),
+    cloudStore.load("librarySettings", { categories: {}, deleted: [] }),
   ]);
   state.favorites = new Set(savedFavorites);
   state.recents = savedRecents;
   customSongs = (Array.isArray(savedCustomSongs) ? savedCustomSongs : []).map(normalizeCustomSong).filter(Boolean);
-  songs = [...baseSongs, ...customSongs];
+  categoryOverrides = savedLibrarySettings?.categories && typeof savedLibrarySettings.categories === "object"
+    ? savedLibrarySettings.categories
+    : {};
+  deletedCatalogKeys = new Set(Array.isArray(savedLibrarySettings?.deleted) ? savedLibrarySettings.deleted : []);
+  rebuildSongs();
   renderSongs();
+  renderQueue();
   if (state.favorites.size) $(".nav-dot").hidden = false;
   const account = cloudStore.account || "";
   $("#accountName").textContent = account || "共享主站账号";
   $("#accountAvatar").textContent = account ? account.slice(0, 1).toUpperCase() : "恩";
-  $("#syncStatus").textContent = cloudStore.userId ? "已登录 · 收藏与最近播放已同步" : "未登录 · 使用主站账号登录";
+  $("#syncStatus").textContent = cloudStore.userId ? "已登录 · 收藏、歌单与分类已同步" : "未登录 · 使用主站账号登录";
 }
 
 function openSongEditor(song = null) {
   editingCustomSongId = song?.id || null;
+  songEditorReturnView = state.viewMode === "library" ? "library" : "mine";
   $("#songForm").reset();
   $("#songDialogTitle").textContent = song ? "编辑我的歌曲" : "添加我喜欢的歌曲";
   $("#saveSongButton").textContent = song ? "保存修改" : "保存到我的歌曲";
@@ -314,15 +389,15 @@ async function submitSongForm(event) {
   const existingIndex = customSongs.findIndex(song => song.id === editingCustomSongId);
   if (existingIndex >= 0) customSongs.splice(existingIndex, 1, draft);
   else customSongs.unshift(draft);
-  songs = [...baseSongs, ...customSongs];
+  rebuildSongs();
   await saveCustomSongs();
-  state.viewMode = "mine";
-  state.mood = "全部";
+  state.viewMode = songEditorReturnView;
+  state.mood = "";
   state.query = "";
   $("#searchInput").value = "";
-  $("#listTitle").textContent = "我的歌曲";
-  document.querySelectorAll(".side-link").forEach(node => node.classList.toggle("active", node.dataset.nav === "mine"));
-  document.querySelectorAll(".mood").forEach(node => node.classList.toggle("active", node.dataset.mood === "全部"));
+  $("#listTitle").textContent = state.viewMode === "library" ? "全部歌单" : "我的歌曲";
+  document.querySelectorAll(".side-link").forEach(node => node.classList.toggle("active", node.dataset.nav === state.viewMode));
+  document.querySelectorAll(".mood").forEach(node => node.classList.remove("active"));
   $("#songDialog").close();
   renderSongs();
 }
@@ -330,11 +405,11 @@ async function submitSongForm(event) {
 async function deleteCustomSong(id) {
   const song = customSongs.find(item => item.id === id);
   if (!song || !window.confirm(`确定从“我的歌曲”中删除《${song.title}》吗？`)) return;
+  const deletingCurrent = state.current?.id === id;
   customSongs = customSongs.filter(item => item.id !== id);
-  songs = [...baseSongs, ...customSongs];
+  rebuildSongs();
   for (let index = queue.length - 1; index >= 0; index -= 1) if (queue[index].id === id) queue.splice(index, 1);
-  if (state.current?.id === id) {
-    state.current = songs[0];
+  if (deletingCurrent) {
     state.playing = false;
     $("#mediaPlayer").removeAttribute("src");
     $("#mediaPlayer").closest(".media-player-shell").classList.remove("is-playing");
@@ -342,6 +417,82 @@ async function deleteCustomSong(id) {
   await saveCustomSongs();
   renderSongs();
   renderQueue();
+}
+
+function openCategoryEditor(key) {
+  const song = songs.find(item => songKey(item) === key);
+  if (!song) return;
+  editingCategorySongKey = key;
+  $("#categorySongTitle").textContent = `修改《${song.title}》分类`;
+  $("#categorySongArtist").textContent = song.artist;
+  $("#categoryFormError").hidden = true;
+  document.querySelectorAll('#categoryForm input[name="categoryMoods"]').forEach(input => {
+    input.checked = song.moods.includes(input.value);
+  });
+  $("#categoryDialog").showModal();
+}
+
+async function submitCategoryForm(event) {
+  event.preventDefault();
+  const moods = [...document.querySelectorAll('#categoryForm input[name="categoryMoods"]:checked')]
+    .map(input => input.value)
+    .filter(mood => PRIMARY_MOODS.includes(mood));
+  if (!moods.length) {
+    $("#categoryFormError").textContent = "请至少选择一个歌曲分类。";
+    $("#categoryFormError").hidden = false;
+    return;
+  }
+  const song = songs.find(item => songKey(item) === editingCategorySongKey);
+  if (!song) return;
+  if (song.isCustom) {
+    const index = customSongs.findIndex(item => item.id === song.id);
+    if (index >= 0) customSongs.splice(index, 1, { ...customSongs[index], moods, theme: moods.join(" · ") });
+    await saveCustomSongs();
+  } else {
+    categoryOverrides[editingCategorySongKey] = moods;
+    await saveLibrarySettings();
+  }
+  rebuildSongs();
+  $("#categoryDialog").close();
+  renderSongs();
+  renderQueue();
+}
+
+async function deleteLibrarySong(key) {
+  const song = songs.find(item => songKey(item) === key);
+  if (!song || !window.confirm(`确定从“全部歌单”中删除《${song.title}》吗？`)) return;
+  const deletingCurrent = songKey(state.current) === key;
+  if (song.isCustom) {
+    customSongs = customSongs.filter(item => item.id !== song.id);
+    await saveCustomSongs();
+  } else {
+    deletedCatalogKeys.add(key);
+    delete categoryOverrides[key];
+    await saveLibrarySettings();
+  }
+  rebuildSongs();
+  if (deletingCurrent) {
+    state.playing = false;
+    $("#mediaPlayer").removeAttribute("src");
+    $("#mediaPlayer").closest(".media-player-shell").classList.remove("is-playing");
+  }
+  renderSongs();
+  renderQueue();
+}
+
+function updateListTitle() {
+  if (state.viewMode === "artist" && state.artist) {
+    $("#listTitle").textContent = `${state.artist} · ${state.mood || "全部曲目"}`;
+    $("#clearFilter").textContent = "清除歌手筛选 ←";
+    return;
+  }
+  const titles = {
+    discover: "为你精选", picked: "为你精选", artists: "歌手合集", singles: "经典单曲",
+    favorites: "我的收藏", recent: "最近播放", mine: "我的歌曲", library: "全部歌单", all: "全部歌曲",
+  };
+  const baseTitle = titles[state.viewMode] || "为你精选";
+  $("#listTitle").textContent = state.mood ? `${baseTitle} · ${state.mood}` : baseTitle;
+  $("#clearFilter").textContent = state.mood ? "清除分类筛选 ×" : "查看全部 →";
 }
 
 document.addEventListener("click", event => {
@@ -353,17 +504,24 @@ document.addEventListener("click", event => {
   const fav = event.target.closest("[data-favorite]");
   if (fav) { const title = fav.dataset.favorite; state.favorites.has(title) ? state.favorites.delete(title) : state.favorites.add(title); cloudStore.save("favorites", [...state.favorites]); $(".nav-dot").hidden = state.favorites.size === 0; renderSongs(); }
   const mood = event.target.closest("[data-mood]");
-  if (mood) { state.mood = mood.dataset.mood; state.viewMode = "discover"; state.artist = ""; $("#clearFilter").textContent = "查看全部 →"; document.querySelectorAll(".mood").forEach(node => node.classList.toggle("active", node === mood)); document.querySelectorAll(".side-link").forEach(node => node.classList.toggle("active", node.dataset.nav === "discover")); $("#listTitle").textContent = state.mood === "全部" ? "为你精选" : state.mood; renderSongs(); }
+  if (mood) {
+    state.mood = state.mood === mood.dataset.mood ? "" : mood.dataset.mood;
+    if (!["artist", "library", "singles", "favorites", "recent", "mine", "artists"].includes(state.viewMode)) state.viewMode = "discover";
+    document.querySelectorAll(".mood").forEach(node => node.classList.toggle("active", node.dataset.mood === state.mood));
+    updateListTitle();
+    renderSongs();
+  }
   const nav = event.target.closest("[data-nav]");
   if (nav) {
     state.viewMode = nav.dataset.nav;
     state.artist = "";
+    state.mood = "";
     state.query = "";
     $("#searchInput").value = "";
-    $("#clearFilter").textContent = "查看全部 →";
-    const titles = { discover: "为你精选", picked: "为你精选", artists: "歌手合集", singles: "经典单曲", favorites: "我的收藏", recent: "最近播放", mine: "我的歌曲" };
-    $("#listTitle").textContent = titles[state.viewMode] || "为你精选";
+    document.querySelectorAll(".mood").forEach(node => node.classList.remove("active"));
+    updateListTitle();
     document.querySelectorAll(".side-link").forEach(node => node.classList.toggle("active", node === nav));
+    $(".sidebar").classList.remove("open");
     renderSongs();
   }
   const artist = event.target.closest("[data-artist-filter]");
@@ -372,8 +530,7 @@ document.addEventListener("click", event => {
     state.artist = artist.dataset.artistFilter;
     state.query = "";
     $("#searchInput").value = "";
-    $("#listTitle").textContent = `${state.artist} · 全部曲目`;
-    $("#clearFilter").textContent = "返回歌手合集 ←";
+    updateListTitle();
     document.querySelectorAll(".side-link").forEach(node => node.classList.toggle("active", node.dataset.nav === "artists"));
     renderSongs();
   }
@@ -389,25 +546,64 @@ document.addEventListener("click", event => {
   if (editSong) openSongEditor(customSongs.find(song => song.id === editSong.dataset.editSong));
   const deleteSong = event.target.closest("[data-delete-song]");
   if (deleteSong) deleteCustomSong(deleteSong.dataset.deleteSong);
+  const editCategories = event.target.closest("[data-edit-categories]");
+  if (editCategories) openCategoryEditor(editCategories.dataset.editCategories);
+  const deleteLibrary = event.target.closest("[data-delete-library]");
+  if (deleteLibrary) deleteLibrarySong(deleteLibrary.dataset.deleteLibrary);
 });
 
-$("#searchInput").addEventListener("input", event => { state.query = event.target.value; $("#listTitle").textContent = state.viewMode === "artists" ? (state.query ? `查找歌手：${state.query}` : "歌手合集") : (state.query ? `搜索：${state.query}` : "为你精选"); renderSongs(); });
+const themeToggle = $("#themeToggle");
+const applyTheme = (theme, persist = true) => {
+  const dark = theme === "dark";
+  if (dark) document.documentElement.dataset.theme = "dark";
+  else delete document.documentElement.dataset.theme;
+  themeToggle.setAttribute("aria-pressed", String(dark));
+  themeToggle.setAttribute("aria-label", dark ? "切换到浅色皮肤" : "切换到深色皮肤");
+  themeToggle.querySelector("span").textContent = dark ? "☼" : "◐";
+  themeToggle.querySelector("b").textContent = dark ? "浅色" : "深色";
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#101b1e" : "#f4ede2");
+  if (persist) {
+    try { localStorage.setItem("worship:theme", dark ? "dark" : "light"); } catch { /* 浏览器可能禁用本地存储。 */ }
+  }
+};
+applyTheme(document.documentElement.dataset.theme === "dark" ? "dark" : "light", false);
+themeToggle.addEventListener("click", () => applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark"));
+
+$("#searchInput").addEventListener("input", event => {
+  state.query = event.target.value;
+  if (state.query) $("#listTitle").textContent = state.viewMode === "artists" ? `查找歌手：${state.query}` : `搜索：${state.query}`;
+  else updateListTitle();
+  renderSongs();
+});
 $("#clearFilter").addEventListener("click", () => {
-  state.mood = "全部"; state.query = ""; $("#searchInput").value = "";
-  if (state.viewMode === "artist") { state.viewMode = "artists"; state.artist = ""; $("#listTitle").textContent = "歌手合集"; }
-  else { state.viewMode = "all"; $("#listTitle").textContent = "全部歌曲"; }
-  $("#clearFilter").textContent = "查看全部 →";
-  document.querySelectorAll(".mood").forEach(node => node.classList.toggle("active", node.dataset.mood === "全部")); renderSongs();
+  state.query = "";
+  $("#searchInput").value = "";
+  if (state.viewMode === "artist") {
+    state.viewMode = "discover";
+    state.artist = "";
+    document.querySelectorAll(".side-link").forEach(node => node.classList.toggle("active", node.dataset.nav === "discover"));
+  } else if (state.mood) {
+    state.mood = "";
+  } else if (state.viewMode !== "library") {
+    state.viewMode = "all";
+  }
+  document.querySelectorAll(".mood").forEach(node => node.classList.toggle("active", node.dataset.mood === state.mood));
+  updateListTitle();
+  renderSongs();
 });
 $("#randomButton").addEventListener("click", () => { const song = songs[Math.floor(Math.random() * songs.length)]; playSong(song.title, song.artist); });
 $("#addSongButton").addEventListener("click", () => openSongEditor());
+$("#libraryAddButton").addEventListener("click", () => openSongEditor());
 $("#songForm").addEventListener("submit", submitSongForm);
 $("#closeSongDialog").addEventListener("click", () => $("#songDialog").close());
 $("#cancelSongEdit").addEventListener("click", () => $("#songDialog").close());
+$("#categoryForm").addEventListener("submit", submitCategoryForm);
+$("#closeCategoryDialog").addEventListener("click", () => $("#categoryDialog").close());
+$("#cancelCategoryEdit").addEventListener("click", () => $("#categoryDialog").close());
 $("#playToggle").addEventListener("click", togglePlayback);
 $("#lyricsButton").addEventListener("click", () => $("#lyricsDialog").showModal()); $("#lyricsButtonBottom").addEventListener("click", () => $("#lyricsDialog").showModal()); $("#closeDialog").addEventListener("click", () => $("#lyricsDialog").close());
 $("#clearQueue").addEventListener("click", () => { queue.splice(0); renderQueue(); }); $("#addQueue").addEventListener("click", () => { queue.push(...songs.filter(song => !queue.some(item => item.title === song.title)).slice(0, 3)); renderQueue(); });
-$("#mobileMenu").addEventListener("click", () => $(".sidebar").classList.toggle("mobile-open"));
+$("#mobileMenu").addEventListener("click", () => $(".sidebar").classList.toggle("open"));
 $("#fullscreenPlayer").addEventListener("click", () => $(".media-player-shell").requestFullscreen?.());
 
 renderSongs(); renderQueue(); loadSavedState();
