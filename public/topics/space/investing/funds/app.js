@@ -1708,7 +1708,7 @@ function renderFilters(scope, defs) {
   const root = document.getElementById(`${scope}-filters`);
   root.replaceChildren();
   defs.forEach((def, index) => {
-    const details = el("details", { class: `filter-group ${def.category}`, open: index < 3, dataset: { filterKey: def.key } });
+    const details = el("details", { class: `filter-group ${def.category}`, open: true, dataset: { filterKey: def.key } });
     const summary = el("summary");
     const summaryLabel = el("span", { text: def.label });
     annotateIndicatorElement(summaryLabel, def.key);
