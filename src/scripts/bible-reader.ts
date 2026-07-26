@@ -120,8 +120,6 @@ const COLLECTION = 'officialWebsiteBibleReaderState';
 const nowIso = () => new Date().toISOString();
 const chapterKey = (book: string, chapter: number) => `${book}-${chapter}`;
 const verseKey = (book: string, chapter: number, verse: number) => `${book}-${chapter}-${verse}`;
-const bibleComReferenceChapterUrl = (book: string, chapter: number) =>
-  `https://www.bible.com/zh-CN/bible/36/${book.toUpperCase()}.${chapter}.CCB`;
 const createId = () => typeof crypto !== 'undefined' && 'randomUUID' in crypto
   ? crypto.randomUUID()
   : `bible-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -362,7 +360,6 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   let activeBookStatusSlug: string | null = null;
   let pendingBookSlug: string | null = null;
   let bookClickTimer: number | undefined;
-  let translationHoverTimer: number | undefined;
   let activeTranslationVerse: HTMLElement | null = null;
   let translationRequestToken = 0;
   const translationCache = new Map<string, TranslationPayload>();
@@ -839,8 +836,6 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   };
 
   const hideTranslationPopover = () => {
-    window.clearTimeout(translationHoverTimer);
-    translationHoverTimer = undefined;
     translationRequestToken += 1;
     activeTranslationVerse?.classList.remove('is-translation-active');
     activeTranslationVerse = null;
@@ -910,7 +905,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       positionTranslationPopover(verseElement);
     } catch {
       if (requestToken !== translationRequestToken || activeTranslationVerse !== verseElement) return;
-      translationText.textContent = '暂时无法载入译文，可点击“译”打开 YouVersion。';
+      translationText.textContent = '暂时无法载入译文，请稍后重试。';
       translationSource.textContent = 'CCB · YouVersion';
       positionTranslationPopover(verseElement);
     }
@@ -947,7 +942,6 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       const active = targetVerse === verse ? ' is-target' : '';
       const read = isReadVerse(sample.book, sample.chapter, verse);
       const noted = Boolean(noteForVerse(sample.book, sample.chapter, verse));
-      const translationUrl = bibleComReferenceChapterUrl(sample.book, sample.chapter);
       return `
         <section class="bible-verse${active}${read ? ' is-read' : ''}${noted ? ' has-note' : ''}" id="${key}" data-verse="${verse}">
           <div class="bible-verse-main">
@@ -957,7 +951,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
           <div class="bible-verse-actions" data-verse-actions="${verse}">
             <button type="button" data-action="toggle-bookmark" data-verse="${verse}" title="${isBookmarked(sample.book, sample.chapter, verse) ? '取消收藏' : '收藏'}" aria-label="${isBookmarked(sample.book, sample.chapter, verse) ? '取消收藏' : '收藏'}">${isBookmarked(sample.book, sample.chapter, verse) ? '★' : '☆'}</button>
             <button class="bible-verse-read-action" type="button" data-action="toggle-read-verse" data-verse="${verse}" title="标记阅读" aria-label="切换本节阅读状态" aria-pressed="${read}">✓</button>
-            <a class="bible-verse-translation-link" href="${escapeHtml(translationUrl)}" target="_blank" rel="noopener noreferrer" title="打开 CCB 参考译文" aria-label="打开 CCB 参考译文">译</a>
+            <button class="bible-verse-translation-link" type="button" data-action="show-translation" data-verse="${verse}" aria-label="查看 CCB 参考译文">译</button>
           </div>
         </section>
       `;
@@ -1646,25 +1640,6 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     if (verse) openNoteEditor(currentBook, currentChapter, verse);
   });
 
-  verseList.addEventListener('pointerover', (event) => {
-    if (event.pointerType && event.pointerType !== 'mouse') return;
-    const target = event.target;
-    if (!(target instanceof Element)) return;
-    const verseElement = target.closest<HTMLElement>('.bible-verse[data-verse]');
-    if (!verseElement || (event.relatedTarget instanceof Node && verseElement.contains(event.relatedTarget))) return;
-    hideTranslationPopover();
-    translationHoverTimer = window.setTimeout(() => showTranslationPopover(verseElement), 2000);
-  });
-
-  verseList.addEventListener('pointerout', (event) => {
-    if (event.pointerType && event.pointerType !== 'mouse') return;
-    const target = event.target;
-    if (!(target instanceof Element)) return;
-    const verseElement = target.closest<HTMLElement>('.bible-verse[data-verse]');
-    if (!verseElement || (event.relatedTarget instanceof Node && verseElement.contains(event.relatedTarget))) return;
-    hideTranslationPopover();
-  });
-
   verseList.addEventListener('scroll', () => {
     if (activeTranslationVerse) positionTranslationPopover(activeTranslationVerse);
   }, { passive: true });
@@ -1775,6 +1750,12 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     const verse = Number(trigger.dataset.verse || '');
     if (verse && trigger.dataset.action === 'toggle-bookmark') toggleBookmark(verse);
     if (verse && trigger.dataset.action === 'toggle-read-verse') void toggleReadVerse(verse, trigger);
+    if (verse && trigger.dataset.action === 'show-translation') {
+      const verseElement = trigger.closest<HTMLElement>('.bible-verse[data-verse]');
+      if (!verseElement) return;
+      if (activeTranslationVerse === verseElement && !translationPopover.hidden) hideTranslationPopover();
+      else void showTranslationPopover(verseElement);
+    }
   });
 
   searchInput.addEventListener('input', runSearch);
