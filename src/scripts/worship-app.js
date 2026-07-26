@@ -46,6 +46,9 @@ let songs = [...baseSongs];
 const sourceMap = worshipSources;
 const queue = [...songs.slice(0, 12)];
 const state = { mood: "", query: "", viewMode: "discover", artist: "", current: songs[0], playing: false, favorites: new Set(), recents: [] };
+let queueSelectionMode = false;
+let selectedQueueKeys = new Set();
+let batchPlaybackKeys = [];
 const $ = selector => document.querySelector(selector);
 const coverClass = song => `cover-${song.cover || "sun"}`;
 const isCurrent = song => state.current?.title === song.title && state.current?.artist === song.artist;
@@ -134,6 +137,52 @@ function addSongsToQueue(candidates, label = "歌曲") {
   } else {
     announceQueue(`${label}已在播放列表中`);
   }
+}
+
+function getPlaybackQueue() {
+  if (batchPlaybackKeys.length) {
+    const selectedSongs = batchPlaybackKeys
+      .map(key => queue.find(song => songKey(song) === key))
+      .filter(Boolean);
+    if (selectedSongs.length) return selectedSongs;
+    batchPlaybackKeys = [];
+  }
+  return queue.length ? queue : songs;
+}
+
+function updateQueueBatchActions() {
+  const actions = $("#queueBatchActions");
+  if (!actions) return;
+  actions.hidden = !queueSelectionMode;
+  $("#queueSelectedCount").textContent = selectedQueueKeys.size;
+  $("#queueSelectAll").textContent = selectedQueueKeys.size === queue.length && queue.length ? "取消全选" : "全选";
+  ["#queuePlaySelected", "#queueDeleteSelected"].forEach(selector => {
+    $(selector).disabled = selectedQueueKeys.size === 0;
+  });
+  $("#queuePanel").classList.toggle("is-selecting", queueSelectionMode);
+  $("#queueTitle").classList.toggle("is-selecting", queueSelectionMode);
+  $("#queueTitle").setAttribute("aria-pressed", String(queueSelectionMode));
+}
+
+function setQueueSelectionMode(enabled) {
+  queueSelectionMode = Boolean(enabled && queue.length);
+  if (!queueSelectionMode) selectedQueueKeys = new Set();
+  renderQueue();
+  announceQueue(queueSelectionMode ? "多选模式 · 选择歌曲后可批量播放或删除" : "已退出多选模式");
+}
+
+function removeQueueSongs(keys, message) {
+  const removing = new Set(keys);
+  if (!removing.size) return;
+  for (let index = queue.length - 1; index >= 0; index -= 1) {
+    if (removing.has(songKey(queue[index]))) queue.splice(index, 1);
+  }
+  selectedQueueKeys = new Set([...selectedQueueKeys].filter(key => !removing.has(key)));
+  batchPlaybackKeys = batchPlaybackKeys.filter(key => !removing.has(key));
+  if (!queue.length) queueSelectionMode = false;
+  savePlaylist();
+  renderQueue();
+  announceQueue(message);
 }
 
 function getFilteredSongs() {
@@ -226,9 +275,17 @@ function renderArtists() {
 
 function renderQueue() {
   $("#queueList").innerHTML = queue.length
-    ? queue.map(song => `<div class="queue-item ${isCurrent(song) ? "current" : ""}"><span class="drag">⋮⋮</span><div class="cover ${coverClass(song)}">${escapeHtml(song.title.slice(0, 2))}</div><div><button type="button" class="queue-song-title" data-play="${escapeHtml(song.title)}" data-artist="${escapeHtml(song.artist)}">${escapeHtml(song.title)}</button><button type="button" class="queue-artist" data-artist-filter="${escapeHtml(song.artist)}">${escapeHtml(song.artist)}</button></div><button class="queue-play ${isCurrent(song) && state.playing ? "is-playing" : ""}" data-play="${escapeHtml(song.title)}" data-artist="${escapeHtml(song.artist)}" aria-label="${isCurrent(song) && state.playing ? "暂停" : "播放"}${escapeHtml(song.title)}">${isCurrent(song) && state.playing ? "Ⅱ" : "▶"}</button></div>`).join("")
+    ? queue.map(song => {
+      const key = songKey(song);
+      const selected = selectedQueueKeys.has(key);
+      const leadingControl = queueSelectionMode
+        ? `<button type="button" class="queue-select ${selected ? "selected" : ""}" data-queue-select="${escapeHtml(key)}" aria-pressed="${selected}" aria-label="${selected ? "取消选择" : "选择"}${escapeHtml(song.title)}">${selected ? "✓" : ""}</button>`
+        : `<span class="drag" aria-hidden="true">⋮⋮</span>`;
+      return `<div class="queue-item ${isCurrent(song) ? "current" : ""} ${selected ? "selected" : ""}" data-queue-key="${escapeHtml(key)}">${leadingControl}<div class="cover ${coverClass(song)}">${escapeHtml(song.title.slice(0, 2))}</div><div><button type="button" class="queue-song-title" data-play="${escapeHtml(song.title)}" data-artist="${escapeHtml(song.artist)}">${escapeHtml(song.title)}</button><button type="button" class="queue-artist" data-artist-filter="${escapeHtml(song.artist)}">${escapeHtml(song.artist)}</button></div><button class="queue-play ${isCurrent(song) && state.playing ? "is-playing" : ""}" data-play="${escapeHtml(song.title)}" data-artist="${escapeHtml(song.artist)}" aria-label="${isCurrent(song) && state.playing ? "暂停" : "播放"}${escapeHtml(song.title)}">${isCurrent(song) && state.playing ? "Ⅱ" : "▶"}</button><button type="button" class="queue-remove" data-remove-from-queue="${escapeHtml(key)}" aria-label="从播放列表删除${escapeHtml(song.title)}">×</button></div>`;
+    }).join("")
     : `<div class="queue-empty"><span>♫</span><strong>播放列表还是空的</strong><small>从歌曲或专辑旁点击“添加至播放列表”</small></div>`;
   $("#queueCount").textContent = queue.length;
+  updateQueueBatchActions();
   updatePlayIndicators();
 }
 
@@ -272,10 +329,12 @@ function readPlayerState(payload) {
 let autoAdvanceLocked = false;
 
 function playNextQueuedSong() {
-  const currentIndex = queue.findIndex(song => songKey(song) === songKey(state.current));
-  const next = currentIndex >= 0 ? queue[currentIndex + 1] : null;
+  const playbackQueue = getPlaybackQueue();
+  const currentIndex = playbackQueue.findIndex(song => songKey(song) === songKey(state.current));
+  const next = currentIndex >= 0 ? playbackQueue[currentIndex + 1] : playbackQueue[0];
+  if (!next && batchPlaybackKeys.length) batchPlaybackKeys = [];
   if (!next) return false;
-  playSong(next.title, next.artist);
+  playSong(next.title, next.artist, { preserveBatch: true });
   announceQueue(`连续播放 · ${next.title}`);
   return true;
 }
@@ -306,8 +365,9 @@ $("#mediaPlayer").addEventListener("load", () => {
 window.addEventListener("pageshow", () => window.setTimeout(sendYouTubeListening, 100));
 document.addEventListener("visibilitychange", () => { if (!document.hidden) sendYouTubeListening(); });
 
-function playSong(title, artist) {
+function playSong(title, artist, { preserveBatch = false } = {}) {
   const song = songs.find(item => item.title === title && (!artist || item.artist === artist)) || songs.find(item => item.title === title) || state.current;
+  if (!preserveBatch) batchPlaybackKeys = [];
   state.current = { ...song, artist: artist || song.artist };
   state.recents = [song.title, ...state.recents.filter(item => item !== song.title)].slice(0, 20);
   cloudStore.save("recent", state.recents);
@@ -564,6 +624,18 @@ document.addEventListener("click", event => {
     const artist = addArtistQueue.dataset.addArtistQueue;
     addSongsToQueue(songs.filter(song => song.artist === artist), `“${artist}”专辑`);
   }
+  const queueSelect = event.target.closest("[data-queue-select]");
+  if (queueSelect) {
+    const key = queueSelect.dataset.queueSelect;
+    selectedQueueKeys.has(key) ? selectedQueueKeys.delete(key) : selectedQueueKeys.add(key);
+    renderQueue();
+  }
+  const queueRemove = event.target.closest("[data-remove-from-queue]");
+  if (queueRemove) {
+    const key = queueRemove.dataset.removeFromQueue;
+    const song = queue.find(item => songKey(item) === key);
+    if (song) removeQueueSongs([key], `已从播放列表删除《${song.title}》`);
+  }
   const mood = event.target.closest("[data-mood]");
   if (mood) {
     state.mood = state.mood === mood.dataset.mood ? "" : mood.dataset.mood;
@@ -597,12 +669,12 @@ document.addEventListener("click", event => {
   }
   const skip = event.target.closest("[data-skip]");
   if (skip) {
-    const pool = queue.length ? queue : songs;
+    const pool = getPlaybackQueue();
     const foundIndex = pool.findIndex(song => song.title === state.current.title && song.artist === state.current.artist);
     const delta = skip.dataset.skip === "prev" ? -1 : 1;
     const currentIndex = foundIndex >= 0 ? foundIndex : (delta > 0 ? -1 : 0);
     const next = pool[(currentIndex + delta + pool.length) % pool.length];
-    playSong(next.title, next.artist);
+    playSong(next.title, next.artist, { preserveBatch: batchPlaybackKeys.length > 0 });
   }
   const editSong = event.target.closest("[data-edit-song]");
   if (editSong) openSongEditor(customSongs.find(song => song.id === editSong.dataset.editSong));
@@ -664,8 +736,45 @@ $("#closeCategoryDialog").addEventListener("click", () => $("#categoryDialog").c
 $("#cancelCategoryEdit").addEventListener("click", () => $("#categoryDialog").close());
 $("#playToggle").addEventListener("click", togglePlayback);
 $("#lyricsButton").addEventListener("click", () => $("#lyricsDialog").showModal()); $("#lyricsButtonBottom").addEventListener("click", () => $("#lyricsDialog").showModal()); $("#closeDialog").addEventListener("click", () => $("#lyricsDialog").close());
-$("#clearQueue").addEventListener("click", () => { queue.splice(0); savePlaylist(); renderQueue(); announceQueue("播放列表已清空"); });
+$("#clearQueue").addEventListener("click", () => {
+  if (!queue.length || !window.confirm(`确定清理播放列表中的 ${queue.length} 首歌曲吗？`)) return;
+  queue.splice(0);
+  selectedQueueKeys = new Set();
+  batchPlaybackKeys = [];
+  queueSelectionMode = false;
+  savePlaylist();
+  renderQueue();
+  announceQueue("播放列表已清理");
+});
 $("#addQueue").addEventListener("click", () => addSongsToQueue(getVisibleSongs(), "当前歌曲列表"));
+$("#queueTitle").addEventListener("dblclick", () => setQueueSelectionMode(!queueSelectionMode));
+$("#queueTitle").addEventListener("keydown", event => {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  event.preventDefault();
+  setQueueSelectionMode(!queueSelectionMode);
+});
+$("#queueSelectAll").addEventListener("click", () => {
+  selectedQueueKeys = selectedQueueKeys.size === queue.length
+    ? new Set()
+    : new Set(queue.map(songKey));
+  renderQueue();
+});
+$("#queuePlaySelected").addEventListener("click", () => {
+  const selectedSongs = queue.filter(song => selectedQueueKeys.has(songKey(song)));
+  if (!selectedSongs.length) return;
+  batchPlaybackKeys = selectedSongs.map(songKey);
+  const first = selectedSongs[0];
+  setQueueSelectionMode(false);
+  batchPlaybackKeys = selectedSongs.map(songKey);
+  playSong(first.title, first.artist, { preserveBatch: true });
+  announceQueue(`开始播放所选歌曲 · ${selectedSongs.length} 首`);
+});
+$("#queueDeleteSelected").addEventListener("click", () => {
+  if (!selectedQueueKeys.size || !window.confirm(`确定从播放列表删除选中的 ${selectedQueueKeys.size} 首歌曲吗？`)) return;
+  const count = selectedQueueKeys.size;
+  removeQueueSongs([...selectedQueueKeys], `已删除所选歌曲 · ${count} 首`);
+});
+$("#queueCancelSelection").addEventListener("click", () => setQueueSelectionMode(false));
 $("#mobileMenu").addEventListener("click", () => $(".sidebar").classList.toggle("open"));
 $("#fullscreenPlayer").addEventListener("click", () => $(".media-player-shell").requestFullscreen?.());
 

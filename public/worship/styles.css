@@ -1331,6 +1331,64 @@ main {
   padding-bottom: 2px;
 }
 
+.queue-list-head h3 {
+  cursor: pointer;
+  user-select: none;
+}
+
+.queue-list-head h3 small {
+  margin-left: 4px;
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: 7px;
+  font-weight: 500;
+}
+
+.queue-list-head h3.is-selecting {
+  color: var(--gold);
+}
+
+.queue-batch-actions {
+  display: grid;
+  grid-template-columns: 1fr repeat(4, auto);
+  align-items: center;
+  gap: 4px;
+  margin: 2px 3px 5px;
+  padding: 6px;
+  border: 1px solid rgba(137, 99, 30, 0.2);
+  border-radius: 9px;
+  background: rgba(232, 216, 188, 0.42);
+}
+
+.queue-batch-actions span {
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.queue-batch-actions b {
+  color: var(--gold);
+}
+
+.queue-batch-actions button {
+  min-height: 23px;
+  padding: 0 6px;
+  border: 1px solid rgba(137, 99, 30, 0.24);
+  border-radius: 7px;
+  color: #6f5524;
+  background: rgba(255, 252, 246, 0.74);
+  font-size: 7px;
+}
+
+.queue-batch-actions button.danger {
+  color: #a0442c;
+  border-color: rgba(185, 79, 47, 0.24);
+}
+
+.queue-batch-actions button:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
 .queue-status {
   min-height: 17px;
   margin: 0 4px 2px;
@@ -1376,7 +1434,7 @@ main {
 .queue-item {
   min-width: 0;
   display: grid;
-  grid-template-columns: 12px 34px minmax(0, 1fr) 24px;
+  grid-template-columns: 14px 34px minmax(0, 1fr) 24px 20px;
   align-items: center;
   gap: 7px;
   padding: 6px 5px;
@@ -1387,9 +1445,32 @@ main {
   background: rgba(224, 203, 166, 0.22);
 }
 
+.queue-item.selected {
+  background: rgba(190, 146, 73, 0.16);
+  box-shadow: inset 2px 0 var(--gold);
+}
+
 .queue-item .drag {
   color: #b0a493;
   font-size: 8px;
+}
+
+.queue-select {
+  width: 14px;
+  height: 14px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgba(137, 99, 30, 0.38);
+  border-radius: 50%;
+  color: #fff;
+  background: transparent;
+  font-size: 8px;
+}
+
+.queue-select.selected {
+  border-color: var(--gold);
+  background: var(--gold);
 }
 
 .queue-item .cover {
@@ -1414,6 +1495,30 @@ main {
   height: 24px;
   color: var(--gold);
   font-size: 9px;
+}
+
+.queue-remove {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 50%;
+  color: #9b8e7b;
+  background: transparent;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.queue-remove:hover {
+  color: #fff;
+  background: var(--coral);
+}
+
+.queue-panel.is-selecting .queue-play,
+.queue-panel.is-selecting .queue-remove {
+  opacity: 0.34;
+  pointer-events: none;
 }
 
 .player {
@@ -1888,8 +1993,28 @@ html[data-theme="dark"] .song-row {
 html[data-theme="dark"] .song-row:hover,
 html[data-theme="dark"] .song-row.current,
 html[data-theme="dark"] .song-row.is-current,
-html[data-theme="dark"] .queue-item.current {
+html[data-theme="dark"] .queue-item.current,
+html[data-theme="dark"] .queue-item.selected {
   background: linear-gradient(90deg, rgba(190, 139, 47, 0.2), rgba(255, 255, 255, 0.035));
+}
+
+html[data-theme="dark"] .queue-batch-actions {
+  border-color: rgba(224, 180, 93, 0.26);
+  background: rgba(144, 101, 32, 0.16);
+}
+
+html[data-theme="dark"] .queue-batch-actions button {
+  color: #efd49f;
+  border-color: rgba(224, 180, 93, 0.28);
+  background: rgba(31, 49, 52, 0.88);
+}
+
+html[data-theme="dark"] .queue-batch-actions button.danger {
+  color: #ffad91;
+}
+
+html[data-theme="dark"] .queue-remove {
+  color: #bfae94;
 }
 
 html[data-theme="dark"] .track-num,
