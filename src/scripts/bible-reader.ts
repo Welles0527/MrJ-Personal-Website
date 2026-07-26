@@ -95,6 +95,14 @@ type RenderOptions = {
   updateLastRead?: boolean;
 };
 
+type TranslationPayload = {
+  id: string;
+  reference: string;
+  content: string;
+  version: string;
+  bibleId: string;
+};
+
 type BookReadingStatus = 'reading' | 'read' | 'none';
 
 type CloudResult<T> = {
@@ -112,8 +120,8 @@ const COLLECTION = 'officialWebsiteBibleReaderState';
 const nowIso = () => new Date().toISOString();
 const chapterKey = (book: string, chapter: number) => `${book}-${chapter}`;
 const verseKey = (book: string, chapter: number, verse: number) => `${book}-${chapter}-${verse}`;
-const bibleComTcvChapterUrl = (book: string, chapter: number) =>
-  `https://www.bible.com/zh-TW/bible/3283/${book.toUpperCase()}.${chapter}.TCV2019T`;
+const bibleComReferenceChapterUrl = (book: string, chapter: number) =>
+  `https://www.bible.com/zh-CN/bible/36/${book.toUpperCase()}.${chapter}.CCB`;
 const createId = () => typeof crypto !== 'undefined' && 'randomUUID' in crypto
   ? crypto.randomUUID()
   : `bible-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -269,10 +277,9 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   const bookmarkList = get<HTMLElement>('[data-bookmark-list]');
   const bookmarkSectionList = root.querySelector<HTMLElement>('[data-bookmark-section-list]');
   const readerBookmarkToggle = root.querySelector<HTMLButtonElement>('[data-action="toggle-reader-bookmarks"]');
-  const readerBookmarkSearch = root.querySelector<HTMLElement>('[data-reader-bookmark-search]');
   const bookmarkTotal = get<HTMLElement>('[data-bookmark-total]');
-  const bookmarkSearchInputs = [...root.querySelectorAll<HTMLInputElement>('[data-bookmark-search]')];
-  const bookmarkSearchStatuses = [...root.querySelectorAll<HTMLElement>('[data-bookmark-search-status]')];
+  const librarySearchInput = get<HTMLInputElement>('[data-library-search]');
+  const librarySearchStatus = get<HTMLElement>('[data-library-search-status]');
   const noteSectionList = get<HTMLElement>('[data-note-section-list]');
   const readerNoteToggle = get<HTMLButtonElement>('[data-action="toggle-reader-notes"]');
   const noteTotal = get<HTMLElement>('[data-note-total]');
@@ -303,6 +310,10 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   const dailyProgress = root.querySelector<HTMLElement>('[data-daily-progress]');
   const readingProgress = root.querySelector<HTMLElement>('[data-reading-progress]');
   const readingThemeToggle = root.querySelector<HTMLButtonElement>('[data-action="toggle-reading-theme"]');
+  const translationPopover = get<HTMLElement>('[data-bible-translation-popover]');
+  const translationReference = get<HTMLElement>('[data-bible-translation-reference]');
+  const translationText = get<HTMLElement>('[data-bible-translation-text]');
+  const translationSource = get<HTMLElement>('[data-bible-translation-source]');
 
   const params = new URLSearchParams(window.location.search);
   root.classList.toggle('is-direct-reader', params.has('book'));
@@ -326,9 +337,10 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   let readVerses = readReadVerses();
   let bookStatuses = readBookStatuses();
   let isDarkReading = readReadingTheme();
+  const expandedBookmarkBooks = new Set<string>();
   const expandedBookmarkGroups = new Set<string>();
+  const expandedNoteBooks = new Set<string>();
   const expandedNoteGroups = new Set<string>();
-  let readingSavePending = false;
   const setReadingSyncStatus = (message: string, status = 'idle') => {
     if (!readingSyncStatus) return;
     readingSyncStatus.textContent = message;
@@ -350,6 +362,10 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   let activeBookStatusSlug: string | null = null;
   let pendingBookSlug: string | null = null;
   let bookClickTimer: number | undefined;
+  let translationHoverTimer: number | undefined;
+  let activeTranslationVerse: HTMLElement | null = null;
+  let translationRequestToken = 0;
+  const translationCache = new Map<string, TranslationPayload>();
 
   const renderLoginState = (nextSession: CloudSession | null) => {
     loginStatus.textContent = nextSession ? `已登录：${nextSession.account}` : '未登录时会先保存到本机浏览器。';
@@ -469,7 +485,6 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       return;
     }
     window.clearTimeout(syncTimer);
-    setReadingSyncStatus('正在保存到云端…', 'saving');
     syncTimer = window.setTimeout(() => {
       syncCloudState()
         .then(() => {
@@ -715,30 +730,51 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     `;
   };
 
-  const noteForVerse = (book: string, chapter: number, verse: number) =>
-    state.notes.find((item) => item.book === book && item.chapter === chapter && item.verse === verse);
-
-  const normalizeBookmarkSearch = (value: string) =>
-    value.trim().toLocaleLowerCase().replace(/\s+/g, '').replace(/[－—–]/g, '-');
-
-  const compactBookmarkSearch = (value: string) => normalizeBookmarkSearch(value).replace(/[-_./:：,，章节目]/g, '');
-
-  const getBookmarkSearchKeyword = () => bookmarkSearchInputs.find((input) => input.value.trim())?.value.trim() ?? '';
-
-  const setBookmarkSearchStatus = (message: string) => {
-    bookmarkSearchStatuses.forEach((status) => {
-      status.textContent = message;
+  const updateReadingProgress = () => {
+    if (!readingProgress) return;
+    const summaries = [
+      getProgressSummary(),
+      getProgressSummary(currentBook),
+      getProgressSummary(currentBook, currentChapter)
+    ];
+    const items = [...readingProgress.querySelectorAll<HTMLElement>('.bible-reading-progress-item')];
+    if (items.length !== summaries.length) {
+      renderReadingProgress();
+      return;
+    }
+    items.forEach((item, index) => {
+      const summary = summaries[index];
+      const percent = item.querySelector<HTMLElement>('dt strong');
+      const bar = item.querySelector<HTMLElement>('.bible-reading-progress-bar > span');
+      const detail = item.querySelector<HTMLElement>('dd small');
+      if (percent) percent.textContent = formatPercent(summary);
+      if (bar) bar.style.width = `${progressWidth(summary)}%`;
+      if (detail) detail.textContent = summary.total
+        ? `已读 ${formatCharCount(summary.read)} / ${formatCharCount(summary.total)} 字`
+        : '正文尚未载入';
     });
   };
 
-  const bookmarkMatchesSearch = (item: Bookmark, keyword: string) => {
+  const noteForVerse = (book: string, chapter: number, verse: number) =>
+    state.notes.find((item) => item.book === book && item.chapter === chapter && item.verse === verse);
+
+  const normalizeLibrarySearch = (value: string) =>
+    value.trim().toLocaleLowerCase().replace(/\s+/g, '').replace(/[－—–]/g, '-');
+
+  const compactLibrarySearch = (value: string) => normalizeLibrarySearch(value).replace(/[-_./:：,，章节目]/g, '');
+
+  const getLibrarySearchKeyword = () => librarySearchInput.value.trim();
+
+  const libraryItemMatchesSearch = (item: Bookmark | Note, keyword: string) => {
     const book = bookBySlug(item.book);
-    const normalized = normalizeBookmarkSearch(keyword);
-    const compact = compactBookmarkSearch(keyword);
+    const normalized = normalizeLibrarySearch(keyword);
+    const compact = compactLibrarySearch(keyword);
     if (!normalized) return true;
 
+    const verseText = data.samples[chapterKey(item.book, item.chapter)]?.verses[item.verse - 1] ?? '';
     const candidates = [
       item.text,
+      verseText,
       item.book,
       `${item.book}-${item.chapter}-${item.verse}`,
       `${item.book}${item.chapter}:${item.verse}`,
@@ -751,9 +787,20 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       `${book?.title ?? item.book}${item.chapter}:${item.verse}`,
       `${book?.shortName ?? item.book}${item.chapter}:${item.verse}`
     ];
-    const haystack = candidates.map(normalizeBookmarkSearch).join(' ');
-    const compactHaystack = candidates.map(compactBookmarkSearch).join(' ');
+    const haystack = candidates.map(normalizeLibrarySearch).join(' ');
+    const compactHaystack = candidates.map(compactLibrarySearch).join(' ');
     return haystack.includes(normalized) || compactHaystack.includes(compact);
+  };
+
+  const updateLibrarySearchStatus = () => {
+    const keyword = getLibrarySearchKeyword();
+    if (!keyword) {
+      librarySearchStatus.textContent = '可按卷名、章节、节号、经文或笔记搜索。';
+      return;
+    }
+    const bookmarkMatches = state.bookmarks.filter((item) => libraryItemMatchesSearch(item, keyword)).length;
+    const noteMatches = state.notes.filter((item) => libraryItemMatchesSearch(item, keyword)).length;
+    librarySearchStatus.textContent = `找到 ${bookmarkMatches} 条收藏、${noteMatches} 条笔记。`;
   };
 
   const sortedBookmarks = () => state.bookmarks
@@ -791,7 +838,86 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     }, 80);
   };
 
+  const hideTranslationPopover = () => {
+    window.clearTimeout(translationHoverTimer);
+    translationHoverTimer = undefined;
+    translationRequestToken += 1;
+    activeTranslationVerse?.classList.remove('is-translation-active');
+    activeTranslationVerse = null;
+    translationPopover.hidden = true;
+  };
+
+  const positionTranslationPopover = (verseElement: HTMLElement) => {
+    if (translationPopover.hidden) return;
+    const viewportPadding = 12;
+    const width = Math.min(430, window.innerWidth - viewportPadding * 2);
+    translationPopover.style.width = `${width}px`;
+    const verseBounds = verseElement.getBoundingClientRect();
+    const popoverHeight = translationPopover.offsetHeight;
+    const left = Math.min(
+      window.innerWidth - width - viewportPadding,
+      Math.max(viewportPadding, verseBounds.left + Math.min(42, Math.max(0, verseBounds.width - width)))
+    );
+    const below = verseBounds.bottom + 8;
+    const top = below + popoverHeight <= window.innerHeight - viewportPadding
+      ? below
+      : Math.max(viewportPadding, verseBounds.top - popoverHeight - 8);
+    translationPopover.style.left = `${left}px`;
+    translationPopover.style.top = `${top}px`;
+  };
+
+  const translationEndpoint = (book: string, chapter: number, verse: number) => {
+    const query = new URLSearchParams({ book: book.toUpperCase(), chapter: String(chapter), verse: String(verse) });
+    return `https://magicj-youversion-verse.pages.dev/api/bible-translation?${query.toString()}`;
+  };
+
+  const showTranslationPopover = async (verseElement: HTMLElement) => {
+    const verse = Number(verseElement.dataset.verse || '');
+    const sample = currentSample();
+    if (!verse || !sample) return;
+
+    const book = sample.book;
+    const chapter = sample.chapter;
+    const key = verseKey(book, chapter, verse);
+    const requestToken = ++translationRequestToken;
+    activeTranslationVerse?.classList.remove('is-translation-active');
+    activeTranslationVerse = verseElement;
+    activeTranslationVerse.classList.add('is-translation-active');
+    translationReference.textContent = `${sample.title}:${verse}`;
+    translationText.textContent = '正在载入译文…';
+    translationSource.textContent = 'CCB · YouVersion';
+    translationPopover.hidden = false;
+    positionTranslationPopover(verseElement);
+
+    const cached = translationCache.get(key);
+    if (cached) {
+      translationReference.textContent = cached.reference || `${sample.title}:${verse}`;
+      translationText.textContent = cached.content;
+      positionTranslationPopover(verseElement);
+      return;
+    }
+
+    try {
+      const response = await fetch(translationEndpoint(book, chapter, verse), { headers: { Accept: 'application/json' } });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const payload = await response.json() as TranslationPayload;
+      if (!payload?.content?.trim()) throw new Error('empty translation');
+      translationCache.set(key, payload);
+      if (requestToken !== translationRequestToken || activeTranslationVerse !== verseElement) return;
+      translationReference.textContent = payload.reference || `${sample.title}:${verse}`;
+      translationText.textContent = payload.content.trim();
+      translationSource.textContent = `${payload.version || 'CCB'} · YouVersion`;
+      positionTranslationPopover(verseElement);
+    } catch {
+      if (requestToken !== translationRequestToken || activeTranslationVerse !== verseElement) return;
+      translationText.textContent = '暂时无法载入译文，可点击“译”打开 YouVersion。';
+      translationSource.textContent = 'CCB · YouVersion';
+      positionTranslationPopover(verseElement);
+    }
+  };
+
   const renderVerses = (targetVerse?: number, options: RenderOptions = {}) => {
+    hideTranslationPopover();
     const updateLastRead = options.updateLastRead ?? true;
     const sample = currentSample();
     const book = currentBookInfo();
@@ -821,7 +947,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       const active = targetVerse === verse ? ' is-target' : '';
       const read = isReadVerse(sample.book, sample.chapter, verse);
       const noted = Boolean(noteForVerse(sample.book, sample.chapter, verse));
-      const translationUrl = bibleComTcvChapterUrl(sample.book, sample.chapter);
+      const translationUrl = bibleComReferenceChapterUrl(sample.book, sample.chapter);
       return `
         <section class="bible-verse${active}${read ? ' is-read' : ''}${noted ? ' has-note' : ''}" id="${key}" data-verse="${verse}" title="双击添加或编辑笔记">
           <div class="bible-verse-main">
@@ -831,7 +957,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
           <div class="bible-verse-actions" data-verse-actions="${verse}">
             <button type="button" data-action="toggle-bookmark" data-verse="${verse}" title="${isBookmarked(sample.book, sample.chapter, verse) ? '取消收藏' : '收藏'}" aria-label="${isBookmarked(sample.book, sample.chapter, verse) ? '取消收藏' : '收藏'}">${isBookmarked(sample.book, sample.chapter, verse) ? '★' : '☆'}</button>
             <button class="bible-verse-read-action" type="button" data-action="toggle-read-verse" data-verse="${verse}" title="标记阅读" aria-label="切换本节阅读状态" aria-pressed="${read}">✓</button>
-            <a class="bible-verse-translation-link" href="${escapeHtml(translationUrl)}" target="_blank" rel="noopener noreferrer" title="打开 TCV2019T 参考译文" aria-label="打开 TCV2019T 参考译文">译</a>
+            <a class="bible-verse-translation-link" href="${escapeHtml(translationUrl)}" target="_blank" rel="noopener noreferrer" title="打开 CCB 参考译文" aria-label="打开 CCB 参考译文">译</a>
           </div>
         </section>
       `;
@@ -845,61 +971,83 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   };
 
   const renderBookmarks = () => {
-    const keyword = getBookmarkSearchKeyword();
+    const keyword = getLibrarySearchKeyword();
     bookmarkTotal.textContent = `${state.bookmarks.length} 条`;
     let html = '<p>还没有收藏经文。</p>';
     if (!state.bookmarks.length) {
       bookmarkList.innerHTML = html;
       if (bookmarkSectionList) bookmarkSectionList.innerHTML = '<p>还没有收藏经文。进入微读圣经后点击经文右侧星标。</p>';
-      setBookmarkSearchStatus('还没有收藏经文。');
+      updateLibrarySearchStatus();
       return;
     }
-    const visibleBookmarks = state.bookmarks.filter((item) => bookmarkMatchesSearch(item, keyword));
+    const visibleBookmarks = sortedBookmarks().filter((item) => libraryItemMatchesSearch(item, keyword));
     if (!visibleBookmarks.length) {
       html = '<p>没有找到匹配的收藏经文。</p>';
       bookmarkList.innerHTML = html;
       if (bookmarkSectionList) bookmarkSectionList.innerHTML = html;
-      setBookmarkSearchStatus(`没有找到“${keyword}”。`);
+      updateLibrarySearchStatus();
       return;
     }
 
-    const grouped = new Map<string, Bookmark[]>();
-    visibleBookmarks
-      .slice()
-      .sort((first, second) => {
-        const firstBook = data.books.findIndex((book) => book.slug === first.book);
-        const secondBook = data.books.findIndex((book) => book.slug === second.book);
-        return firstBook - secondBook || first.chapter - second.chapter || first.verse - second.verse;
-      })
-      .forEach((item) => {
-        const key = `${item.book}-${item.chapter}`;
-        grouped.set(key, [...(grouped.get(key) ?? []), item]);
-      });
+    const grouped = new Map<string, Map<number, Bookmark[]>>();
+    visibleBookmarks.forEach((item) => {
+      const chapters = grouped.get(item.book) ?? new Map<number, Bookmark[]>();
+      chapters.set(item.chapter, [...(chapters.get(item.chapter) ?? []), item]);
+      grouped.set(item.book, chapters);
+    });
 
-    html = [...grouped.entries()].map(([key, items]) => {
-      const first = items[0];
-      const book = bookBySlug(first.book);
-      const expanded = expandedBookmarkGroups.has(key);
-      const itemsHtml = items.map((item) => `
-        <button type="button" data-goto-book="${item.book}" data-goto-chapter="${item.chapter}" data-goto-verse="${item.verse}">
-          <strong>${escapeHtml(book?.title ?? item.book)} ${item.chapter}:${item.verse}</strong><br>
-          ${escapeHtml(item.text)}
-        </button>
-      `).join('');
+    const bookGrid = [...grouped.entries()].map(([bookSlug, chapters]) => {
+      const book = bookBySlug(bookSlug);
+      const expanded = Boolean(keyword) || expandedBookmarkBooks.has(bookSlug);
+      const total = [...chapters.values()].reduce((sum, items) => sum + items.length, 0);
       return `
-        <section class="bible-bookmark-group" data-bookmark-group="${escapeHtml(key)}">
-          <button class="bible-collapsible-group-toggle" type="button" data-action="toggle-bookmark-group" data-group-key="${escapeHtml(key)}" aria-expanded="${expanded}">
-            <span><strong>${escapeHtml(book?.title ?? first.book)} ${first.chapter}章</strong><small>${items.length} 条</small></span>
-            <span aria-hidden="true">${expanded ? '−' : '+'}</span>
+        <button class="bible-library-card" type="button" data-action="toggle-bookmark-book" data-book-key="${escapeHtml(bookSlug)}" aria-expanded="${expanded}">
+          <strong>${escapeHtml(book?.title ?? bookSlug)}</strong>
+          <small>${total} 条</small>
+        </button>
+      `;
+    }).join('');
+
+    const branches = [...grouped.entries()].map(([bookSlug, chapters]) => {
+      const book = bookBySlug(bookSlug);
+      const bookExpanded = Boolean(keyword) || expandedBookmarkBooks.has(bookSlug);
+      if (!bookExpanded) return '';
+      const chapterGrid = [...chapters.entries()].map(([chapter, items]) => {
+        const key = `${bookSlug}-${chapter}`;
+        const expanded = Boolean(keyword) || expandedBookmarkGroups.has(key);
+        return `
+          <button class="bible-library-card" type="button" data-action="toggle-bookmark-group" data-group-key="${escapeHtml(key)}" aria-expanded="${expanded}">
+            <strong>${chapter}章</strong>
+            <small>${items.length} 条</small>
           </button>
-          <div class="bible-collapsible-group-content" data-bookmark-group-content="${escapeHtml(key)}"${expanded ? '' : ' hidden'}>${itemsHtml}</div>
+        `;
+      }).join('');
+      const chapterEntries = [...chapters.entries()].map(([chapter, items]) => {
+        const key = `${bookSlug}-${chapter}`;
+        const expanded = Boolean(keyword) || expandedBookmarkGroups.has(key);
+        if (!expanded) return '';
+        const itemsHtml = items.map((item) => `
+          <button type="button" data-goto-book="${item.book}" data-goto-chapter="${item.chapter}" data-goto-verse="${item.verse}">
+            <strong>${escapeHtml(book?.title ?? item.book)} ${item.chapter}:${item.verse}</strong><br>
+            ${escapeHtml(item.text)}
+          </button>
+        `).join('');
+        return `<div class="bible-collapsible-group-content" data-bookmark-group-content="${escapeHtml(key)}">${itemsHtml}</div>`;
+      }).join('');
+      return `
+        <section class="bible-library-branch" data-bookmark-book="${escapeHtml(bookSlug)}">
+          <h4>${escapeHtml(book?.title ?? bookSlug)}</h4>
+          <div class="bible-library-grid">${chapterGrid}</div>
+          ${chapterEntries}
         </section>
       `;
     }).join('');
 
+    html = `<div class="bible-library-grid">${bookGrid}</div>${branches}`;
+
     bookmarkList.innerHTML = html;
     if (bookmarkSectionList) bookmarkSectionList.innerHTML = html;
-    setBookmarkSearchStatus(keyword ? `找到 ${visibleBookmarks.length} 条收藏。` : `共 ${state.bookmarks.length} 条收藏。`);
+    updateLibrarySearchStatus();
   };
 
   const sortedNotes = () => state.notes
@@ -988,45 +1136,84 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   };
 
   const renderNotes = () => {
+    const keyword = getLibrarySearchKeyword();
     noteTotal.textContent = `${state.notes.length} 条`;
     if (!state.notes.length) {
       noteSectionList.innerHTML = '<p>还没有笔记。</p>';
+      updateLibrarySearchStatus();
       return;
     }
 
-    const grouped = new Map<string, Note[]>();
-    sortedNotes().forEach((item) => {
-      const key = `${item.book}-${item.chapter}`;
-      grouped.set(key, [...(grouped.get(key) ?? []), item]);
+    const visibleNotes = sortedNotes().filter((item) => libraryItemMatchesSearch(item, keyword));
+    if (!visibleNotes.length) {
+      noteSectionList.innerHTML = '<p>没有找到匹配的笔记。</p>';
+      updateLibrarySearchStatus();
+      return;
+    }
+
+    const grouped = new Map<string, Map<number, Note[]>>();
+    visibleNotes.forEach((item) => {
+      const chapters = grouped.get(item.book) ?? new Map<number, Note[]>();
+      chapters.set(item.chapter, [...(chapters.get(item.chapter) ?? []), item]);
+      grouped.set(item.book, chapters);
     });
 
-    noteSectionList.innerHTML = [...grouped.entries()].map(([key, items]) => {
-      const first = items[0];
-      const book = bookBySlug(first.book);
-      const expanded = expandedNoteGroups.has(key);
-      const itemsHtml = items.map((item) => `
-        <button type="button" data-action="open-note" data-note-book="${item.book}" data-note-chapter="${item.chapter}" data-note-verse="${item.verse}">
-          <strong>${escapeHtml(book?.title ?? item.book)} ${item.chapter}:${item.verse}</strong>
-          <span>${escapeHtml(item.text)}</span>
-        </button>
-      `).join('');
+    const bookGrid = [...grouped.entries()].map(([bookSlug, chapters]) => {
+      const book = bookBySlug(bookSlug);
+      const expanded = Boolean(keyword) || expandedNoteBooks.has(bookSlug);
+      const total = [...chapters.values()].reduce((sum, items) => sum + items.length, 0);
       return `
-        <section class="bible-bookmark-group" data-note-group="${escapeHtml(key)}">
-          <button class="bible-collapsible-group-toggle" type="button" data-action="toggle-note-group" data-group-key="${escapeHtml(key)}" aria-expanded="${expanded}">
-            <span><strong>${escapeHtml(book?.title ?? first.book)} ${first.chapter}章</strong><small>${items.length} 条</small></span>
-            <span aria-hidden="true">${expanded ? '−' : '+'}</span>
+        <button class="bible-library-card" type="button" data-action="toggle-note-book" data-book-key="${escapeHtml(bookSlug)}" aria-expanded="${expanded}">
+          <strong>${escapeHtml(book?.title ?? bookSlug)}</strong>
+          <small>${total} 条</small>
+        </button>
+      `;
+    }).join('');
+
+    const branches = [...grouped.entries()].map(([bookSlug, chapters]) => {
+      const book = bookBySlug(bookSlug);
+      const bookExpanded = Boolean(keyword) || expandedNoteBooks.has(bookSlug);
+      if (!bookExpanded) return '';
+      const chapterGrid = [...chapters.entries()].map(([chapter, items]) => {
+        const key = `${bookSlug}-${chapter}`;
+        const expanded = Boolean(keyword) || expandedNoteGroups.has(key);
+        return `
+          <button class="bible-library-card" type="button" data-action="toggle-note-group" data-group-key="${escapeHtml(key)}" aria-expanded="${expanded}">
+            <strong>${chapter}章</strong>
+            <small>${items.length} 条</small>
           </button>
-          <div class="bible-collapsible-group-content" data-note-group-content="${escapeHtml(key)}"${expanded ? '' : ' hidden'}>${itemsHtml}</div>
+        `;
+      }).join('');
+      const chapterEntries = [...chapters.entries()].map(([chapter, items]) => {
+        const key = `${bookSlug}-${chapter}`;
+        const expanded = Boolean(keyword) || expandedNoteGroups.has(key);
+        if (!expanded) return '';
+        const itemsHtml = items.map((item) => `
+          <button type="button" data-action="open-note" data-note-book="${item.book}" data-note-chapter="${item.chapter}" data-note-verse="${item.verse}">
+            <strong>${escapeHtml(book?.title ?? item.book)} ${item.chapter}:${item.verse}</strong>
+            <span>${escapeHtml(item.text)}</span>
+          </button>
+        `).join('');
+        return `<div class="bible-collapsible-group-content" data-note-group-content="${escapeHtml(key)}">${itemsHtml}</div>`;
+      }).join('');
+      return `
+        <section class="bible-library-branch" data-note-book="${escapeHtml(bookSlug)}">
+          <h4>${escapeHtml(book?.title ?? bookSlug)}</h4>
+          <div class="bible-library-grid">${chapterGrid}</div>
+          ${chapterEntries}
         </section>
       `;
     }).join('');
+
+    noteSectionList.innerHTML = `<div class="bible-library-grid">${bookGrid}</div>${branches}`;
+    updateLibrarySearchStatus();
   };
 
   const toggleReaderBookmarks = () => {
     if (!readerBookmarkToggle) return;
     const expanded = readerBookmarkToggle.getAttribute('aria-expanded') === 'true';
+    if (!expanded) renderBookmarks();
     readerBookmarkToggle.setAttribute('aria-expanded', String(!expanded));
-    if (readerBookmarkSearch) readerBookmarkSearch.hidden = expanded;
     bookmarkList.hidden = expanded;
   };
 
@@ -1238,11 +1425,24 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       }, ...state.bookmarks];
       persist('经文已收藏。');
     }
-    renderAll(verse);
+    const bookmarked = isBookmarked(sample.book, sample.chapter, verse);
+    const bookmarkButton = root.querySelector<HTMLButtonElement>(
+      `#${CSS.escape(verseKey(sample.book, sample.chapter, verse))} [data-action="toggle-bookmark"]`
+    );
+    if (bookmarkButton) {
+      const label = bookmarked ? '取消收藏' : '收藏';
+      bookmarkButton.textContent = bookmarked ? '★' : '☆';
+      bookmarkButton.title = label;
+      bookmarkButton.setAttribute('aria-label', label);
+    }
+    bookmarkTotal.textContent = `${state.bookmarks.length} 条`;
+    updateLibrarySearchStatus();
+    if (!bookmarkList.hidden || (bookmarkSectionList && bookmarkSectionList.offsetParent !== null)) {
+      renderBookmarks();
+    }
   };
 
-  const toggleReadVerse = async (verse: number, trigger: HTMLElement) => {
-    if (readingSavePending) return;
+  const toggleReadVerse = (verse: number, trigger: HTMLElement) => {
     if (!session) {
       setReadingSyncStatus('请先登录，阅读进度才会保存到云端。', 'error');
       notify('请先登录后再保存阅读进度。');
@@ -1261,42 +1461,18 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     if (nextRead) nextReadVerses.add(key);
     else nextReadVerses.delete(key);
 
-    readingSavePending = true;
-    root.querySelectorAll<HTMLButtonElement>('.bible-verse-read-action').forEach((button) => {
-      button.disabled = true;
-    });
-    setReadingSyncStatus('正在保存阅读进度…', 'saving');
-    state.updatedAt = nowIso();
-    try {
-      await syncCloudState(nextReadVerses);
-      const pageScrollX = window.scrollX;
-      const pageScrollY = window.scrollY;
-      const verseScrollTop = verseList.scrollTop;
-      readVerses = nextReadVerses;
-      const cached = cacheSyncedState();
-      const verseElement = root.querySelector<HTMLElement>(`#${CSS.escape(key)}`);
-      verseElement?.classList.toggle('is-read', nextRead);
-      trigger.setAttribute('aria-pressed', String(nextRead));
-      renderReadingProgress();
-      const chapterButton = chapterList.querySelector<HTMLButtonElement>(`[data-chapter="${currentChapter}"]`);
-      const chapterProgress = getProgressSummary(currentBook, currentChapter);
-      const chapterComplete = chapterProgress.total > 0 && chapterProgress.read >= chapterProgress.total;
-      chapterButton?.classList.toggle('is-complete', chapterComplete);
-      chapterButton?.setAttribute('aria-label', `${currentBookInfo().title} ${currentChapter}章${chapterComplete ? '，已读完' : ''}`);
-      window.setTimeout(() => {
-        window.scrollTo(pageScrollX, pageScrollY);
-        verseList.scrollTop = verseScrollTop;
-      }, 0);
-      if (!cached) notify('阅读进度已保存到云端，但本地缓存更新失败。');
-    } catch (error) {
-      markCloudSyncUnavailable(error);
-      notify('阅读进度未保存，请重试。');
-    } finally {
-      readingSavePending = false;
-      root.querySelectorAll<HTMLButtonElement>('.bible-verse-read-action').forEach((button) => {
-        button.disabled = false;
-      });
-    }
+    readVerses = nextReadVerses;
+    writeReadVerses(readVerses);
+    const verseElement = root.querySelector<HTMLElement>(`#${CSS.escape(key)}`);
+    verseElement?.classList.toggle('is-read', nextRead);
+    trigger.setAttribute('aria-pressed', String(nextRead));
+    updateReadingProgress();
+    const chapterButton = chapterList.querySelector<HTMLButtonElement>(`[data-chapter="${currentChapter}"]`);
+    const chapterProgress = getProgressSummary(currentBook, currentChapter);
+    const chapterComplete = chapterProgress.total > 0 && chapterProgress.read >= chapterProgress.total;
+    chapterButton?.classList.toggle('is-complete', chapterComplete);
+    chapterButton?.setAttribute('aria-label', `${currentBookInfo().title} ${currentChapter}章${chapterComplete ? '，已读完' : ''}`);
+    persist();
   };
 
   const openNoteEditor = (book: string, chapter: number, verse: number) => {
@@ -1470,6 +1646,32 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     if (verse) openNoteEditor(currentBook, currentChapter, verse);
   });
 
+  verseList.addEventListener('pointerover', (event) => {
+    if (event.pointerType && event.pointerType !== 'mouse') return;
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const verseElement = target.closest<HTMLElement>('.bible-verse[data-verse]');
+    if (!verseElement || (event.relatedTarget instanceof Node && verseElement.contains(event.relatedTarget))) return;
+    hideTranslationPopover();
+    translationHoverTimer = window.setTimeout(() => showTranslationPopover(verseElement), 2000);
+  });
+
+  verseList.addEventListener('pointerout', (event) => {
+    if (event.pointerType && event.pointerType !== 'mouse') return;
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const verseElement = target.closest<HTMLElement>('.bible-verse[data-verse]');
+    if (!verseElement || (event.relatedTarget instanceof Node && verseElement.contains(event.relatedTarget))) return;
+    hideTranslationPopover();
+  });
+
+  verseList.addEventListener('scroll', () => {
+    if (activeTranslationVerse) positionTranslationPopover(activeTranslationVerse);
+  }, { passive: true });
+  window.addEventListener('resize', () => {
+    if (activeTranslationVerse) positionTranslationPopover(activeTranslationVerse);
+  });
+
   root.addEventListener('click', (event) => {
     const target = event.target;
     if (!(target instanceof Element)) return;
@@ -1511,11 +1713,23 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     if (trigger.dataset.action === 'export-bookmarks') exportBookmarks();
     if (trigger.dataset.action === 'export-notes') exportNotes();
     if (trigger.dataset.action === 'toggle-reading-theme') toggleReadingTheme();
+    if (trigger.dataset.action === 'toggle-bookmark-book' && trigger.dataset.bookKey) {
+      const key = trigger.dataset.bookKey;
+      if (expandedBookmarkBooks.has(key)) expandedBookmarkBooks.delete(key);
+      else expandedBookmarkBooks.add(key);
+      renderBookmarks();
+    }
     if (trigger.dataset.action === 'toggle-bookmark-group' && trigger.dataset.groupKey) {
       const key = trigger.dataset.groupKey;
       if (expandedBookmarkGroups.has(key)) expandedBookmarkGroups.delete(key);
       else expandedBookmarkGroups.add(key);
       renderBookmarks();
+    }
+    if (trigger.dataset.action === 'toggle-note-book' && trigger.dataset.bookKey) {
+      const key = trigger.dataset.bookKey;
+      if (expandedNoteBooks.has(key)) expandedNoteBooks.delete(key);
+      else expandedNoteBooks.add(key);
+      renderNotes();
     }
     if (trigger.dataset.action === 'toggle-note-group' && trigger.dataset.groupKey) {
       const key = trigger.dataset.groupKey;
@@ -1564,13 +1778,9 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   });
 
   searchInput.addEventListener('input', runSearch);
-  bookmarkSearchInputs.forEach((input) => {
-    input.addEventListener('input', () => {
-      bookmarkSearchInputs.forEach((nextInput) => {
-        if (nextInput !== input) nextInput.value = input.value;
-      });
-      renderBookmarks();
-    });
+  librarySearchInput.addEventListener('input', () => {
+    renderBookmarks();
+    renderNotes();
   });
   dailySteps.forEach((input) => {
     input.addEventListener('change', () => {

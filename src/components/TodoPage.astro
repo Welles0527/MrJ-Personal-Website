@@ -26,6 +26,16 @@ const navItems: NavItem[] = [
     <link rel="icon" type="image/svg+xml" href={`${basePath}favicon.svg`} />
     <link rel="shortcut icon" type="image/svg+xml" href={`${basePath}favicon.svg`} />
     <title>To-Do-List</title>
+    <script is:inline>
+      (() => {
+        try {
+          const savedTheme = localStorage.getItem('mywebsite.todo-theme.v1');
+          document.documentElement.dataset.todoTheme = savedTheme === 'dark' ? 'dark' : 'light';
+        } catch {
+          document.documentElement.dataset.todoTheme = 'light';
+        }
+      })();
+    </script>
   </head>
   <body>
     <div class="site-update-notice" role="status" aria-live="polite" data-site-update-notice hidden>
@@ -88,7 +98,9 @@ const navItems: NavItem[] = [
             <button class="todo-account-button" type="button" data-action="open-login" data-login-open hidden>登录</button>
             <button class="todo-account-button" type="button" data-action="sign-out" data-sign-out hidden>退出登录</button>
             <span class="todo-utility" aria-label="搜索（视觉图标）" title="搜索">⌕</span>
-            <span class="todo-utility" aria-label="设置（视觉图标）" title="设置">⚙</span>
+            <button class="todo-utility todo-theme-toggle" type="button" data-theme-toggle aria-label="切换深色皮肤" title="切换深色皮肤" aria-pressed="false">
+              <span data-theme-icon aria-hidden="true">☾</span>
+            </button>
             <span class="todo-utility" aria-label="提醒（视觉图标）" title="提醒">♧</span>
             <button class="todo-primary-button" type="button" data-action="open-create">
               <span aria-hidden="true">＋</span>
@@ -231,6 +243,18 @@ const navItems: NavItem[] = [
         </div>
       </dialog>
 
+      <dialog class="todo-modal todo-export-reminder-modal" aria-labelledby="todo-export-reminder-title" data-export-reminder-modal>
+        <div class="todo-delete-content">
+          <p class="todo-kicker">每周备份提醒</p>
+          <h2 id="todo-export-reminder-title">该导出本周待办了</h2>
+          <p>Excel 备份将包含个人待办总表、AI灵感-生活、AI灵感-投资和每周必做四个工作表。</p>
+          <div class="todo-modal-actions">
+            <button class="todo-secondary-button" type="button" data-action="dismiss-export-reminder">本周不再提醒</button>
+            <button class="todo-primary-button" type="button" data-action="export-reminder-now">立即导出</button>
+          </div>
+        </div>
+      </dialog>
+
       <dialog class="todo-modal todo-login-modal" aria-labelledby="todo-login-title" data-login-modal>
         <form class="todo-form" data-login-form novalidate>
           <div class="todo-modal-header">
@@ -268,6 +292,31 @@ const navItems: NavItem[] = [
 
       const todoRoot = document.querySelector<HTMLElement>('[data-todo-app]');
       if (todoRoot) mountTodoWorkspace(todoRoot);
+
+      const themeKey = 'mywebsite.todo-theme.v1';
+      const themeToggle = document.querySelector<HTMLButtonElement>('[data-theme-toggle]');
+      const themeIcon = themeToggle?.querySelector<HTMLElement>('[data-theme-icon]');
+      const applyTheme = (theme: 'light' | 'dark') => {
+        document.documentElement.dataset.todoTheme = theme;
+        if (!themeToggle || !themeIcon) return;
+        const isDark = theme === 'dark';
+        const label = isDark ? '切换浅色皮肤' : '切换深色皮肤';
+        themeIcon.textContent = isDark ? '☀' : '☾';
+        themeToggle.setAttribute('aria-label', label);
+        themeToggle.setAttribute('title', label);
+        themeToggle.setAttribute('aria-pressed', String(isDark));
+      };
+
+      applyTheme(document.documentElement.dataset.todoTheme === 'dark' ? 'dark' : 'light');
+      themeToggle?.addEventListener('click', () => {
+        const nextTheme = document.documentElement.dataset.todoTheme === 'dark' ? 'light' : 'dark';
+        applyTheme(nextTheme);
+        try {
+          localStorage.setItem(themeKey, nextTheme);
+        } catch {
+          // Theme switching still works for the current page when storage is unavailable.
+        }
+      });
     </script>
 
     <script>
@@ -500,8 +549,12 @@ const navItems: NavItem[] = [
       .todo-sidebar-lanes .todo-overview-empty { color: #f2d8a9; }
 
       .todo-sidebar-lanes .todo-overview-list {
-        max-height: 22.5rem;
+        max-height: none;
+        overflow-y: visible;
+        scrollbar-width: none;
       }
+
+      .todo-sidebar-lanes .todo-overview-list::-webkit-scrollbar { display: none; }
 
       .todo-sidebar-lanes .todo-overview-item {
         border-color: rgba(255, 214, 144, 0.14);
@@ -512,10 +565,18 @@ const navItems: NavItem[] = [
       .todo-sidebar-lanes .todo-overview-note { color: #e4c79b; }
 
       .todo-sidebar-lanes .todo-overview-actions button,
+      .todo-sidebar-lanes .todo-overview-menu-summary,
+      .todo-sidebar-lanes .todo-overview-menu-panel button,
       .todo-sidebar-lanes .todo-lane-add {
         border-color: rgba(255, 214, 144, 0.18);
         background: rgba(255, 232, 186, 0.1);
         color: #f5d59b;
+      }
+
+      .todo-sidebar-lanes .todo-overview-menu-panel {
+        border-color: rgba(255, 214, 144, 0.2);
+        background: #4c260d;
+        box-shadow: 0 10px 24px rgba(25, 10, 1, 0.34);
       }
 
       .todo-sidebar-mail {
@@ -1028,6 +1089,34 @@ const navItems: NavItem[] = [
 
       .todo-overview-item-main { min-width: 0; }
 
+      .todo-overview-weekly-list {
+        gap: 0.34rem;
+      }
+
+      .todo-overview-item.is-inline-category {
+        align-items: center;
+        padding: 0.42rem 0.5rem;
+        background: rgba(255, 252, 244, 0.8);
+      }
+
+      .todo-overview-title-line {
+        display: grid;
+        grid-template-columns: 3.25rem minmax(0, 1fr);
+        gap: 0.56rem;
+        align-items: center;
+        min-width: 0;
+      }
+
+      .todo-overview-title-line .todo-tag {
+        justify-self: start;
+        white-space: nowrap;
+      }
+
+      .todo-overview-item.is-inline-category .todo-overview-note,
+      .todo-overview-item.is-inline-category .todo-overview-meta {
+        margin-left: 3.81rem;
+      }
+
       .todo-overview-title {
         margin: 0;
         color: #2f1a0c;
@@ -1056,6 +1145,8 @@ const navItems: NavItem[] = [
       }
 
       .todo-overview-actions button,
+      .todo-overview-menu-summary,
+      .todo-overview-menu-panel button,
       .todo-lane-add {
         display: grid;
         place-items: center;
@@ -1072,9 +1163,48 @@ const navItems: NavItem[] = [
         font-size: 0.6rem;
       }
 
-      .todo-overview-actions button:disabled {
+      .todo-overview-actions button:disabled,
+      .todo-overview-menu-panel button:disabled {
         cursor: not-allowed;
         opacity: 0.36;
+      }
+
+      .todo-overview-menu {
+        position: relative;
+        align-self: start;
+      }
+
+      .todo-overview-menu-summary {
+        width: 1.58rem;
+        height: 1.24rem;
+        cursor: pointer;
+        list-style: none;
+        font-size: 0.86rem;
+        line-height: 1;
+      }
+
+      .todo-overview-menu-summary::-webkit-details-marker { display: none; }
+
+      .todo-overview-menu-panel {
+        position: absolute;
+        z-index: 6;
+        top: calc(100% + 0.2rem);
+        right: 0;
+        display: flex;
+        gap: 0.14rem;
+        border: 1px solid rgba(122, 76, 34, 0.16);
+        border-radius: 0.44rem;
+        padding: 0.2rem;
+        background: #fff5e4;
+        box-shadow: 0 9px 20px rgba(83, 45, 13, 0.18);
+      }
+
+      .todo-overview-menu:not([open]) .todo-overview-menu-panel { display: none; }
+
+      .todo-overview-menu-panel button {
+        width: 1.34rem;
+        height: 1.34rem;
+        font-size: 0.62rem;
       }
 
       .todo-lane-add {
@@ -1585,6 +1715,395 @@ const navItems: NavItem[] = [
 
       .todo-backdrop { display: none; }
       .todo-migration-frame { position: fixed; width: 1px; height: 1px; border: 0; opacity: 0; pointer-events: none; }
+
+      html[data-todo-theme="dark"],
+      html[data-todo-theme="dark"] body {
+        background: #172022;
+        color-scheme: dark;
+      }
+
+      html[data-todo-theme="dark"] .todo-shell {
+        --espresso: #101719;
+        --leather: #151e20;
+        --leather-soft: #334043;
+        --coffee: #c2834f;
+        --coffee-dark: #91572f;
+        --paper: #222c2e;
+        --paper-2: #293436;
+        --paper-3: #303b3d;
+        --line: rgba(218, 229, 226, 0.12);
+        --muted: #9aa8a4;
+        --shadow: 0 18px 44px rgba(3, 8, 9, 0.28);
+        --category-all: #d09868;
+        --category-work: #b39ade;
+        --category-study: #f07e70;
+        --category-life: #7eb7e4;
+        --category-health: #78bd8c;
+        --category-other: #e2b25f;
+        --important-star: #ff6c5f;
+        --important-text: #e9efec;
+        background:
+          linear-gradient(112deg, rgba(255, 255, 255, 0.018), transparent 42%),
+          #172022;
+        color: #e8eeeb;
+      }
+
+      html[data-todo-theme="dark"] .todo-shell::before {
+        background-image: radial-gradient(rgba(223, 235, 232, 0.055) 0.55px, transparent 0.55px);
+        opacity: 0.34;
+      }
+
+      html[data-todo-theme="dark"] .todo-sidebar {
+        border-color: rgba(199, 216, 212, 0.09);
+        background:
+          repeating-linear-gradient(30deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 11px),
+          #11191b;
+        color: #dfe7e4;
+        box-shadow: 8px 0 26px rgba(3, 8, 9, 0.32);
+      }
+
+      html[data-todo-theme="dark"] .todo-brand {
+        border-bottom-color: rgba(218, 229, 226, 0.1);
+      }
+
+      html[data-todo-theme="dark"] .todo-brand-mark {
+        background: rgba(222, 232, 229, 0.07);
+        color: #d9b089;
+        box-shadow: inset 0 0 0 1px rgba(218, 229, 226, 0.12);
+      }
+
+      html[data-todo-theme="dark"] .todo-brand strong,
+      html[data-todo-theme="dark"] .todo-nav a,
+      html[data-todo-theme="dark"] .todo-nav button,
+      html[data-todo-theme="dark"] .todo-nav > span {
+        color: #e9efec;
+      }
+
+      html[data-todo-theme="dark"] .todo-brand div span {
+        color: #879693;
+      }
+
+      html[data-todo-theme="dark"] .todo-nav .is-active {
+        border-color: rgba(215, 228, 224, 0.12);
+        background: #273235;
+        color: #f5f8f7;
+        box-shadow: inset 4px 0 0 #c48551;
+      }
+
+      html[data-todo-theme="dark"] .todo-nav-icon {
+        color: #cf8f59;
+      }
+
+      html[data-todo-theme="dark"] .todo-sidebar-lanes .todo-overview-lane {
+        border-color: rgba(218, 229, 226, 0.1);
+        background: #182224;
+      }
+
+      html[data-todo-theme="dark"] .todo-sidebar-lanes .todo-overview-lane-title,
+      html[data-todo-theme="dark"] .todo-sidebar-lanes .todo-overview-title {
+        color: #edf2f0;
+      }
+
+      html[data-todo-theme="dark"] .todo-sidebar-lanes .todo-overview-lane-count,
+      html[data-todo-theme="dark"] .todo-sidebar-lanes .todo-overview-empty,
+      html[data-todo-theme="dark"] .todo-sidebar-lanes .todo-overview-note {
+        color: #99a7a3;
+      }
+
+      html[data-todo-theme="dark"] .todo-sidebar-lanes .todo-overview-item {
+        border-color: rgba(218, 229, 226, 0.09);
+        background: #222d2f;
+      }
+
+      html[data-todo-theme="dark"] .todo-sidebar-lanes .todo-overview-actions button,
+      html[data-todo-theme="dark"] .todo-sidebar-lanes .todo-overview-menu-summary,
+      html[data-todo-theme="dark"] .todo-sidebar-lanes .todo-overview-menu-panel button,
+      html[data-todo-theme="dark"] .todo-sidebar-lanes .todo-lane-add {
+        border-color: rgba(218, 229, 226, 0.12);
+        background: #2a3638;
+        color: #d7dfdc;
+      }
+
+      html[data-todo-theme="dark"] .todo-sidebar-lanes .todo-overview-menu-panel {
+        border-color: rgba(218, 229, 226, 0.12);
+        background: #1b2527;
+        box-shadow: 0 12px 28px rgba(2, 6, 7, 0.38);
+      }
+
+      html[data-todo-theme="dark"] .todo-sidebar-mail {
+        border-color: rgba(218, 229, 226, 0.11);
+        color: #768682;
+      }
+
+      html[data-todo-theme="dark"] .todo-kicker,
+      html[data-todo-theme="dark"] .todo-account,
+      html[data-todo-theme="dark"] .todo-heading h1,
+      html[data-todo-theme="dark"] .todo-section-label,
+      html[data-todo-theme="dark"] .todo-section-label small {
+        color: #e9efec;
+      }
+
+      html[data-todo-theme="dark"] .todo-title-cup {
+        background: #263133;
+        box-shadow: 0 8px 18px rgba(2, 7, 8, 0.28);
+      }
+
+      html[data-todo-theme="dark"] .todo-last-sync {
+        color: #91a09c;
+      }
+
+      html[data-todo-theme="dark"] .todo-account-button,
+      html[data-todo-theme="dark"] .todo-utility,
+      html[data-todo-theme="dark"] .todo-data-button {
+        border-color: rgba(218, 229, 226, 0.11);
+        background: #222d2f;
+        color: #dfe6e3;
+        box-shadow: 0 8px 18px rgba(2, 7, 8, 0.18);
+      }
+
+      html[data-todo-theme="dark"] .todo-theme-toggle[aria-pressed="true"] {
+        border-color: rgba(213, 154, 99, 0.38);
+        background: #3a3029;
+        color: #f1bd8a;
+      }
+
+      html[data-todo-theme="dark"] .todo-primary-button {
+        border-color: rgba(223, 173, 126, 0.28);
+        background: #a9663d;
+        color: #fff5eb;
+        box-shadow: 0 12px 24px rgba(4, 9, 10, 0.3);
+      }
+
+      html[data-todo-theme="dark"] .todo-secondary-button {
+        border-color: var(--line);
+        background: #293436;
+        color: #e5ebe8;
+      }
+
+      html[data-todo-theme="dark"] .todo-filter {
+        border-color: color-mix(in srgb, var(--filter-color) 34%, rgba(218, 229, 226, 0.12));
+        background: color-mix(in srgb, var(--filter-color) 14%, #222d2f);
+        color: color-mix(in srgb, var(--filter-color) 82%, white);
+        box-shadow: none;
+      }
+
+      html[data-todo-theme="dark"] .todo-filter.is-active {
+        border-color: color-mix(in srgb, var(--filter-color) 76%, white);
+        background: color-mix(in srgb, var(--filter-color) 72%, #222d2f);
+        color: #fbfdfc;
+        outline-color: color-mix(in srgb, var(--filter-color) 40%, transparent);
+      }
+
+      html[data-todo-theme="dark"] .todo-planner-card,
+      html[data-todo-theme="dark"] .todo-day-column {
+        border-color: rgba(218, 229, 226, 0.1);
+        background: #202a2c;
+        box-shadow: var(--shadow);
+      }
+
+      html[data-todo-theme="dark"] .todo-calendar-panel {
+        border-color: rgba(218, 229, 226, 0.09);
+      }
+
+      html[data-todo-theme="dark"] .todo-select-row select,
+      html[data-todo-theme="dark"] .todo-month-day,
+      html[data-todo-theme="dark"] .todo-day-overview {
+        color: #e5ece9;
+      }
+
+      html[data-todo-theme="dark"] .todo-weekday-row,
+      html[data-todo-theme="dark"] .todo-day-name,
+      html[data-todo-theme="dark"] .todo-day-count,
+      html[data-todo-theme="dark"] .todo-section-label small {
+        color: #9ba9a5;
+      }
+
+      html[data-todo-theme="dark"] .todo-month-day.is-outside {
+        color: #53615e;
+      }
+
+      html[data-todo-theme="dark"] .todo-month-day:hover,
+      html[data-todo-theme="dark"] .todo-day-overview:hover {
+        background: rgba(218, 229, 226, 0.06);
+      }
+
+      html[data-todo-theme="dark"] .todo-month-day.is-in-week::before {
+        background: rgba(199, 139, 83, 0.12);
+      }
+
+      html[data-todo-theme="dark"] .todo-month-day.is-selected span {
+        background: #b86f42;
+        color: #fff8f1;
+        box-shadow: 0 5px 12px rgba(3, 8, 9, 0.34);
+      }
+
+      html[data-todo-theme="dark"] .todo-day-overview.is-selected,
+      html[data-todo-theme="dark"] .todo-day-overview.is-today {
+        border-color: rgba(205, 145, 90, 0.36);
+        background: #293436;
+        box-shadow: inset 0 -4px 0 rgba(194, 126, 72, 0.14);
+      }
+
+      html[data-todo-theme="dark"] .todo-day-overview.is-weekend .todo-day-name,
+      html[data-todo-theme="dark"] .todo-day-column.is-weekend .todo-column-name {
+        color: #e28972;
+      }
+
+      html[data-todo-theme="dark"] .todo-day-dot {
+        background: #c88751;
+      }
+
+      html[data-todo-theme="dark"] .todo-overview-lane {
+        border-color: rgba(218, 229, 226, 0.09);
+        background: #1c2628;
+      }
+
+      html[data-todo-theme="dark"] .todo-overview-lane-title,
+      html[data-todo-theme="dark"] .todo-overview-title,
+      html[data-todo-theme="dark"] .todo-column-name,
+      html[data-todo-theme="dark"] .todo-item-title {
+        color: #e9efec;
+      }
+
+      html[data-todo-theme="dark"] .todo-overview-lane-count,
+      html[data-todo-theme="dark"] .todo-overview-category-count,
+      html[data-todo-theme="dark"] .todo-overview-note,
+      html[data-todo-theme="dark"] .todo-column-date,
+      html[data-todo-theme="dark"] .todo-item-note,
+      html[data-todo-theme="dark"] .todo-empty-day,
+      html[data-todo-theme="dark"] .todo-overview-empty {
+        color: #93a19d;
+      }
+
+      html[data-todo-theme="dark"] .todo-overview-item,
+      html[data-todo-theme="dark"] .todo-overview-item.is-inline-category,
+      html[data-todo-theme="dark"] .todo-item {
+        border-color: rgba(218, 229, 226, 0.09);
+        background: #283335;
+      }
+
+      html[data-todo-theme="dark"] .todo-overview-actions button,
+      html[data-todo-theme="dark"] .todo-overview-menu-summary,
+      html[data-todo-theme="dark"] .todo-overview-menu-panel button,
+      html[data-todo-theme="dark"] .todo-lane-add {
+        border-color: rgba(218, 229, 226, 0.11);
+        background: #303c3e;
+        color: #cbd5d1;
+      }
+
+      html[data-todo-theme="dark"] .todo-overview-menu-panel {
+        border-color: rgba(218, 229, 226, 0.12);
+        background: #1b2527;
+        box-shadow: 0 10px 24px rgba(2, 6, 7, 0.36);
+      }
+
+      html[data-todo-theme="dark"] .todo-day-column.is-selected,
+      html[data-todo-theme="dark"] .todo-day-column.is-today {
+        border-color: rgba(201, 139, 82, 0.28);
+        background: #242f31;
+        box-shadow: inset 0 -5px 0 rgba(194, 126, 72, 0.12);
+      }
+
+      html[data-todo-theme="dark"] .todo-checkbox {
+        accent-color: #c88751;
+      }
+
+      html[data-todo-theme="dark"] .todo-item.is-completed .todo-item-title {
+        color: #778581;
+      }
+
+      html[data-todo-theme="dark"] .todo-tag.work { background: color-mix(in srgb, var(--category-work) 20%, #263133); color: #c8b5ee; }
+      html[data-todo-theme="dark"] .todo-tag.study { background: color-mix(in srgb, var(--category-study) 18%, #263133); color: #f39a90; }
+      html[data-todo-theme="dark"] .todo-tag.life { background: color-mix(in srgb, var(--category-life) 18%, #263133); color: #9bc9ed; }
+      html[data-todo-theme="dark"] .todo-tag.health { background: color-mix(in srgb, var(--category-health) 18%, #263133); color: #99d1a8; }
+      html[data-todo-theme="dark"] .todo-tag.other { background: color-mix(in srgb, var(--category-other) 18%, #263133); color: #edc77d; }
+      html[data-todo-theme="dark"] .todo-tag.done { background: #314538; color: #a9d2b4; }
+
+      html[data-todo-theme="dark"] .todo-tag.important {
+        background: rgba(255, 108, 95, 0.08);
+        color: #e9efec;
+      }
+
+      html[data-todo-theme="dark"] .todo-item-actions button {
+        color: #8f9e9a;
+      }
+
+      html[data-todo-theme="dark"] .todo-item-actions button:hover,
+      html[data-todo-theme="dark"] .todo-add-bottom:hover {
+        background: #354144;
+        color: #edf2f0;
+      }
+
+      html[data-todo-theme="dark"] .todo-add-bottom {
+        border-color: rgba(218, 229, 226, 0.09);
+        background: #263133;
+        color: #a4b0ad;
+      }
+
+      html[data-todo-theme="dark"] .todo-modal {
+        border-color: rgba(218, 229, 226, 0.12);
+        background: #202a2c;
+        color: #e9efec;
+        box-shadow: 0 28px 90px rgba(2, 6, 7, 0.58);
+      }
+
+      html[data-todo-theme="dark"] .todo-modal::backdrop {
+        background: rgba(4, 9, 10, 0.7);
+      }
+
+      html[data-todo-theme="dark"] .todo-form,
+      html[data-todo-theme="dark"] .todo-delete-content {
+        background: #202a2c;
+      }
+
+      html[data-todo-theme="dark"] .todo-dialog-close {
+        border-color: rgba(218, 229, 226, 0.12);
+        background: #2b3638;
+        color: #cbd5d1;
+      }
+
+      html[data-todo-theme="dark"] .todo-field,
+      html[data-todo-theme="dark"] .todo-important-toggle {
+        color: #cbd5d1;
+      }
+
+      html[data-todo-theme="dark"] .todo-field input,
+      html[data-todo-theme="dark"] .todo-field select,
+      html[data-todo-theme="dark"] .todo-field textarea {
+        border-color: rgba(218, 229, 226, 0.12);
+        background: #172123;
+        color: #edf2f0;
+        outline-color: #c88751;
+      }
+
+      html[data-todo-theme="dark"] .todo-field input::placeholder,
+      html[data-todo-theme="dark"] .todo-field textarea::placeholder {
+        color: #6f7e7a;
+      }
+
+      html[data-todo-theme="dark"] .todo-trash-empty,
+      html[data-todo-theme="dark"] .todo-trash-item {
+        border-color: rgba(218, 229, 226, 0.1);
+        background: #283335;
+        color: #cbd5d1;
+      }
+
+      html[data-todo-theme="dark"] .todo-trash-title {
+        color: #edf2f0;
+      }
+
+      html[data-todo-theme="dark"] .todo-trash-meta {
+        color: #91a09c;
+      }
+
+      html[data-todo-theme="dark"] .todo-toast,
+      html[data-todo-theme="dark"] .site-update-notice {
+        border-color: rgba(218, 229, 226, 0.14);
+        background: #101719;
+        color: #edf2f0;
+        box-shadow: 0 14px 34px rgba(2, 6, 7, 0.46);
+      }
+
       .sr-only {
         position: absolute;
         width: 1px;

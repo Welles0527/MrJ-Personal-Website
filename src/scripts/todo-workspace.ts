@@ -25,6 +25,7 @@ type TodoState = {
 };
 
 const STORAGE_KEY = 'mywebsite.weekly-todos.v1';
+const EXPORT_REMINDER_KEY = 'mywebsite.todo-export-reminder.v1';
 const LOCAL_MIGRATION_ORIGIN = 'http://localhost:4321';
 const LOCAL_MIGRATION_PATH = '/officialwebsite/topics/space/planning/todo';
 const OFFICIAL_WEBSITE_ORIGIN = 'https://www.magicj.cn';
@@ -37,7 +38,8 @@ const categories: Array<{ value: TodoCategory; label: string }> = [
 ];
 const placements: Array<{ value: TodoPlacement; label: string }> = [
   { value: 'upcoming', label: '近期待办' },
-  { value: 'ai', label: 'AI灵感' },
+  { value: 'ai-life', label: 'AI灵感-生活' },
+  { value: 'ai-investing', label: 'AI灵感-投资' },
   { value: 'weekly', label: '每周必做' }
 ];
 
@@ -110,7 +112,9 @@ const normalizeTodo = (value: unknown): Todo | null => {
     title: item.title,
     date,
     category: item.category,
-    placement: isPlacement(item.placement) ? item.placement : 'upcoming',
+    placement: item.placement === 'ai'
+      ? 'ai-life'
+      : isPlacement(item.placement) ? item.placement : 'upcoming',
     sortOrder: typeof item.sortOrder === 'number' ? item.sortOrder : timeValue(item.createdAt),
     important: item.important,
     completed: item.completed,
@@ -200,7 +204,6 @@ export function mountTodoWorkspace(root: HTMLElement) {
   const sidebarLanes = getElement<HTMLElement>('[data-sidebar-lanes]');
   const mobileDays = getElement<HTMLElement>('[data-mobile-days]');
   const board = getElement<HTMLElement>('[data-weekly-board]');
-  const todayPanel = root.querySelector<HTMLElement>('[data-today-panel]');
   const stats = getElement<HTMLElement>('[data-weekly-stats]');
   const weekRange = getElement<HTMLElement>('[data-week-range]');
   const yearSelect = getElement<HTMLSelectElement>('[data-control="year"]');
@@ -213,6 +216,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
   const deleteModal = getElement<HTMLDialogElement>('[data-delete-modal]');
   const trashModal = getElement<HTMLDialogElement>('[data-trash-modal]');
   const migrationModal = getElement<HTMLDialogElement>('[data-migration-modal]');
+  const exportReminderModal = getElement<HTMLDialogElement>('[data-export-reminder-modal]');
   const loginModal = getElement<HTMLDialogElement>('[data-login-modal]');
   const todoForm = getElement<HTMLFormElement>('[data-todo-form]');
   const loginForm = getElement<HTMLFormElement>('[data-login-form]');
@@ -246,6 +250,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
   let pendingMigrationTodos: Todo[] | null = null;
   let migrationFrame: HTMLIFrameElement | null = null;
   let migrationTimer: number | undefined;
+  let exportReminderTimer: number | undefined;
   let cloudSession: CloudSession | null = null;
   let completeEmailSignUp: ((verificationCode: string) => Promise<CloudSession>) | null = null;
   let draggedTodoId: string | null = null;
@@ -380,27 +385,53 @@ export function mountTodoWorkspace(root: HTMLElement) {
     }).join('');
   };
 
-  const renderOverviewTodo = (todo: Todo, index: number, total: number, options: { showMeta?: boolean } = {}) => `
-    <li class="todo-overview-item ${todo.completed ? 'is-completed' : ''}" draggable="true" data-todo-id="${todo.id}" data-overview-drop-id="${todo.id}" title="双击编辑">
+  const renderOverviewActionButtons = (todo: Todo, index: number, total: number) => `
+    <button type="button" data-action="move-overview-up" data-todo-id="${todo.id}" aria-label="上移：${escapeHtml(todo.title)}" title="上移" ${index === 0 ? 'disabled' : ''}>↑</button>
+    <button type="button" data-action="move-overview-down" data-todo-id="${todo.id}" aria-label="下移：${escapeHtml(todo.title)}" title="下移" ${index === total - 1 ? 'disabled' : ''}>↓</button>
+    <button type="button" data-action="edit-todo" data-todo-id="${todo.id}" aria-label="编辑：${escapeHtml(todo.title)}" title="编辑"><span aria-hidden="true">✎</span></button>
+    <button type="button" data-action="ask-delete" data-todo-id="${todo.id}" aria-label="删除：${escapeHtml(todo.title)}" title="删除"><span aria-hidden="true">×</span></button>`;
+
+  type OverviewTodoOptions = {
+    showMeta?: boolean;
+    showCategory?: boolean;
+    showCompleted?: boolean;
+    inlineCategory?: boolean;
+    compactActions?: boolean;
+  };
+
+  const renderOverviewMeta = (todo: Todo, options: OverviewTodoOptions) => {
+    if (!options.showMeta) return '';
+    const tags = [
+      options.showCategory === false ? '' : `<span class="todo-tag ${todo.category}">${categoryLabel(todo.category)}</span>`,
+      todo.important ? '<span class="todo-tag important"><span class="todo-important-star" aria-hidden="true">★</span>重要</span>' : '',
+      options.showCompleted === false || !todo.completed ? '' : '<span class="todo-tag done">已完成</span>'
+    ].filter(Boolean).join('');
+    return tags ? `<div class="todo-overview-meta">${tags}</div>` : '';
+  };
+
+  const renderOverviewTodo = (
+    todo: Todo,
+    index: number,
+    total: number,
+    options: OverviewTodoOptions = {}
+  ) => `
+    <li class="todo-overview-item ${todo.completed ? 'is-completed' : ''} ${options.inlineCategory ? 'is-inline-category' : ''}" draggable="true" data-todo-id="${todo.id}" data-overview-drop-id="${todo.id}" title="双击编辑">
       <div class="todo-overview-item-main">
-        <p class="todo-overview-title">${escapeHtml(todo.title)}</p>
-        ${todo.note ? `<p class="todo-overview-note">${escapeHtml(todo.note)}</p>` : ''}
-        ${options.showMeta ? `<div class="todo-overview-meta">
+        ${options.inlineCategory ? `<div class="todo-overview-title-line">
           <span class="todo-tag ${todo.category}">${categoryLabel(todo.category)}</span>
-          ${todo.important ? '<span class="todo-tag important"><span class="todo-important-star" aria-hidden="true">★</span>重要</span>' : ''}
-          ${todo.completed ? '<span class="todo-tag done">已完成</span>' : ''}
-        </div>` : ''}
+          <p class="todo-overview-title">${escapeHtml(todo.title)}</p>
+        </div>` : `<p class="todo-overview-title">${escapeHtml(todo.title)}</p>`}
+        ${todo.note ? `<p class="todo-overview-note">${escapeHtml(todo.note)}</p>` : ''}
+        ${renderOverviewMeta(todo, options)}
       </div>
-      <div class="todo-overview-actions">
-        <button type="button" data-action="move-overview-up" data-todo-id="${todo.id}" aria-label="上移：${escapeHtml(todo.title)}" title="上移" ${index === 0 ? 'disabled' : ''}>↑</button>
-        <button type="button" data-action="move-overview-down" data-todo-id="${todo.id}" aria-label="下移：${escapeHtml(todo.title)}" title="下移" ${index === total - 1 ? 'disabled' : ''}>↓</button>
-        <button type="button" data-action="edit-todo" data-todo-id="${todo.id}" aria-label="编辑：${escapeHtml(todo.title)}" title="编辑"><span aria-hidden="true">✎</span></button>
-        <button type="button" data-action="ask-delete" data-todo-id="${todo.id}" aria-label="删除：${escapeHtml(todo.title)}" title="删除"><span aria-hidden="true">×</span></button>
-      </div>
+      ${options.compactActions ? `<details class="todo-overview-menu">
+        <summary class="todo-overview-menu-summary" aria-label="显示${escapeHtml(todo.title)}的操作" title="更多操作"><span aria-hidden="true">…</span></summary>
+        <div class="todo-overview-menu-panel" role="menu">${renderOverviewActionButtons(todo, index, total)}</div>
+      </details>` : `<div class="todo-overview-actions">${renderOverviewActionButtons(todo, index, total)}</div>`}
     </li>`;
 
   const renderPlacementLanes = () => {
-    const sidebarPlacements = placements.filter((placement) => placement.value === 'ai' || placement.value === 'weekly');
+    const sidebarPlacements = placements.filter((placement) => placement.value === 'ai-investing' || placement.value === 'ai-life');
     sidebarLanes.innerHTML = sidebarPlacements.map((placement) => {
       const todos = filterTodos(allTodosForPlacement(placement.value));
       return `<section class="todo-overview-lane" aria-label="${placement.label}" data-drop-placement="${placement.value}">
@@ -411,23 +442,28 @@ export function mountTodoWorkspace(root: HTMLElement) {
           </div>
           <button class="todo-lane-add" type="button" data-action="open-create" data-placement="${placement.value}" aria-label="新增${placement.label}待办">＋</button>
         </header>
-        ${todos.length ? `<ul class="todo-overview-list">${todos.map((todo, index) => renderOverviewTodo(todo, index, todos.length)).join('')}</ul>` : '<p class="todo-overview-empty">暂无待办</p>'}
+        ${todos.length ? `<ul class="todo-overview-list">${todos.map((todo, index) => renderOverviewTodo(todo, index, todos.length, { compactActions: true })).join('')}</ul>` : '<p class="todo-overview-empty">暂无待办</p>'}
       </section>`;
     }).join('');
   };
 
   const renderOverviewLanes = () => {
-    const todayKey = toDateKey(currentDate);
-    const todayTodos = filterTodos(allTodosForDateKey(todayKey));
-    overviewLanes.innerHTML = `<section class="todo-overview-lane todo-today-overview-lane" aria-label="今日待办" data-drop-date="${todayKey}">
+    const weeklyTodos = filterTodos(allTodosForPlacement('weekly'));
+    overviewLanes.innerHTML = `<section class="todo-overview-lane" aria-label="每周必做" data-drop-placement="weekly">
       <header class="todo-overview-lane-header">
         <div>
-          <h3 class="todo-overview-lane-title">今日待办</h3>
-          <span class="todo-overview-lane-count">${dateDescription(currentDate)} · ${todayTodos.length} 项</span>
+          <h3 class="todo-overview-lane-title">每周必做</h3>
+          <span class="todo-overview-lane-count">${weeklyTodos.length} 项</span>
         </div>
-        <button class="todo-lane-add" type="button" data-action="open-create" data-date="${todayKey}" aria-label="新增今日待办">＋</button>
+        <button class="todo-lane-add" type="button" data-action="open-create" data-placement="weekly" aria-label="新增每周必做待办">＋</button>
       </header>
-      ${todayTodos.length ? `<ul class="todo-overview-list">${todayTodos.map((todo, index) => renderOverviewTodo(todo, index, todayTodos.length, { showMeta: true })).join('')}</ul>` : '<p class="todo-overview-empty">今天暂无待办</p>'}
+      ${weeklyTodos.length ? `<ul class="todo-overview-list todo-overview-weekly-list">${weeklyTodos.map((todo, index) =>
+        renderOverviewTodo(todo, index, weeklyTodos.length, {
+          showMeta: true,
+          showCategory: false,
+          showCompleted: false,
+          inlineCategory: true
+        })).join('')}</ul>` : '<p class="todo-overview-empty">暂无待办</p>'}
     </section>`;
   };
 
@@ -487,54 +523,6 @@ export function mountTodoWorkspace(root: HTMLElement) {
     }).join('');
   };
 
-  const renderTodayPanel = () => {
-    if (!todayPanel) return;
-    const selectedWeek = getSelectedWeek();
-    const dayIndex = selectedWeek.findIndex((item) => sameDate(item, state.selectedDate));
-    const weekday = weekdayNames[dayIndex >= 0 ? dayIndex : (state.selectedDate.getDay() + 6) % 7];
-    const todos = todosForDate(state.selectedDate);
-    const groups = [
-      { title: '头号任务', fallback: '先处理今天最重要的一件事。' },
-      { title: '轻松任务', fallback: '适合穿插完成的小任务。' },
-      { title: '专注任务', fallback: '留一段安静时间推进。' }
-    ];
-    const canCompleteAll = todos.some((todo) => !todo.completed);
-
-    todayPanel.innerHTML = `
-      <header class="todo-today-header">
-        <h2 class="todo-today-title">今天 · ${weekday} ${longDate(state.selectedDate)} <span class="todo-sun" aria-hidden="true">☀</span></h2>
-        <button class="todo-complete-day" type="button" data-action="complete-selected-day" ${canCompleteAll ? '' : 'disabled'}>完成全部</button>
-      </header>
-      <div class="todo-focus-list">
-        ${groups.map((group, index) => {
-          const todo = todos[index];
-          if (!todo) {
-            return `<section class="todo-focus-group">
-              <h3><span class="todo-priority-icon" aria-hidden="true">☆</span>${group.title}</h3>
-              <p class="todo-focus-empty"><span aria-hidden="true">☕</span>没有安排，给今天留白吧。</p>
-            </section>`;
-          }
-          return `<section class="todo-focus-group">
-            <h3><span class="todo-priority-icon" aria-hidden="true">☆</span>${group.title}</h3>
-            <div class="todo-focus-task ${todo.completed ? 'is-completed' : ''}" data-todo-id="${todo.id}" title="双击编辑">
-              <input class="todo-checkbox" type="checkbox" ${todo.completed ? 'checked' : ''} data-action="toggle-complete" data-todo-id="${todo.id}" aria-label="${todo.completed ? '取消完成' : '完成'}：${escapeHtml(todo.title)}" />
-              <div>
-                <p class="todo-focus-title-row">
-                  <span class="todo-focus-title">${escapeHtml(todo.title)}</span>
-                  <span class="todo-tag ${todo.category}">${categoryLabel(todo.category)}</span>
-                  ${todo.important ? '<span class="todo-tag important"><span class="todo-important-star" aria-hidden="true">★</span>重要</span>' : ''}
-                  ${todo.completed ? '<span class="todo-tag done">已完成</span>' : ''}
-                </p>
-                <p class="todo-focus-note">${escapeHtml(todo.note || group.fallback)}</p>
-              </div>
-            </div>
-          </section>`;
-        }).join('')}
-      </div>
-      <p class="todo-today-note">添加备注 / 心情记录...</p>
-    `;
-  };
-
   const renderStats = () => {
     const keys = new Set(getSelectedWeek().map(toDateKey));
     const weeklyTodos = filterTodos(state.todos.filter((todo) => keys.has(todo.date)));
@@ -555,7 +543,6 @@ export function mountTodoWorkspace(root: HTMLElement) {
     renderPlacementLanes();
     renderMobileDays();
     renderBoard();
-    renderTodayPanel();
     renderStats();
   };
 
@@ -746,6 +733,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
     await startCloudWatcher(session);
     if (loginModal.open) loginModal.close();
     notify(successMessage || '已连接云端待办，跨浏览器实时同步已开启。');
+    scheduleExportReminder();
   };
 
   const saveCloudTodo = async (
@@ -1032,9 +1020,10 @@ export function mountTodoWorkspace(root: HTMLElement) {
       .replaceAll("'", '&apos;');
     const textCell = (column: string, row: number, value: string) =>
       `<c r="${column}${row}" t="inlineStr"><is><t xml:space="preserve">${escapeXml(value)}</t></is></c>`;
-    const rows = [
-      ['日期', '展示栏目', '分类', '待办事项', '重要', '完成状态', '备注', '创建时间', '更新时间'],
-      ...state.todos.map((todo) => [
+    const headers = ['日期', '展示栏目', '分类', '待办事项', '重要', '完成状态', '备注', '创建时间', '更新时间'];
+    const rowsForTodos = (todos: Todo[]) => [
+      headers,
+      ...todos.map((todo) => [
         todoDateLabel(todo),
         placementLabel(todo.placement),
         categoryLabel(todo.category),
@@ -1046,7 +1035,14 @@ export function mountTodoWorkspace(root: HTMLElement) {
         todo.updatedAt
       ])
     ];
-    const worksheet = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${rows.map((values, index) => `<row r="${index + 1}">${values.map((value, column) => textCell(String.fromCharCode(65 + column), index + 1, value)).join('')}</row>`).join('')}</sheetData></worksheet>`;
+    const worksheetForRows = (rows: string[][]) =>
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${rows.map((values, index) => `<row r="${index + 1}">${values.map((value, column) => textCell(String.fromCharCode(65 + column), index + 1, value)).join('')}</row>`).join('')}</sheetData></worksheet>`;
+    const sheets = [
+      { name: '个人待办', todos: state.todos },
+      { name: 'AI灵感-生活', todos: state.todos.filter((todo) => !todo.date && todo.placement === 'ai-life') },
+      { name: 'AI灵感-投资', todos: state.todos.filter((todo) => !todo.date && todo.placement === 'ai-investing') },
+      { name: '每周必做', todos: state.todos.filter((todo) => !todo.date && todo.placement === 'weekly') }
+    ];
     const encoder = new TextEncoder();
     const crc32 = (bytes: Uint8Array) => {
       let crc = 0xffffffff;
@@ -1056,12 +1052,21 @@ export function mountTodoWorkspace(root: HTMLElement) {
       }
       return (crc ^ 0xffffffff) >>> 0;
     };
+    const worksheetOverrides = sheets.map((_, index) =>
+      `<Override PartName="/xl/worksheets/sheet${index + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`
+    ).join('');
+    const workbookSheets = sheets.map((sheet, index) =>
+      `<sheet name="${escapeXml(sheet.name)}" sheetId="${index + 1}" r:id="rId${index + 1}"/>`
+    ).join('');
+    const workbookRelationships = sheets.map((_, index) =>
+      `<Relationship Id="rId${index + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${index + 1}.xml"/>`
+    ).join('');
     const entries = [
-      ['[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>'],
+      ['[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>${worksheetOverrides}</Types>`],
       ['_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
-      ['xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="个人待办" sheetId="1" r:id="rId1"/></sheets></workbook>'],
-      ['xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>'],
-      ['xl/worksheets/sheet1.xml', worksheet]
+      ['xl/workbook.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${workbookSheets}</sheets></workbook>`],
+      ['xl/_rels/workbook.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${workbookRelationships}</Relationships>`],
+      ...sheets.map((sheet, index) => [`xl/worksheets/sheet${index + 1}.xml`, worksheetForRows(rowsForTodos(sheet.todos))])
     ].map(([name, content]) => ({ name: encoder.encode(name), content: encoder.encode(content) }));
     const localParts: Uint8Array[] = [];
     const centralParts: Uint8Array[] = [];
@@ -1120,6 +1125,59 @@ export function mountTodoWorkspace(root: HTMLElement) {
     link.remove();
     window.setTimeout(() => URL.revokeObjectURL(url), 0);
     notify('Excel 待办备份已下载。');
+  };
+
+  const exportReminderTiming = (now: Date) => {
+    const friday = addDays(startOfWeek(now), 4);
+    friday.setHours(23, 0, 0, 0);
+    const reminderEnd = addDays(friday, 3);
+    reminderEnd.setHours(0, 0, 0, 0);
+    const nextFriday = new Date(friday);
+    if (now >= friday) nextFriday.setDate(nextFriday.getDate() + 7);
+    return {
+      reminderKey: toDateKey(friday),
+      reminderDue: now >= friday && now < reminderEnd,
+      nextFriday
+    };
+  };
+
+  const readExportReminderKey = () => {
+    try {
+      return window.localStorage.getItem(EXPORT_REMINDER_KEY);
+    } catch {
+      return null;
+    }
+  };
+
+  const markExportReminderHandled = () => {
+    const { reminderKey } = exportReminderTiming(new Date());
+    try {
+      window.localStorage.setItem(EXPORT_REMINDER_KEY, reminderKey);
+    } catch {
+      // The reminder still works for the current page session when storage is unavailable.
+    }
+  };
+
+  const scheduleExportReminder = () => {
+    window.clearTimeout(exportReminderTimer);
+    const now = new Date();
+    const { reminderKey, reminderDue, nextFriday } = exportReminderTiming(now);
+    const hasCloudData = Boolean(cloudSession && (state.todos.length || state.trash.length));
+    const anotherDialogOpen = loginModal.open
+      || todoModal.open
+      || deleteModal.open
+      || trashModal.open
+      || migrationModal.open;
+    if (
+      reminderDue
+      && hasCloudData
+      && readExportReminderKey() !== reminderKey
+      && !exportReminderModal.open
+      && !anotherDialogOpen
+    ) {
+      exportReminderModal.showModal();
+    }
+    exportReminderTimer = window.setTimeout(scheduleExportReminder, Math.max(1000, nextFriday.getTime() - now.getTime()));
   };
 
   window.addEventListener('message', (event) => {
@@ -1254,6 +1312,11 @@ export function mountTodoWorkspace(root: HTMLElement) {
   root.addEventListener('click', async (event) => {
     const target = event.target;
     if (!(target instanceof Element)) return;
+    const clickedMenu = target.closest<HTMLDetailsElement>('.todo-overview-menu');
+    const clickedAction = Boolean(target.closest('[data-action]'));
+    root.querySelectorAll<HTMLDetailsElement>('.todo-overview-menu[open]').forEach((menu) => {
+      if (menu !== clickedMenu || clickedAction) menu.removeAttribute('open');
+    });
     const trigger = target.closest<HTMLElement>('[data-action]');
     if (!trigger) return;
     const action = trigger.dataset.action;
@@ -1365,6 +1428,15 @@ export function mountTodoWorkspace(root: HTMLElement) {
       }
     }
     if (action === 'export-backup') exportBackup();
+    if (action === 'dismiss-export-reminder') {
+      markExportReminderHandled();
+      if (exportReminderModal.open) exportReminderModal.close();
+    }
+    if (action === 'export-reminder-now') {
+      markExportReminderHandled();
+      if (exportReminderModal.open) exportReminderModal.close();
+      exportBackup();
+    }
     if (action === 'close-form') closeForm();
     if (action === 'toggle-complete') {
       const todo = state.todos.find((item) => item.id === trigger.dataset.todoId);
@@ -1536,7 +1608,9 @@ export function mountTodoWorkspace(root: HTMLElement) {
         existing ? '待办已更新并同步到云端。' : '待办已添加并同步到云端。',
         existing?.updatedAt
       );
-      if (!saved) return;
+      if (!saved) {
+        return;
+      }
       if (date) selectDate(date);
       render();
     } catch (error) {
@@ -1653,11 +1727,20 @@ export function mountTodoWorkspace(root: HTMLElement) {
   };
 
   compactQuery.addEventListener('change', render);
-  window.addEventListener('focus', refreshWhenActive);
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') refreshWhenActive();
+  window.addEventListener('focus', () => {
+    refreshWhenActive();
+    scheduleExportReminder();
   });
-  window.addEventListener('beforeunload', closeCloudWatcher);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      refreshWhenActive();
+      scheduleExportReminder();
+    }
+  });
+  window.addEventListener('beforeunload', () => {
+    closeCloudWatcher();
+    window.clearTimeout(exportReminderTimer);
+  });
   render();
-  void initialiseCloud();
+  void initialiseCloud().finally(scheduleExportReminder);
 }

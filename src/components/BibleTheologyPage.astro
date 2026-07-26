@@ -361,6 +361,13 @@ const hymnCards = [
             继续阅读
           </button>
         </section>
+        <div class="bible-library-search">
+          <label>
+            <span>搜索收藏和笔记</span>
+            <input data-library-search type="search" placeholder="卷名 / 章节 / 经文 / 笔记" autocomplete="off" />
+          </label>
+          <p data-library-search-status>可按卷名、章节、节号、经文或笔记搜索。</p>
+        </div>
         <section id="bible-bookmarks">
           <button class="bible-panel-toggle" type="button" data-action="toggle-reader-bookmarks" aria-expanded="false">
             <span>经文收藏 <small data-bookmark-total>0 条</small></span>
@@ -368,16 +375,9 @@ const hymnCards = [
           <div class="bible-panel-export-row">
             <button type="button" data-action="export-bookmarks" title="导出全部经文收藏为 Excel">导出收藏 Excel</button>
           </div>
-          <div class="bible-bookmark-search" data-reader-bookmark-search hidden>
-            <label>
-              <span>搜索收藏</span>
-              <input data-bookmark-search type="search" placeholder="卷名 / 章节 / 经文" autocomplete="off" />
-            </label>
-            <p data-bookmark-search-status>可按卷名、章节、节号或经文搜索。</p>
-          </div>
           <div data-bookmark-list class="bible-bookmark-list" hidden></div>
         </section>
-        <section>
+        <section id="bible-notes">
           <button class="bible-panel-toggle" type="button" data-action="toggle-reader-notes" aria-expanded="false">
             <span>我的笔记 <small data-note-total>0 条</small></span>
           </button>
@@ -570,6 +570,14 @@ const hymnCards = [
       </div>
     </div>
   </dialog>
+
+  <aside class="bible-translation-popover" data-bible-translation-popover role="status" aria-live="polite" hidden>
+    <div class="bible-translation-popover-heading">
+      <strong data-bible-translation-reference>参考译文</strong>
+      <small data-bible-translation-source>CCB · YouVersion</small>
+    </div>
+    <p data-bible-translation-text>正在载入译文…</p>
+  </aside>
 
   <p class="bible-toast" data-bible-toast hidden></p>
   <script is:inline type="application/json" id="bible-data" set:html={JSON.stringify(bibleData)}></script>
@@ -1656,6 +1664,56 @@ const hymnCards = [
     color: #168ea1;
   }
 
+  .bible-verse.is-translation-active {
+    border-color: rgba(181, 138, 50, 0.56);
+  }
+
+  .bible-translation-popover {
+    position: fixed;
+    z-index: 120;
+    box-sizing: border-box;
+    max-width: calc(100vw - 1.5rem);
+    border: 1px solid rgba(181, 138, 50, 0.5);
+    border-radius: 0.72rem;
+    padding: 0.82rem 0.9rem;
+    background: rgba(255, 250, 240, 0.98);
+    color: #21170c;
+    box-shadow: 0 14px 36px rgba(54, 36, 12, 0.24);
+    pointer-events: none;
+  }
+
+  .bible-translation-popover[hidden] {
+    display: none;
+  }
+
+  .bible-translation-popover-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.8rem;
+  }
+
+  .bible-translation-popover-heading strong {
+    color: #6c4a14;
+    font-size: 0.76rem;
+    font-weight: 900;
+  }
+
+  .bible-translation-popover-heading small {
+    flex: none;
+    color: #8b6c3a;
+    font-size: 0.64rem;
+    font-weight: 800;
+  }
+
+  .bible-translation-popover p {
+    margin: 0.48rem 0 0;
+    color: inherit;
+    font-family: "Noto Serif TC", "Noto Serif SC", "Songti TC", "Songti SC", serif;
+    font-size: 0.94rem;
+    line-height: 1.75;
+  }
+
   .bible-placeholder {
     display: grid;
     min-height: 20rem;
@@ -1820,17 +1878,16 @@ const hymnCards = [
     gap: 0.45rem;
   }
 
-  .bible-bookmark-search {
+  .bible-library-search {
     display: grid;
     gap: 0.35rem;
-    margin: 0.65rem 0;
+    padding: 0.75rem;
+    border: 1px solid rgba(101, 79, 44, 0.14);
+    border-radius: 0.6rem;
+    background: #fffaf0;
   }
 
-  .bible-bookmark-search[hidden] {
-    display: none;
-  }
-
-  .bible-bookmark-search label {
+  .bible-library-search label {
     display: grid;
     gap: 0.28rem;
     color: #5f4930;
@@ -1838,7 +1895,7 @@ const hymnCards = [
     font-weight: 800;
   }
 
-  .bible-bookmark-search input {
+  .bible-library-search input {
     width: 100%;
     border: 1px solid rgba(101, 79, 44, 0.16);
     border-radius: 0.48rem;
@@ -1848,12 +1905,12 @@ const hymnCards = [
     font: inherit;
   }
 
-  .bible-bookmark-search input:focus {
+  .bible-library-search input:focus {
     border-color: #b58a32;
     outline: 2px solid rgba(181, 138, 50, 0.16);
   }
 
-  .bible-bookmark-search p {
+  .bible-library-search p {
     margin: 0;
     color: rgba(66, 51, 30, 0.62);
     font-size: 0.7rem;
@@ -1874,6 +1931,61 @@ const hymnCards = [
     margin: 0.3rem 0 0;
     color: #2b2115;
     font-size: 0.82rem;
+  }
+
+  .bible-library-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem;
+  }
+
+  .bible-library-branch {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .bible-library-branch > h4 {
+    margin: 0.18rem 0 0;
+    color: #5f4930;
+    font-size: 0.76rem;
+  }
+
+  .bible-library-card {
+    display: grid !important;
+    min-width: 0;
+    min-height: 4.2rem !important;
+    align-content: center;
+    justify-items: start;
+    gap: 0.2rem;
+    border: 1px solid rgba(101, 79, 44, 0.14) !important;
+    border-radius: 0.58rem !important;
+    padding: 0.65rem !important;
+    background: #fffaf0 !important;
+    color: #2b2115 !important;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .bible-library-card strong,
+  .bible-library-card small {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .bible-library-card strong {
+    font-size: 0.82rem;
+  }
+
+  .bible-library-card small {
+    color: #806c50;
+    font-size: 0.68rem;
+  }
+
+  .bible-library-card[aria-expanded="true"] {
+    border-color: #b58a32 !important;
+    background: #f3dfad !important;
   }
 
   .bible-collapsible-group-toggle {
@@ -1935,6 +2047,82 @@ const hymnCards = [
     color: inherit;
   }
 
+  #bible-bookmarks .bible-panel-toggle {
+    border-color: #c69b3d;
+    background: #f1dfb0;
+    color: #5a3d0d;
+  }
+
+  #bible-bookmarks .bible-library-card {
+    border-color: rgba(181, 138, 50, 0.48) !important;
+    background: #fff7e4 !important;
+    color: #68470d !important;
+  }
+
+  #bible-bookmarks .bible-library-card[aria-expanded="true"] {
+    border-color: #b58a32 !important;
+    background: #dfb95f !important;
+    color: #181108 !important;
+  }
+
+  #bible-bookmarks .bible-library-card[aria-expanded="true"] small {
+    color: rgba(24, 17, 8, 0.68);
+  }
+
+  #bible-bookmarks .bible-library-branch > h4 {
+    color: #795719;
+  }
+
+  #bible-bookmarks .bible-collapsible-group-content > button {
+    border-color: rgba(181, 138, 50, 0.5);
+    background: #f5e4b8;
+    color: #5a3d0d;
+  }
+
+  #bible-notes .bible-panel-toggle {
+    border-color: #8b67aa;
+    background: #e3d4f0;
+    color: #4d3465;
+  }
+
+  #bible-notes .bible-library-card {
+    border-color: rgba(128, 96, 168, 0.5) !important;
+    background: #f6effb !important;
+    color: #52386b !important;
+  }
+
+  #bible-notes .bible-library-card[aria-expanded="true"] {
+    border-color: #8060a8 !important;
+    background: #9a78ba !important;
+    color: #170d20 !important;
+  }
+
+  #bible-notes .bible-library-card[aria-expanded="true"] small {
+    color: rgba(23, 13, 32, 0.65);
+  }
+
+  #bible-notes .bible-library-branch > h4 {
+    color: #69498a;
+  }
+
+  #bible-notes .bible-collapsible-group-content > button {
+    border-color: rgba(128, 96, 168, 0.5);
+    background: #e9ddf3;
+    color: #4d3465;
+  }
+
+  #bible-bookmarks .bible-library-card:focus-visible,
+  #bible-bookmarks .bible-collapsible-group-content > button:focus-visible {
+    outline: 2px solid #b58a32;
+    outline-offset: 2px;
+  }
+
+  #bible-notes .bible-library-card:focus-visible,
+  #bible-notes .bible-collapsible-group-content > button:focus-visible {
+    outline: 2px solid #8060a8;
+    outline-offset: 2px;
+  }
+
   .bible-app.is-dark-reader .bible-reader-section {
     background: #050505;
     color: #fff4d8;
@@ -1960,14 +2148,14 @@ const hymnCards = [
   }
 
   .bible-app.is-dark-reader .bible-reader-tools input,
-  .bible-app.is-dark-reader .bible-bookmark-search input {
+  .bible-app.is-dark-reader .bible-library-search input {
     border-color: rgba(216, 179, 95, 0.26);
     background: #1a150d;
     color: #fff4d8;
   }
 
   .bible-app.is-dark-reader .bible-reader-tools input::placeholder,
-  .bible-app.is-dark-reader .bible-bookmark-search input::placeholder {
+  .bible-app.is-dark-reader .bible-library-search input::placeholder {
     color: rgba(255, 247, 224, 0.42);
   }
 
@@ -2083,6 +2271,21 @@ const hymnCards = [
     color: #a8dce8;
   }
 
+  .bible-app.is-dark-reader .bible-translation-popover {
+    border-color: rgba(216, 179, 95, 0.52);
+    background: rgba(26, 20, 12, 0.98);
+    color: #f7df9e;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.48);
+  }
+
+  .bible-app.is-dark-reader .bible-translation-popover-heading strong {
+    color: #f7df9e;
+  }
+
+  .bible-app.is-dark-reader .bible-translation-popover-heading small {
+    color: rgba(247, 223, 158, 0.68);
+  }
+
   .bible-app.is-dark-reader .bible-notes-panel h3,
   .bible-app.is-dark-reader .bible-reading-progress-item dt,
   .bible-app.is-dark-reader .bible-reading-progress-item dt strong {
@@ -2112,6 +2315,27 @@ const hymnCards = [
     color: #f7df9e !important;
   }
 
+  .bible-app.is-dark-reader .bible-library-search,
+  .bible-app.is-dark-reader .bible-library-card {
+    border-color: rgba(216, 179, 95, 0.22) !important;
+    background: #19140c !important;
+    color: #f7df9e !important;
+  }
+
+  .bible-app.is-dark-reader .bible-library-search label {
+    color: #f7df9e;
+  }
+
+  .bible-app.is-dark-reader .bible-library-card[aria-expanded="true"] {
+    border-color: #d8b35f !important;
+    background: #2a2011 !important;
+  }
+
+  .bible-app.is-dark-reader .bible-library-card small,
+  .bible-app.is-dark-reader .bible-library-branch > h4 {
+    color: rgba(255, 247, 224, 0.58);
+  }
+
   .bible-app.is-dark-reader .bible-collapsible-group-toggle {
     border-color: rgba(216, 179, 95, 0.22) !important;
     background: #19140c !important;
@@ -2126,6 +2350,70 @@ const hymnCards = [
     border-color: rgba(216, 179, 95, 0.18);
     background: #151109;
     color: #f7df9e;
+  }
+
+  .bible-app.is-dark-reader #bible-bookmarks .bible-panel-toggle {
+    border-color: #d8b35f;
+    background: #422d10;
+    color: #ffe7a7;
+  }
+
+  .bible-app.is-dark-reader #bible-bookmarks .bible-library-card {
+    border-color: rgba(216, 179, 95, 0.48) !important;
+    background: #21190d !important;
+    color: #f7df9e !important;
+  }
+
+  .bible-app.is-dark-reader #bible-bookmarks .bible-library-card[aria-expanded="true"] {
+    border-color: #e0b85b !important;
+    background: #e0b85b !important;
+    color: #171008 !important;
+  }
+
+  .bible-app.is-dark-reader #bible-bookmarks .bible-library-card[aria-expanded="true"] small {
+    color: rgba(23, 16, 8, 0.66);
+  }
+
+  .bible-app.is-dark-reader #bible-bookmarks .bible-library-branch > h4 {
+    color: #e5c675;
+  }
+
+  .bible-app.is-dark-reader #bible-bookmarks .bible-collapsible-group-content > button {
+    border-color: #d8b35f;
+    background: #402b0f;
+    color: #ffe7a7;
+  }
+
+  .bible-app.is-dark-reader #bible-notes .bible-panel-toggle {
+    border-color: #9c79bd;
+    background: #432d5d;
+    color: #eadcff;
+  }
+
+  .bible-app.is-dark-reader #bible-notes .bible-library-card {
+    border-color: rgba(156, 121, 189, 0.58) !important;
+    background: #2a2039 !important;
+    color: #eadcff !important;
+  }
+
+  .bible-app.is-dark-reader #bible-notes .bible-library-card[aria-expanded="true"] {
+    border-color: #9a78ba !important;
+    background: #9a78ba !important;
+    color: #160d1f !important;
+  }
+
+  .bible-app.is-dark-reader #bible-notes .bible-library-card[aria-expanded="true"] small {
+    color: rgba(22, 13, 31, 0.66);
+  }
+
+  .bible-app.is-dark-reader #bible-notes .bible-library-branch > h4 {
+    color: #c5a8df;
+  }
+
+  .bible-app.is-dark-reader #bible-notes .bible-collapsible-group-content > button {
+    border-color: #9a78ba;
+    background: #3f2c56;
+    color: #eadcff;
   }
 
   .bible-feature-section {
@@ -2748,7 +3036,7 @@ const hymnCards = [
     }
 
     .bible-verse {
-      padding: 0.72rem 4.45rem 0.72rem 0.72rem;
+      padding: 0.72rem 5.25rem 0.72rem 0.72rem;
     }
 
     .bible-verse-number {
@@ -2760,6 +3048,15 @@ const hymnCards = [
     .bible-verse-text {
       font-size: 0.96rem;
       line-height: 1.78;
+    }
+
+    .bible-translation-popover {
+      padding: 0.72rem 0.78rem;
+    }
+
+    .bible-translation-popover p {
+      font-size: 0.84rem;
+      line-height: 1.65;
     }
 
     .bible-notes-panel h3 {

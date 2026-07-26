@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'j-space-';
-const CACHE_VERSION = '20260722-v6';
+const CACHE_VERSION = '20260726-v1';
 const PAGE_CACHE = `${CACHE_PREFIX}pages-${CACHE_VERSION}`;
 const ASSET_CACHE = `${CACHE_PREFIX}assets-${CACHE_VERSION}`;
 const BASE_PATH = '/officialwebsite/';
