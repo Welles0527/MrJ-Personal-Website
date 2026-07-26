@@ -98,7 +98,6 @@ function rebuildSongs() {
     .map(item => songs.find(song => songKey(song) === songKey(item)))
     .filter(Boolean);
   queue.splice(0, queue.length, ...refreshedQueue);
-  if (!queue.length) queue.push(...songs.slice(0, 12));
   state.current = songs.find(song => songKey(song) === currentKey) || songs[0];
   if (!state.current) state.playing = false;
 }
@@ -110,6 +109,31 @@ async function saveLibrarySettings() {
       .filter(([, moods]) => moods.length),
   );
   await cloudStore.save("librarySettings", { categories, deleted: [...deletedCatalogKeys] });
+}
+
+async function savePlaylist() {
+  await cloudStore.save("playlist", queue.map(songKey));
+}
+
+function announceQueue(message) {
+  const status = $("#queueStatus");
+  if (!status) return;
+  status.textContent = message;
+  window.clearTimeout(announceQueue.timer);
+  announceQueue.timer = window.setTimeout(() => { status.textContent = ""; }, 2600);
+}
+
+function addSongsToQueue(candidates, label = "歌曲") {
+  const existingKeys = new Set(queue.map(songKey));
+  const additions = candidates.filter(song => song && !existingKeys.has(songKey(song)));
+  queue.push(...additions);
+  renderQueue();
+  if (additions.length) {
+    savePlaylist();
+    announceQueue(`已将${label}加入播放列表 · ${additions.length} 首`);
+  } else {
+    announceQueue(`${label}已在播放列表中`);
+  }
 }
 
 function getFilteredSongs() {
@@ -168,7 +192,7 @@ function renderSongs() {
     <article class="song-row ${state.viewMode === "library" ? "library-row" : ""} ${isCurrent(song) ? "is-current" : ""}">
       <span class="track-num">${String(song.rank ?? index + 1).padStart(2, "0")}</span>
       <div class="row-cover cover ${coverClass(song)}">${escapeHtml(song.title.slice(0, 4))}</div>
-      <div class="song-name"><button type="button" class="song-title-button" data-play="${escapeHtml(song.title)}" data-artist="${escapeHtml(song.artist)}" aria-label="播放${escapeHtml(song.title)}"><strong>${escapeHtml(song.title)}</strong><small>${escapeHtml(song.album)}</small></button>${managementActions}${customActions}</div>
+      <div class="song-name"><button type="button" class="song-title-button" data-play="${escapeHtml(song.title)}" data-artist="${escapeHtml(song.artist)}" aria-label="播放${escapeHtml(song.title)}"><strong>${escapeHtml(song.title)}</strong></button><button type="button" class="song-queue-button" data-add-to-queue="${escapeHtml(key)}" aria-label="将${escapeHtml(song.title)}添加至播放列表"><span>＋</span> 添加至播放列表</button>${managementActions}${customActions}</div>
       <button type="button" class="artist" data-artist-filter="${escapeHtml(song.artist)}">${escapeHtml(song.artist)}</button>
       <div class="tags">${song.moods.slice(0, 2).map(mood => `<span>${escapeHtml(mood)}</span>`).join("")}</div>
       <span class="duration">${escapeHtml(song.duration)}</span>
@@ -201,7 +225,9 @@ function renderArtists() {
 }
 
 function renderQueue() {
-  $("#queueList").innerHTML = queue.map(song => `<div class="queue-item ${isCurrent(song) ? "current" : ""}"><span class="drag">⋮⋮</span><div class="cover ${coverClass(song)}">${escapeHtml(song.title.slice(0, 2))}</div><div><button type="button" class="queue-song-title" data-play="${escapeHtml(song.title)}" data-artist="${escapeHtml(song.artist)}">${escapeHtml(song.title)}</button><button type="button" class="queue-artist" data-artist-filter="${escapeHtml(song.artist)}">${escapeHtml(song.artist)}</button></div><button class="queue-play ${isCurrent(song) && state.playing ? "is-playing" : ""}" data-play="${escapeHtml(song.title)}" data-artist="${escapeHtml(song.artist)}" aria-label="${isCurrent(song) && state.playing ? "暂停" : "播放"}${escapeHtml(song.title)}">${isCurrent(song) && state.playing ? "Ⅱ" : "▶"}</button></div>`).join("");
+  $("#queueList").innerHTML = queue.length
+    ? queue.map(song => `<div class="queue-item ${isCurrent(song) ? "current" : ""}"><span class="drag">⋮⋮</span><div class="cover ${coverClass(song)}">${escapeHtml(song.title.slice(0, 2))}</div><div><button type="button" class="queue-song-title" data-play="${escapeHtml(song.title)}" data-artist="${escapeHtml(song.artist)}">${escapeHtml(song.title)}</button><button type="button" class="queue-artist" data-artist-filter="${escapeHtml(song.artist)}">${escapeHtml(song.artist)}</button></div><button class="queue-play ${isCurrent(song) && state.playing ? "is-playing" : ""}" data-play="${escapeHtml(song.title)}" data-artist="${escapeHtml(song.artist)}" aria-label="${isCurrent(song) && state.playing ? "暂停" : "播放"}${escapeHtml(song.title)}">${isCurrent(song) && state.playing ? "Ⅱ" : "▶"}</button></div>`).join("")
+    : `<div class="queue-empty"><span>♫</span><strong>播放列表还是空的</strong><small>从歌曲或专辑旁点击“添加至播放列表”</small></div>`;
   $("#queueCount").textContent = queue.length;
   updatePlayIndicators();
 }
@@ -243,6 +269,17 @@ function readPlayerState(payload) {
   return null;
 }
 
+let autoAdvanceLocked = false;
+
+function playNextQueuedSong() {
+  const currentIndex = queue.findIndex(song => songKey(song) === songKey(state.current));
+  const next = currentIndex >= 0 ? queue[currentIndex + 1] : null;
+  if (!next) return false;
+  playSong(next.title, next.artist);
+  announceQueue(`连续播放 · ${next.title}`);
+  return true;
+}
+
 window.addEventListener("message", event => {
   const player = $("#mediaPlayer");
   if (!player?.contentWindow || event.source !== player.contentWindow) return;
@@ -253,7 +290,14 @@ window.addEventListener("message", event => {
   }
   const playerState = readPlayerState(payload);
   if (playerState === 1 || playerState === 3) setPlaybackState(true);
-  if (playerState === 0 || playerState === 2 || playerState === 5) setPlaybackState(false);
+  if (playerState === 0) {
+    if (autoAdvanceLocked) return;
+    autoAdvanceLocked = true;
+    if (!playNextQueuedSong()) setPlaybackState(false);
+    window.setTimeout(() => { autoAdvanceLocked = false; }, 1200);
+    return;
+  }
+  if (playerState === 2 || playerState === 5) setPlaybackState(false);
 });
 
 $("#mediaPlayer").addEventListener("load", () => {
@@ -317,9 +361,10 @@ function togglePlayback() {
 }
 
 async function loadSavedState() {
-  const [savedFavorites, savedRecents, savedCustomSongs, savedLibrarySettings] = await Promise.all([
+  const [savedFavorites, savedRecents, savedCustomSongs, savedLibrarySettings, savedPlaylist] = await Promise.all([
     cloudStore.load("favorites", []), cloudStore.load("recent", []), cloudStore.load("customSongs", []),
     cloudStore.load("librarySettings", { categories: {}, deleted: [] }),
+    cloudStore.load("playlist", null),
   ]);
   state.favorites = new Set(savedFavorites);
   state.recents = savedRecents;
@@ -329,13 +374,19 @@ async function loadSavedState() {
     : {};
   deletedCatalogKeys = new Set(Array.isArray(savedLibrarySettings?.deleted) ? savedLibrarySettings.deleted : []);
   rebuildSongs();
+  if (Array.isArray(savedPlaylist)) {
+    const restoredQueue = savedPlaylist
+      .map(key => songs.find(song => songKey(song) === key))
+      .filter(Boolean);
+    queue.splice(0, queue.length, ...restoredQueue);
+  }
   renderSongs();
   renderQueue();
   if (state.favorites.size) $(".nav-dot").hidden = false;
   const account = cloudStore.account || "";
   $("#accountName").textContent = account || "共享主站账号";
   $("#accountAvatar").textContent = account ? account.slice(0, 1).toUpperCase() : "恩";
-  $("#syncStatus").textContent = cloudStore.userId ? "已登录 · 收藏、歌单与分类已同步" : "未登录 · 使用主站账号登录";
+  $("#syncStatus").textContent = cloudStore.userId ? "已登录 · 收藏、播放列表与分类已同步" : "未登录 · 使用主站账号登录";
 }
 
 function openSongEditor(song = null) {
@@ -503,6 +554,16 @@ document.addEventListener("click", event => {
   }
   const fav = event.target.closest("[data-favorite]");
   if (fav) { const title = fav.dataset.favorite; state.favorites.has(title) ? state.favorites.delete(title) : state.favorites.add(title); cloudStore.save("favorites", [...state.favorites]); $(".nav-dot").hidden = state.favorites.size === 0; renderSongs(); }
+  const addToQueue = event.target.closest("[data-add-to-queue]");
+  if (addToQueue) {
+    const song = songs.find(item => songKey(item) === addToQueue.dataset.addToQueue);
+    if (song) addSongsToQueue([song], `《${song.title}》`);
+  }
+  const addArtistQueue = event.target.closest("[data-add-artist-queue]");
+  if (addArtistQueue) {
+    const artist = addArtistQueue.dataset.addArtistQueue;
+    addSongsToQueue(songs.filter(song => song.artist === artist), `“${artist}”专辑`);
+  }
   const mood = event.target.closest("[data-mood]");
   if (mood) {
     state.mood = state.mood === mood.dataset.mood ? "" : mood.dataset.mood;
@@ -537,8 +598,9 @@ document.addEventListener("click", event => {
   const skip = event.target.closest("[data-skip]");
   if (skip) {
     const pool = queue.length ? queue : songs;
-    const currentIndex = Math.max(0, pool.findIndex(song => song.title === state.current.title && song.artist === state.current.artist));
+    const foundIndex = pool.findIndex(song => song.title === state.current.title && song.artist === state.current.artist);
     const delta = skip.dataset.skip === "prev" ? -1 : 1;
+    const currentIndex = foundIndex >= 0 ? foundIndex : (delta > 0 ? -1 : 0);
     const next = pool[(currentIndex + delta + pool.length) % pool.length];
     playSong(next.title, next.artist);
   }
@@ -602,7 +664,8 @@ $("#closeCategoryDialog").addEventListener("click", () => $("#categoryDialog").c
 $("#cancelCategoryEdit").addEventListener("click", () => $("#categoryDialog").close());
 $("#playToggle").addEventListener("click", togglePlayback);
 $("#lyricsButton").addEventListener("click", () => $("#lyricsDialog").showModal()); $("#lyricsButtonBottom").addEventListener("click", () => $("#lyricsDialog").showModal()); $("#closeDialog").addEventListener("click", () => $("#lyricsDialog").close());
-$("#clearQueue").addEventListener("click", () => { queue.splice(0); renderQueue(); }); $("#addQueue").addEventListener("click", () => { queue.push(...songs.filter(song => !queue.some(item => item.title === song.title)).slice(0, 3)); renderQueue(); });
+$("#clearQueue").addEventListener("click", () => { queue.splice(0); savePlaylist(); renderQueue(); announceQueue("播放列表已清空"); });
+$("#addQueue").addEventListener("click", () => addSongsToQueue(getVisibleSongs(), "当前歌曲列表"));
 $("#mobileMenu").addEventListener("click", () => $(".sidebar").classList.toggle("open"));
 $("#fullscreenPlayer").addEventListener("click", () => $(".media-player-shell").requestFullscreen?.());
 
