@@ -1,0 +1,10 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "magicj-youversion-verse",
+  "main": "src/index.js",
+  "compatibility_date": "2026-07-26",
+  "workers_dev": true,
+  "vars": {
+    "YVP_BIBLE_ID": "36"
+  }
+}

@@ -949,7 +949,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       const noted = Boolean(noteForVerse(sample.book, sample.chapter, verse));
       const translationUrl = bibleComReferenceChapterUrl(sample.book, sample.chapter);
       return `
-        <section class="bible-verse${active}${read ? ' is-read' : ''}${noted ? ' has-note' : ''}" id="${key}" data-verse="${verse}" title="双击添加或编辑笔记">
+        <section class="bible-verse${active}${read ? ' is-read' : ''}${noted ? ' has-note' : ''}" id="${key}" data-verse="${verse}">
           <div class="bible-verse-main">
             <span class="bible-verse-number">${verse}</span>
             <p class="bible-verse-text">${escapeHtml(text)}</p>
