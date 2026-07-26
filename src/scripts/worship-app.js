@@ -49,10 +49,13 @@ const state = { mood: "", query: "", viewMode: "discover", artist: "", current: 
 let queueSelectionMode = false;
 let selectedQueueKeys = new Set();
 let batchPlaybackKeys = [];
+let youtubePlaylistEntries = [];
+let youtubeAdvanceFallbackTimer = 0;
 const $ = selector => document.querySelector(selector);
 const coverClass = song => `cover-${song.cover || "sun"}`;
 const isCurrent = song => state.current?.title === song.title && state.current?.artist === song.artist;
 const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[character]));
+const resolveSongSource = song => song?.source || sourceMap[`${song?.artist || ""}::${song?.title || ""}`] || {};
 let editingCustomSongId = null;
 let editingCategorySongKey = null;
 let songEditorReturnView = "mine";
@@ -137,6 +140,7 @@ function addSongsToQueue(candidates, label = "歌曲") {
   } else {
     announceQueue(`${label}已在播放列表中`);
   }
+  return additions;
 }
 
 function getPlaybackQueue() {
@@ -148,6 +152,19 @@ function getPlaybackQueue() {
     batchPlaybackKeys = [];
   }
   return queue.length ? queue : songs;
+}
+
+function buildYouTubePlaylistEntries(currentSong) {
+  const playbackQueue = getPlaybackQueue();
+  const currentIndex = playbackQueue.findIndex(song => songKey(song) === songKey(currentSong));
+  const remainingSongs = currentIndex >= 0 ? playbackQueue.slice(currentIndex) : [currentSong];
+  const entries = [];
+  for (const song of remainingSongs) {
+    const youtubeId = resolveSongSource(song).youtubeId;
+    if (!youtubeId) break;
+    entries.push({ song, youtubeId: String(youtubeId) });
+  }
+  return entries;
 }
 
 function updateQueueBatchActions() {
@@ -313,17 +330,78 @@ function setPlaybackState(playing) {
   updatePlayIndicators();
 }
 
+function sendYouTubeCommand(func, args = []) {
+  const player = $("#mediaPlayer");
+  if (!player?.contentWindow || !player.src.includes("youtube-nocookie.com")) return false;
+  player.contentWindow.postMessage(JSON.stringify({ event: "command", func, args }), "*");
+  return true;
+}
+
 function sendYouTubeListening() {
   const player = $("#mediaPlayer");
   if (!player?.contentWindow || !player.src.includes("youtube-nocookie.com")) return;
   player.contentWindow.postMessage(JSON.stringify({ event: "listening", id: "mediaPlayer" }), "*");
-  player.contentWindow.postMessage(JSON.stringify({ event: "command", func: "addEventListener", args: ["onStateChange"] }), "*");
+  sendYouTubeCommand("addEventListener", ["onStateChange"]);
+  sendYouTubeCommand("getPlayerState");
+  sendYouTubeCommand("getVideoData");
 }
 
 function readPlayerState(payload) {
   if (payload?.event === "onStateChange" && typeof payload.info === "number") return payload.info;
   if (payload?.event === "infoDelivery" && typeof payload.info?.playerState === "number") return payload.info.playerState;
   return null;
+}
+
+function readPlayerVideoId(payload) {
+  return payload?.info?.videoData?.video_id || payload?.info?.videoData?.videoId || "";
+}
+
+function updateCurrentSong(song, { recordRecent = true, render = true } = {}) {
+  state.current = { ...song };
+  if (recordRecent) {
+    state.recents = [song.title, ...state.recents.filter(item => item !== song.title)].slice(0, 20);
+    cloudStore.save("recent", state.recents);
+  }
+  $("#nowTitle").textContent = song.title; $("#nowArtist").textContent = song.artist;
+  $("#playerTitle").textContent = song.title; $("#playerArtist").textContent = song.artist;
+  [$("#nowTitle"), $("#playerTitle")].forEach(node => { node.dataset.play = song.title; node.dataset.artist = song.artist; });
+  [$("#nowArtist"), $("#playerArtist")].forEach(node => { node.dataset.artistFilter = song.artist; });
+  const queuePlayToggle = $("#queuePlayToggle");
+  if (queuePlayToggle) {
+    queuePlayToggle.dataset.play = song.title;
+    queuePlayToggle.dataset.artist = song.artist;
+  }
+  $(".mini-heart").dataset.favorite = song.title;
+  $("#dialogSong").textContent = song.title; $("#dialogArtist").textContent = song.artist;
+  document.querySelectorAll(".player-cover,.now-card .cover").forEach(node => {
+    node.className = `cover ${node.classList.contains("player-cover") ? "player-cover " : ""}${coverClass(song)}`;
+    node.textContent = "";
+  });
+  if (render) {
+    renderSongs();
+    renderQueue();
+    updatePlayIndicators();
+  }
+}
+
+function syncSongFromEmbeddedPlaylist(videoId) {
+  if (!videoId || !youtubePlaylistEntries.length) return;
+  const currentIndex = youtubePlaylistEntries.findIndex(entry => songKey(entry.song) === songKey(state.current));
+  const laterMatch = youtubePlaylistEntries.findIndex((entry, index) => index > currentIndex && entry.youtubeId === videoId);
+  const match = laterMatch >= 0
+    ? youtubePlaylistEntries[laterMatch]
+    : youtubePlaylistEntries.find(entry => entry.youtubeId === videoId);
+  if (!match || songKey(match.song) === songKey(state.current)) return;
+  window.clearTimeout(youtubeAdvanceFallbackTimer);
+  updateCurrentSong(match.song, { render: false });
+  $("#sourceLink").href = `https://www.youtube.com/watch?v=${match.youtubeId}`;
+  $("#playerSourceLabel").textContent = "YouTube";
+  state.playing = true;
+  setProgress(47);
+  renderSongs();
+  renderQueue();
+  updatePlayIndicators();
+  announceQueue(`连续播放 · ${match.song.title}`);
 }
 
 let autoAdvanceLocked = false;
@@ -347,11 +425,27 @@ window.addEventListener("message", event => {
   if (typeof payload === "string") {
     try { payload = JSON.parse(payload); } catch { return; }
   }
+  syncSongFromEmbeddedPlaylist(readPlayerVideoId(payload));
   const playerState = readPlayerState(payload);
-  if (playerState === 1 || playerState === 3) setPlaybackState(true);
+  if (playerState === 1 || playerState === 3) {
+    window.clearTimeout(youtubeAdvanceFallbackTimer);
+    setPlaybackState(true);
+  }
   if (playerState === 0) {
     if (autoAdvanceLocked) return;
     autoAdvanceLocked = true;
+    const embeddedIndex = youtubePlaylistEntries.findIndex(entry => songKey(entry.song) === songKey(state.current));
+    if (embeddedIndex >= 0 && embeddedIndex < youtubePlaylistEntries.length - 1) {
+      const endedSongKey = songKey(state.current);
+      window.clearTimeout(youtubeAdvanceFallbackTimer);
+      youtubeAdvanceFallbackTimer = window.setTimeout(() => {
+        if (songKey(state.current) !== endedSongKey) return;
+        youtubePlaylistEntries = [];
+        if (!playNextQueuedSong()) setPlaybackState(false);
+      }, 2500);
+      window.setTimeout(() => { autoAdvanceLocked = false; }, 1200);
+      return;
+    }
     if (!playNextQueuedSong()) setPlaybackState(false);
     window.setTimeout(() => { autoAdvanceLocked = false; }, 1200);
     return;
@@ -363,53 +457,48 @@ $("#mediaPlayer").addEventListener("load", () => {
   [0, 250, 800].forEach(delay => window.setTimeout(sendYouTubeListening, delay));
 });
 window.addEventListener("pageshow", () => window.setTimeout(sendYouTubeListening, 100));
-document.addEventListener("visibilitychange", () => { if (!document.hidden) sendYouTubeListening(); });
+document.addEventListener("visibilitychange", sendYouTubeListening);
 
 function playSong(title, artist, { preserveBatch = false } = {}) {
   const song = songs.find(item => item.title === title && (!artist || item.artist === artist)) || songs.find(item => item.title === title) || state.current;
   if (!preserveBatch) batchPlaybackKeys = [];
-  state.current = { ...song, artist: artist || song.artist };
-  state.recents = [song.title, ...state.recents.filter(item => item !== song.title)].slice(0, 20);
-  cloudStore.save("recent", state.recents);
-  $("#nowTitle").textContent = song.title; $("#nowArtist").textContent = song.artist;
-  $("#playerTitle").textContent = song.title; $("#playerArtist").textContent = song.artist;
-  [$("#nowTitle"), $("#playerTitle")].forEach(node => { node.dataset.play = song.title; node.dataset.artist = song.artist; });
-  [$("#nowArtist"), $("#playerArtist")].forEach(node => { node.dataset.artistFilter = song.artist; });
-  const queuePlayToggle = $("#queuePlayToggle");
-  if (queuePlayToggle) {
-    queuePlayToggle.dataset.play = song.title;
-    queuePlayToggle.dataset.artist = song.artist;
-  }
-  $(".mini-heart").dataset.favorite = song.title;
-  $("#dialogSong").textContent = song.title; $("#dialogArtist").textContent = song.artist;
-  const source = song.source || sourceMap[`${song.artist}::${song.title}`] || {};
+  window.clearTimeout(youtubeAdvanceFallbackTimer);
+  const activeSong = { ...song, artist: artist || song.artist };
+  updateCurrentSong(activeSong, { render: false });
+  const source = resolveSongSource(activeSong);
   const mediaPlayer = $("#mediaPlayer");
   const playerShell = mediaPlayer.closest(".media-player-shell");
   if (source.youtubeId) {
-    mediaPlayer.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(source.youtubeId)}?autoplay=1&rel=0&playsinline=1&enablejsapi=1&origin=${encodeURIComponent(location.origin)}`;
+    youtubePlaylistEntries = buildYouTubePlaylistEntries(activeSong);
+    const remainingIds = youtubePlaylistEntries.slice(1).map(entry => encodeURIComponent(entry.youtubeId));
+    const playlistParameter = remainingIds.length ? `&playlist=${remainingIds.join(",")}` : "";
+    mediaPlayer.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(source.youtubeId)}?autoplay=1&rel=0&playsinline=1&enablejsapi=1&origin=${encodeURIComponent(location.origin)}${playlistParameter}`;
     playerShell.classList.add("is-playing");
     $("#sourceLink").href = `https://www.youtube.com/watch?v=${source.youtubeId}`;
     $("#playerSourceLabel").textContent = "YouTube";
   } else if (source.bvid) {
+    youtubePlaylistEntries = [];
     mediaPlayer.src = `https://player.bilibili.com/player.html?bvid=${encodeURIComponent(source.bvid)}&page=1&autoplay=1&high_quality=1&danmaku=0`;
     playerShell.classList.add("is-playing");
     $("#sourceLink").href = `https://www.bilibili.com/video/${source.bvid}/`;
     $("#playerSourceLabel").textContent = "B站";
   } else {
+    youtubePlaylistEntries = [];
     mediaPlayer.removeAttribute("src");
     playerShell.classList.remove("is-playing");
     $("#sourceLink").href = song.sourceUrl || `https://www.youtube.com/results?search_query=${encodeURIComponent(`${song.artist} ${song.title}`)}`;
   }
-  document.querySelectorAll(".player-cover,.now-card .cover").forEach(node => {
-    node.className = `cover ${node.classList.contains("player-cover") ? "player-cover " : ""}${coverClass(song)}`;
-    node.textContent = "";
-  });
   state.playing = Boolean(source.youtubeId || source.bvid); setProgress(state.playing ? 47 : 0); renderSongs(); renderQueue(); updatePlayIndicators();
 }
 
 function togglePlayback() {
   const player = $("#mediaPlayer");
   if (!player.src) { playSong(state.current.title, state.current.artist); return; }
+  if (player.src.includes("youtube-nocookie.com")) {
+    sendYouTubeCommand(state.playing ? "pauseVideo" : "playVideo");
+    setPlaybackState(!state.playing);
+    return;
+  }
   if (state.playing) {
     player.dataset.pausedSrc = player.src;
     player.removeAttribute("src");
@@ -622,7 +711,14 @@ document.addEventListener("click", event => {
   const addArtistQueue = event.target.closest("[data-add-artist-queue]");
   if (addArtistQueue) {
     const artist = addArtistQueue.dataset.addArtistQueue;
-    addSongsToQueue(songs.filter(song => song.artist === artist), `“${artist}”专辑`);
+    const artistSongs = songs.filter(song => song.artist === artist);
+    if (artistSongs.length) {
+      addSongsToQueue(artistSongs, `“${artist}”专辑`);
+      batchPlaybackKeys = artistSongs.map(songKey);
+      const firstSong = artistSongs[0];
+      playSong(firstSong.title, firstSong.artist, { preserveBatch: true });
+      announceQueue(`已加入“${artist}”并开始连续播放 · ${artistSongs.length} 首`);
+    }
   }
   const queueSelect = event.target.closest("[data-queue-select]");
   if (queueSelect) {
