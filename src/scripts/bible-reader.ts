@@ -360,6 +360,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   let activeBookStatusSlug: string | null = null;
   let pendingBookSlug: string | null = null;
   let bookClickTimer: number | undefined;
+  let translationHoverTimer: number | undefined;
   let activeTranslationVerse: HTMLElement | null = null;
   let translationRequestToken = 0;
   const translationCache = new Map<string, TranslationPayload>();
@@ -836,6 +837,8 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   };
 
   const hideTranslationPopover = () => {
+    window.clearTimeout(translationHoverTimer);
+    translationHoverTimer = undefined;
     translationRequestToken += 1;
     activeTranslationVerse?.classList.remove('is-translation-active');
     activeTranslationVerse = null;
@@ -1638,6 +1641,30 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     const verseElement = target.closest<HTMLElement>('.bible-verse[data-verse]');
     const verse = Number(verseElement?.dataset.verse || '');
     if (verse) openNoteEditor(currentBook, currentChapter, verse);
+  });
+
+  verseList.addEventListener('pointerover', (event) => {
+    if (event.pointerType && event.pointerType !== 'mouse') return;
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const trigger = target.closest<HTMLElement>('[data-action="show-translation"]');
+    if (!trigger || (event.relatedTarget instanceof Node && trigger.contains(event.relatedTarget))) return;
+    const verseElement = trigger.closest<HTMLElement>('.bible-verse[data-verse]');
+    if (!verseElement) return;
+    window.clearTimeout(translationHoverTimer);
+    translationHoverTimer = window.setTimeout(() => {
+      translationHoverTimer = undefined;
+      void showTranslationPopover(verseElement);
+    }, 2000);
+  });
+
+  verseList.addEventListener('pointerout', (event) => {
+    if (event.pointerType && event.pointerType !== 'mouse') return;
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const trigger = target.closest<HTMLElement>('[data-action="show-translation"]');
+    if (!trigger || (event.relatedTarget instanceof Node && trigger.contains(event.relatedTarget))) return;
+    hideTranslationPopover();
   });
 
   verseList.addEventListener('scroll', () => {
