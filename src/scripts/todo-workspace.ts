@@ -90,6 +90,10 @@ const createId = () => typeof crypto !== 'undefined' && 'randomUUID' in crypto
 
 const isCategory = (value: unknown): value is TodoCategory => categories.some((category) => category.value === value);
 const isPlacement = (value: unknown): value is TodoPlacement => placements.some((placement) => placement.value === value);
+const isWeeklyTemplate = (todo: Todo) => todo.placement === 'weekly' && !todo.date;
+const copiedCompletionForDate = (todo: Todo) => isWeeklyTemplate(todo) ? false : todo.completed;
+const shouldCopyWeeklyTemplate = (todo: Todo | undefined, destination: string | undefined) =>
+  Boolean(todo && isWeeklyTemplate(todo) && destination !== 'weekly');
 
 const normalizeTodo = (value: unknown): Todo | null => {
   if (!value || typeof value !== 'object') return null;
@@ -835,6 +839,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
       ...todo,
       id: createId(),
       date: dateKey,
+      completed: copiedCompletionForDate(todo),
       sortOrder: nextDateSortOrder(dateKey),
       updatedAt: new Date().toISOString()
     };
@@ -936,7 +941,13 @@ export function mountTodoWorkspace(root: HTMLElement) {
     const targetIndex = todos.findIndex((todo) => todo.id === targetTodo.id);
     if (targetIndex < 0) return;
     const copiedTodo: Todo = targetTodo.date
-      ? { ...sourceTodo, id: createId(), date: targetTodo.date, updatedAt: new Date().toISOString() }
+      ? {
+          ...sourceTodo,
+          id: createId(),
+          date: targetTodo.date,
+          completed: copiedCompletionForDate(sourceTodo),
+          updatedAt: new Date().toISOString()
+        }
       : { ...sourceTodo, id: createId(), date: '', placement: targetTodo.placement, updatedAt: new Date().toISOString() };
     const insertIndex = targetIndex + (insertAfter ? 1 : 0);
     const reorderedTodos = [
@@ -1265,9 +1276,10 @@ export function mountTodoWorkspace(root: HTMLElement) {
     const targetTodo = dropTarget.dataset.overviewDropId
       ? state.todos.find((todo) => todo.id === dropTarget.dataset.overviewDropId)
       : undefined;
-    const weeklySourceDroppedElsewhere = sourceTodo?.placement === 'weekly'
-      && targetTodo?.placement !== 'weekly'
-      && dropTarget.dataset.dropPlacement !== 'weekly';
+    const dropDestination = targetTodo
+      ? targetTodo.date ? 'date' : targetTodo.placement
+      : dropTarget.dataset.dropDate ? 'date' : dropTarget.dataset.dropPlacement;
+    const weeklySourceDroppedElsewhere = shouldCopyWeeklyTemplate(sourceTodo, dropDestination);
     const copyRequested = event.ctrlKey || draggedWithCopy || weeklySourceDroppedElsewhere;
     clearDropTargets();
     draggedTodoId = null;
