@@ -21,6 +21,10 @@ const STORAGE = {
   sharedAuth: "mywebsite.site-auth-session.v1"
 };
 
+const ACCOUNT_SYNC_REFRESH_MS = 15000;
+let accountSyncPromise = null;
+let lastAccountSyncAt = 0;
+
 const state = {
   activeView: "kpi",
   manifest: null,
@@ -327,22 +331,30 @@ function restorePreferences() {
   } catch {
     state.kpi.columns = [...DEFAULT_KPI_COLUMNS];
   }
+  restoreManagerPreferencesLocal();
+  restoreManagerNotesLocal();
+}
+
+function restoreManagerPreferencesLocal() {
+  const restored = new Map();
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE.managerPreferences) || "{}");
     Object.entries(saved && typeof saved === "object" ? saved : {}).forEach(([managerId, preference]) => {
-      if (managerId && preference && typeof preference === "object") state.preferences.set(managerId, normalizePreference(managerId, preference));
+      if (managerId && preference && typeof preference === "object") restored.set(managerId, normalizePreference(managerId, preference));
     });
-  } catch {
-    state.preferences = new Map();
-  }
+  } catch {}
+  state.preferences = restored;
+}
+
+function restoreManagerNotesLocal() {
+  const restored = new Map();
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE.managerNotes) || "{}");
     Object.entries(saved && typeof saved === "object" ? saved : {}).forEach(([managerId, note]) => {
-      if (managerId && note && typeof note === "object") state.managerNotes.set(managerId, { text: stringValue(note.text), updatedAt: stringValue(note.updatedAt) });
+      if (managerId && note && typeof note === "object") restored.set(managerId, normalizeManagerNote(note));
     });
-  } catch {
-    state.managerNotes = new Map();
-  }
+  } catch {}
+  state.managerNotes = restored;
 }
 
 function bindStaticEvents() {
@@ -434,8 +446,15 @@ function bindStaticEvents() {
   document.getElementById("holdings-manager-close").addEventListener("click", () => holdingsManagerDialog.close());
   holdingsManagerDialog.addEventListener("click", event => { if (event.target === holdingsManagerDialog) holdingsManagerDialog.close(); });
   document.getElementById("holdings-manager-clear").addEventListener("click", clearHoldingsManagers);
-  window.addEventListener("site-auth-change", event => renderSharedAuthStatus(event.detail));
-  window.addEventListener("storage", event => { if (event.key === STORAGE.sharedAuth) initializePreferenceSync(); });
+  window.addEventListener("site-auth-change", event => {
+    renderSharedAuthStatus(event.detail);
+    scheduleAccountSync(true);
+  });
+  window.addEventListener("storage", handleCrossWindowStorage);
+  window.addEventListener("focus", () => scheduleAccountSync(false));
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") scheduleAccountSync(false);
+  });
   document.getElementById("holding-drilldown-close").addEventListener("click", () => { state.holdingsView.selectedStock = null; document.getElementById("holding-drilldown").hidden = true; });
   document.getElementById("guide-tabs").addEventListener("click", event => {
     const button = event.target.closest("button[data-guide-tab]");
@@ -1038,8 +1057,7 @@ function saveManagerPreviewNote({ closeDialog = false } = {}) {
   if (!managerId) return;
   const text = document.getElementById("manager-preview-note-text").value.trim();
   const updatedAt = new Date().toISOString();
-  if (text) state.managerNotes.set(managerId, { text, updatedAt });
-  else state.managerNotes.delete(managerId);
+  state.managerNotes.set(managerId, { text, updatedAt, deleted: !text });
   saveManagerNotesLocal();
   void persistManagerNotesCloud();
   setText("manager-preview-note-status", text ? `已保存：${formatDateTime(updatedAt)}` : "备注已清空");
@@ -1233,8 +1251,50 @@ function saveManagerNotesLocal() {
 function normalizeManagerNote(raw) {
   return {
     text: stringValue(raw?.text),
-    updatedAt: stringValue(raw?.updatedAt)
+    updatedAt: stringValue(raw?.updatedAt),
+    deleted: raw?.deleted === true || !stringValue(raw?.text)
   };
+}
+
+function handleCrossWindowStorage(event) {
+  if (event.storageArea && event.storageArea !== localStorage) return;
+  if (event.key === STORAGE.sharedAuth) {
+    scheduleAccountSync(true);
+    return;
+  }
+  if (event.key === STORAGE.managerPreferences) {
+    restoreManagerPreferencesLocal();
+    rerenderPreferenceConsumers();
+    renderManagerPreviewPreferenceActions();
+    return;
+  }
+  if (event.key === STORAGE.managerNotes) {
+    restoreManagerNotesLocal();
+    renderScoreNoteList();
+    if (document.getElementById("manager-preview-dialog")?.open && !document.getElementById("manager-preview-note-panel")?.hidden) renderManagerPreviewNote();
+    return;
+  }
+  if (event.key === STORAGE.kpiDefaultFilters || event.key === `${STORAGE.kpiDefaultFilters}:updated-at`) {
+    applyDefaultFilters("kpi", state.activeView === "kpi");
+    return;
+  }
+  if (event.key === STORAGE.scoreDefaultFilters || event.key === `${STORAGE.scoreDefaultFilters}:updated-at`) {
+    applyDefaultFilters("score", state.activeView === "score");
+  }
+}
+
+function scheduleAccountSync(force = false) {
+  const now = Date.now();
+  if (!force && (document.visibilityState === "hidden" || now - lastAccountSyncAt < ACCOUNT_SYNC_REFRESH_MS)) return accountSyncPromise;
+  if (accountSyncPromise) return accountSyncPromise;
+  lastAccountSyncAt = now;
+  accountSyncPromise = (async () => {
+    await initializePreferenceSync();
+    await initializeNoteSync();
+  })().finally(() => {
+    accountSyncPromise = null;
+  });
+  return accountSyncPromise;
 }
 
 async function initializeNoteSync() {
@@ -1255,6 +1315,7 @@ async function initializeNoteSync() {
     saveManagerNotesLocal();
     await bridge.save(Object.fromEntries(state.managerNotes));
     renderScoreNoteList();
+    if (document.getElementById("manager-preview-dialog")?.open && !document.getElementById("manager-preview-note-panel")?.hidden) renderManagerPreviewNote();
   } catch (error) {
     updatePreferenceSyncState("pending", error?.message);
   }
@@ -1305,6 +1366,7 @@ async function initializePreferenceSync() {
     applyDefaultFilters("kpi", false);
     applyDefaultFilters("score", false);
     await bridge.save(preferenceCloudPayload());
+    rerenderPreferenceConsumers();
     updatePreferenceSyncState("synced");
   } catch (error) {
     if (!session?.uid) renderSharedAuthStatus(null, "暂时无法确认登录状态");
@@ -1385,12 +1447,18 @@ function mergeRemoteFilterDefaults(raw) {
 
 function rerenderPreferenceConsumers() {
   if (state.managers) {
+    if (state.activeView === "funds" && state.funds) renderFunds();
     if (state.activeView === "kpi") renderKpi();
     if (state.activeView === "score") renderScore();
-    if (state.activeView === "profile" && state.profile.primaryId) renderProfilePreferenceActions();
+    if (state.activeView === "profile" && state.profile.primaryId) {
+      const manager = state.managers.find(item => item.id === state.profile.primaryId);
+      if (manager) document.getElementById("profile-summary-title").replaceChildren(managerNameButton(manager, { className: "profile-manager-name" }));
+      renderProfilePreferenceActions();
+    }
     if (state.activeView === "holdings") renderHoldings();
     if (state.activeView === "personnel") loadPersonnelMonitor(false);
   }
+  if (document.getElementById("manager-preview-dialog")?.open) renderManagerPreviewPreferenceActions();
 }
 
 function renderManagerPreferenceControls(manager, compact = false, showReview = false) {

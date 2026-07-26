@@ -18,36 +18,73 @@
     return (Array.isArray(data) ? data[0] : data) || {};
   }
 
+  function timestamp(value) {
+    return Date.parse(value?.updatedAt || "") || 0;
+  }
+
+  function mergeLatestRecords(existing, incoming) {
+    const merged = { ...(existing && typeof existing === "object" ? existing : {}) };
+    Object.entries(incoming && typeof incoming === "object" ? incoming : {}).forEach(([key, value]) => {
+      if (!value || typeof value !== "object") return;
+      if (!merged[key] || timestamp(value) >= timestamp(merged[key])) merged[key] = value;
+    });
+    return merged;
+  }
+
+  function mergeFilterDefaults(existing, incoming) {
+    const merged = { ...(existing && typeof existing === "object" ? existing : {}) };
+    ["kpi", "score"].forEach(scope => {
+      const candidate = incoming?.[scope];
+      if (!candidate || typeof candidate !== "object") return;
+      if (!merged[scope] || timestamp(candidate) >= timestamp(merged[scope])) merged[scope] = candidate;
+    });
+    return {
+      ...merged,
+      schemaVersion: incoming?.schemaVersion || existing?.schemaVersion || "fund-dashboard-filter-defaults-v1"
+    };
+  }
+
+  function mergePreferences(existing, incoming) {
+    const merged = mergeLatestRecords(existing, incoming);
+    const key = "__dashboardFilterDefaults";
+    if (existing?.[key] || incoming?.[key]) merged[key] = mergeFilterDefaults(existing?.[key], incoming?.[key]);
+    return merged;
+  }
+
   async function session() {
     const current = await window.FundPreferenceCloud?.getSession?.();
     return current?.uid ? current : null;
   }
 
   async function loadDocument(current) {
-    try {
-      const response = await database.collection(COLLECTION).doc(current.uid).get();
-      return documentFrom(response);
-    } catch {
-      return {};
-    }
+    const response = await database.collection(COLLECTION).doc(current.uid).get();
+    return documentFrom(response);
+  }
+
+  async function withWriteLock(current, callback) {
+    const name = `fund-dashboard-cloud-write:${current.uid}`;
+    if (navigator.locks?.request) return navigator.locks.request(name, callback);
+    return callback();
   }
 
   async function saveDocument(current, patch) {
-    const existing = await loadDocument(current);
-    const payload = {
-      ownerId: current.uid,
-      account: current.account,
-      schemaVersion: SCHEMA_VERSION,
-      preferences: existing.preferences && typeof existing.preferences === "object" ? existing.preferences : {},
-      notes: existing.notes && typeof existing.notes === "object" ? existing.notes : {},
-      ...patch,
-      updatedAt: new Date().toISOString()
-    };
-    responseData(
-      await database.collection(COLLECTION).doc(current.uid).set(payload),
-      "保存基金经理个人数据失败。"
-    );
-    return payload;
+    return withWriteLock(current, async () => {
+      const existing = await loadDocument(current);
+      const payload = {
+        ...existing,
+        ownerId: current.uid,
+        account: current.account,
+        schemaVersion: SCHEMA_VERSION,
+        preferences: mergePreferences(existing.preferences, patch.preferences),
+        notes: mergeLatestRecords(existing.notes, patch.notes),
+        updatedAt: new Date().toISOString()
+      };
+      responseData(
+        await database.collection(COLLECTION).doc(current.uid).set(payload),
+        "保存基金经理个人数据失败。"
+      );
+      return payload;
+    });
   }
 
   const preferenceBridge = window.FundPreferenceCloud;
