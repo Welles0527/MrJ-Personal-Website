@@ -22,19 +22,19 @@ const featurePages = [
     artC: '#ff7ab6'
   },
   {
-    id: 'bookmarks',
-    title: '经文收藏',
-    eyebrow: 'SAVE',
-    quote: '我将你的话藏在心里，免得我得罪你。',
-    reference: '诗篇 119:11',
-    summary: '把触动你的经文和阅读进度保存起来。',
-    action: '查看收藏',
-    href: '#bible-bookmarks',
-    status: '已上线',
-    image: `${basePath}images/bible-theology/feature-bookmarks.webp`,
-    artA: '#ffe08a',
-    artB: '#ff8fab',
-    artC: '#8ec5ff'
+    id: 'daily',
+    title: '每日祷告',
+    eyebrow: 'PRAYER',
+    quote: '早晨我必向你陈明我的心意，并要警醒。',
+    reference: '诗篇 5:3',
+    summary: '每天用一篇以经文为根基的祷告，安静、交托并重新得力。',
+    action: '开始祷告',
+    href: '#bible-daily',
+    status: '每日更新',
+    image: `${basePath}images/bible-theology/feature-prayer.webp`,
+    artA: '#86efac',
+    artB: '#fde68a',
+    artC: '#60a5fa'
   },
   {
     id: 'videos',
@@ -67,21 +67,6 @@ const featurePages = [
     artC: '#93c5fd'
   },
   {
-    id: 'daily',
-    title: '每日读经',
-    eyebrow: 'DAILY',
-    quote: '早晨我必向你陈明我的心意，并要警醒。',
-    reference: '诗篇 5:3',
-    summary: '按每日章节、灵修问题和进度提醒安排读经。',
-    action: '进入计划',
-    href: '#bible-daily',
-    status: '7日计划',
-    image: `${basePath}images/bible-theology/feature-daily.webp`,
-    artA: '#86efac',
-    artB: '#fde68a',
-    artC: '#60a5fa'
-  },
-  {
     id: 'groups',
     title: '小组聚会',
     eyebrow: 'GROUP',
@@ -104,12 +89,27 @@ const featurePages = [
     reference: '诗篇 96:1',
     summary: '整理诗歌主题、使用场景和聚会搭配建议。',
     action: '进入诗歌',
-    href: '#bible-hymns',
+    href: worshipMusicHref,
     status: '主题索引',
     image: `${basePath}images/bible-theology/feature-hymns.webp`,
     artA: '#f0abfc',
     artB: '#facc15',
     artC: '#38bdf8'
+  },
+  {
+    id: 'bookmarks',
+    title: '经文收藏',
+    eyebrow: 'SAVE',
+    quote: '我将你的话藏在心里，免得我得罪你。',
+    reference: '诗篇 119:11',
+    summary: '把触动你的经文和阅读进度保存起来。',
+    action: '查看收藏',
+    href: '#bible-bookmarks',
+    status: '已上线',
+    image: `${basePath}images/bible-theology/feature-bookmarks.webp`,
+    artA: '#ffe08a',
+    artB: '#ff8fab',
+    artC: '#8ec5ff'
   }
 ];
 
@@ -193,14 +193,6 @@ const chapterSamples = {
   }
 };
 
-const bibleData = {
-  books: bibleBooks,
-  samples: chapterSamples,
-  features: featurePages,
-  fullTextUrl: `${basePath}data/bible/chi-cuv-simp.json`,
-  versionLabel: '和合本（公开领域简体）'
-};
-
 const videoModules = [
   { title: '创世记导读', meta: '经卷导读 · 8-12 分钟', text: '从创造、堕落、应许和族长故事建立旧约入口。', href: '?book=gen&chapter=1#bible-reader', guide: '先读创世记 1，标记“神说”“神看为好”“有晚上，有早晨”。' },
   { title: '诗篇祷告路径', meta: '主题导读 · 6-10 分钟', text: '用赞美、哀歌、信靠和感恩整理诗篇的祷告语言。', href: '?book=psa&chapter=23#bible-reader', guide: '先读诗篇 23，再把“供应、引导、同在、盼望”写成祷告。' },
@@ -216,15 +208,143 @@ const peopleCards = [
   { name: '马利亚', role: '顺服与见证', text: '从领受、等候和见证看信心如何进入日常生命。', refs: '路 1 / 约 2 / 徒 1', question: '我今天可以在哪件小事上顺服？', href: '#bible-daily' }
 ];
 
-const dailyPlan = [
-  { day: 'D1', title: '创造与光', passage: '创世记 1', prompt: '今天观察“神说”出现在哪里。' },
-  { day: 'D2', title: '供应与安息', passage: '诗篇 23', prompt: '写下一处你需要被牧养的地方。' },
-  { day: 'D3', title: '重生与信', passage: '约翰福音 3', prompt: '把“信”与“永生”的关系写成一句话。' },
-  { day: 'D4', title: '应许与等候', passage: '创世记 12', prompt: '记录一个正在等候的应许或方向。' },
-  { day: 'D5', title: '旷野与带领', passage: '出埃及记 3', prompt: '思考神如何回应人的推辞。' },
-  { day: 'D6', title: '悔改与更新', passage: '诗篇 51', prompt: '用一段祷告回应经文。' },
-  { day: 'D7', title: '使命与同行', passage: '马太福音 28', prompt: '写下本周一个可执行的顺服行动。' }
+const dailyPrayers = [
+  {
+    theme: '清晨交托',
+    title: '把今天交在你手中',
+    reference: '诗篇 5:3',
+    prayer: '亲爱的天父，新的一天来到，我把心里的期待、忧虑和尚未想清楚的事都交给你。求你整理我的次序，使我先寻求你的心意；也赐我清醒温柔的心，在每一个选择中活出诚实、忍耐和爱。阿们。'
+  },
+  {
+    theme: '寻求智慧',
+    title: '在选择中听见你的引导',
+    reference: '雅各书 1:5',
+    prayer: '赐智慧的主，我承认自己看得有限，也容易被情绪和急切推动。求你在今天的决定中赐我分辨，让我不凭惧怕行动，也不靠聪明自恃；愿你的真理校正我，使我的选择带来和平与生命。阿们。'
+  },
+  {
+    theme: '平安',
+    title: '把忧虑化为祷告',
+    reference: '腓立比书 4:6-7',
+    prayer: '守护人心的神，我把反复盘旋的担忧一件一件带到你面前。求你赐我超过环境的平安，让我的思想停留在你的信实里；帮助我做好今天能够做的事，其余的学习安然交托。阿们。'
+  },
+  {
+    theme: '感恩',
+    title: '在平凡里看见恩典',
+    reference: '帖撒罗尼迦前书 5:16-18',
+    prayer: '恩典的主，谢谢你把生命、关系、工作和今日所需赐给我。即使有些事情尚未如愿，也求你开我的眼，使我不忽略细小却真实的恩惠；愿感恩成为我的眼光，也成为我对待别人的方式。阿们。'
+  },
+  {
+    theme: '安静等候',
+    title: '停止奔忙，重新仰望',
+    reference: '诗篇 46:10',
+    prayer: '永不改变的神，我愿暂时放下催促自己的声音，在你面前安静。求你从忙乱中收回我的心，让我记得你仍掌权；在答案尚未来到的时候，赐我耐心，在道路尚未清楚的时候，赐我信靠。阿们。'
+  },
+  {
+    theme: '关系',
+    title: '以温柔守护彼此',
+    reference: '以弗所书 4:2-3',
+    prayer: '爱的主，求你看守我今天所说的话和所带出的态度。除去我的骄傲与急躁，使我愿意先聆听、慢慢判断、及时道歉；在分歧里赐我温柔和诚实，让我成为修复关系、带来和睦的人。阿们。'
+  },
+  {
+    theme: '更新',
+    title: '为我造一颗清洁的心',
+    reference: '诗篇 51:10',
+    prayer: '圣洁的神，求你光照我不愿面对的软弱，也洁净我隐藏的动机。谢谢你不因我的失败离弃我；求你在我里面重新放正直的灵，使我愿意悔改、接受饶恕，并以新的选择回应你的恩典。阿们。'
+  },
+  {
+    theme: '勇气',
+    title: '在惧怕中仍然向前',
+    reference: '以赛亚书 41:10',
+    prayer: '与我同在的主，当我因未知、压力或人的眼光退缩时，求你坚固我。让我不是假装无所畏惧，而是在惧怕中仍选择信靠；求你扶持我的脚步，使我今天忠心完成眼前的一步。阿们。'
+  },
+  {
+    theme: '工作',
+    title: '把手中的事献给你',
+    reference: '歌罗西书 3:23',
+    prayer: '信实的主，求你赐我专注与勤勉，使我不只为人的肯定工作。帮助我认真完成微小的责任，也在压力中守住诚实和善意；愿我手中的事成为服事，使人因我的工作得到真实的帮助。阿们。'
+  },
+  {
+    theme: '安息',
+    title: '在疲惫中来到你面前',
+    reference: '马太福音 11:28',
+    prayer: '温柔的主，我带着身体的疲惫、心里的重担来到你面前。求你教我放下不属于我的责任，也赐我勇气承认自己的有限；愿你的同在使我重新得力，让我用合宜的节奏继续前行。阿们。'
+  },
+  {
+    theme: '家庭',
+    title: '祝福我的家',
+    reference: '约书亚记 24:15',
+    prayer: '守约的神，我把家人和我们的关系交托给你。求你赐我们彼此尊重、真实沟通和愿意饶恕的心；在忙碌与困难中，帮助我们仍选择爱、选择同行，使这个家成为有平安、有恩慈的地方。阿们。'
+  },
+  {
+    theme: '引导',
+    title: '不倚靠自己的聪明',
+    reference: '箴言 3:5-6',
+    prayer: '引路的主，我把尚未确定的方向交给你。求你拆去我因控制而来的焦虑，使我愿意承认你、等候你，也留心你借着真理、环境和成熟肢体给我的提醒；求你修直我前面的路。阿们。'
+  },
+  {
+    theme: '服事',
+    title: '让我看见身边的需要',
+    reference: '马可福音 10:45',
+    prayer: '谦卑服事人的主，求你使我不只关注自己的计划，也看见身边人的需要。赐我一双愿意帮助的手、一颗不求回报的心；让我今天用具体的小事表达爱，不让善意只停留在想法里。阿们。'
+  },
+  {
+    theme: '盼望',
+    title: '在等待中充满盼望',
+    reference: '罗马书 15:13',
+    prayer: '赐盼望的神，当现实使我灰心时，求你借着圣灵重新充满我。让我记得盼望不是否认困难，而是在困难中仍相信你的良善；愿喜乐和平安在我里面扎根，也从我流向身边的人。阿们。'
+  },
+  {
+    theme: '饶恕',
+    title: '放下苦毒，选择恩慈',
+    reference: '歌罗西书 3:13',
+    prayer: '满有怜悯的主，你知道我受过的伤，也知道我紧握不放的委屈。求你医治我，使我不再让苦毒定义自己；赐我智慧设立合宜界限，也赐我力量逐步饶恕，如同我领受你的饶恕。阿们。'
+  },
+  {
+    theme: '供应',
+    title: '赐给我们日用的饮食',
+    reference: '马太福音 6:11',
+    prayer: '供应一切所需的天父，我把今天实际的需要带到你面前。求你赐下够用的恩典，也教我不被贪心和比较辖制；当我有余时，使我愿意分享，当我缺乏时，使我仍能信靠并勇敢求助。阿们。'
+  },
+  {
+    theme: '使命',
+    title: '让我成为福音的见证',
+    reference: '马太福音 28:19-20',
+    prayer: '差遣人的主，求你使我的信仰不只停留在言语。让我在家庭、工作和朋友中活出真实的爱，以谦卑和尊重分享盼望；求你预备合宜的机会，也让我记得你必常与我同在。阿们。'
+  },
+  {
+    theme: '医治',
+    title: '在软弱中仰望你',
+    reference: '诗篇 103:2-3',
+    prayer: '怜悯人的主，我把身体和心灵的软弱带到你面前。求你赐下医治、合适的照顾和忍耐，也引导医生与陪伴我的人；无论恢复需要多久，愿你的同在托住我，使我不孤单、不失去盼望。阿们。'
+  },
+  {
+    theme: '忍耐',
+    title: '让试炼生出成熟',
+    reference: '雅各书 1:2-4',
+    prayer: '塑造生命的神，我不轻看眼前的困难，也不愿让它白白经过。求你在试炼中培养我的忍耐，显明需要成长的地方；赐我忠心坚持的力量，使我经过考验后更成熟、更自由、更像你。阿们。'
+  },
+  {
+    theme: '安睡',
+    title: '平安躺下睡觉',
+    reference: '诗篇 4:8',
+    prayer: '看顾我的主，这一天无论完成多少，我愿在夜里把一切交还给你。求你安静我的思绪，赦免我的亏欠，也医治今天留下的疲惫；让我在你的保护中安睡，明早带着新的恩典醒来。阿们。'
+  },
+  {
+    theme: '赞美',
+    title: '向你唱一首新歌',
+    reference: '诗篇 96:1-2',
+    prayer: '配得赞美的主，我因你的信实、慈爱和救恩称颂你。求你使我的赞美不只在顺利的时候发出，也在等待和争战中持续；愿我的言语、选择和生活，成为一首献给你的新歌。阿们。'
+  }
 ];
+
+const bibleData = {
+  books: bibleBooks,
+  samples: chapterSamples,
+  features: featurePages,
+  prayers: dailyPrayers,
+  fullTextUrl: `${basePath}data/bible/chi-cuv-simp.json`,
+  versionLabel: '和合本（公开领域简体）'
+};
 
 const groupQuestions = [
   '这段经文中最直接触动你的词句是什么？',
@@ -392,6 +512,34 @@ const hymnCards = [
     </div>
   </section>
 
+  <section class="bible-feature-section" id="bible-daily" aria-labelledby="bible-daily-title">
+    <div class="bible-section-shell">
+      <p class="bible-section-kicker">DAILY PRAYER</p>
+      <h2 id="bible-daily-title">每日祷告</h2>
+      <p class="bible-section-lede">每天一篇以经文为根基的原创祷告；需要另一篇时，可以随时刷新。</p>
+      <article class="bible-prayer-card" aria-live="polite" aria-atomic="true">
+        <div class="bible-prayer-meta">
+          <span data-prayer-date>今日祷告</span>
+          <span>经文主题原创</span>
+        </div>
+        <p class="bible-prayer-theme" data-prayer-theme>{dailyPrayers[0].theme}</p>
+        <h3 data-prayer-title>{dailyPrayers[0].title}</h3>
+        <blockquote data-prayer-text>{dailyPrayers[0].prayer}</blockquote>
+        <div class="bible-prayer-footer">
+          <div>
+            <strong data-prayer-reference>{dailyPrayers[0].reference}</strong>
+            <small data-prayer-count>1 / {dailyPrayers.length}</small>
+          </div>
+          <button type="button" data-action="refresh-prayer" aria-label="换一篇祷告">
+            <span aria-hidden="true">↻</span>
+            换一篇
+          </button>
+        </div>
+        <p class="bible-prayer-source">祷告词按《圣经》和合本主题原创，不摘录受版权限制的祷告书。</p>
+      </article>
+    </div>
+  </section>
+
   <section class="bible-feature-section" id="bible-videos" aria-labelledby="bible-videos-title">
     <div class="bible-section-shell">
       <p class="bible-section-kicker">WATCH</p>
@@ -431,29 +579,6 @@ const hymnCards = [
             <em>{person.question}</em>
             <a href={person.href}>进入线索</a>
           </article>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <section class="bible-feature-section" id="bible-daily" aria-labelledby="bible-daily-title">
-    <div class="bible-section-shell">
-      <p class="bible-section-kicker">DAILY</p>
-      <h2 id="bible-daily-title">每日读经</h2>
-      <p class="bible-section-lede">一个 7 天读经计划，勾选进度会保存在本机浏览器。</p>
-      <div class="bible-daily-summary" aria-live="polite">
-        <strong data-daily-progress>0 / 7</strong>
-        <span>今日可以从已收录章节开始，再按计划记录回应。</span>
-      </div>
-      <div class="bible-daily-plan">
-        {dailyPlan.map((item, index) => (
-          <label class="bible-daily-item">
-            <input type="checkbox" data-daily-step={String(index)} />
-            <span>{item.day}</span>
-            <strong>{item.title}</strong>
-            <em>{item.passage}</em>
-            <small>{item.prompt}</small>
-          </label>
         ))}
       </div>
     </div>
@@ -2603,64 +2728,142 @@ const hymnCards = [
     padding-left: 1.1rem;
   }
 
-  .bible-daily-plan {
-    display: grid;
-    gap: 0.65rem;
-    margin-top: 1.35rem;
+  .bible-prayer-card {
+    position: relative;
+    isolation: isolate;
+    max-width: 58rem;
+    overflow: hidden;
+    border: 1px solid rgba(216, 179, 95, 0.34);
+    border-radius: 1rem;
+    padding: clamp(1.25rem, 3vw, 2.25rem);
+    background:
+      radial-gradient(circle at 88% 12%, rgba(237, 196, 103, 0.18), transparent 16rem),
+      linear-gradient(135deg, rgba(255, 246, 218, 0.1), rgba(255, 246, 218, 0.035));
+    box-shadow: 0 1.5rem 3.8rem rgba(0, 0, 0, 0.18);
   }
 
-  .bible-daily-summary {
+  .bible-prayer-card::before {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    background:
+      repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent 2.25rem,
+        rgba(216, 179, 95, 0.055) 2.25rem,
+        rgba(216, 179, 95, 0.055) calc(2.25rem + 1px)
+      );
+    content: '';
+    pointer-events: none;
+  }
+
+  .bible-prayer-meta,
+  .bible-prayer-footer {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.6rem 1rem;
     align-items: center;
-    width: fit-content;
-    max-width: 100%;
-    border: 1px solid rgba(216, 179, 95, 0.18);
-    border-radius: 999px;
-    padding: 0.48rem 0.78rem;
-    background: rgba(255, 246, 218, 0.045);
-    color: rgba(255, 247, 224, 0.68);
-    font-size: 0.82rem;
+    justify-content: space-between;
+    gap: 0.7rem 1rem;
   }
 
-  .bible-daily-summary strong {
+  .bible-prayer-meta span {
+    border: 1px solid rgba(216, 179, 95, 0.25);
+    border-radius: 999px;
+    padding: 0.36rem 0.66rem;
+    background: rgba(20, 17, 11, 0.3);
+    color: rgba(255, 247, 224, 0.72);
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 0.69rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+  }
+
+  .bible-prayer-theme {
+    width: fit-content;
+    margin: clamp(1.4rem, 3vw, 2.4rem) 0 0.65rem;
+    color: #e2bd68;
+    font-size: 0.78rem;
+    font-weight: 900;
+    letter-spacing: 0.16em;
+  }
+
+  .bible-prayer-card h3 {
+    margin: 0;
+    color: #fff4d8;
+    font-family: 'STSong', 'Songti SC', serif;
+    font-size: clamp(1.65rem, 4vw, 2.8rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+  }
+
+  .bible-prayer-card blockquote {
+    max-width: 48rem;
+    margin: 1.2rem 0 1.6rem;
+    border-left: 2px solid rgba(224, 186, 98, 0.78);
+    padding: 0.1rem 0 0.1rem clamp(1rem, 2.5vw, 1.55rem);
+    color: rgba(255, 247, 224, 0.86);
+    font-family: 'STKaiti', 'KaiTi', serif;
+    font-size: clamp(1.02rem, 2.3vw, 1.25rem);
+    line-height: 2;
+  }
+
+  .bible-prayer-footer {
+    border-top: 1px solid rgba(216, 179, 95, 0.17);
+    padding-top: 1rem;
+  }
+
+  .bible-prayer-footer > div {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+  }
+
+  .bible-prayer-footer strong {
     color: #f9df9f;
   }
 
-  .bible-daily-item {
-    display: grid;
-    grid-template-columns: auto 3rem minmax(8rem, 0.8fr) minmax(7rem, 0.7fr) minmax(0, 1.2fr);
-    gap: 0.8rem;
+  .bible-prayer-footer small {
+    color: rgba(255, 247, 224, 0.48);
+    font-family: ui-monospace, Consolas, monospace;
+  }
+
+  .bible-prayer-footer button {
+    display: inline-flex;
     align-items: center;
-    border: 1px solid rgba(216, 179, 95, 0.18);
-    border-radius: 0.7rem;
-    padding: 0.85rem 1rem;
-    background: rgba(255, 246, 218, 0.045);
-    color: rgba(255, 247, 224, 0.72);
+    justify-content: center;
+    gap: 0.42rem;
+    min-height: 2.7rem;
+    border: 1px solid rgba(216, 179, 95, 0.42);
+    border-radius: 999px;
+    padding: 0.55rem 0.92rem;
+    background: #d8b35f;
+    color: #21190c;
+    cursor: pointer;
+    font-weight: 900;
+    transition: transform 180ms ease, background 180ms ease, box-shadow 180ms ease;
   }
 
-  .bible-daily-item input {
-    width: 1.1rem;
-    height: 1.1rem;
-    accent-color: #d8b35f;
+  .bible-prayer-footer button:hover {
+    transform: translateY(-2px);
+    background: #f0cf85;
+    box-shadow: 0 0.8rem 1.8rem rgba(0, 0, 0, 0.2);
   }
 
-  .bible-daily-item span,
-  .bible-daily-item strong {
-    color: #fff4d8;
+  .bible-prayer-footer button span {
+    font-size: 1.1rem;
+    transition: transform 420ms ease;
   }
 
-  .bible-daily-item em,
-  .bible-daily-item small {
-    color: rgba(255, 247, 224, 0.64);
-    font-style: normal;
-    line-height: 1.55;
+  .bible-prayer-footer button:active span {
+    transform: rotate(180deg);
   }
 
-  .bible-daily-item.is-done {
-    border-color: rgba(216, 179, 95, 0.42);
-    background: rgba(216, 179, 95, 0.12);
+  .bible-prayer-source {
+    margin: 1rem 0 0;
+    color: rgba(255, 247, 224, 0.46);
+    font-size: 0.72rem;
+    line-height: 1.65;
   }
 
   .bible-login-modal,
@@ -3086,13 +3289,20 @@ const hymnCards = [
       padding: 2.2rem 1rem;
     }
 
-    .bible-daily-item {
-      grid-template-columns: auto 2.5rem minmax(0, 1fr);
+    .bible-prayer-card {
+      border-radius: 0.85rem;
     }
 
-    .bible-daily-item em,
-    .bible-daily-item small {
-      grid-column: 3;
+    .bible-prayer-meta {
+      align-items: flex-start;
+    }
+
+    .bible-prayer-footer {
+      align-items: stretch;
+    }
+
+    .bible-prayer-footer button {
+      width: 100%;
     }
   }
 </style>

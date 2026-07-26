@@ -32,10 +32,18 @@ type FeaturePage = {
   artC: string;
 };
 
+type DailyPrayer = {
+  theme: string;
+  title: string;
+  reference: string;
+  prayer: string;
+};
+
 type BibleData = {
   books: BibleBook[];
   samples: Record<string, ChapterSample>;
   features: FeaturePage[];
+  prayers: DailyPrayer[];
   fullTextUrl?: string;
   versionLabel?: string;
 };
@@ -111,7 +119,7 @@ type CloudResult<T> = {
 };
 
 const STORAGE_KEY = 'mywebsite.bible-reader.v1';
-const DAILY_PLAN_KEY = 'mywebsite.bible-daily-plan.v1';
+const DAILY_PRAYER_KEY = 'mywebsite.bible-daily-prayer.v1';
 const READ_VERSES_KEY = 'mywebsite.bible-read-verses.v1';
 const BOOK_STATUS_KEY = 'mywebsite.bible-book-status.v1';
 const READING_THEME_KEY = 'mywebsite.bible-reading-theme.v1';
@@ -304,8 +312,12 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   const readingSyncStatus = root.querySelector<HTMLElement>('[data-reading-sync-status]');
   const toast = get<HTMLElement>('[data-bible-toast]');
   const groupGuide = root.querySelector<HTMLElement>('[data-group-guide]');
-  const dailySteps = [...root.querySelectorAll<HTMLInputElement>('[data-daily-step]')];
-  const dailyProgress = root.querySelector<HTMLElement>('[data-daily-progress]');
+  const prayerDate = get<HTMLElement>('[data-prayer-date]');
+  const prayerTheme = get<HTMLElement>('[data-prayer-theme]');
+  const prayerTitle = get<HTMLElement>('[data-prayer-title]');
+  const prayerText = get<HTMLElement>('[data-prayer-text]');
+  const prayerReference = get<HTMLElement>('[data-prayer-reference]');
+  const prayerCount = get<HTMLElement>('[data-prayer-count]');
   const readingProgress = root.querySelector<HTMLElement>('[data-reading-progress]');
   const readingThemeToggle = root.querySelector<HTMLButtonElement>('[data-action="toggle-reading-theme"]');
   const translationPopover = get<HTMLElement>('[data-bible-translation-popover]');
@@ -363,6 +375,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   let translationHoverTimer: number | undefined;
   let activeTranslationVerse: HTMLElement | null = null;
   let translationRequestToken = 0;
+  let currentPrayerIndex = 0;
   const translationCache = new Map<string, TranslationPayload>();
 
   const renderLoginState = (nextSession: CloudSession | null) => {
@@ -1220,34 +1233,63 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     noteSectionList.hidden = expanded;
   };
 
-  const readDailyPlan = () => {
+  const prayerDateKey = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const prayerIndexForDate = () => {
+    const today = new Date();
+    const seed = today.getFullYear() * 372 + (today.getMonth() + 1) * 31 + today.getDate();
+    return data.prayers.length ? seed % data.prayers.length : 0;
+  };
+
+  const readPrayerIndex = () => {
+    const date = prayerDateKey();
     try {
-      const parsed = JSON.parse(window.localStorage.getItem(DAILY_PLAN_KEY) || '[]');
-      return Array.isArray(parsed) ? parsed.map(Boolean) : [];
+      const saved = JSON.parse(window.localStorage.getItem(DAILY_PRAYER_KEY) || '{}') as { date?: string; index?: number };
+      if (saved.date === date && Number.isInteger(saved.index) && Number(saved.index) >= 0 && Number(saved.index) < data.prayers.length) {
+        return Number(saved.index);
+      }
     } catch {
-      return [];
+      // Use the date-based prayer when local storage is unavailable or invalid.
+    }
+    return prayerIndexForDate();
+  };
+
+  const writePrayerIndex = (index: number) => {
+    try {
+      window.localStorage.setItem(DAILY_PRAYER_KEY, JSON.stringify({ date: prayerDateKey(), index }));
+    } catch {
+      notify('今日祷告暂时无法保存到浏览器。');
     }
   };
 
-  const writeDailyPlan = () => {
-    const values = dailySteps.map((input) => input.checked);
-    try {
-      window.localStorage.setItem(DAILY_PLAN_KEY, JSON.stringify(values));
-    } catch {
-      notify('读经计划进度暂时无法保存。');
-    }
+  const renderPrayer = (index: number, persist = false) => {
+    if (!data.prayers.length) return;
+    currentPrayerIndex = (index + data.prayers.length) % data.prayers.length;
+    const prayer = data.prayers[currentPrayerIndex];
+    prayerDate.textContent = new Intl.DateTimeFormat('zh-CN', {
+      month: 'long',
+      day: 'numeric',
+      weekday: 'long'
+    }).format(new Date());
+    prayerTheme.textContent = prayer.theme;
+    prayerTitle.textContent = prayer.title;
+    prayerText.textContent = prayer.prayer;
+    prayerReference.textContent = prayer.reference;
+    prayerCount.textContent = `${currentPrayerIndex + 1} / ${data.prayers.length}`;
+    if (persist) writePrayerIndex(currentPrayerIndex);
   };
 
-  const renderDailyPlan = () => {
-    const values = readDailyPlan();
-    dailySteps.forEach((input, index) => {
-      input.checked = Boolean(values[index]);
-      input.closest('.bible-daily-item')?.classList.toggle('is-done', input.checked);
-    });
-    if (dailyProgress) {
-      const completed = dailySteps.filter((input) => input.checked).length;
-      dailyProgress.textContent = `${completed} / ${dailySteps.length}`;
-    }
+  const refreshPrayer = () => {
+    if (data.prayers.length < 2) return;
+    const offset = 1 + Math.floor(Math.random() * (data.prayers.length - 1));
+    renderPrayer(currentPrayerIndex + offset, true);
+    notify('已换一篇祷告。');
   };
 
   const renderAll = (targetVerse?: number, options: RenderOptions = {}) => {
@@ -1715,6 +1757,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     if (trigger.dataset.action === 'export-bookmarks') exportBookmarks();
     if (trigger.dataset.action === 'export-notes') exportNotes();
     if (trigger.dataset.action === 'toggle-reading-theme') toggleReadingTheme();
+    if (trigger.dataset.action === 'refresh-prayer') refreshPrayer();
     if (trigger.dataset.action === 'toggle-bookmark-book' && trigger.dataset.bookKey) {
       const key = trigger.dataset.bookKey;
       if (expandedBookmarkBooks.has(key)) expandedBookmarkBooks.delete(key);
@@ -1790,13 +1833,6 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     renderBookmarks();
     renderNotes();
   });
-  dailySteps.forEach((input) => {
-    input.addEventListener('change', () => {
-      input.closest('.bible-daily-item')?.classList.toggle('is-done', input.checked);
-      writeDailyPlan();
-      renderDailyPlan();
-    });
-  });
   window.addEventListener('keydown', (event) => {
     if (event.key === 'ArrowLeft') setFeature(currentFeature - 1);
     if (event.key === 'ArrowRight') setFeature(currentFeature + 1);
@@ -1814,7 +1850,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
 
   indexReadingProgress();
   renderReadingTheme();
-  renderDailyPlan();
+  renderPrayer(readPrayerIndex());
   renderAll(Number(params.get('verse') || '') || undefined, { updateLastRead: false });
   void loadFullBibleText();
 }
