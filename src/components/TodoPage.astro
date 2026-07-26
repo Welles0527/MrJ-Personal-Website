@@ -845,6 +845,8 @@ const navItems: NavItem[] = [
         flex-direction: column;
         padding: 0.9rem 1.08rem 0.94rem;
         border-right: 1px solid rgba(111, 63, 23, 0.1);
+        font-family: "Segoe UI Variable Text", "Segoe UI", "Helvetica Neue", Arial, "Microsoft YaHei", sans-serif;
+        font-variant-numeric: tabular-nums;
       }
 
       .todo-select-row {
@@ -862,7 +864,7 @@ const navItems: NavItem[] = [
         background: transparent;
         color: #2e1a0d;
         font-size: 0.92rem;
-        font-weight: 900;
+        font-weight: 700;
         outline-color: #a9672c;
       }
 
@@ -877,7 +879,8 @@ const navItems: NavItem[] = [
         margin-bottom: 0.2rem;
         color: #8b6746;
         font-size: 0.74rem;
-        font-weight: 900;
+        font-weight: 650;
+        line-height: 1;
       }
 
       .todo-month-day {
@@ -889,8 +892,9 @@ const navItems: NavItem[] = [
         border-radius: 999px;
         background: transparent;
         color: #3b2413;
-        font-size: 0.78rem;
-        font-weight: 900;
+        font-size: 0.82rem;
+        font-weight: 500;
+        line-height: 1;
       }
 
       .todo-month-day:hover { background: rgba(133, 82, 31, 0.08); }
@@ -924,6 +928,7 @@ const navItems: NavItem[] = [
         border-radius: 50%;
         background: linear-gradient(180deg, #a9572c, #71310d);
         color: #fff1cf;
+        font-weight: 700;
         box-shadow: 0 4px 9px rgba(68, 28, 3, 0.24);
       }
 
@@ -1091,6 +1096,32 @@ const navItems: NavItem[] = [
 
       .todo-overview-weekly-list {
         gap: 0.34rem;
+      }
+
+      .todo-overview-weekly-columns {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(11.5rem, 1fr));
+        gap: 0.58rem;
+        min-width: 0;
+      }
+
+      .todo-overview-weekly-column {
+        min-width: 0;
+      }
+
+      .todo-overview-weekly-column-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.35rem;
+        min-height: 1.65rem;
+        margin-bottom: 0.34rem;
+        border-bottom: 1px solid rgba(111, 63, 23, 0.1);
+        padding: 0 0.12rem 0.3rem;
+      }
+
+      .todo-overview-weekly-column .todo-overview-item {
+        grid-template-columns: minmax(0, 1fr) auto;
       }
 
       .todo-overview-item.is-inline-category {
@@ -1398,7 +1429,7 @@ const navItems: NavItem[] = [
       }
 
       .todo-item.is-completed .todo-item-title {
-        color: #967a5d;
+        opacity: 0.62;
         text-decoration: line-through;
       }
 
@@ -2009,7 +2040,7 @@ const navItems: NavItem[] = [
       }
 
       html[data-todo-theme="dark"] .todo-item.is-completed .todo-item-title {
-        color: #778581;
+        opacity: 0.58;
       }
 
       html[data-todo-theme="dark"] .todo-tag.work { background: color-mix(in srgb, var(--category-work) 20%, #263133); color: #c8b5ee; }
@@ -2116,6 +2147,7 @@ const navItems: NavItem[] = [
       @media (max-width: 1200px) {
         .todo-shell { grid-template-columns: 224px minmax(0, 1fr); }
         .todo-main { padding-right: 1rem; padding-left: 1rem; }
+        .todo-overview-weekly-columns { grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr)); }
         .todo-weekly-board { gap: 0.5rem; }
         .todo-day-column { padding: 0.68rem; }
         .todo-item { padding: 0.58rem; }
@@ -2144,6 +2176,7 @@ const navItems: NavItem[] = [
         .todo-planner-card { grid-template-columns: 1fr; }
         .todo-calendar-panel { border-right: 0; border-bottom: 1px solid rgba(111, 63, 23, 0.1); }
         .todo-week-overview { min-width: 610px; }
+        .todo-overview-weekly-columns { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .todo-weekly-board { grid-template-columns: repeat(2, minmax(0, 1fr)); min-height: auto; }
         .todo-day-column { min-height: 22rem; }
       }
@@ -2233,6 +2266,7 @@ const navItems: NavItem[] = [
           color: #542906;
         }
         .todo-board-section { margin-top: 0.75rem; }
+        .todo-overview-weekly-columns { grid-template-columns: 1fr; }
         .todo-weekly-board,
         .todo-weekly-board.is-compact {
           grid-template-columns: 1fr;

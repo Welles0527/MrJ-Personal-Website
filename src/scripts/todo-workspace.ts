@@ -449,6 +449,12 @@ export function mountTodoWorkspace(root: HTMLElement) {
 
   const renderOverviewLanes = () => {
     const weeklyTodos = filterTodos(allTodosForPlacement('weekly'));
+    const weeklyGroups = categories
+      .map((category) => ({
+        ...category,
+        todos: weeklyTodos.filter((todo) => todo.category === category.value)
+      }))
+      .filter((group) => group.todos.length);
     overviewLanes.innerHTML = `<section class="todo-overview-lane" aria-label="每周必做" data-drop-placement="weekly">
       <header class="todo-overview-lane-header">
         <div>
@@ -457,13 +463,19 @@ export function mountTodoWorkspace(root: HTMLElement) {
         </div>
         <button class="todo-lane-add" type="button" data-action="open-create" data-placement="weekly" aria-label="新增每周必做待办">＋</button>
       </header>
-      ${weeklyTodos.length ? `<ul class="todo-overview-list todo-overview-weekly-list">${weeklyTodos.map((todo, index) =>
-        renderOverviewTodo(todo, index, weeklyTodos.length, {
-          showMeta: true,
-          showCategory: false,
-          showCompleted: false,
-          inlineCategory: true
-        })).join('')}</ul>` : '<p class="todo-overview-empty">暂无待办</p>'}
+      ${weeklyTodos.length ? `<div class="todo-overview-weekly-columns">${weeklyGroups.map((group) => `
+        <section class="todo-overview-weekly-column" aria-label="${group.label}">
+          <header class="todo-overview-weekly-column-header">
+            <span class="todo-tag ${group.value}">${group.label}</span>
+            <span class="todo-overview-category-count">${group.todos.length} 项</span>
+          </header>
+          <ul class="todo-overview-list todo-overview-weekly-list">${group.todos.map((todo, index) =>
+            renderOverviewTodo(todo, index, group.todos.length, {
+              showMeta: true,
+              showCategory: false,
+              showCompleted: false
+            })).join('')}</ul>
+        </section>`).join('')}</div>` : '<p class="todo-overview-empty">暂无待办</p>'}
     </section>`;
   };
 
@@ -733,7 +745,6 @@ export function mountTodoWorkspace(root: HTMLElement) {
     await startCloudWatcher(session);
     if (loginModal.open) loginModal.close();
     notify(successMessage || '已连接云端待办，跨浏览器实时同步已开启。');
-    scheduleExportReminder();
   };
 
   const saveCloudTodo = async (
@@ -883,7 +894,12 @@ export function mountTodoWorkspace(root: HTMLElement) {
   const moveOverviewTodo = async (todoId: string, direction: -1 | 1) => {
     const todo = state.todos.find((item) => item.id === todoId);
     if (!todo) return;
-    const todos = todo.date ? allTodosForDateKey(todo.date) : allTodosForPlacement(todo.placement);
+    const placementTodos = allTodosForPlacement(todo.placement);
+    const todos = todo.date
+      ? allTodosForDateKey(todo.date)
+      : todo.placement === 'weekly'
+        ? placementTodos.filter((item) => item.category === todo.category)
+        : placementTodos;
     const index = todos.findIndex((item) => item.id === todo.id);
     const nextIndex = index + direction;
     if (index < 0 || nextIndex < 0 || nextIndex >= todos.length) return;
@@ -1162,19 +1178,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
     window.clearTimeout(exportReminderTimer);
     const now = new Date();
     const { reminderKey, reminderDue, nextFriday } = exportReminderTiming(now);
-    const hasCloudData = Boolean(cloudSession && (state.todos.length || state.trash.length));
-    const anotherDialogOpen = loginModal.open
-      || todoModal.open
-      || deleteModal.open
-      || trashModal.open
-      || migrationModal.open;
-    if (
-      reminderDue
-      && hasCloudData
-      && readExportReminderKey() !== reminderKey
-      && !exportReminderModal.open
-      && !anotherDialogOpen
-    ) {
+    if (reminderDue && readExportReminderKey() !== reminderKey && !exportReminderModal.open) {
       exportReminderModal.showModal();
     }
     exportReminderTimer = window.setTimeout(scheduleExportReminder, Math.max(1000, nextFriday.getTime() - now.getTime()));
@@ -1601,6 +1605,12 @@ export function mountTodoWorkspace(root: HTMLElement) {
       showLogin('请先登录后再保存待办。');
       return;
     }
+    const editingId = state.editingId;
+    const reopenFormAfterFailedSave = () => {
+      openForm(date ?? undefined, nextTodo, nextPlacement);
+      state.editingId = editingId;
+      formTitle.textContent = editingId ? '编辑待办' : '新增待办';
+    };
     closeForm();
     try {
       const saved = await saveCloudTodo(
@@ -1609,11 +1619,13 @@ export function mountTodoWorkspace(root: HTMLElement) {
         existing?.updatedAt
       );
       if (!saved) {
+        reopenFormAfterFailedSave();
         return;
       }
       if (date) selectDate(date);
       render();
     } catch (error) {
+      reopenFormAfterFailedSave();
       showCloudError(error, '保存云端待办失败。');
     }
   });
@@ -1742,5 +1754,6 @@ export function mountTodoWorkspace(root: HTMLElement) {
     window.clearTimeout(exportReminderTimer);
   });
   render();
-  void initialiseCloud().finally(scheduleExportReminder);
+  scheduleExportReminder();
+  void initialiseCloud();
 }
