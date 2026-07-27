@@ -31,7 +31,7 @@ const LOCAL_MIGRATION_PATH = '/officialwebsite/topics/space/planning/todo';
 const OFFICIAL_WEBSITE_ORIGIN = 'https://www.magicj.cn';
 const categories: Array<{ value: TodoCategory; label: string }> = [
   { value: 'work', label: '工作' },
-  { value: 'study', label: '学习' },
+  { value: 'study', label: '投资' },
   { value: 'life', label: '生活' },
   { value: 'health', label: '运动' },
   { value: 'other', label: ['信', '仰'].join('') }
@@ -94,6 +94,22 @@ const isWeeklyTemplate = (todo: Todo) => todo.placement === 'weekly' && !todo.da
 const copiedCompletionForDate = (todo: Todo) => isWeeklyTemplate(todo) ? false : todo.completed;
 const shouldCopyWeeklyTemplate = (todo: Todo | undefined, destination: string | undefined) =>
   Boolean(todo && isWeeklyTemplate(todo) && destination !== 'weekly');
+const executeTodoSubmission = async (
+  save: (onMutationConfirmed: () => void) => Promise<boolean>,
+  onMutationConfirmed: () => void
+) => {
+  let mutationConfirmed = false;
+  try {
+    const saved = await save(() => {
+      if (mutationConfirmed) return;
+      mutationConfirmed = true;
+      onMutationConfirmed();
+    });
+    return { saved, mutationConfirmed, error: null };
+  } catch (error) {
+    return { saved: false, mutationConfirmed, error };
+  }
+};
 
 const normalizeTodo = (value: unknown): Todo | null => {
   if (!value || typeof value !== 'object') return null;
@@ -245,6 +261,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
   const placementInput = todoForm.elements.namedItem('placement') as HTMLSelectElement;
   const importantInput = todoForm.elements.namedItem('important') as HTMLInputElement;
   const noteInput = todoForm.elements.namedItem('note') as HTMLTextAreaElement;
+  const todoSubmitButton = todoForm.querySelector<HTMLButtonElement>('button[type="submit"]');
   const loginEmailInput = loginForm.elements.namedItem('email') as HTMLInputElement;
   const loginPasswordInput = loginForm.elements.namedItem('password') as HTMLInputElement;
   const verificationCodeInput = loginForm.elements.namedItem('verificationCode') as HTMLInputElement;
@@ -580,6 +597,12 @@ export function mountTodoWorkspace(root: HTMLElement) {
 
   const closeForm = () => {
     if (todoModal.open) todoModal.close();
+  };
+
+  const setTodoSavePending = (pending: boolean) => {
+    if (!todoSubmitButton) return;
+    todoSubmitButton.disabled = pending;
+    todoSubmitButton.textContent = pending ? '保存中…' : '保存待办';
   };
 
   const openDeleteDialog = (todo: Todo) => {
@@ -1617,29 +1640,30 @@ export function mountTodoWorkspace(root: HTMLElement) {
       showLogin('请先登录后再保存待办。');
       return;
     }
-    const editingId = state.editingId;
-    const reopenFormAfterFailedSave = () => {
-      openForm(date ?? undefined, nextTodo, nextPlacement);
-      state.editingId = editingId;
-      formTitle.textContent = editingId ? '编辑待办' : '新增待办';
-    };
-    closeForm();
-    try {
-      const saved = await saveCloudTodo(
+    setTodoSavePending(true);
+    const result = await executeTodoSubmission(
+      (onMutationConfirmed) => saveCloudTodo(
         nextTodo,
         existing ? '待办已更新并同步到云端。' : '待办已添加并同步到云端。',
-        existing?.updatedAt
-      );
-      if (!saved) {
-        reopenFormAfterFailedSave();
-        return;
+        existing?.updatedAt,
+        onMutationConfirmed
+      ),
+      () => {
+        // A confirmed cloud mutation owns the modal lifecycle. Later readback errors must not reopen it.
+        closeForm();
+        upsertTodoInState(nextTodo);
+        render();
       }
-      if (date) selectDate(date);
-      render();
-    } catch (error) {
-      reopenFormAfterFailedSave();
-      showCloudError(error, '保存云端待办失败。');
+    );
+    setTodoSavePending(false);
+    if (result.error) {
+      showCloudError(result.error, '保存云端待办失败。');
+      return;
     }
+    if (!result.saved) return;
+    if (!result.mutationConfirmed) closeForm();
+    if (date) selectDate(date);
+    render();
   });
 
   const loginCredentials = () => {
