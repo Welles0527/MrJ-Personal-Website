@@ -109,6 +109,7 @@ type TranslationPayload = {
   content: string;
   version: string;
   bibleId: string;
+  source?: string;
 };
 
 type BookReadingStatus = 'reading' | 'read' | 'none';
@@ -879,7 +880,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
 
   const translationEndpoint = (book: string, chapter: number, verse: number) => {
     const query = new URLSearchParams({ book: book.toUpperCase(), chapter: String(chapter), verse: String(verse) });
-    return `https://magicj-youversion-verse.pages.dev/api/bible-translation?${query.toString()}`;
+    return `https://www.magicj.cn/api/bible-translation-genesis-test?${query.toString()}`;
   };
 
   const showTranslationPopover = async (verseElement: HTMLElement) => {
@@ -896,7 +897,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     activeTranslationVerse.classList.add('is-translation-active');
     translationReference.textContent = `${sample.title}:${verse}`;
     translationText.textContent = '正在载入译文…';
-    translationSource.textContent = 'CCB · YouVersion';
+    translationSource.textContent = 'CCB · Biblica';
     translationPopover.hidden = false;
     positionTranslationPopover(verseElement);
 
@@ -917,12 +918,12 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       if (requestToken !== translationRequestToken || activeTranslationVerse !== verseElement) return;
       translationReference.textContent = payload.reference || `${sample.title}:${verse}`;
       translationText.textContent = payload.content.trim();
-      translationSource.textContent = `${payload.version || 'CCB'} · YouVersion`;
+      translationSource.textContent = `${payload.version || 'CCB'} · ${payload.source || 'Biblica'}`;
       positionTranslationPopover(verseElement);
     } catch {
       if (requestToken !== translationRequestToken || activeTranslationVerse !== verseElement) return;
       translationText.textContent = '暂时无法载入译文，请稍后重试。';
-      translationSource.textContent = 'CCB · YouVersion';
+      translationSource.textContent = 'CCB · Biblica';
       positionTranslationPopover(verseElement);
     }
   };
@@ -967,7 +968,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
           <div class="bible-verse-actions" data-verse-actions="${verse}">
             <button type="button" data-action="toggle-bookmark" data-verse="${verse}" title="${isBookmarked(sample.book, sample.chapter, verse) ? '取消收藏' : '收藏'}" aria-label="${isBookmarked(sample.book, sample.chapter, verse) ? '取消收藏' : '收藏'}">${isBookmarked(sample.book, sample.chapter, verse) ? '★' : '☆'}</button>
             <button class="bible-verse-read-action" type="button" data-action="toggle-read-verse" data-verse="${verse}" title="标记阅读" aria-label="切换本节阅读状态" aria-pressed="${read}">✓</button>
-            <button class="bible-verse-translation-link" type="button" data-action="show-translation" data-verse="${verse}" aria-label="查看 CCB 参考译文">译</button>
+            <button class="bible-verse-translation-link" type="button" data-action="show-translation" data-verse="${verse}" aria-label="查看 CCB 当代译本">译</button>
           </div>
         </section>
       `;
