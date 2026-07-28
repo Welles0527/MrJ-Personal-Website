@@ -1641,6 +1641,9 @@ export function mountTodoWorkspace(root: HTMLElement) {
       return;
     }
     setTodoSavePending(true);
+    closeForm();
+    upsertTodoInState(nextTodo);
+    render();
     const result = await executeTodoSubmission(
       (onMutationConfirmed) => saveCloudTodo(
         nextTodo,
@@ -1648,20 +1651,28 @@ export function mountTodoWorkspace(root: HTMLElement) {
         existing?.updatedAt,
         onMutationConfirmed
       ),
-      () => {
-        // A confirmed cloud mutation owns the modal lifecycle. Later readback errors must not reopen it.
-        closeForm();
-        upsertTodoInState(nextTodo);
-        render();
-      }
+      () => undefined
     );
     setTodoSavePending(false);
     if (result.error) {
+      if (!result.mutationConfirmed) {
+        state.todos = existing
+          ? state.todos.map((todo) => todo.id === existing.id ? existing : todo)
+          : state.todos.filter((todo) => todo.id !== nextTodo.id);
+        render();
+      }
       showCloudError(result.error, '保存云端待办失败。');
       return;
     }
-    if (!result.saved) return;
-    if (!result.mutationConfirmed) closeForm();
+    if (!result.saved) {
+      if (!result.mutationConfirmed) {
+        state.todos = existing
+          ? state.todos.map((todo) => todo.id === existing.id ? existing : todo)
+          : state.todos.filter((todo) => todo.id !== nextTodo.id);
+        render();
+      }
+      return;
+    }
     if (date) selectDate(date);
     render();
   });
