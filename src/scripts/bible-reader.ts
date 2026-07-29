@@ -391,7 +391,6 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   let syncTimer: number | undefined;
   let fullTextStatus: 'loading' | 'ready' | 'failed' = data.fullTextUrl ? 'loading' : 'ready';
   let activeNoteTarget: { book: string; chapter: number; verse: number; verseText: string } | null = null;
-  let activeUtterance: SpeechSynthesisUtterance | null = null;
   let activeAudio: HTMLAudioElement | null = null;
   let activeAudioUrl: string | null = null;
   let activeSpeechController: AbortController | null = null;
@@ -1456,38 +1455,8 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     activeSpeechController?.abort();
     activeSpeechController = null;
     releaseActiveAudio();
-    if ('speechSynthesis' in window) {
-      activeUtterance = null;
-      window.speechSynthesis.cancel();
-    }
     if (clearReplay) lastSpeechText = '';
     renderSpeechControls(false);
-  };
-
-  const speakWithBrowserVoice = (text: string, requestToken: number) => {
-    if (!('speechSynthesis' in window)) {
-      notify('当前浏览器不支持语音朗读。');
-      renderSpeechControls(false);
-      return;
-    }
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    activeUtterance = utterance;
-    utterance.lang = 'zh-CN';
-    utterance.rate = 0.92 * speechRate;
-    utterance.onend = () => {
-      if (activeUtterance !== utterance || requestToken !== speechRequestToken) return;
-      activeUtterance = null;
-      renderSpeechControls(false);
-    };
-    utterance.onerror = () => {
-      if (activeUtterance !== utterance || requestToken !== speechRequestToken) return;
-      activeUtterance = null;
-      renderSpeechControls(false);
-      notify('朗读中断，请重新播放。');
-    };
-    renderSpeechControls(true);
-    window.speechSynthesis.speak(utterance);
   };
 
   const speechEndpoint = () => {
@@ -1495,69 +1464,144 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     return isLocal ? 'http://127.0.0.1:9000/api/bible-tts' : '/api/bible-translation';
   };
 
+  const splitSpeechText = (text: string, maxLength = 42) => {
+    const normalized = text.replace(/\s+/g, ' ').trim();
+    if (!normalized) return [];
+    const sentences = normalized.match(/[^。！？；!?;]+[。！？；!?;]?/g) || [normalized];
+    const parts: string[] = [];
+
+    sentences.forEach((sentence) => {
+      let remaining = sentence.trim();
+      while (remaining.length > maxLength) {
+        const candidate = remaining.slice(0, maxLength + 1);
+        const punctuationIndex = Math.max(
+          candidate.lastIndexOf('，'),
+          candidate.lastIndexOf('、'),
+          candidate.lastIndexOf('：'),
+          candidate.lastIndexOf(','),
+          candidate.lastIndexOf(':')
+        );
+        const splitAt = punctuationIndex >= Math.floor(maxLength * 0.55) ? punctuationIndex + 1 : maxLength;
+        parts.push(remaining.slice(0, splitAt));
+        remaining = remaining.slice(splitAt).trim();
+      }
+      if (remaining) parts.push(remaining);
+    });
+
+    const segments: string[] = [];
+    let current = '';
+    parts.forEach((part) => {
+      if (current && current.length + part.length > maxLength) {
+        segments.push(current);
+        current = part;
+      } else {
+        current += part;
+      }
+    });
+    if (current) segments.push(current);
+    return segments;
+  };
+
   const rememberSpeechAudio = (text: string, audio: Blob) => {
     speechAudioCache.delete(text);
     speechAudioCache.set(text, audio);
-    while (speechAudioCache.size > 3) {
+    while (speechAudioCache.size > 16) {
       const oldest = speechAudioCache.keys().next().value;
       if (!oldest) break;
       speechAudioCache.delete(oldest);
     }
   };
 
-  const speak = async (text: string) => {
-    stopSpeech();
-    lastSpeechText = text;
-    const requestToken = speechRequestToken;
-    renderSpeechControls(true);
-
+  const loadSpeechAudio = async (text: string) => {
     try {
       let audioBlob = speechAudioCache.get(text);
       if (!audioBlob) {
         const controller = new AbortController();
         activeSpeechController = controller;
-        const response = await fetch(speechEndpoint(), {
-          method: 'POST',
-          headers: {
-            Accept: 'audio/mpeg',
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ text }),
-          signal: controller.signal
-        });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        audioBlob = await response.blob();
-        if (!audioBlob.size || !audioBlob.type.startsWith('audio/')) throw new Error('invalid audio');
-        rememberSpeechAudio(text, audioBlob);
+        try {
+          const response = await fetch(speechEndpoint(), {
+            method: 'POST',
+            headers: {
+              Accept: 'audio/mpeg',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ text }),
+            signal: controller.signal
+          });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          audioBlob = await response.blob();
+          if (!audioBlob.size || !audioBlob.type.startsWith('audio/')) throw new Error('invalid audio');
+          rememberSpeechAudio(text, audioBlob);
+        } finally {
+          if (activeSpeechController === controller) activeSpeechController = null;
+        }
       }
-      if (requestToken !== speechRequestToken) return;
-
-      activeSpeechController = null;
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const audio = new Audio(audioUrl);
-      audio.playbackRate = speechRate;
-      audio.preservesPitch = true;
-      activeAudio = audio;
-      activeAudioUrl = audioUrl;
-      audio.onended = () => {
-        if (activeAudio !== audio || requestToken !== speechRequestToken) return;
-        releaseActiveAudio();
-        renderSpeechControls(false);
-      };
-      audio.onerror = () => {
-        if (activeAudio !== audio || requestToken !== speechRequestToken) return;
-        releaseActiveAudio();
-        notify('云端男声播放失败，已改用本机朗读。');
-        speakWithBrowserVoice(text, requestToken);
-      };
-      await audio.play();
+      return { audio: audioBlob };
     } catch (error) {
-      if ((error as Error)?.name === 'AbortError' || requestToken !== speechRequestToken) return;
-      activeSpeechController = null;
-      releaseActiveAudio();
-      notify('云端男声暂不可用，已改用本机朗读。');
-      speakWithBrowserVoice(text, requestToken);
+      return { error: error as Error };
     }
+  };
+
+  const playSpeechSegment = async (
+    segments: string[],
+    index: number,
+    requestToken: number,
+    prepared?: ReturnType<typeof loadSpeechAudio>
+  ) => {
+    if (requestToken !== speechRequestToken || index >= segments.length) return;
+    let result = await (prepared || loadSpeechAudio(segments[index]));
+    if (requestToken !== speechRequestToken) return;
+    if (!result.audio && result.error?.name !== 'AbortError') {
+      result = await loadSpeechAudio(segments[index]);
+    }
+    if (requestToken !== speechRequestToken || result.error?.name === 'AbortError') return;
+    if (!result.audio) {
+      stopSpeech();
+      notify('云端男声生成失败，请稍后重新播放。');
+      return;
+    }
+
+    const nextAudio = index + 1 < segments.length ? loadSpeechAudio(segments[index + 1]) : undefined;
+    const audioUrl = URL.createObjectURL(result.audio);
+    const audio = new Audio(audioUrl);
+    audio.playbackRate = speechRate;
+    audio.preservesPitch = true;
+    activeAudio = audio;
+    activeAudioUrl = audioUrl;
+    audio.onended = () => {
+      if (activeAudio !== audio || requestToken !== speechRequestToken) return;
+      releaseActiveAudio();
+      if (index + 1 < segments.length) {
+        void playSpeechSegment(segments, index + 1, requestToken, nextAudio);
+      } else {
+        renderSpeechControls(false);
+      }
+    };
+    audio.onerror = () => {
+      if (activeAudio !== audio || requestToken !== speechRequestToken) return;
+      stopSpeech();
+      notify('云端男声播放失败，请重新播放。');
+    };
+    try {
+      await audio.play();
+    } catch {
+      if (requestToken !== speechRequestToken) return;
+      stopSpeech();
+      notify('浏览器未能开始播放，请再次点击朗读。');
+    }
+  };
+
+  const speak = (text: string) => {
+    stopSpeech();
+    lastSpeechText = text;
+    const requestToken = speechRequestToken;
+    const segments = splitSpeechText(text);
+    if (!segments.length) {
+      notify('该章没有可朗读的正文。');
+      return;
+    }
+    renderSpeechControls(true);
+    void playSpeechSegment(segments, 0, requestToken);
   };
 
   const toggleBookmark = (verse: number) => {
@@ -1955,7 +1999,6 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     speechRate = nextRate;
     const saved = writeSpeechRate(speechRate);
     if (activeAudio) activeAudio.playbackRate = speechRate;
-    if (activeUtterance) activeUtterance.rate = 0.92 * speechRate;
     notify(saved ? `朗读倍速已切换至 ${speechRate} 倍。` : `朗读倍速已切换至 ${speechRate} 倍，但当前浏览器无法长期保存。`);
   });
   librarySearchInput.addEventListener('input', () => {
