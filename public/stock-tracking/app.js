@@ -64,12 +64,12 @@
     viewMode: requestedView === "technical" ? "technical" : "stock",
     activeGroup: requestedGroup,
     query: "",
-    readOverrides: new Set(),
+    readOverridesByScope: new Map(),
     editField: null,
     costDraft: "",
     thesisDraft: "",
     saveError: "",
-    filters: { sentiment: "all" },
+    filters: { sentiment: "all", date: "all" },
     universe: [],
     universeMeta: null,
     refreshing: false,
@@ -120,6 +120,7 @@
   function handleExternalStorageChange() {
     state.editField = null;
     state.saveError = "";
+    state.readOverridesByScope.clear();
     restoreWatchlist();
     render();
   }
@@ -226,6 +227,7 @@
   }
 
   function restoreWatchlist() {
+    state.readOverridesByScope.clear();
     const codes = accountStorage.loadWatchlist(seedStockCodes);
     data.stocks = codes.map(stockRecord);
   }
@@ -284,8 +286,31 @@
     return stockGroups.find(group => group.id === state.activeGroup) || stockGroups[0];
   }
 
-  function isUnread(message) {
-    return Boolean(message.unread) !== state.readOverrides.has(message.id);
+  function readStorageScope(stockId = "") {
+    if (stockId) return String(stockId);
+    if (state.viewMode === "macro") return "market-macro";
+    return String(selectedStock().id || "unknown");
+  }
+
+  function readOverridesFor(scopeId = readStorageScope()) {
+    if (!state.readOverridesByScope.has(scopeId)) {
+      const saved = accountStorage.load(scopeId);
+      const values = Array.isArray(saved.readOverrides)
+        ? saved.readOverrides.map(value => String(value || "")).filter(Boolean)
+        : [];
+      state.readOverridesByScope.set(scopeId, new Set(values));
+    }
+    return state.readOverridesByScope.get(scopeId);
+  }
+
+  function persistReadOverrides(scopeId, overrides) {
+    accountStorage.save(scopeId, {
+      readOverrides: [...overrides].slice(-1000)
+    });
+  }
+
+  function isUnread(message, scopeId = readStorageScope()) {
+    return Boolean(message.unread) !== readOverridesFor(scopeId).has(message.id);
   }
 
   function groupIncludes(group, message) {
@@ -298,7 +323,8 @@
 
   function unreadCount(stock, group = null) {
     const messages = group ? messagesForGroup(stock, group) : stock.messages;
-    return messages.filter(isUnread).length;
+    const scopeId = readStorageScope(stock.id);
+    return messages.filter(message => isUnread(message, scopeId)).length;
   }
 
   function normalizeSentiment(sentiment) {
@@ -315,6 +341,47 @@
 
   function messageMatchesFilters(message) {
     if (state.filters.sentiment !== "all" && message.sentiment !== state.filters.sentiment) return false;
+    if (!messageMatchesDateFilter(message, state.filters.date)) return false;
+    return true;
+  }
+
+  function shanghaiDateParts(value = new Date()) {
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Shanghai",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).formatToParts(date);
+    const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+    const year = Number(values.year);
+    const month = Number(values.month);
+    const day = Number(values.day);
+    const ordinal = Math.floor(Date.UTC(year, month - 1, day) / 86400000);
+    return {
+      year,
+      month,
+      day,
+      ordinal,
+      weekday: new Date(Date.UTC(year, month - 1, day)).getUTCDay()
+    };
+  }
+
+  function messageMatchesDateFilter(message, dateFilter) {
+    if (!dateFilter || dateFilter === "all") return true;
+    const messageDate = shanghaiDateParts(message.publishedAt);
+    const today = shanghaiDateParts();
+    if (!messageDate || !today) return false;
+    if (dateFilter === "today") return messageDate.ordinal === today.ordinal;
+    if (dateFilter === "week") {
+      const mondayOffset = (today.weekday + 6) % 7;
+      const weekStart = today.ordinal - mondayOffset;
+      return messageDate.ordinal >= weekStart && messageDate.ordinal <= weekStart + 6;
+    }
+    if (dateFilter === "month") {
+      return messageDate.year === today.year && messageDate.month === today.month;
+    }
     return true;
   }
 
@@ -908,7 +975,7 @@
 
   function renderBoard(stock, group) {
     const messages = messagesForGroup(stock, group).sort(sortByNewest);
-    const unread = messages.filter(isUnread).length;
+    const unread = messages.filter(message => isUnread(message)).length;
     const latest = messages[0];
     const riskCounts = messages.reduce((counts, message) => {
       if (Object.hasOwn(counts, message.importance)) counts[message.importance] += 1;
@@ -940,7 +1007,7 @@
     const group = activeGroup();
     const stock = selectedStock();
     const messages = mode === "macro" ? data.market.macroNews : messagesForGroup(stock);
-    const unread = messages.filter(isUnread).length;
+    const unread = messages.filter(message => isUnread(message)).length;
     const title = mode === "macro" ? "宏观大事件" : group.title;
     const checkedAt = mode === "stock" ? state.dynamicsCheckedByCode.get(stock.code) : null;
     return `
@@ -968,6 +1035,12 @@
           ["利好", "利好"],
           ["利空", "利空"],
           ["中性", "中性"]
+        ])}
+        ${renderFilterGroup("日期", "date", [
+          ["all", "全部"],
+          ["today", "今日"],
+          ["week", "本周"],
+          ["month", "本月"]
         ])}
         ${filtersActive() ? `<button class="clear-filters" type="button" data-action="clear-filters">清除筛选</button>` : ""}
       </section>`;
@@ -1151,7 +1224,7 @@
   function resetForNavigation() {
     state.editField = null;
     state.saveError = "";
-    state.filters = { sentiment: "all" };
+    state.filters = { sentiment: "all", date: "all" };
   }
 
   function closeAuthModal() {
@@ -1299,14 +1372,20 @@
       state.activeGroup = "all";
     } else if (action === "toggle-message-read") {
       const messageId = target.dataset.messageId;
-      if (state.readOverrides.has(messageId)) state.readOverrides.delete(messageId);
-      else state.readOverrides.add(messageId);
+      const scopeId = readStorageScope();
+      const overrides = readOverridesFor(scopeId);
+      if (overrides.has(messageId)) overrides.delete(messageId);
+      else overrides.add(messageId);
+      persistReadOverrides(scopeId, overrides);
     } else if (action === "mark-read") {
       const messages = state.viewMode === "macro" ? filteredMacroNews() : filteredStockMessages(selectedStock());
-      messages.filter(isUnread).forEach(message => {
-        if (state.readOverrides.has(message.id)) state.readOverrides.delete(message.id);
-        else state.readOverrides.add(message.id);
+      const scopeId = readStorageScope();
+      const overrides = readOverridesFor(scopeId);
+      messages.filter(message => isUnread(message, scopeId)).forEach(message => {
+        if (overrides.has(message.id)) overrides.delete(message.id);
+        else overrides.add(message.id);
       });
+      persistReadOverrides(scopeId, overrides);
     } else if (action === "edit-position") {
       const position = positionValues(selectedStock());
       state.editField = target.dataset.field;
@@ -1327,7 +1406,7 @@
     } else if (action === "append-thesis") {
       appendThesis();
     } else if (action === "clear-filters") {
-      state.filters = { sentiment: "all" };
+      state.filters = { sentiment: "all", date: "all" };
     } else if (action === "set-filter") {
       state.filters[target.dataset.filterKey] = target.dataset.filterValue;
     } else if (action === "refresh-all") {
