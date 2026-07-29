@@ -3,6 +3,7 @@
 const https = require("https");
 
 const QUOTE_ENDPOINT = "https://push2.eastmoney.com/api/qt/stock/get";
+const QUOTE_FALLBACK_ENDPOINT = "https://push2delay.eastmoney.com/api/qt/stock/get";
 const ANNOUNCEMENT_ENDPOINT = "https://np-anotice-stock.eastmoney.com/api/security/ann";
 const NEWS_ENDPOINT = "https://search-api-web.eastmoney.com/search/jsonp";
 const DATA_CENTER_ENDPOINT = "https://datacenter-web.eastmoney.com/api/data/v1/get";
@@ -212,11 +213,23 @@ async function cachedLoad(key, ttl, loader, force = false) {
 }
 
 async function fetchQuote(code) {
-  const url = new URL(QUOTE_ENDPOINT);
-  url.searchParams.set("secid", `${marketIdFor(code)}.${code}`);
-  url.searchParams.set("fields", "f43,f44,f45,f46,f47,f48,f57,f58,f60,f86,f116,f117,f168,f169,f170,f171");
-  url.searchParams.set("_", Date.now());
-  const payload = await requestJson(url);
+  const quoteUrl = endpoint => {
+    const url = new URL(endpoint);
+    url.searchParams.set("secid", `${marketIdFor(code)}.${code}`);
+    url.searchParams.set("fields", "f43,f44,f45,f46,f47,f48,f57,f58,f60,f86,f116,f117,f168,f169,f170,f171");
+    url.searchParams.set("_", Date.now());
+    return url;
+  };
+  let payload;
+  let quoteKind = "realtime";
+  let source = "东方财富公开实时行情";
+  try {
+    payload = JSON.parse(await requestTextOnce(quoteUrl(QUOTE_ENDPOINT), 3500));
+  } catch {
+    payload = JSON.parse(await requestTextOnce(quoteUrl(QUOTE_FALLBACK_ENDPOINT), 5000));
+    quoteKind = "delayed";
+    source = "东方财富公开延迟行情";
+  }
   const item = payload?.data;
   if (!item || String(item.f57) !== code || !Number.isFinite(Number(item.f43))) {
     throw new Error("实时行情暂不可用");
@@ -238,8 +251,8 @@ async function fetchQuote(code) {
     totalMarketValue: scaled(item.f116),
     circulatingMarketValue: scaled(item.f117),
     updatedAt: shanghaiIsoFromUnix(item.f86),
-    quoteKind: "realtime",
-    source: "东方财富公开实时行情"
+    quoteKind,
+    source
   };
 }
 

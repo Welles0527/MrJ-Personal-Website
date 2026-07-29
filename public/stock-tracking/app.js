@@ -803,7 +803,7 @@
           </div>
           <div class="position-return">
             持仓收益 <strong class="${returnPct === null ? "" : returnPct >= 0 ? "positive" : "negative"}">${returnPct === null ? "—" : formatSigned(returnPct, "%")}</strong>
-            <span class="quote-updated-at">${stock.quoteKind === "realtime" ? "实时行情" : "收盘行情"} ${stock.quoteUpdatedAt ? formatDateTime(stock.quoteUpdatedAt) : "等待刷新"}</span>
+          <span class="quote-updated-at">${stock.quoteKind === "realtime" ? "实时行情" : stock.quoteKind === "delayed" ? "延迟行情" : "收盘行情"} ${stock.quoteUpdatedAt ? formatDateTime(stock.quoteUpdatedAt) : "等待刷新"}</span>
           </div>
         </div>
         <dl class="position-metrics">
