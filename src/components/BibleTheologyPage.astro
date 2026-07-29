@@ -4,48 +4,72 @@ const characterMapHref = `${basePath}topics/applications/inspiration-station/the
 const lifespanRankingHref = `${basePath}topics/applications/inspiration-station/theology/age-rankings?view=lifespan`;
 const accessionRankingHref = `${basePath}topics/applications/inspiration-station/theology/age-rankings?view=accession`;
 const worshipMusicHref = `${basePath}worship/`;
-const groupAlbumFolder = '20260728 Gloria-Welles家';
-const groupAlbumBase = `${basePath}images/bible-theology/albums/${encodeURIComponent(groupAlbumFolder)}/`;
-const groupAlbumPhotos = [
+const groupAlbumPhoto = (folder: string, filename: string) =>
+  `${basePath}images/bible-theology/albums/${encodeURIComponent(folder)}/${filename}`;
+const groupAlbums = [
   {
-    src: `${groupAlbumBase}01-group-wide.webp`,
-    alt: '小组成员围在餐桌旁合影',
-    caption: '聚会大合影'
+    id: 'sandy-20260623',
+    folder: '20260623 Sandy家',
+    date: '2026.06.23',
+    photos: [
+      {
+        src: groupAlbumPhoto('20260623 Sandy家', '01-group-wide.webp'),
+        alt: '小组成员在客厅合影',
+        caption: '聚会大合影'
+      },
+      {
+        src: groupAlbumPhoto('20260623 Sandy家', '02-group-photo.webp'),
+        alt: '小组成员围坐合影',
+        caption: '一起留下聚会时光'
+      }
+    ]
   },
   {
-    src: `${groupAlbumBase}02-group-photo.webp`,
-    alt: '小组成员在家中合影',
-    caption: '一起留下聚会时光'
-  },
-  {
-    src: `${groupAlbumBase}03-two-members.webp`,
-    alt: '两位成员在家中合影',
-    caption: '温暖合影'
-  },
-  {
-    src: `${groupAlbumBase}04-table-group.webp`,
-    alt: '聚会成员围桌合影',
-    caption: '围桌相聚'
-  },
-  {
-    src: `${groupAlbumBase}05-meal.webp`,
-    alt: '聚会餐桌上的餐点',
-    caption: '一起分享的晚餐'
-  },
-  {
-    src: `${groupAlbumBase}06-reading.webp`,
-    alt: '成员在窗边阅读',
-    caption: '安静的阅读时光'
-  },
-  {
-    src: `${groupAlbumBase}07-game.webp`,
-    alt: '成员一起玩桌游',
-    caption: '桌游时间'
-  },
-  {
-    src: `${groupAlbumBase}08-selfie.webp`,
-    alt: '聚会成员自拍合影',
-    caption: '聚会自拍'
+    id: 'gloria-welles-20260728',
+    folder: '20260728 Gloria-Welles家',
+    date: '2026.07.28',
+    photos: [
+      {
+        src: groupAlbumPhoto('20260728 Gloria-Welles家', '01-group-wide.webp'),
+        alt: '小组成员围在餐桌旁合影',
+        caption: '聚会大合影'
+      },
+      {
+        src: groupAlbumPhoto('20260728 Gloria-Welles家', '02-group-photo.webp'),
+        alt: '小组成员在家中合影',
+        caption: '一起留下聚会时光'
+      },
+      {
+        src: groupAlbumPhoto('20260728 Gloria-Welles家', '03-two-members.webp'),
+        alt: '两位成员在家中合影',
+        caption: '温暖合影'
+      },
+      {
+        src: groupAlbumPhoto('20260728 Gloria-Welles家', '04-table-group.webp'),
+        alt: '聚会成员围桌合影',
+        caption: '围桌相聚'
+      },
+      {
+        src: groupAlbumPhoto('20260728 Gloria-Welles家', '05-meal.webp'),
+        alt: '聚会餐桌上的餐点',
+        caption: '一起分享的晚餐'
+      },
+      {
+        src: groupAlbumPhoto('20260728 Gloria-Welles家', '06-reading.webp'),
+        alt: '成员在窗边阅读',
+        caption: '安静的阅读时光'
+      },
+      {
+        src: groupAlbumPhoto('20260728 Gloria-Welles家', '07-game.webp'),
+        alt: '成员一起玩桌游',
+        caption: '桌游时间'
+      },
+      {
+        src: groupAlbumPhoto('20260728 Gloria-Welles家', '08-selfie.webp'),
+        alt: '聚会成员自拍合影',
+        caption: '聚会自拍'
+      }
+    ]
   }
 ];
 
@@ -659,66 +683,83 @@ const hymnCards = [
           <h3>聚会相册</h3>
           <p>把一起吃饭、分享和欢笑的片段，收进同一个相册里。</p>
         </div>
-        <button class="bible-album-folder" type="button" data-action="open-group-album" aria-haspopup="dialog">
-          <span class="bible-album-collage" aria-hidden="true">
-            {groupAlbumPhotos.slice(0, 3).map((photo) => (
-              <img src={photo.src} alt="" loading="lazy" decoding="async" />
-            ))}
-          </span>
-          <span class="bible-album-folder-copy">
-            <small>2026.07.28 · {groupAlbumPhotos.length} 张照片</small>
-            <strong>{groupAlbumFolder}</strong>
-            <span class="bible-album-open">打开相册 <i aria-hidden="true">↗</i></span>
-          </span>
-        </button>
+        <div class="bible-album-list">
+          {groupAlbums.map((album) => (
+            <button
+              class="bible-album-folder"
+              type="button"
+              data-action="open-group-album"
+              data-album-id={album.id}
+              aria-haspopup="dialog"
+            >
+              <span class="bible-album-collage" data-photo-count={album.photos.length} aria-hidden="true">
+                {album.photos.slice(0, 3).map((photo) => (
+                  <img src={photo.src} alt="" loading="lazy" decoding="async" />
+                ))}
+              </span>
+              <span class="bible-album-folder-copy">
+                <small>{album.date} · {album.photos.length} 张照片</small>
+                <strong>{album.folder}</strong>
+                <span class="bible-album-open">打开相册 <i aria-hidden="true">↗</i></span>
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   </section>
 
-  <dialog class="bible-album-modal" data-group-album-modal aria-labelledby="bible-group-album-title">
-    <div class="bible-album-viewer">
-      <header>
-        <div>
-          <p>MEETING ALBUM · 2026.07.28</p>
-          <h2 id="bible-group-album-title">{groupAlbumFolder}</h2>
+  {groupAlbums.map((album) => (
+    <dialog
+      class="bible-album-modal"
+      data-group-album-modal
+      data-album-id={album.id}
+      aria-labelledby={`bible-group-album-title-${album.id}`}
+    >
+      <div class="bible-album-viewer">
+        <header>
+          <div>
+            <p>MEETING ALBUM · {album.date}</p>
+            <h2 id={`bible-group-album-title-${album.id}`}>{album.folder}</h2>
+          </div>
+          <button type="button" data-action="close-group-album" aria-label={`关闭${album.folder}相册`}>×</button>
+        </header>
+        <div class="bible-album-stage">
+          <button type="button" data-action="previous-album-photo" aria-label="上一张照片">←</button>
+          <figure>
+            <img
+              src={album.photos[0].src}
+              alt={album.photos[0].alt}
+              data-album-main-image
+              decoding="async"
+            />
+            <figcaption>
+              <span data-album-caption>{album.photos[0].caption}</span>
+              <small data-album-counter>1 / {album.photos.length}</small>
+            </figcaption>
+          </figure>
+          <button type="button" data-action="next-album-photo" aria-label="下一张照片">→</button>
         </div>
-        <button type="button" data-action="close-group-album" aria-label="关闭聚会相册">×</button>
-      </header>
-      <div class="bible-album-stage">
-        <button type="button" data-action="previous-album-photo" aria-label="上一张照片">←</button>
-        <figure>
-          <img
-            src={groupAlbumPhotos[0].src}
-            alt={groupAlbumPhotos[0].alt}
-            data-album-main-image
-            decoding="async"
-          />
-          <figcaption>
-            <span data-album-caption>{groupAlbumPhotos[0].caption}</span>
-            <small data-album-counter>1 / {groupAlbumPhotos.length}</small>
-          </figcaption>
-        </figure>
-        <button type="button" data-action="next-album-photo" aria-label="下一张照片">→</button>
+        <div class="bible-album-thumbnails" aria-label={`${album.folder}照片列表`}>
+          {album.photos.map((photo, index) => (
+            <button
+              class:list={{ 'is-active': index === 0 }}
+              type="button"
+              data-album-thumbnail
+              data-album-index={index}
+              data-album-src={photo.src}
+              data-album-alt={photo.alt}
+              data-album-caption={photo.caption}
+              aria-label={`查看第 ${index + 1} 张照片：${photo.caption}`}
+              aria-pressed={index === 0 ? 'true' : 'false'}
+            >
+              <img src={photo.src} alt="" loading="lazy" decoding="async" />
+            </button>
+          ))}
+        </div>
       </div>
-      <div class="bible-album-thumbnails" aria-label="相册照片列表">
-        {groupAlbumPhotos.map((photo, index) => (
-          <button
-            class:list={{ 'is-active': index === 0 }}
-            type="button"
-            data-album-thumbnail
-            data-album-index={index}
-            data-album-src={photo.src}
-            data-album-alt={photo.alt}
-            data-album-caption={photo.caption}
-            aria-label={`查看第 ${index + 1} 张照片：${photo.caption}`}
-            aria-pressed={index === 0 ? 'true' : 'false'}
-          >
-            <img src={photo.src} alt="" loading="lazy" decoding="async" />
-          </button>
-        ))}
-      </div>
-    </div>
-  </dialog>
+    </dialog>
+  ))}
 
   <section class="bible-feature-section" id="bible-hymns" aria-labelledby="bible-hymns-title">
     <div class="bible-section-shell">
@@ -824,59 +865,66 @@ const hymnCards = [
       mountBibleReader(root, JSON.parse(dataElement.textContent));
     }
 
-    const albumModal = root?.querySelector<HTMLDialogElement>('[data-group-album-modal]');
-    const albumMainImage = albumModal?.querySelector<HTMLImageElement>('[data-album-main-image]');
-    const albumCaption = albumModal?.querySelector<HTMLElement>('[data-album-caption]');
-    const albumCounter = albumModal?.querySelector<HTMLElement>('[data-album-counter]');
-    const albumThumbnailStrip = albumModal?.querySelector<HTMLElement>('.bible-album-thumbnails');
-    const albumThumbnails = Array.from(
-      albumModal?.querySelectorAll<HTMLButtonElement>('[data-album-thumbnail]') ?? []
+    const albumOpenButtons = Array.from(
+      root?.querySelectorAll<HTMLButtonElement>('[data-action="open-group-album"]') ?? []
     );
-    let activeAlbumIndex = 0;
+    root?.querySelectorAll<HTMLDialogElement>('[data-group-album-modal]').forEach((albumModal) => {
+      const albumMainImage = albumModal.querySelector<HTMLImageElement>('[data-album-main-image]');
+      const albumCaption = albumModal.querySelector<HTMLElement>('[data-album-caption]');
+      const albumCounter = albumModal.querySelector<HTMLElement>('[data-album-counter]');
+      const albumThumbnailStrip = albumModal.querySelector<HTMLElement>('.bible-album-thumbnails');
+      const albumThumbnails = Array.from(
+        albumModal.querySelectorAll<HTMLButtonElement>('[data-album-thumbnail]')
+      );
+      const albumOpenButton = albumOpenButtons.find(
+        (button) => button.dataset.albumId === albumModal.dataset.albumId
+      );
+      let activeAlbumIndex = 0;
 
-    const showAlbumPhoto = (index: number) => {
-      if (!albumMainImage || !albumCaption || !albumCounter || albumThumbnails.length === 0) return;
-      activeAlbumIndex = (index + albumThumbnails.length) % albumThumbnails.length;
-      const thumbnail = albumThumbnails[activeAlbumIndex];
-      albumMainImage.src = thumbnail.dataset.albumSrc ?? '';
-      albumMainImage.alt = thumbnail.dataset.albumAlt ?? '';
-      albumCaption.textContent = thumbnail.dataset.albumCaption ?? '';
-      albumCounter.textContent = `${activeAlbumIndex + 1} / ${albumThumbnails.length}`;
-      albumThumbnails.forEach((button, buttonIndex) => {
-        const isActive = buttonIndex === activeAlbumIndex;
-        button.classList.toggle('is-active', isActive);
-        button.setAttribute('aria-pressed', String(isActive));
-      });
-      if (albumThumbnailStrip) {
-        albumThumbnailStrip.scrollTo({
-          left: thumbnail.offsetLeft - (albumThumbnailStrip.clientWidth - thumbnail.offsetWidth) / 2,
-          behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+      const showAlbumPhoto = (index: number) => {
+        if (!albumMainImage || !albumCaption || !albumCounter || albumThumbnails.length === 0) return;
+        activeAlbumIndex = (index + albumThumbnails.length) % albumThumbnails.length;
+        const thumbnail = albumThumbnails[activeAlbumIndex];
+        albumMainImage.src = thumbnail.dataset.albumSrc ?? '';
+        albumMainImage.alt = thumbnail.dataset.albumAlt ?? '';
+        albumCaption.textContent = thumbnail.dataset.albumCaption ?? '';
+        albumCounter.textContent = `${activeAlbumIndex + 1} / ${albumThumbnails.length}`;
+        albumThumbnails.forEach((button, buttonIndex) => {
+          const isActive = buttonIndex === activeAlbumIndex;
+          button.classList.toggle('is-active', isActive);
+          button.setAttribute('aria-pressed', String(isActive));
         });
-      }
-    };
+        if (albumThumbnailStrip) {
+          albumThumbnailStrip.scrollTo({
+            left: thumbnail.offsetLeft - (albumThumbnailStrip.clientWidth - thumbnail.offsetWidth) / 2,
+            behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+          });
+        }
+      };
 
-    root?.querySelector<HTMLButtonElement>('[data-action="open-group-album"]')?.addEventListener('click', () => {
-      showAlbumPhoto(0);
-      albumModal?.showModal();
-    });
-    albumModal?.querySelector<HTMLButtonElement>('[data-action="close-group-album"]')?.addEventListener('click', () => {
-      albumModal.close();
-    });
-    albumModal?.querySelector<HTMLButtonElement>('[data-action="previous-album-photo"]')?.addEventListener('click', () => {
-      showAlbumPhoto(activeAlbumIndex - 1);
-    });
-    albumModal?.querySelector<HTMLButtonElement>('[data-action="next-album-photo"]')?.addEventListener('click', () => {
-      showAlbumPhoto(activeAlbumIndex + 1);
-    });
-    albumThumbnails.forEach((button, index) => {
-      button.addEventListener('click', () => showAlbumPhoto(index));
-    });
-    albumModal?.addEventListener('click', (event) => {
-      if (event.target === albumModal) albumModal.close();
-    });
-    albumModal?.addEventListener('keydown', (event) => {
-      if (event.key === 'ArrowLeft') showAlbumPhoto(activeAlbumIndex - 1);
-      if (event.key === 'ArrowRight') showAlbumPhoto(activeAlbumIndex + 1);
+      albumOpenButton?.addEventListener('click', () => {
+        showAlbumPhoto(0);
+        albumModal.showModal();
+      });
+      albumModal.querySelector<HTMLButtonElement>('[data-action="close-group-album"]')?.addEventListener('click', () => {
+        albumModal.close();
+      });
+      albumModal.querySelector<HTMLButtonElement>('[data-action="previous-album-photo"]')?.addEventListener('click', () => {
+        showAlbumPhoto(activeAlbumIndex - 1);
+      });
+      albumModal.querySelector<HTMLButtonElement>('[data-action="next-album-photo"]')?.addEventListener('click', () => {
+        showAlbumPhoto(activeAlbumIndex + 1);
+      });
+      albumThumbnails.forEach((button, index) => {
+        button.addEventListener('click', () => showAlbumPhoto(index));
+      });
+      albumModal.addEventListener('click', (event) => {
+        if (event.target === albumModal) albumModal.close();
+      });
+      albumModal.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowLeft') showAlbumPhoto(activeAlbumIndex - 1);
+        if (event.key === 'ArrowRight') showAlbumPhoto(activeAlbumIndex + 1);
+      });
     });
   </script>
 </section>
@@ -2847,6 +2895,11 @@ const hymnCards = [
     line-height: 1.6;
   }
 
+  .bible-album-list {
+    display: grid;
+    gap: 1rem;
+  }
+
   .bible-album-folder {
     position: relative;
     display: grid;
@@ -2899,6 +2952,15 @@ const hymnCards = [
 
   .bible-album-collage img:first-child {
     grid-row: 1 / -1;
+  }
+
+  .bible-album-collage[data-photo-count="2"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: 1fr;
+  }
+
+  .bible-album-collage[data-photo-count="2"] img:first-child {
+    grid-row: auto;
   }
 
   .bible-album-folder:hover .bible-album-collage img:first-child {
