@@ -702,17 +702,18 @@ export function mountTodoWorkspace(root: HTMLElement) {
 
     searchResults.innerHTML = matches.map(({ todo, deleted }) => {
       const status = deleted ? '已删除' : todo.completed ? '已完成' : '进行中';
-      return `<section class="todo-search-item">
-        <div class="todo-search-title-row">
+      const locationLabel = todo.date ? `定位到 ${todo.date}` : '任务未设置日期';
+      return `<button class="todo-search-item" type="button" data-action="locate-search-result" data-todo-id="${escapeHtml(todo.id)}" data-todo-date="${escapeHtml(todo.date)}" aria-label="${escapeHtml(`${todo.title}，${locationLabel}`)}">
+        <span class="todo-search-title-row">
           ${todo.important ? '<span class="todo-item-star" aria-label="重要">★</span>' : ''}
-          <p class="todo-search-title">${escapeHtml(todo.title)}</p>
+          <span class="todo-search-title">${escapeHtml(todo.title)}</span>
           <span class="todo-search-category">${escapeHtml(categoryLabel(todo.category))}</span>
           <span class="todo-search-status ${deleted ? 'is-deleted' : ''}">${status}</span>
-        </div>
+        </span>
         <time class="todo-search-created" datetime="${escapeHtml(todo.createdAt)}">${createdTimeLabel(todo.createdAt)}</time>
-        ${todo.note ? `<p class="todo-search-note">${escapeHtml(todo.note)}</p>` : ''}
-        <p class="todo-search-meta"><span>${escapeHtml(todoDateLabel(todo))}</span><span>${escapeHtml(placementLabel(todo.placement))}</span></p>
-      </section>`;
+        ${todo.note ? `<span class="todo-search-note">${escapeHtml(todo.note)}</span>` : ''}
+        <span class="todo-search-meta"><span>${escapeHtml(todoDateLabel(todo))}</span><span>${escapeHtml(placementLabel(todo.placement))}</span></span>
+      </button>`;
     }).join('');
   };
 
@@ -721,6 +722,35 @@ export function mountTodoWorkspace(root: HTMLElement) {
     renderSearchResults();
     if (!searchModal.open) searchModal.showModal();
     searchInput.focus();
+  };
+
+  const locateSearchResult = (todoId: string) => {
+    const activeTodo = state.todos.find((todo) => todo.id === todoId);
+    const todo = activeTodo ?? state.trash.find((item) => item.id === todoId);
+    if (!todo) return;
+    const date = parseDateKey(todo.date);
+    if (!date) {
+      notify('该任务未设置日期，无法定位到日历。');
+      return;
+    }
+
+    if (searchModal.open) searchModal.close();
+    selectDate(date);
+    render();
+    window.requestAnimationFrame(() => {
+      const dayColumn = root.querySelector<HTMLElement>(`.todo-day-column[data-drop-date="${todo.date}"]`);
+      if (!dayColumn) return;
+      dayColumn.classList.remove('is-located');
+      void dayColumn.offsetWidth;
+      dayColumn.classList.add('is-located');
+      dayColumn.scrollIntoView({
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+        block: 'center',
+        inline: 'nearest'
+      });
+      window.setTimeout(() => dayColumn.classList.remove('is-located'), 1600);
+    });
+    notify(activeTodo ? `已定位到 ${todo.date}。` : `已定位到 ${todo.date}，该任务当前在回收站。`);
   };
 
   const openTrash = () => {
@@ -1457,6 +1487,9 @@ export function mountTodoWorkspace(root: HTMLElement) {
     }
     if (action === 'close-search') {
       if (searchModal.open) searchModal.close();
+    }
+    if (action === 'locate-search-result' && trigger.dataset.todoId) {
+      locateSearchResult(trigger.dataset.todoId);
     }
     if (action === 'open-trash') {
       openTrash();

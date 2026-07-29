@@ -1813,6 +1813,7 @@ const navItems: NavItem[] = [
 
       .todo-search-item {
         display: grid;
+        width: 100%;
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: center;
         gap: 0.45rem 1rem;
@@ -1820,6 +1821,22 @@ const navItems: NavItem[] = [
         border-radius: 0.58rem;
         padding: 0.68rem 0.78rem;
         background: rgba(255, 250, 243, 0.62);
+        color: inherit;
+        font: inherit;
+        text-align: left;
+        transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
+      }
+
+      .todo-search-item:hover {
+        border-color: rgba(124, 76, 32, 0.28);
+        background: rgba(255, 250, 243, 0.9);
+        transform: translateY(-1px);
+      }
+
+      .todo-search-item:focus-visible {
+        border-color: #9b602d;
+        outline: 3px solid rgba(155, 96, 45, 0.16);
+        outline-offset: 1px;
       }
 
       .todo-search-title-row {
@@ -1887,6 +1904,18 @@ const navItems: NavItem[] = [
         font-size: 0.74rem;
         line-height: 1.45;
         overflow-wrap: anywhere;
+      }
+
+      .todo-day-column.is-located {
+        animation: todo-locate-pulse 1.45s ease-out;
+      }
+
+      @keyframes todo-locate-pulse {
+        0%, 100% { box-shadow: none; }
+        35% {
+          border-color: rgba(180, 91, 27, 0.62);
+          box-shadow: 0 0 0 4px rgba(180, 91, 27, 0.14);
+        }
       }
 
       .todo-toast {
@@ -2325,6 +2354,16 @@ const navItems: NavItem[] = [
       html[data-todo-theme="dark"] .todo-search-status.is-deleted {
         background: rgba(215, 112, 94, 0.12);
         color: #e5a092;
+      }
+
+      html[data-todo-theme="dark"] .todo-search-item:hover {
+        border-color: rgba(200, 135, 81, 0.32);
+        background: #303c3e;
+      }
+
+      html[data-todo-theme="dark"] .todo-search-item:focus-visible {
+        border-color: #c88751;
+        outline-color: rgba(200, 135, 81, 0.2);
       }
 
       html[data-todo-theme="dark"] .todo-toast,

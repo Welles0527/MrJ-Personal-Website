@@ -176,6 +176,27 @@ try {
     await page.locator('[data-action="close-search"]').click();
   }
 
+  await page.locator('[data-action="open-search"]').click();
+  await page.locator('[data-search-input]').fill('MDLSCC');
+  await page.waitForFunction(() => document.querySelectorAll('[data-search-results] .todo-search-item').length === 1);
+  const searchHit = page.locator('[data-search-results] .todo-search-item');
+  assert.equal(await searchHit.count(), 1, 'search must return one clickable task result');
+  const targetDate = await searchHit.getAttribute('data-todo-date');
+  assert.match(targetDate || '', /^\d{4}-\d{2}-\d{2}$/, 'dated search result must expose its target date');
+  await searchHit.click();
+  assert.equal(await searchModal.evaluate((dialog) => dialog.open), false, 'clicking a dated search result must close the search modal');
+  await page.waitForFunction((date) => document.querySelector(`.todo-day-column[data-drop-date="${date}"]`)?.classList.contains('is-located'), targetDate);
+  assert.equal(
+    await page.locator(`.todo-day-column[data-drop-date="${targetDate}"].is-selected`).count(),
+    1,
+    'clicking a search result must select and reveal its task date'
+  );
+  if (process.env.TODO_SEARCH_SCREENSHOT_DIR) {
+    await page.screenshot({
+      path: path.join(path.resolve(process.env.TODO_SEARCH_SCREENSHOT_DIR), 'todo-search-located.png')
+    });
+  }
+
   const failure = await submitTask(page, 'MODAL FAIL REGRESSION');
   assert.equal(failure.openAfterSubmit, false, 'failed cloud save must not keep the modal open');
   await page.waitForTimeout(1300);
@@ -184,7 +205,7 @@ try {
 
   const counters = await page.evaluate(() => globalThis.__todoModalRegression);
   assert.deepEqual(counters, { calls: 2, confirmed: 1, failures: 1 });
-  console.log('Todo modal and search regression test passed.');
+  console.log('Todo modal, search, and date-location regression test passed.');
 } finally {
   await browser?.close();
   stopProcessTree(server);
