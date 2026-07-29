@@ -1,0 +1,358 @@
+---
+import BaseLayout from '../../../../../layouts/BaseLayout.astro';
+import { createBibleGroupAlbums } from '../../../../../data/bible-group-albums';
+
+const basePath = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
+const theologyHref = `${basePath}topics/applications/inspiration-station/theology/?book=gen&chapter=1#bible-groups`;
+const groupAlbums = createBibleGroupAlbums(basePath);
+---
+
+<BaseLayout title="小组聚会相册｜微读圣经" activeTheme="applications" bare>
+  <main class="group-albums-page">
+    <header class="group-albums-hero">
+      <a class="group-albums-back" href={theologyHref}><span aria-hidden="true">←</span> 返回小组聚会</a>
+      <p class="group-albums-kicker">MEETING ALBUMS · GROUP LIFE</p>
+      <h1>小组聚会相册</h1>
+      <p class="group-albums-intro">把一起读经、吃饭、分享和欢笑的片段，留在同一段同行的记忆里。</p>
+      <nav class="group-albums-nav" aria-label="相册目录">
+        {groupAlbums.map((album, index) => (
+          <a href={`#${album.id}`}>
+            <img src={album.photos[0].src} alt="" loading={index === 0 ? 'eager' : 'lazy'} decoding="async" />
+            <span>
+              <small>{album.date} · {album.photos.length} 张照片</small>
+              <strong>{album.folder}</strong>
+            </span>
+            <i aria-hidden="true">{String(index + 1).padStart(2, '0')}</i>
+          </a>
+        ))}
+      </nav>
+    </header>
+
+    <div class="group-albums-collections">
+      {groupAlbums.map((album, albumIndex) => (
+        <section class="group-album-collection" id={album.id} aria-labelledby={`${album.id}-title`}>
+          <header>
+            <div>
+              <p>ALBUM {String(albumIndex + 1).padStart(2, '0')} · {album.date}</p>
+              <h2 id={`${album.id}-title`}>{album.folder}</h2>
+            </div>
+            <span>{album.photos.length} PHOTOS</span>
+          </header>
+          <div class="group-album-photo-grid">
+            {album.photos.map((photo, photoIndex) => (
+              <figure>
+                <a href={photo.src} target="_blank" rel="noopener noreferrer" aria-label={`打开原图：${photo.caption}`}>
+                  <img src={photo.src} alt={photo.alt} loading={albumIndex === 0 && photoIndex === 0 ? 'eager' : 'lazy'} decoding="async" />
+                </a>
+                <figcaption>
+                  <span>{String(photoIndex + 1).padStart(2, '0')}</span>
+                  <strong>{photo.caption}</strong>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  </main>
+</BaseLayout>
+
+<style>
+  :global(html) {
+    scroll-behavior: smooth;
+    background: #080704;
+  }
+
+  :global(body) {
+    background: #080704;
+  }
+
+  .group-albums-page {
+    --album-gold: #e2bd68;
+    --album-cream: #fff4d8;
+    --album-muted: rgba(255, 247, 224, 0.62);
+    min-height: 100vh;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 88% 4%, rgba(226, 189, 104, 0.11), transparent 26rem),
+      linear-gradient(180deg, #0d0a06 0%, #080704 46rem, #050403 100%);
+    color: var(--album-cream);
+    font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  }
+
+  .group-albums-hero,
+  .group-albums-collections {
+    width: min(calc(100% - 3rem), 1180px);
+    margin: 0 auto;
+  }
+
+  .group-albums-hero {
+    position: relative;
+    padding: clamp(2.2rem, 6vw, 5.2rem) 0 clamp(3.2rem, 7vw, 6rem);
+  }
+
+  .group-albums-hero::after {
+    position: absolute;
+    right: -8rem;
+    bottom: 2rem;
+    width: 24rem;
+    height: 24rem;
+    border: 1px solid rgba(226, 189, 104, 0.08);
+    border-radius: 50%;
+    content: "";
+    pointer-events: none;
+  }
+
+  .group-albums-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin-bottom: clamp(3rem, 8vw, 6rem);
+    color: rgba(255, 244, 216, 0.68);
+    font-size: 0.82rem;
+    font-weight: 800;
+    text-decoration: none;
+    transition: color 180ms ease, transform 180ms ease;
+  }
+
+  .group-albums-back:hover {
+    color: var(--album-gold);
+    transform: translateX(-0.2rem);
+  }
+
+  .group-albums-kicker,
+  .group-album-collection > header p {
+    margin: 0;
+    color: var(--album-gold);
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.13em;
+  }
+
+  .group-albums-hero h1 {
+    max-width: 12em;
+    margin: 0.65rem 0 0;
+    font-family: "Noto Serif SC", "Songti SC", SimSun, serif;
+    font-size: clamp(3rem, 8vw, 7.2rem);
+    font-weight: 900;
+    letter-spacing: -0.07em;
+    line-height: 0.98;
+  }
+
+  .group-albums-intro {
+    max-width: 42rem;
+    margin: 1.4rem 0 0;
+    color: var(--album-muted);
+    font-size: clamp(0.98rem, 2vw, 1.18rem);
+    line-height: 1.8;
+  }
+
+  .group-albums-nav {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: clamp(2.4rem, 5vw, 4rem);
+  }
+
+  .group-albums-nav a {
+    position: relative;
+    display: grid;
+    overflow: hidden;
+    min-height: 8.5rem;
+    grid-template-columns: minmax(8.5rem, 0.8fr) minmax(0, 1.2fr);
+    align-items: stretch;
+    border: 1px solid rgba(226, 189, 104, 0.24);
+    border-radius: 1rem;
+    background: rgba(255, 246, 218, 0.035);
+    color: var(--album-cream);
+    text-decoration: none;
+    transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+  }
+
+  .group-albums-nav a:hover {
+    border-color: rgba(242, 205, 121, 0.76);
+    background: rgba(255, 246, 218, 0.065);
+    transform: translateY(-3px);
+  }
+
+  .group-albums-nav img {
+    width: 100%;
+    height: 100%;
+    min-height: 8.5rem;
+    object-fit: cover;
+  }
+
+  .group-albums-nav a > span {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    justify-content: center;
+    padding: 1rem;
+  }
+
+  .group-albums-nav small {
+    color: rgba(255, 247, 224, 0.45);
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 0.65rem;
+  }
+
+  .group-albums-nav strong {
+    margin-top: 0.42rem;
+    font-family: "Noto Serif SC", "Songti SC", SimSun, serif;
+    font-size: clamp(1rem, 2vw, 1.35rem);
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+  }
+
+  .group-albums-nav i {
+    position: absolute;
+    right: 0.8rem;
+    bottom: 0.55rem;
+    color: rgba(226, 189, 104, 0.35);
+    font-family: Georgia, serif;
+    font-size: 0.72rem;
+    font-style: normal;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+  }
+
+  .group-albums-collections {
+    padding-bottom: clamp(4rem, 10vw, 9rem);
+  }
+
+  .group-album-collection {
+    scroll-margin-top: 1.5rem;
+    border-top: 1px solid rgba(226, 189, 104, 0.2);
+    padding: clamp(2.4rem, 6vw, 5rem) 0;
+  }
+
+  .group-album-collection > header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.5rem;
+    margin-bottom: clamp(1.5rem, 4vw, 2.6rem);
+  }
+
+  .group-album-collection h2 {
+    margin: 0.55rem 0 0;
+    font-family: "Noto Serif SC", "Songti SC", SimSun, serif;
+    font-size: clamp(2rem, 5vw, 4.4rem);
+    line-height: 1.08;
+    overflow-wrap: anywhere;
+  }
+
+  .group-album-collection > header > span {
+    flex: none;
+    border: 1px solid rgba(226, 189, 104, 0.22);
+    border-radius: 999px;
+    padding: 0.5rem 0.72rem;
+    color: rgba(255, 247, 224, 0.5);
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+  }
+
+  .group-album-photo-grid {
+    columns: 3 17rem;
+    column-gap: 1rem;
+  }
+
+  .group-album-photo-grid figure {
+    overflow: hidden;
+    break-inside: avoid;
+    margin: 0 0 1rem;
+    border: 1px solid rgba(226, 189, 104, 0.18);
+    border-radius: 0.8rem;
+    background: rgba(255, 246, 218, 0.035);
+    box-shadow: 0 1.2rem 2.8rem rgba(0, 0, 0, 0.22);
+  }
+
+  .group-album-photo-grid a {
+    display: block;
+    overflow: hidden;
+    background: #020201;
+  }
+
+  .group-album-photo-grid img {
+    display: block;
+    width: 100%;
+    height: auto;
+    transition: filter 220ms ease, transform 420ms cubic-bezier(0.2, 0.72, 0.18, 1);
+  }
+
+  .group-album-photo-grid a:hover img {
+    filter: saturate(1.05) brightness(1.04);
+    transform: scale(1.018);
+  }
+
+  .group-album-photo-grid figcaption {
+    display: flex;
+    align-items: baseline;
+    gap: 0.65rem;
+    padding: 0.72rem 0.82rem 0.78rem;
+  }
+
+  .group-album-photo-grid figcaption span {
+    color: var(--album-gold);
+    font-family: Georgia, serif;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+  }
+
+  .group-album-photo-grid figcaption strong {
+    color: rgba(255, 247, 224, 0.72);
+    font-size: 0.78rem;
+  }
+
+  @media (max-width: 720px) {
+    .group-albums-hero,
+    .group-albums-collections {
+      width: min(calc(100% - 2rem), 1180px);
+    }
+
+    .group-albums-back {
+      margin-bottom: 3.6rem;
+    }
+
+    .group-albums-nav {
+      grid-template-columns: 1fr;
+    }
+
+    .group-albums-nav a {
+      min-height: 7.5rem;
+      grid-template-columns: minmax(7.5rem, 0.75fr) minmax(0, 1.25fr);
+    }
+
+    .group-albums-nav img {
+      min-height: 7.5rem;
+    }
+
+    .group-album-collection > header {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    .group-album-photo-grid {
+      columns: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(html) {
+      scroll-behavior: auto;
+    }
+
+    .group-albums-back,
+    .group-albums-nav a,
+    .group-album-photo-grid img {
+      transition: none;
+    }
+  }
+</style>
