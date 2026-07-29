@@ -8,6 +8,7 @@ const accessionRankingHref = `${basePath}topics/applications/inspiration-station
 const worshipMusicHref = `${basePath}worship/`;
 const groupAlbums = createBibleGroupAlbums(basePath);
 const groupAlbumsHref = `${basePath}topics/applications/inspiration-station/theology/group-albums/`;
+const alternativeKnowledgeHref = `${basePath}topics/applications/inspiration-station/theology/alternative-knowledge/`;
 
 const featurePages = [
   {
@@ -114,6 +115,21 @@ const featurePages = [
     artA: '#ffe08a',
     artB: '#ff8fab',
     artC: '#8ec5ff'
+  },
+  {
+    id: 'alternative-knowledge',
+    title: '另类知识',
+    eyebrow: 'ARCHIVE',
+    quote: '你要察看神的作为；因神使为曲的，谁能变为直呢？',
+    reference: '传道书 7:13',
+    summary: '收纳圣经中的地理、礼仪、象征与容易被忽略的知识线索。',
+    action: '进入资料馆',
+    href: alternativeKnowledgeHref,
+    status: '内容筹备中',
+    image: `${basePath}images/bible-theology/feature-alternative-knowledge.svg`,
+    artA: '#5b4b9d',
+    artB: '#d5ad58',
+    artC: '#183b56'
   }
 ];
 
@@ -402,7 +418,6 @@ const hymnCards = [
     </div>
 
     <nav class="bible-top-nav" aria-label="圣经网站板块导航">
-      <a class="bible-home-link" href={`${basePath}topics/applications/inspiration-station`}>AI灵感站</a>
       <div class="bible-nav-scroll">
         {featurePages.map((page, index) => (
           <button type="button" data-feature-target={String(index)} class={index === 0 ? 'is-active' : ''}>
@@ -798,34 +813,26 @@ const hymnCards = [
   .bible-top-nav {
     position: relative;
     z-index: 4;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+    display: block;
     width: min(calc(100% - 2rem), 1320px);
-    min-height: 3.8rem;
+    min-height: 6.8rem;
     margin: 1rem auto 0;
     padding: 0;
   }
 
-  .bible-home-link {
-    flex: 0 0 auto;
-    color: var(--gold-soft);
-    font-size: 0.76rem;
-    font-weight: 900;
-    letter-spacing: 0.08em;
-    text-decoration: none;
-  }
-
   .bible-nav-scroll {
     display: grid;
-    flex: 1 1 auto;
-    grid-template-columns: repeat(7, minmax(8.2rem, 1fr));
-    gap: 0.5rem;
+    grid-template-columns: repeat(4, minmax(8.2rem, 1fr));
+    grid-auto-rows: minmax(2.9rem, auto);
+    gap: 0.42rem;
     overflow-x: auto;
-    padding: 0.32rem;
+    padding: 0.42rem;
     border: 1px solid rgba(216, 179, 95, 0.3);
-    border-radius: 999px;
-    background: rgba(255, 246, 218, 0.025);
+    border-radius: 1.45rem;
+    background:
+      linear-gradient(180deg, rgba(255, 246, 218, 0.035), rgba(255, 246, 218, 0.018)),
+      rgba(7, 6, 4, 0.36);
+    box-shadow: inset 0 1px rgba(255, 255, 255, 0.03), 0 1rem 2.5rem rgba(0, 0, 0, 0.12);
     scrollbar-width: none;
   }
 
@@ -835,7 +842,7 @@ const hymnCards = [
 
   .bible-nav-scroll button {
     display: inline-flex;
-    min-height: 2.9rem;
+    min-height: 3rem;
     align-items: center;
     justify-content: center;
     gap: 0.52rem;
@@ -3175,20 +3182,14 @@ const hymnCards = [
     }
 
     .bible-top-nav {
-      align-items: flex-start;
-      flex-direction: column;
-      gap: 0.55rem;
       width: 100%;
       padding-bottom: 0.35rem;
     }
 
-    .bible-home-link {
-      padding-left: 0.35rem;
-    }
-
     .bible-nav-scroll {
       width: 100%;
-      grid-template-columns: repeat(7, minmax(8.2rem, 1fr));
+      grid-template-columns: repeat(4, minmax(8.2rem, 1fr));
+      border-radius: 1.1rem;
     }
 
     .bible-stage-copy {

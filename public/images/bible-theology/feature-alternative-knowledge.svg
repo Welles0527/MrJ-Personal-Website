@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" role="img" aria-labelledby="title desc">
+  <title id="title">另类知识资料馆</title>
+  <desc id="desc">深蓝星图与金色档案卡组成的知识资料馆插画</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#101426"/>
+      <stop offset=".55" stop-color="#18243d"/>
+      <stop offset="1" stop-color="#071016"/>
+    </linearGradient>
+    <radialGradient id="glow" cx=".72" cy=".24" r=".55">
+      <stop offset="0" stop-color="#d7b667" stop-opacity=".34"/>
+      <stop offset="1" stop-color="#d7b667" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="22" stdDeviation="24" flood-color="#000" flood-opacity=".45"/>
+    </filter>
+    <pattern id="stars" width="88" height="88" patternUnits="userSpaceOnUse">
+      <circle cx="12" cy="18" r="2" fill="#f1d58a" opacity=".42"/>
+      <circle cx="61" cy="47" r="1.5" fill="#c7d9e8" opacity=".34"/>
+      <circle cx="32" cy="76" r="1" fill="#fff" opacity=".28"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="900" fill="url(#bg)"/>
+  <rect width="1200" height="900" fill="url(#glow)"/>
+  <rect width="1200" height="900" fill="url(#stars)"/>
+  <g opacity=".24" fill="none" stroke="#d7b667">
+    <circle cx="850" cy="238" r="154"/>
+    <circle cx="850" cy="238" r="108"/>
+    <path d="M696 238h308M850 84v308M742 130l216 216M958 130 742 346"/>
+  </g>
+  <g filter="url(#shadow)">
+    <path d="M188 202h488l92 92v422H188z" fill="#d9bd79"/>
+    <path d="M188 202h488l92 92H188z" fill="#f0d99f"/>
+    <path d="M676 202v92h92" fill="#b18d42"/>
+    <rect x="238" y="326" width="382" height="12" rx="6" fill="#2b2940" opacity=".72"/>
+    <rect x="238" y="374" width="278" height="8" rx="4" fill="#2b2940" opacity=".4"/>
+    <rect x="238" y="410" width="332" height="8" rx="4" fill="#2b2940" opacity=".4"/>
+    <rect x="238" y="446" width="236" height="8" rx="4" fill="#2b2940" opacity=".4"/>
+    <circle cx="286" cy="576" r="46" fill="#22233a"/>
+    <path d="m271 576 11 12 22-27" fill="none" stroke="#e8cd88" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="352" y="564" fill="#22233a" font-family="Georgia,serif" font-size="34" font-weight="700" letter-spacing="6">ARCHIVE 08</text>
+    <text x="352" y="615" fill="#38364d" font-family="serif" font-size="42" font-weight="700">另类知识</text>
+  </g>
+  <g fill="none" stroke="#d7b667" stroke-width="3" opacity=".7">
+    <path d="M830 520c84-72 164-48 208 34-50 56-124 76-208 34-34-17-34-51 0-68Z"/>
+    <path d="M840 554h188"/>
+    <circle cx="938" cy="554" r="30"/>
+  </g>
+  <text x="850" y="704" fill="#e4c878" font-family="Georgia,serif" font-size="22" letter-spacing="8">MAP · RITUAL · SYMBOL</text>
+</svg>
