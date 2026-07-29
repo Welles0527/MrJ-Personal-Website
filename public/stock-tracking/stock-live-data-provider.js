@@ -383,9 +383,11 @@
     async getLatestInformation(stockCode, options = {}) {
       const code = String(stockCode).padStart(6, "0");
       const sections = Array.isArray(options.sections) && options.sections.length
-        ? options.sections.filter(section => ["announcements", "news"].includes(section))
-        : ["announcements", "news"];
-      if (!sections.length) return { announcements: [], news: [], errors: {}, checkedAt: new Date().toISOString() };
+        ? options.sections.filter(section => ["announcements", "news", "events"].includes(section))
+        : ["announcements", "news", "events"];
+      if (!sections.length) {
+        return { announcements: [], news: [], events: [], errors: {}, checkedAt: new Date().toISOString() };
+      }
 
       try {
         const payload = await this.requestJson(this.proxyUrl(code, sections, options));
@@ -408,6 +410,9 @@
             ? payload.announcements.map(item => ({ ...item, sentiment: normalizeSentiment(item.sentiment) }))
             : [],
           news,
+          events: Array.isArray(payload?.events)
+            ? payload.events.map(item => ({ ...item, sentiment: normalizeSentiment(item.sentiment) }))
+            : [],
           errors,
           checkedAt: payload?.checkedAt || new Date().toISOString()
         };
@@ -417,8 +422,10 @@
         return {
           announcements,
           news: [],
+          events: [],
           errors: {
-            ...(sections.includes("news") ? { news: proxyError?.message || "新闻数据暂不可用" } : {})
+            ...(sections.includes("news") ? { news: proxyError?.message || "新闻数据暂不可用" } : {}),
+            ...(sections.includes("events") ? { events: proxyError?.message || "公司事件暂不可用" } : {})
           },
           checkedAt: new Date().toISOString()
         };

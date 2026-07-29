@@ -15,16 +15,12 @@
   const REFRESH_INTERVALS = {
     quote: 15 * 1000,
     announcements: 2 * 60 * 1000,
-    news: 5 * 60 * 1000
+    news: 5 * 60 * 1000,
+    events: 5 * 60 * 1000
   };
   const technicalProvider = window.StockTechnicalAnalysis
     ? new window.StockTechnicalAnalysis.MockTechnicalAnalysisProvider()
     : null;
-  const evidenceDescriptions = {
-    "事实": "公司公告、财报、监管文件或其他可核验的权威材料",
-    "推断": "依据公开数据形成的研究判断",
-    "传闻": "尚未经公司或权威来源确认"
-  };
   const stockGroups = [
     { id: "all", title: "全部动态", icon: "all", categories: ["macro", "company", "risk", "valuation", "capital", "other"], size: "primary" },
     { id: "industry", title: "行业大事件", icon: "globe", categories: ["macro"], size: "secondary" },
@@ -67,7 +63,6 @@
     selectedStockId: requestedStockId || data?.stocks?.[0]?.id || "",
     viewMode: requestedView === "technical" ? "technical" : "stock",
     activeGroup: requestedGroup,
-    expandedMessageId: null,
     query: "",
     readOverrides: new Set(),
     editField: null,
@@ -83,6 +78,7 @@
     dynamicsCheckedByCode: new Map(),
     announcementsCheckedByCode: new Map(),
     newsCheckedByCode: new Map(),
+    eventsCheckedByCode: new Map(),
     pendingRefreshOptions: null,
     searchComposing: false,
     technicalSearchComposing: false,
@@ -178,7 +174,7 @@
       REFRESH_INTERVALS.announcements
     ));
     refreshTimers.push(window.setInterval(
-      () => runAutomaticRefresh(["news"]),
+      () => runAutomaticRefresh(["news", "events"]),
       REFRESH_INTERVALS.news
     ));
   }
@@ -189,7 +185,7 @@
       silent: true,
       force: true,
       quoteCodes: [selectedStock().code],
-      feedSections: ["announcements", "news"]
+      feedSections: ["announcements", "news", "events"]
     });
   }
 
@@ -375,6 +371,27 @@
       .replaceAll("'", "&#039;");
   }
 
+  function specificSourceUrl(value) {
+    if (!value) return "";
+    try {
+      const url = new URL(value, window.location.href);
+      if (!["http:", "https:"].includes(url.protocol)) return "";
+      const path = url.pathname.replace(/\/+$/, "") || "/";
+      const genericPaths = new Set([
+        "/",
+        "/officialwebsite",
+        "/stock-tracking",
+        "/news",
+        "/notices",
+        "/stockcalendar",
+        "/dzjy"
+      ]);
+      return genericPaths.has(path.toLowerCase()) ? "" : url.href;
+    } catch {
+      return "";
+    }
+  }
+
   function icon(name) {
     return `<svg viewBox="0 0 24 24" aria-hidden="true">${iconPaths[name] || iconPaths.news}</svg>`;
   }
@@ -445,6 +462,9 @@
     const existingNews = (record.messages || []).filter(message =>
       message.live && String(message.id).startsWith("live-news-")
     );
+    const existingEvents = (record.messages || []).filter(message =>
+      message.live && String(message.id).startsWith("live-event-")
+    );
     const preserveReadState = messages => messages.map(message => ({
       ...normalizeMessage(message),
       unread: existingById.has(message.id) ? existingById.get(message.id).unread : true
@@ -455,13 +475,17 @@
     const news = sections.includes("news")
       ? preserveReadState(information.news || [])
       : existingNews;
-    const latestMessages = [...announcements, ...news];
+    const events = sections.includes("events")
+      ? preserveReadState(information.events || [])
+      : existingEvents;
+    const latestMessages = [...announcements, ...news, ...events];
     record.messages = [...retainedMessages, ...latestMessages].sort(sortByNewest);
     record.dynamicLatestAt = latestMessages.sort(sortByNewest)[0]?.publishedAt || null;
     record.liveMessagesLoaded = true;
     const checkedAt = information.checkedAt || new Date().toISOString();
     if (sections.includes("announcements")) state.announcementsCheckedByCode.set(stockCode, checkedAt);
     if (sections.includes("news")) state.newsCheckedByCode.set(stockCode, checkedAt);
+    if (sections.includes("events")) state.eventsCheckedByCode.set(stockCode, checkedAt);
     state.dynamicsCheckedByCode.set(stockCode, checkedAt);
   }
 
@@ -482,11 +506,11 @@
       ...new Set([...data.stocks.map(stock => stock.code), selected.code])
     ];
     const feedSections = Array.isArray(options.feedSections)
-      ? options.feedSections.filter(section => ["announcements", "news"].includes(section))
-      : ["announcements", "news"];
+      ? options.feedSections.filter(section => ["announcements", "news", "events"].includes(section))
+      : ["announcements", "news", "events"];
     state.refreshing = true;
     if (!options.silent) {
-      state.refreshNotice = `正在刷新 ${quoteCodes.length} 只股票的实时行情与 ${selected.name} 最新公告、新闻…`;
+      state.refreshNotice = `正在刷新 ${quoteCodes.length} 只股票的实时行情与 ${selected.name} 最新公告、新闻、公司事件…`;
       render();
     }
 
@@ -529,7 +553,8 @@
       const marketTime = state.marketUpdatedAt ? `行情 ${formatDateTime(state.marketUpdatedAt)}` : "行情暂未更新";
       const announcementTime = state.announcementsCheckedByCode.get(selected.code);
       const newsTime = state.newsCheckedByCode.get(selected.code);
-      state.refreshNotice = `${marketTime} · 公告 ${announcementTime ? formatDateTime(announcementTime) : "待检查"} · 新闻 ${newsTime ? formatDateTime(newsTime) : "待检查"}`;
+      const eventTime = state.eventsCheckedByCode.get(selected.code);
+      state.refreshNotice = `${marketTime} · 公告 ${announcementTime ? formatDateTime(announcementTime) : "待检查"} · 新闻 ${newsTime ? formatDateTime(newsTime) : "待检查"} · 事项 ${eventTime ? formatDateTime(eventTime) : "待检查"}`;
       if (errors.length) state.refreshNotice += ` · ${errors.length} 项未成功`;
     } else {
       state.refreshNotice = `刷新失败：${errors[0] || "公开数据源暂不可用"}`;
@@ -991,41 +1016,40 @@
   }
 
   function renderMessage(message) {
-    const expanded = state.expandedMessageId === message.id;
     const unread = isUnread(message);
+    const sourceUrl = specificSourceUrl(message.sourceUrl);
+    const eventBadge = message.eventLabel
+      ? `<span class="message-tag event-kind-${escapeHtml(message.eventKind || "reminder")}">${escapeHtml(message.eventLabel)}</span>`
+      : "";
+    const sourceLink = sourceUrl
+      ? `<a class="message-source-link" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">查看来源
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5M19 5l-8 8M17 13v6H5V7h6"/></svg>
+        </a>`
+      : "";
     return `
-      <article class="message-row ${expanded ? "expanded" : ""} ${unread ? "unread" : "read"}">
+      <article class="message-row ${unread ? "unread" : "read"}">
         <span class="message-time-cell">
           <time datetime="${message.publishedAt}">${formatMessageTime(message.publishedAt)}</time>
           <button class="message-read-check ${unread ? "" : "checked"}" type="button"
             data-action="toggle-message-read" data-message-id="${message.id}"
-            aria-label="${unread ? "标记为已读" : "取消已读"}" aria-checked="${!unread}">
+            role="checkbox" aria-label="${unread ? "标记为已读" : "取消已读"}" aria-checked="${!unread}">
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.2l2.8 2.8 6.2-6.2"/></svg>
           </button>
         </span>
         <span class="timeline-track" aria-hidden="true"></span>
         <div class="message-body">
-          <button class="message-toggle" type="button" data-action="toggle-message" data-message-id="${message.id}" aria-expanded="${expanded}">
-            <span class="message-heading">
+          <div class="message-main">
+            <div class="message-heading">
               <strong>${escapeHtml(message.title)}</strong>
               <span class="message-badges">
+                ${eventBadge}
                 <span class="message-tag evidence-${message.evidence}">${message.evidence}</span>
                 <span class="message-tag sentiment-${message.sentiment}">${sentimentLabel(message.sentiment)}</span>
                 ${unread ? "" : `<span class="message-read-icon" title="已读" aria-label="已读"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.2l2.8 2.8 6.2-6.2"/></svg></span>`}
               </span>
-            </span>
-            <span class="message-summary">${escapeHtml(message.summary)}</span>
-          </button>
-          <div class="message-meta">
-            <a href="${escapeHtml(message.sourceUrl)}" target="_blank" rel="noopener noreferrer">查看来源
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5M19 5l-8 8M17 13v6H5V7h6"/></svg>
-            </a>
+            </div>
+            ${sourceLink}
           </div>
-          ${expanded ? `
-            <div class="message-detail">
-              <p>${escapeHtml(message.detail)}</p>
-              <span><b>证据说明</b>${evidenceDescriptions[message.evidence]}</span>
-            </div>` : ""}
         </div>
       </article>`;
   }
@@ -1115,7 +1139,6 @@
   }
 
   function resetForNavigation() {
-    state.expandedMessageId = null;
     state.editField = null;
     state.saveError = "";
     state.filters = { sentiment: "all" };
@@ -1251,7 +1274,6 @@
         resetForNavigation();
       } else {
         state.activeGroup = target.dataset.group;
-        state.expandedMessageId = null;
       }
     } else if (action === "return-stock-view") {
       state.viewMode = "stock";
@@ -1265,10 +1287,6 @@
       removeFromWatchlist(target.dataset.stockId || selectedStock().code);
     } else if (action === "show-all") {
       state.activeGroup = "all";
-      state.expandedMessageId = null;
-    } else if (action === "toggle-message") {
-      const messageId = target.dataset.messageId;
-      state.expandedMessageId = state.expandedMessageId === messageId ? null : messageId;
     } else if (action === "toggle-message-read") {
       const messageId = target.dataset.messageId;
       if (state.readOverrides.has(messageId)) state.readOverrides.delete(messageId);
@@ -1300,10 +1318,8 @@
       appendThesis();
     } else if (action === "clear-filters") {
       state.filters = { sentiment: "all" };
-      state.expandedMessageId = null;
     } else if (action === "set-filter") {
       state.filters[target.dataset.filterKey] = target.dataset.filterValue;
-      state.expandedMessageId = null;
     } else if (action === "refresh-all") {
       refreshAllInformation({ force: true });
       return;
@@ -1319,7 +1335,7 @@
         silent: true,
         force: true,
         quoteCodes: [String(refreshCodeAfterRender).padStart(6, "0")],
-        feedSections: ["announcements", "news"]
+        feedSections: ["announcements", "news", "events"]
       });
     }
   }
