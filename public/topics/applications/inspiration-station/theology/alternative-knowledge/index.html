@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="圣经名山与圣经献祭互动看板 Demo，使用统一的温暖 3D 动画绘本风格呈现。"
+    />
+    <title>圣经知识看板 Demo</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">跳到主要内容</a>
+
+    <header class="site-header">
+      <a class="brand" href="#" aria-label="圣经知识图谱首页">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48" role="img">
+            <path d="M8 10.5h13c4 0 7 2.2 7 6.2v22.8c0-4-3-6.2-7-6.2H8z" />
+            <path d="M40 10.5H27c-4 0-7 2.2-7 6.2v22.8c0-4 3-6.2 7-6.2h13z" />
+            <path d="M24 17v20" />
+          </svg>
+        </span>
+        <span>
+          <strong>BIBLE ATLAS</strong>
+          <small>圣经知识图谱</small>
+        </span>
+      </a>
+
+      <nav class="board-tabs" aria-label="知识看板切换">
+        <button class="board-tab is-active" type="button" data-board-target="mountains" aria-selected="true">
+          <span>01</span> 圣经名山
+        </button>
+        <button class="board-tab" type="button" data-board-target="offerings" aria-selected="false">
+          <span>02</span> 圣经献祭
+        </button>
+      </nav>
+    </header>
+
+    <main id="main-content">
+      <section class="board is-active" id="mountains-board" data-board="mountains">
+        <div class="hero hero--mountains">
+          <img
+            class="hero-image"
+            src="./assets/images/hero-mountains.png"
+            alt="金色夕阳下，旅人眺望由发光道路连接的圣经群山"
+            width="1792"
+            height="1024"
+          />
+          <div class="hero-shade"></div>
+          <div class="hero-content">
+            <p class="eyebrow">LANDSCAPES OF FAITH · 信仰地景</p>
+            <h1>圣经名山</h1>
+            <p class="hero-lead">沿着显现、立约、献上与差遣发生的高地，重新走进圣经故事。</p>
+            <div class="hero-actions">
+              <button class="primary-action" type="button" data-scroll-to="mountain-explorer">
+                开始探索
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg>
+              </button>
+              <p class="image-credit">主视觉及卡片插图均由 ImageGen 生成</p>
+            </div>
+          </div>
+          <dl class="hero-stats" aria-label="名山看板数据概览">
+            <div><dt>6</dt><dd>座名山示例</dd></div>
+            <div><dt>4</dt><dd>段圣经时代</dd></div>
+            <div><dt>18</dt><dd>处关联经文</dd></div>
+          </dl>
+        </div>
+
+        <div class="explorer" id="mountain-explorer">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">EXPLORE THE STORY</p>
+              <h2>选择一座山，进入一段故事</h2>
+            </div>
+            <div class="view-switch" role="group" aria-label="名山显示方式">
+              <button class="is-active" type="button" data-view="cards" aria-pressed="true">知识卡</button>
+              <button type="button" data-view="timeline" aria-pressed="false">时间线</button>
+            </div>
+          </div>
+
+          <div class="filter-row" role="group" aria-label="名山主题筛选">
+            <button class="filter-chip is-active" type="button" data-filter="all">全部</button>
+            <button class="filter-chip" type="button" data-filter="covenant">显现与立约</button>
+            <button class="filter-chip" type="button" data-filter="worship">献上与敬拜</button>
+            <button class="filter-chip" type="button" data-filter="witness">争战与见证</button>
+            <button class="filter-chip" type="button" data-filter="mission">盼望与差遣</button>
+          </div>
+
+          <div class="story-grid" id="mountain-grid" aria-live="polite"></div>
+
+          <aside class="context-note">
+            <span class="note-index">考据 01</span>
+            <div>
+              <strong>明确地点与传统地点分开呈现</strong>
+              <p>例如变像之山在经文中并未具名；各各他也没有被经文称为一座山。看板会把“经文明确”“可能关联”和“后世传统”分别标注。</p>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="board" id="offerings-board" data-board="offerings" hidden>
+        <div class="hero hero--offerings">
+          <img
+            class="hero-image"
+            src="./assets/images/hero-offerings.png"
+            alt="金色夕阳下，讲解者在会幕庭院介绍祭坛、谷物、油和香"
+            width="1792"
+            height="1024"
+          />
+          <div class="hero-shade"></div>
+          <div class="hero-content">
+            <p class="eyebrow">OFFERINGS & WORSHIP · 献祭与敬拜</p>
+            <h1>圣经献祭</h1>
+            <p class="hero-lead">从祭物、礼仪与目的，看赎罪、感恩、相交和奉献的整全脉络。</p>
+            <div class="hero-actions">
+              <button class="primary-action" type="button" data-scroll-to="offering-explorer">
+                认识五祭
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg>
+              </button>
+              <p class="image-credit">以教育性场景代替血腥或猎奇画面</p>
+            </div>
+          </div>
+          <dl class="hero-stats" aria-label="献祭看板数据概览">
+            <div><dt>5</dt><dd>类核心祭</dd></div>
+            <div><dt>9</dt><dd>种礼仪动作</dd></div>
+            <div><dt>4</dt><dd>条新约回应</dd></div>
+          </dl>
+        </div>
+
+        <div class="explorer" id="offering-explorer">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">A GRAMMAR OF WORSHIP</p>
+              <h2>祭的种类，不等于礼仪动作</h2>
+            </div>
+            <div class="view-switch" role="group" aria-label="献祭显示方式">
+              <button class="is-active" type="button" data-view="cards" aria-pressed="true">知识卡</button>
+              <button type="button" data-view="timeline" aria-pressed="false">律法次序</button>
+            </div>
+          </div>
+
+          <div class="filter-row" role="group" aria-label="献祭主题筛选">
+            <button class="filter-chip is-active" type="button" data-filter="all">全部</button>
+            <button class="filter-chip" type="button" data-filter="dedication">全然献上</button>
+            <button class="filter-chip" type="button" data-filter="gratitude">感恩相交</button>
+            <button class="filter-chip" type="button" data-filter="atonement">洁净赎罪</button>
+            <button class="filter-chip" type="button" data-filter="repair">赔偿修复</button>
+          </div>
+
+          <div class="story-grid" id="offering-grid" aria-live="polite"></div>
+
+          <section class="ritual-flow" aria-labelledby="ritual-title">
+            <div class="ritual-intro">
+              <p class="eyebrow">RITUAL ACTIONS</p>
+              <h3 id="ritual-title">一次献祭中可能出现哪些动作？</h3>
+              <p>不同祭类并不包含完全相同的步骤，下面是用于建立整体认知的礼仪词汇。</p>
+            </div>
+            <ol>
+              <li><span>01</span><strong>按手</strong><small>认同与代替</small></li>
+              <li><span>02</span><strong>宰杀</strong><small>由献祭者执行</small></li>
+              <li><span>03</span><strong>处理血</strong><small>洒、抹或倒</small></li>
+              <li><span>04</span><strong>焚烧</strong><small>全部或指定部分</small></li>
+              <li><span>05</span><strong>摇祭／举祭</strong><small>呈献指定部分</small></li>
+              <li><span>06</span><strong>分享筵席</strong><small>平安祭的相交</small></li>
+            </ol>
+          </section>
+
+          <aside class="context-note">
+            <span class="note-index">考据 02</span>
+            <div>
+              <strong>避免把所有奉献都叫作“流血献祭”</strong>
+              <p>素祭本身不使用动物；赎罪日被送入旷野的代罪羊，也不应画成被宰杀献上的祭牲。</p>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </main>
+
+    <dialog class="detail-dialog" id="detail-dialog" aria-labelledby="dialog-title">
+      <button class="dialog-close" type="button" aria-label="关闭详情">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19" /></svg>
+      </button>
+      <img id="dialog-image" alt="" width="768" height="512" />
+      <div class="dialog-content">
+        <p class="dialog-kicker" id="dialog-kicker"></p>
+        <h2 id="dialog-title"></h2>
+        <p class="dialog-summary" id="dialog-summary"></p>
+        <section class="dialog-story" id="dialog-story-section" aria-labelledby="dialog-story-title" hidden>
+          <p class="dialog-section-label">STORY · 故事脉络</p>
+          <h3 id="dialog-story-title">山上发生了什么？</h3>
+          <div id="dialog-story"></div>
+        </section>
+        <div class="dialog-facts">
+          <div><span>关键经文</span><strong id="dialog-reference"></strong></div>
+          <div><span>相关人物</span><strong id="dialog-people"></strong></div>
+          <div><span>核心主题</span><strong id="dialog-theme"></strong></div>
+        </div>
+        <section class="scripture-guide" id="scripture-guide" aria-labelledby="scripture-guide-title" hidden>
+          <div class="scripture-guide-heading">
+            <div>
+              <p class="dialog-section-label">SCRIPTURE GUIDE · 经文指引</p>
+              <h3 id="scripture-guide-title">点击经文，展开重点节选</h3>
+            </div>
+            <span>和合本 · 简体</span>
+          </div>
+          <div class="scripture-tabs" id="scripture-tabs" role="tablist" aria-label="经文指引"></div>
+          <article class="scripture-reader" id="scripture-reader" role="tabpanel" aria-live="polite" hidden>
+            <p class="scripture-reference" id="scripture-reference"></p>
+            <p class="scripture-cue" id="scripture-cue"></p>
+            <div class="scripture-text" id="scripture-text"></div>
+            <p class="scripture-source">经文摘录自和合本（公开领域简体）；较长章节仅展示与本山故事直接相关的重点经节。</p>
+          </article>
+        </section>
+        <blockquote id="dialog-question"></blockquote>
+        <p class="dialog-note" id="dialog-note"></p>
+      </div>
+    </dialog>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
