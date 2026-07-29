@@ -528,6 +528,13 @@ const hymnCards = [
             <button type="button" class="bible-theme-toggle" data-action="toggle-reading-theme" aria-pressed="false">深色阅读</button>
             <button type="button" data-action="cloud-login">登录同步</button>
             <div class="bible-speech-actions" aria-label="章节朗读控制">
+              <select class="bible-speech-rate" data-speech-rate aria-label="朗读倍速" title="朗读倍速">
+                <option value="1">1×</option>
+                <option value="1.2">1.2×</option>
+                <option value="1.5">1.5×</option>
+                <option value="2">2×</option>
+                <option value="3">3×</option>
+              </select>
               <button type="button" data-action="read-chapter" aria-pressed="false">朗读本章</button>
               <button class="bible-speech-icon" type="button" data-action="replay-chapter" aria-label="重新播放本章" title="重新播放本章" disabled>↻</button>
               <button class="bible-speech-icon" type="button" data-action="stop-reading" aria-label="停止朗读" title="停止朗读" disabled>■</button>
@@ -1646,6 +1653,7 @@ const hymnCards = [
   .bible-segmented button,
   .bible-view-toggle button,
   .bible-reading-actions button,
+  .bible-reading-actions select,
   .bible-mobile-directory,
   .bible-notes-panel button,
   .bible-login-actions button,
@@ -1805,7 +1813,13 @@ const hymnCards = [
 
   .bible-speech-actions {
     display: flex;
+    align-items: center;
     gap: 0.32rem;
+  }
+
+  .bible-reading-actions .bible-speech-rate {
+    width: 4.15rem;
+    padding-right: 0.35rem;
   }
 
   .bible-reading-actions .bible-speech-icon {
@@ -1854,6 +1868,7 @@ const hymnCards = [
   }
 
   .bible-reading-actions button,
+  .bible-reading-actions select,
   .bible-notes-panel button,
   .bible-login-actions button,
   .bible-note-actions button {
@@ -2527,6 +2542,7 @@ const hymnCards = [
   .bible-app.is-dark-reader .bible-segmented button,
   .bible-app.is-dark-reader .bible-view-toggle button,
   .bible-app.is-dark-reader .bible-reading-actions button,
+  .bible-app.is-dark-reader .bible-reading-actions select,
   .bible-app.is-dark-reader .bible-mobile-directory {
     border-color: rgba(216, 179, 95, 0.24);
     background: #1a150d;
@@ -3756,10 +3772,16 @@ const hymnCards = [
       flex-wrap: wrap;
     }
 
-    .bible-reading-actions button {
+    .bible-reading-actions button,
+    .bible-reading-actions select {
       min-height: 2rem;
       padding: 0.34rem 0.5rem;
       font-size: 0.64rem;
+    }
+
+    .bible-reading-actions .bible-speech-rate {
+      width: 3.6rem;
+      padding-right: 0.2rem;
     }
 
     .bible-reading-actions .bible-speech-icon {

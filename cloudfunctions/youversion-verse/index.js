@@ -1,7 +1,9 @@
 "use strict";
 
+const crypto = require("crypto");
 const http = require("http");
 const https = require("https");
+const { EDGE_TTS, synthesizeEdgeSpeech } = require("./edge-tts");
 
 const PORT = Number(process.env.PORT || 9000);
 const APP_KEY = String(process.env.YVP_APP_KEY || "").trim();
@@ -12,6 +14,8 @@ const YVP_API_IPS = String(process.env.YVP_API_IPS || "151.101.1.55,151.101.65.5
   .filter(value => /^\d{1,3}(?:\.\d{1,3}){3}$/.test(value));
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const MAX_CACHE_ENTRIES = 500;
+const TTS_MAX_TEXT_LENGTH = 12000;
+const MAX_TTS_CACHE_ENTRIES = 8;
 const ALLOWED_BOOKS = new Set([
   "GEN", "EXO", "LEV", "NUM", "DEU", "JOS", "JDG", "RUT", "1SA", "2SA",
   "1KI", "2KI", "1CH", "2CH", "EZR", "NEH", "EST", "JOB", "PSA", "PRO",
@@ -22,6 +26,7 @@ const ALLOWED_BOOKS = new Set([
   "2PE", "1JN", "2JN", "3JN", "JUD", "REV"
 ]);
 const responseCache = new Map();
+const speechCache = new Map();
 
 function allowedOrigin(origin) {
   if (!origin) return "";
@@ -40,9 +45,24 @@ function corsHeaders(originHeader) {
   const origin = allowedOrigin(originHeader);
   return {
     ...(origin ? { "Access-Control-Allow-Origin": origin } : {}),
-    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
     "Vary": "Origin"
+  };
+}
+
+function audioResponse(origin, audio, cacheStatus = "MISS") {
+  return {
+    statusCode: 200,
+    headers: {
+      "Content-Type": "audio/mpeg",
+      "Cache-Control": "public, max-age=86400",
+      "X-TTS-Voice": EDGE_TTS.voice,
+      "X-Worker-Cache": cacheStatus,
+      ...corsHeaders(origin)
+    },
+    body: audio.toString("base64"),
+    isBase64Encoded: true
   };
 }
 
@@ -138,6 +158,65 @@ function writeCached(key, value) {
   responseCache.set(key, { createdAt: Date.now(), value });
 }
 
+function normalizeSpeechText(value) {
+  if (typeof value !== "string") return "";
+  return value
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function readSpeechCache(key) {
+  const audio = speechCache.get(key);
+  if (!audio) return null;
+  speechCache.delete(key);
+  speechCache.set(key, audio);
+  return audio;
+}
+
+function writeSpeechCache(key, audio) {
+  speechCache.delete(key);
+  speechCache.set(key, audio);
+  while (speechCache.size > MAX_TTS_CACHE_ENTRIES) {
+    const oldestKey = speechCache.keys().next().value;
+    if (!oldestKey) break;
+    speechCache.delete(oldestKey);
+  }
+}
+
+async function handleTtsRequest(body, origin) {
+  let payload;
+  try {
+    payload = JSON.parse(String(body || ""));
+  } catch {
+    return jsonResponse(origin, 400, { error: "Invalid JSON body" });
+  }
+  const text = normalizeSpeechText(payload?.text);
+  if (!text || text.length > TTS_MAX_TEXT_LENGTH) {
+    return jsonResponse(origin, 400, { error: "Speech text must contain 1 to 12000 characters" });
+  }
+  const cacheKey = crypto
+    .createHash("sha256")
+    .update([EDGE_TTS.voice, EDGE_TTS.rate, EDGE_TTS.pitch, text].join("\n"))
+    .digest("hex");
+  const cached = readSpeechCache(cacheKey);
+  if (cached) return audioResponse(origin, cached, "HIT");
+  try {
+    let audio;
+    try {
+      audio = await synthesizeEdgeSpeech(text);
+    } catch (error) {
+      if (error?.message !== "Edge TTS returned no audio") throw error;
+      audio = await synthesizeEdgeSpeech(text);
+    }
+    writeSpeechCache(cacheKey, audio);
+    return audioResponse(origin, audio);
+  } catch (error) {
+    console.error("Edge TTS request failed", error);
+    return jsonResponse(origin, 502, { error: "Speech service is temporarily unavailable" });
+  }
+}
+
 function parseReference(url) {
   const book = String(url.searchParams.get("book") || "").trim().toUpperCase();
   const chapter = Number(url.searchParams.get("chapter"));
@@ -167,16 +246,25 @@ async function loadVerse(reference) {
   return value;
 }
 
-async function handleRequest(method, url, origin = "") {
+async function handleRequest(method, url, origin = "", body = "") {
   if (method === "OPTIONS") {
     return { statusCode: 204, headers: corsHeaders(origin), body: "", isBase64Encoded: false };
   }
 
   if (url.pathname.endsWith("/health") && method === "GET") {
-    return jsonResponse(origin, 200, { ok: true, configured: Boolean(APP_KEY), bibleId: BIBLE_ID });
+    return jsonResponse(origin, 200, {
+      ok: true,
+      configured: Boolean(APP_KEY),
+      bibleId: BIBLE_ID,
+      ttsVoice: EDGE_TTS.voice
+    });
   }
 
   const acceptedPath = url.pathname === "/" || url.pathname === "/api/bible-translation";
+  const acceptedTtsPath = acceptedPath || url.pathname === "/api/bible-tts";
+  if (method === "POST" && acceptedTtsPath) {
+    return handleTtsRequest(body, origin);
+  }
   if (!acceptedPath) {
     return jsonResponse(origin, 404, { error: "Not Found" });
   }
@@ -218,19 +306,29 @@ function eventUrl(event) {
 async function main(event = {}) {
   const method = String(event.httpMethod || event.requestContext?.http?.method || event.requestContext?.httpMethod || "GET").toUpperCase();
   const origin = String(event.headers?.origin || event.headers?.Origin || "");
-  return handleRequest(method, eventUrl(event), origin);
+  const body = event.isBase64Encoded
+    ? Buffer.from(String(event.body || ""), "base64").toString("utf8")
+    : String(event.body || "");
+  return handleRequest(method, eventUrl(event), origin, body);
 }
 
 const server = http.createServer(async (req, res) => {
+  const chunks = [];
+  let bodyLength = 0;
+  for await (const chunk of req) {
+    bodyLength += chunk.length;
+    if (bodyLength <= 32 * 1024) chunks.push(chunk);
+  }
   const result = await handleRequest(
     String(req.method || "GET").toUpperCase(),
     new URL(req.url || "/", "http://127.0.0.1"),
-    String(req.headers.origin || "")
+    String(req.headers.origin || ""),
+    bodyLength <= 32 * 1024 ? Buffer.concat(chunks).toString("utf8") : ""
   );
   res.writeHead(result.statusCode, result.headers);
-  res.end(result.body);
+  res.end(result.isBase64Encoded ? Buffer.from(result.body, "base64") : result.body);
 });
 
 if (require.main === module) server.listen(PORT);
 
-module.exports = { allowedOrigin, parseReference, loadVerse, handleRequest, main };
+module.exports = { allowedOrigin, parseReference, loadVerse, handleRequest, handleTtsRequest, main };

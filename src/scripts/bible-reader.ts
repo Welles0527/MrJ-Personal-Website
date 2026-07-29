@@ -124,6 +124,8 @@ const DAILY_PRAYER_KEY = 'mywebsite.bible-daily-prayer.v1';
 const READ_VERSES_KEY = 'mywebsite.bible-read-verses.v1';
 const BOOK_STATUS_KEY = 'mywebsite.bible-book-status.v1';
 const READING_THEME_KEY = 'mywebsite.bible-reading-theme.v1';
+const SPEECH_RATE_KEY = 'mywebsite.bible-speech-rate.v1';
+const SPEECH_RATES = [1, 1.2, 1.5, 2, 3];
 const COLLECTION = 'officialWebsiteBibleReaderState';
 
 const nowIso = () => new Date().toISOString();
@@ -223,6 +225,24 @@ const writeReadingTheme = (isDark: boolean) => {
   }
 };
 
+const readSpeechRate = () => {
+  try {
+    const savedRate = Number(window.localStorage.getItem(SPEECH_RATE_KEY));
+    return SPEECH_RATES.includes(savedRate) ? savedRate : 1;
+  } catch {
+    return 1;
+  }
+};
+
+const writeSpeechRate = (rate: number) => {
+  try {
+    window.localStorage.setItem(SPEECH_RATE_KEY, String(rate));
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 const assertCloudResult = <T>(result: CloudResult<T>, fallback: string) => {
   if (!result) throw new Error(fallback);
   if (result.error) throw new Error(result.error.message || fallback);
@@ -309,6 +329,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   const readChapterButton = get<HTMLButtonElement>('[data-action="read-chapter"]');
   const replayChapterButton = get<HTMLButtonElement>('[data-action="replay-chapter"]');
   const stopReadingButton = get<HTMLButtonElement>('[data-action="stop-reading"]');
+  const speechRateSelect = get<HTMLSelectElement>('[data-speech-rate]');
   const loginAccount = root.querySelector<HTMLElement>('[data-login-account]');
   const readingSyncStatus = root.querySelector<HTMLElement>('[data-reading-sync-status]');
   const toast = get<HTMLElement>('[data-bible-toast]');
@@ -348,6 +369,8 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   let readVerses = readReadVerses();
   let bookStatuses = readBookStatuses();
   let isDarkReading = readReadingTheme();
+  let speechRate = readSpeechRate();
+  speechRateSelect.value = String(speechRate);
   const expandedBookmarkBooks = new Set<string>();
   const expandedBookmarkGroups = new Set<string>();
   const expandedNoteBooks = new Set<string>();
@@ -369,6 +392,10 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   let fullTextStatus: 'loading' | 'ready' | 'failed' = data.fullTextUrl ? 'loading' : 'ready';
   let activeNoteTarget: { book: string; chapter: number; verse: number; verseText: string } | null = null;
   let activeUtterance: SpeechSynthesisUtterance | null = null;
+  let activeAudio: HTMLAudioElement | null = null;
+  let activeAudioUrl: string | null = null;
+  let activeSpeechController: AbortController | null = null;
+  let speechRequestToken = 0;
   let lastSpeechText = '';
   let activeBookStatusSlug: string | null = null;
   let pendingBookSlug: string | null = null;
@@ -378,6 +405,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   let translationRequestToken = 0;
   let currentPrayerIndex = 0;
   const translationCache = new Map<string, TranslationPayload>();
+  const speechAudioCache = new Map<string, Blob>();
 
   const renderLoginState = (nextSession: CloudSession | null) => {
     loginStatus.textContent = nextSession ? `已登录：${nextSession.account}` : '未登录时会先保存到本机浏览器。';
@@ -1410,7 +1438,24 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     stopReadingButton.disabled = !isSpeaking;
   };
 
+  const releaseActiveAudio = () => {
+    if (activeAudio) {
+      activeAudio.pause();
+      activeAudio.removeAttribute('src');
+      activeAudio.load();
+      activeAudio = null;
+    }
+    if (activeAudioUrl) {
+      URL.revokeObjectURL(activeAudioUrl);
+      activeAudioUrl = null;
+    }
+  };
+
   const stopSpeech = (clearReplay = false) => {
+    speechRequestToken += 1;
+    activeSpeechController?.abort();
+    activeSpeechController = null;
+    releaseActiveAudio();
     if ('speechSynthesis' in window) {
       activeUtterance = null;
       window.speechSynthesis.cancel();
@@ -1419,30 +1464,100 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     renderSpeechControls(false);
   };
 
-  const speak = (text: string) => {
+  const speakWithBrowserVoice = (text: string, requestToken: number) => {
     if (!('speechSynthesis' in window)) {
       notify('当前浏览器不支持语音朗读。');
+      renderSpeechControls(false);
       return;
     }
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     activeUtterance = utterance;
-    lastSpeechText = text;
     utterance.lang = 'zh-CN';
-    utterance.rate = 0.92;
+    utterance.rate = 0.92 * speechRate;
     utterance.onend = () => {
-      if (activeUtterance !== utterance) return;
+      if (activeUtterance !== utterance || requestToken !== speechRequestToken) return;
       activeUtterance = null;
       renderSpeechControls(false);
     };
     utterance.onerror = () => {
-      if (activeUtterance !== utterance) return;
+      if (activeUtterance !== utterance || requestToken !== speechRequestToken) return;
       activeUtterance = null;
       renderSpeechControls(false);
       notify('朗读中断，请重新播放。');
     };
     renderSpeechControls(true);
     window.speechSynthesis.speak(utterance);
+  };
+
+  const speechEndpoint = () => {
+    const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
+    return isLocal ? 'http://127.0.0.1:9000/api/bible-tts' : '/api/bible-translation-genesis-test';
+  };
+
+  const rememberSpeechAudio = (text: string, audio: Blob) => {
+    speechAudioCache.delete(text);
+    speechAudioCache.set(text, audio);
+    while (speechAudioCache.size > 3) {
+      const oldest = speechAudioCache.keys().next().value;
+      if (!oldest) break;
+      speechAudioCache.delete(oldest);
+    }
+  };
+
+  const speak = async (text: string) => {
+    stopSpeech();
+    lastSpeechText = text;
+    const requestToken = speechRequestToken;
+    renderSpeechControls(true);
+
+    try {
+      let audioBlob = speechAudioCache.get(text);
+      if (!audioBlob) {
+        const controller = new AbortController();
+        activeSpeechController = controller;
+        const response = await fetch(speechEndpoint(), {
+          method: 'POST',
+          headers: {
+            Accept: 'audio/mpeg',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ text }),
+          signal: controller.signal
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        audioBlob = await response.blob();
+        if (!audioBlob.size || !audioBlob.type.startsWith('audio/')) throw new Error('invalid audio');
+        rememberSpeechAudio(text, audioBlob);
+      }
+      if (requestToken !== speechRequestToken) return;
+
+      activeSpeechController = null;
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      audio.playbackRate = speechRate;
+      audio.preservesPitch = true;
+      activeAudio = audio;
+      activeAudioUrl = audioUrl;
+      audio.onended = () => {
+        if (activeAudio !== audio || requestToken !== speechRequestToken) return;
+        releaseActiveAudio();
+        renderSpeechControls(false);
+      };
+      audio.onerror = () => {
+        if (activeAudio !== audio || requestToken !== speechRequestToken) return;
+        releaseActiveAudio();
+        notify('云端男声播放失败，已改用本机朗读。');
+        speakWithBrowserVoice(text, requestToken);
+      };
+      await audio.play();
+    } catch (error) {
+      if ((error as Error)?.name === 'AbortError' || requestToken !== speechRequestToken) return;
+      activeSpeechController = null;
+      releaseActiveAudio();
+      notify('云端男声暂不可用，已改用本机朗读。');
+      speakWithBrowserVoice(text, requestToken);
+    }
   };
 
   const toggleBookmark = (verse: number) => {
@@ -1809,10 +1924,11 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     }
     if (trigger.dataset.action === 'read-chapter') {
       const sample = currentSample();
-      if (sample) speak(`${sample.title}。${sample.verses.map((text, index) => `${index + 1}节，${text}`).join('')}`);
+      const book = sample ? bookBySlug(sample.book) : undefined;
+      if (sample) void speak(`${book?.title || sample.title}，第${sample.chapter}章。${sample.verses.join('')}`);
       else notify('该章正文暂未导入，无法朗读。');
     }
-    if (trigger.dataset.action === 'replay-chapter' && lastSpeechText) speak(lastSpeechText);
+    if (trigger.dataset.action === 'replay-chapter' && lastSpeechText) void speak(lastSpeechText);
     if (trigger.dataset.action === 'resume-reading') resumeSelectedBook();
     if (trigger.dataset.action === 'stop-reading') {
       stopSpeech();
@@ -1830,6 +1946,18 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   });
 
   searchInput.addEventListener('input', runSearch);
+  speechRateSelect.addEventListener('change', () => {
+    const nextRate = Number(speechRateSelect.value);
+    if (!SPEECH_RATES.includes(nextRate)) {
+      speechRateSelect.value = String(speechRate);
+      return;
+    }
+    speechRate = nextRate;
+    const saved = writeSpeechRate(speechRate);
+    if (activeAudio) activeAudio.playbackRate = speechRate;
+    if (activeUtterance) activeUtterance.rate = 0.92 * speechRate;
+    notify(saved ? `朗读倍速已切换至 ${speechRate} 倍。` : `朗读倍速已切换至 ${speechRate} 倍，但当前浏览器无法长期保存。`);
+  });
   librarySearchInput.addEventListener('input', () => {
     renderBookmarks();
     renderNotes();
