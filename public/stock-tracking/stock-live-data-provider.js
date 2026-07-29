@@ -95,6 +95,18 @@
     return Math.abs(hash).toString(36);
   }
 
+  function isRelevantNewsItem(item, stockName) {
+    if (!stockName) return true;
+    const title = plainText(item?.title);
+    const content = plainText(item?.content || item?.summary || item?.detail);
+    if (title.includes(stockName)) return true;
+    if (!content.includes(stockName)) return false;
+
+    const aggregateTitle = /短线防风险|均线.{0,8}(死叉|金叉)|\d+\s*(只|个)\s*(A股|股票|个股)|(A股|个股).{0,12}(大宗交易|龙虎榜|融资|主力|异动|榜单|名单|汇总)|(融资|资金流向|大宗交易).{0,10}(排名|榜|一览)/;
+    if (aggregateTitle.test(title)) return false;
+    return content.slice(0, 220).includes(stockName);
+  }
+
   function sentimentFromTitle(title) {
     if (/(减持|处罚|立案|诉讼|预亏|亏损|终止|风险提示|冻结|下修|退市)/.test(title)) return "利空";
     if (/(增持|回购|中标|预增|扭亏|分红|权益分派|签订.{0,8}合同)/.test(title)) return "利好";
@@ -340,10 +352,7 @@
       const payload = await this.jsonpRequest(url);
       const items = Array.isArray(payload?.result?.cmsArticleWebOld) ? payload.result.cmsArticleWebOld : [];
       return items
-        .filter(item => {
-          if (!stockName) return true;
-          return plainText(item.title).includes(stockName) || plainText(item.content).includes(stockName);
-        })
+        .filter(item => isRelevantNewsItem(item, stockName))
         .slice(0, limit)
         .map(item => {
         const title = plainText(item.title);
@@ -376,7 +385,9 @@
 
       try {
         const payload = await this.requestJson(this.proxyUrl(code, sections, options));
-        let news = Array.isArray(payload?.news) ? payload.news : [];
+        let news = Array.isArray(payload?.news)
+          ? payload.news.filter(item => isRelevantNewsItem(item, options.name))
+          : [];
         const errors = { ...(payload?.errors || {}) };
         if (sections.includes("news") && !news.length) {
           try {
