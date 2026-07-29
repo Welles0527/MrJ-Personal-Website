@@ -1492,7 +1492,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
 
   const speechEndpoint = () => {
     const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
-    return isLocal ? 'http://127.0.0.1:9000/api/bible-tts' : '/api/bible-translation-genesis-test';
+    return isLocal ? 'http://127.0.0.1:9000/api/bible-tts' : '/api/bible-translation';
   };
 
   const rememberSpeechAudio = (text: string, audio: Blob) => {
