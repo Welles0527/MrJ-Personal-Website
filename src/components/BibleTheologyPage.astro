@@ -3,8 +3,6 @@ import { createBibleGroupAlbums } from '../data/bible-group-albums';
 
 const basePath = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
 const characterMapHref = `${basePath}topics/applications/inspiration-station/theology/character-map`;
-const lifespanRankingHref = `${basePath}topics/applications/inspiration-station/theology/age-rankings?view=lifespan`;
-const accessionRankingHref = `${basePath}topics/applications/inspiration-station/theology/age-rankings?view=accession`;
 const worshipMusicHref = `${basePath}worship/`;
 const groupAlbums = createBibleGroupAlbums(basePath);
 const groupAlbumsHref = `${basePath}topics/applications/inspiration-station/theology/group-albums/`;
@@ -122,14 +120,14 @@ const featurePages = [
     eyebrow: 'ARCHIVE',
     quote: '你要察看神的作为；因神使为曲的，谁能变为直呢？',
     reference: '传道书 7:13',
-    summary: '收纳圣经中的地理、礼仪、象征与容易被忽略的知识线索。',
+    summary: '对照圣经中具有相同属性的信息：人物寿命、登基年龄、名山与献祭方式。',
     action: '进入资料馆',
     href: alternativeKnowledgeHref,
-    status: '内容筹备中',
-    image: `${basePath}images/bible-theology/feature-alternative-knowledge.svg`,
-    artA: '#5b4b9d',
-    artB: '#d5ad58',
-    artC: '#183b56'
+    status: '4 类专题',
+    image: `${basePath}images/bible-theology/feature-alternative-knowledge-v2.png`,
+    artA: '#8c5d28',
+    artB: '#d7af5b',
+    artC: '#18253a'
   }
 ];
 
@@ -595,8 +593,6 @@ const hymnCards = [
       <p class="bible-section-lede">以人物为入口，把故事、经文、主题和生命应用串起来。</p>
       <div class="bible-people-actions" aria-label="圣经人物工具">
         <a class="bible-section-link bible-character-map-link" href={characterMapHref}>打开圣经人物图谱</a>
-        <a class="bible-section-link bible-person-ranking-link" href={lifespanRankingHref}>圣经寿命排名</a>
-        <a class="bible-section-link bible-person-ranking-link" href={accessionRankingHref}>登基年龄排名</a>
       </div>
       <div class="bible-card-grid bible-people-grid">
         {peopleCards.map((person) => (

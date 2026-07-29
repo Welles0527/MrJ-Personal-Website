@@ -153,26 +153,36 @@ a:focus-visible {
   background: rgba(255, 255, 255, 0.025);
 }
 
-.board-tab {
+.board-tab,
+.board-link {
+  display: inline-flex;
   min-height: 46px;
+  align-items: center;
+  justify-content: center;
   padding: 0 22px;
   border: 0;
   border-radius: 999px;
   color: var(--muted);
   background: transparent;
   cursor: pointer;
+  font: inherit;
+  text-decoration: none;
+  white-space: nowrap;
   transition: color 180ms ease, background 180ms ease, box-shadow 180ms ease;
 }
 
-.board-tab span {
+.board-tab span,
+.board-link span {
   margin-right: 8px;
   color: var(--amber);
   font: 700 10px/1 Georgia, serif;
   letter-spacing: 0.12em;
 }
 
-.board-tab:hover {
+.board-tab:hover,
+.board-link:hover {
   color: var(--cream);
+  background: rgba(255, 255, 255, 0.045);
 }
 
 .board-tab.is-active {
@@ -1099,11 +1109,14 @@ h1 {
   }
 
   .board-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     width: 100%;
   }
 
-  .board-tab {
-    flex: 1;
+  .board-tab,
+  .board-link {
+    width: 100%;
     padding: 0 12px;
   }
 
