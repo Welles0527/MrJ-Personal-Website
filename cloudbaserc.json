@@ -12,6 +12,15 @@
       "timeout": 15,
       "memorySize": 128,
       "description": "Proxy licensed YouVersion verse translations without exposing the App Key."
+    },
+    {
+      "name": "stock-tracking-live",
+      "type": "Event",
+      "runtime": "Nodejs18.15",
+      "handler": "index.main",
+      "timeout": 20,
+      "memorySize": 128,
+      "description": "Proxy and cache public A-share quotes, announcements, and news for the stock tracking dashboard."
     }
   ]
 }

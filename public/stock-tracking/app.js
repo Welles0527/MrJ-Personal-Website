@@ -12,6 +12,11 @@
   const liveDataProvider = window.StockTrackingLiveData
     ? new window.StockTrackingLiveData.EastmoneyStockLiveDataProvider()
     : null;
+  const REFRESH_INTERVALS = {
+    quote: 15 * 1000,
+    announcements: 2 * 60 * 1000,
+    news: 5 * 60 * 1000
+  };
   const technicalProvider = window.StockTechnicalAnalysis
     ? new window.StockTechnicalAnalysis.MockTechnicalAnalysisProvider()
     : null;
@@ -76,7 +81,9 @@
     refreshNotice: "",
     marketUpdatedAt: null,
     dynamicsCheckedByCode: new Map(),
-    pendingRefreshCode: "",
+    announcementsCheckedByCode: new Map(),
+    newsCheckedByCode: new Map(),
+    pendingRefreshOptions: null,
     searchComposing: false,
     technicalSearchComposing: false,
     authMode: null,
@@ -90,6 +97,7 @@
   let root;
   let technicalPage;
   let completeEmailSignUp;
+  const refreshTimers = [];
 
   function mount() {
     root = document.getElementById("app");
@@ -106,9 +114,11 @@
     window.addEventListener("storage", handleExternalStorageChange);
     window.addEventListener("site-auth-change", handleExternalStorageChange);
     window.addEventListener("stock-auth-ready", handleAuthReady);
+    document.addEventListener("visibilitychange", handleVisibilityRefresh);
     render();
     loadStockUniverse();
-    refreshAllInformation({ silent: true });
+    refreshAllInformation({ silent: true, force: true });
+    startAutomaticRefresh();
   }
 
   function handleExternalStorageChange() {
@@ -121,6 +131,66 @@
   function handleAuthReady() {
     state.authMessage = "";
     render();
+  }
+
+  function shanghaiMarketClock() {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Shanghai",
+      weekday: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23"
+    }).formatToParts(new Date());
+    const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+    return {
+      weekday: values.weekday,
+      minuteOfDay: Number(values.hour) * 60 + Number(values.minute)
+    };
+  }
+
+  function isMarketPollingWindow() {
+    const clock = shanghaiMarketClock();
+    if (["Sat", "Sun"].includes(clock.weekday)) return false;
+    return (
+      (clock.minuteOfDay >= 9 * 60 + 15 && clock.minuteOfDay <= 11 * 60 + 30)
+      || (clock.minuteOfDay >= 13 * 60 && clock.minuteOfDay <= 15 * 60 + 5)
+    );
+  }
+
+  function runAutomaticRefresh(sections) {
+    if (document.visibilityState !== "visible" || !liveDataProvider) return;
+    const options = {
+      silent: true,
+      quoteCodes: sections.includes("quote") ? [selectedStock().code] : [],
+      feedSections: sections.filter(section => section !== "quote")
+    };
+    refreshAllInformation(options);
+  }
+
+  function startAutomaticRefresh() {
+    refreshTimers.forEach(timer => window.clearInterval(timer));
+    refreshTimers.length = 0;
+    refreshTimers.push(window.setInterval(() => {
+      if (isMarketPollingWindow()) runAutomaticRefresh(["quote"]);
+    }, REFRESH_INTERVALS.quote));
+    refreshTimers.push(window.setInterval(
+      () => runAutomaticRefresh(["announcements"]),
+      REFRESH_INTERVALS.announcements
+    ));
+    refreshTimers.push(window.setInterval(
+      () => runAutomaticRefresh(["news"]),
+      REFRESH_INTERVALS.news
+    ));
+  }
+
+  function handleVisibilityRefresh() {
+    if (document.visibilityState !== "visible") return;
+    refreshAllInformation({
+      silent: true,
+      force: true,
+      quoteCodes: [selectedStock().code],
+      feedSections: ["announcements", "news"]
+    });
   }
 
   function createBasicStockRecord(basic) {
@@ -332,7 +402,7 @@
     render();
   }
 
-  function applyClosingQuote(quote) {
+  function applyLiveQuote(quote) {
     const record = stockRecord(quote.code);
     Object.assign(record, {
       name: quote.name || record.name,
@@ -344,7 +414,8 @@
       turnoverRate: quote.turnoverRate,
       amount: quote.amount,
       totalMarketValue: quote.totalMarketValue,
-      circulatingMarketValue: quote.circulatingMarketValue
+      circulatingMarketValue: quote.circulatingMarketValue,
+      quoteKind: quote.quoteKind || "realtime"
     });
     if (
       quote.updatedAt
@@ -354,72 +425,111 @@
     }
   }
 
-  function applyLatestAnnouncements(stockCode, announcements) {
+  function applyLatestInformation(stockCode, information, sections) {
     const record = stockRecord(stockCode);
+    const existingById = new Map((record.messages || []).map(message => [message.id, message]));
     const retainedMessages = (record.messages || []).filter(message =>
       ["technical", "health"].includes(message.category)
     );
-    record.messages = [...retainedMessages, ...announcements].sort(sortByNewest);
-    record.dynamicLatestAt = announcements[0]?.publishedAt || null;
+    const existingAnnouncements = (record.messages || []).filter(message =>
+      message.live && String(message.id).startsWith("live-announcement-")
+    );
+    const existingNews = (record.messages || []).filter(message =>
+      message.live && String(message.id).startsWith("live-news-")
+    );
+    const preserveReadState = messages => messages.map(message => ({
+      ...message,
+      unread: existingById.has(message.id) ? existingById.get(message.id).unread : true
+    }));
+    const announcements = sections.includes("announcements")
+      ? preserveReadState(information.announcements || [])
+      : existingAnnouncements;
+    const news = sections.includes("news")
+      ? preserveReadState(information.news || [])
+      : existingNews;
+    const latestMessages = [...announcements, ...news];
+    record.messages = [...retainedMessages, ...latestMessages].sort(sortByNewest);
+    record.dynamicLatestAt = latestMessages.sort(sortByNewest)[0]?.publishedAt || null;
     record.liveMessagesLoaded = true;
-    state.dynamicsCheckedByCode.set(stockCode, new Date().toISOString());
+    const checkedAt = information.checkedAt || new Date().toISOString();
+    if (sections.includes("announcements")) state.announcementsCheckedByCode.set(stockCode, checkedAt);
+    if (sections.includes("news")) state.newsCheckedByCode.set(stockCode, checkedAt);
+    state.dynamicsCheckedByCode.set(stockCode, checkedAt);
   }
 
   async function refreshAllInformation(options = {}) {
     if (!liveDataProvider) return;
     if (state.refreshing) {
-      state.pendingRefreshCode = String(options.quoteCodes?.[0] || selectedStock().code);
+      if (!state.pendingRefreshOptions || options.force) {
+        state.pendingRefreshOptions = {
+          ...options,
+          silent: true,
+          quoteCodes: options.quoteCodes || [selectedStock().code]
+        };
+      }
       return;
     }
     const selected = selectedStock();
     const quoteCodes = options.quoteCodes || [
       ...new Set([...data.stocks.map(stock => stock.code), selected.code])
     ];
+    const feedSections = Array.isArray(options.feedSections)
+      ? options.feedSections.filter(section => ["announcements", "news"].includes(section))
+      : ["announcements", "news"];
     state.refreshing = true;
     if (!options.silent) {
-      state.refreshNotice = `正在刷新 ${quoteCodes.length} 只股票的收盘行情与 ${selected.name} 最新动态…`;
+      state.refreshNotice = `正在刷新 ${quoteCodes.length} 只股票的实时行情与 ${selected.name} 最新公告、新闻…`;
       render();
     }
 
     const quoteRequests = quoteCodes.map(code =>
-      liveDataProvider.getClosingQuote(code).then(quote => {
-        applyClosingQuote(quote);
+      liveDataProvider.getRealtimeQuote(code, { force: options.force }).then(quote => {
+        applyLiveQuote(quote);
         return quote;
       })
     );
-    const announcementRequest = liveDataProvider
-      .getLatestAnnouncements(selected.code, { limit: 12 })
-      .then(announcements => {
-        applyLatestAnnouncements(selected.code, announcements);
-        return announcements;
-      });
-    const [quoteResults, announcementResult] = await Promise.all([
+    const informationRequest = feedSections.length
+      ? liveDataProvider
+        .getLatestInformation(selected.code, {
+          sections: feedSections,
+          force: options.force,
+          name: selected.name
+        })
+        .then(information => {
+          applyLatestInformation(selected.code, information, feedSections);
+          return information;
+        })
+      : Promise.resolve(null);
+    const [quoteResults, informationResult] = await Promise.all([
       Promise.allSettled(quoteRequests),
-      Promise.allSettled([announcementRequest])
+      Promise.allSettled([informationRequest])
     ]);
 
     const quoteSuccesses = quoteResults.filter(result => result.status === "fulfilled").length;
-    const announcementSucceeded = announcementResult[0]?.status === "fulfilled";
+    const informationSucceeded = !feedSections.length || informationResult[0]?.status === "fulfilled";
+    const informationErrors = informationResult[0]?.status === "fulfilled"
+      ? Object.values(informationResult[0].value?.errors || {})
+      : [];
     const errors = [
       ...quoteResults.filter(result => result.status === "rejected").map(result => result.reason?.message),
-      ...announcementResult.filter(result => result.status === "rejected").map(result => result.reason?.message)
+      ...informationResult.filter(result => result.status === "rejected").map(result => result.reason?.message),
+      ...informationErrors
     ].filter(Boolean);
 
     state.refreshing = false;
-    if (quoteSuccesses || announcementSucceeded) {
-      const marketTime = state.marketUpdatedAt ? `行情截至 ${formatDateTime(state.marketUpdatedAt)}` : "行情暂未更新";
-      const dynamicTime = state.dynamicsCheckedByCode.get(selected.code);
-      state.refreshNotice = `${marketTime} · 动态检查 ${dynamicTime ? formatDateTime(dynamicTime) : "未完成"}`;
+    if (quoteSuccesses || informationSucceeded) {
+      const marketTime = state.marketUpdatedAt ? `行情 ${formatDateTime(state.marketUpdatedAt)}` : "行情暂未更新";
+      const announcementTime = state.announcementsCheckedByCode.get(selected.code);
+      const newsTime = state.newsCheckedByCode.get(selected.code);
+      state.refreshNotice = `${marketTime} · 公告 ${announcementTime ? formatDateTime(announcementTime) : "待检查"} · 新闻 ${newsTime ? formatDateTime(newsTime) : "待检查"}`;
       if (errors.length) state.refreshNotice += ` · ${errors.length} 项未成功`;
     } else {
       state.refreshNotice = `刷新失败：${errors[0] || "公开数据源暂不可用"}`;
     }
     render();
-    const pendingCode = state.pendingRefreshCode;
-    state.pendingRefreshCode = "";
-    if (pendingCode && pendingCode !== selected.code) {
-      refreshAllInformation({ silent: true, quoteCodes: [pendingCode] });
-    }
+    const pendingOptions = state.pendingRefreshOptions;
+    state.pendingRefreshOptions = null;
+    if (pendingOptions) refreshAllInformation(pendingOptions);
   }
 
   function render() {
@@ -487,7 +597,7 @@
           <div class="watchlist-heading">
             <h1>自选股持仓</h1>
             <button class="refresh-all ${state.refreshing ? "refreshing" : ""}" type="button" data-action="refresh-all"
-              ${state.refreshing ? "disabled" : ""} aria-label="刷新收盘行情与最新动态" title="刷新收盘行情与当前股票最新动态">
+              ${state.refreshing ? "disabled" : ""} aria-label="刷新实时行情与最新新闻" title="立即刷新实时行情、公告与新闻">
               ${icon("refresh")}<span>${state.refreshing ? "刷新中" : "刷新"}</span>
             </button>
           </div>
@@ -511,8 +621,8 @@
         <div class="last-updated" aria-label="数据更新时间">
           ${icon("refresh")}
           <span>
-            <b>行情截至 ${state.marketUpdatedAt ? formatDateTime(state.marketUpdatedAt) : "等待同步"}</b>
-            <small>动态检查 ${state.dynamicsCheckedByCode.get(stock.code) ? formatDateTime(state.dynamicsCheckedByCode.get(stock.code)) : "等待同步"}</small>
+            <b>行情 ${state.marketUpdatedAt ? formatDateTime(state.marketUpdatedAt) : "等待同步"} · 盘中15秒</b>
+            <small>公告 ${state.announcementsCheckedByCode.get(stock.code) ? formatDateTime(state.announcementsCheckedByCode.get(stock.code)) : "等待"} · 新闻 ${state.newsCheckedByCode.get(stock.code) ? formatDateTime(state.newsCheckedByCode.get(stock.code)) : "等待"}</small>
           </span>
         </div>
       </aside>`;
@@ -650,7 +760,7 @@
           </div>
           <div class="position-return">
             持仓收益 <strong class="${returnPct === null ? "" : returnPct >= 0 ? "positive" : "negative"}">${returnPct === null ? "—" : formatSigned(returnPct, "%")}</strong>
-            <span class="quote-updated-at">收盘截至 ${stock.quoteUpdatedAt ? formatDateTime(stock.quoteUpdatedAt) : "等待刷新"}</span>
+            <span class="quote-updated-at">${stock.quoteKind === "realtime" ? "实时行情" : "收盘行情"} ${stock.quoteUpdatedAt ? formatDateTime(stock.quoteUpdatedAt) : "等待刷新"}</span>
           </div>
         </div>
         <dl class="position-metrics">
@@ -1187,7 +1297,7 @@
       state.filters[target.dataset.filterKey] = target.dataset.filterValue;
       state.expandedMessageId = null;
     } else if (action === "refresh-all") {
-      refreshAllInformation();
+      refreshAllInformation({ force: true });
       return;
     } else if (state.viewMode === "technical" && technicalPage) {
       const handled = technicalPage.handleAction(target);
@@ -1199,7 +1309,9 @@
     if (refreshCodeAfterRender) {
       refreshAllInformation({
         silent: true,
-        quoteCodes: [String(refreshCodeAfterRender).padStart(6, "0")]
+        force: true,
+        quoteCodes: [String(refreshCodeAfterRender).padStart(6, "0")],
+        feedSections: ["announcements", "news"]
       });
     }
   }
