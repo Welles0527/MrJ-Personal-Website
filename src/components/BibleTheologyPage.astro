@@ -469,7 +469,10 @@ const hymnCards = [
       <a class="bible-home-link" href={`${basePath}topics/applications/inspiration-station`}>AI灵感站</a>
       <div class="bible-nav-scroll">
         {featurePages.map((page, index) => (
-          <button type="button" data-feature-target={String(index)} class={index === 0 ? 'is-active' : ''}>{page.title}</button>
+          <button type="button" data-feature-target={String(index)} class={index === 0 ? 'is-active' : ''}>
+            <span class="bible-nav-index" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+            <span>{page.title}</span>
+          </button>
         ))}
       </div>
     </nav>
@@ -992,13 +995,10 @@ const hymnCards = [
     display: flex;
     align-items: center;
     gap: 1rem;
-    width: min(72vw, 860px);
-    min-height: 3.6rem;
+    width: min(calc(100% - 2rem), 1320px);
+    min-height: 3.8rem;
     margin: 1rem auto 0;
-    border: 1px solid rgba(216, 179, 95, 0.2);
-    border-radius: 999px;
-    padding: 0.35rem 0.55rem;
-    background: rgba(255, 246, 218, 0.04);
+    padding: 0;
   }
 
   .bible-home-link {
@@ -1011,11 +1011,15 @@ const hymnCards = [
   }
 
   .bible-nav-scroll {
-    display: flex;
+    display: grid;
     flex: 1 1 auto;
-    gap: 0.42rem;
+    grid-template-columns: repeat(7, minmax(8.2rem, 1fr));
+    gap: 0.5rem;
     overflow-x: auto;
-    padding-bottom: 0.2rem;
+    padding: 0.32rem;
+    border: 1px solid rgba(216, 179, 95, 0.3);
+    border-radius: 999px;
+    background: rgba(255, 246, 218, 0.025);
     scrollbar-width: none;
   }
 
@@ -1024,22 +1028,47 @@ const hymnCards = [
   }
 
   .bible-nav-scroll button {
-    flex: 0 0 auto;
-    min-height: 2.2rem;
-    border: 1px solid rgba(216, 179, 95, 0.18);
+    display: inline-flex;
+    min-height: 2.9rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.52rem;
+    border: 0;
     border-radius: 999px;
-    padding: 0.44rem 0.76rem;
-    background: rgba(255, 246, 218, 0.04);
-    color: rgba(255, 247, 224, 0.76);
+    padding: 0 0.85rem;
+    background: transparent;
+    color: rgba(255, 247, 224, 0.68);
     cursor: pointer;
-    font-size: 0.75rem;
+    font-size: 0.9rem;
     font-weight: 800;
+    white-space: nowrap;
+    transition: color 180ms ease, background 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+  }
+
+  .bible-nav-scroll button:hover {
+    background: rgba(255, 246, 218, 0.06);
+    color: #fff5d4;
+  }
+
+  .bible-nav-scroll button:focus-visible {
+    outline: 2px solid #ffd67f;
+    outline-offset: 2px;
+  }
+
+  .bible-nav-index {
+    color: #f0ae47;
+    font: 700 0.65rem/1 Georgia, "Times New Roman", serif;
+    letter-spacing: 0.12em;
   }
 
   .bible-nav-scroll button.is-active {
-    border-color: rgba(216, 179, 95, 0.7);
-    background: rgba(216, 179, 95, 0.16);
-    color: #fff5d4;
+    background: linear-gradient(135deg, #ffe5a3, #f2ad43);
+    box-shadow: 0 0.5rem 1.5rem rgba(238, 156, 49, 0.2), inset 0 1px rgba(255, 255, 255, 0.75);
+    color: #27140a;
+  }
+
+  .bible-nav-scroll button.is-active .bible-nav-index {
+    color: #6e3b12;
   }
 
   .bible-stage-copy {
@@ -3571,7 +3600,17 @@ const hymnCards = [
       align-items: flex-start;
       flex-direction: column;
       gap: 0.55rem;
-      padding-bottom: 0.7rem;
+      width: 100%;
+      padding-bottom: 0.35rem;
+    }
+
+    .bible-home-link {
+      padding-left: 0.35rem;
+    }
+
+    .bible-nav-scroll {
+      width: 100%;
+      grid-template-columns: repeat(7, minmax(8.2rem, 1fr));
     }
 
     .bible-stage-copy {
