@@ -73,7 +73,7 @@ function importanceFromTitle(title) {
 }
 
 function sentimentFromTitle(title) {
-  if (/(增长|中标|签订|回购|增持|扭亏|突破|上涨|提价|扩产|净流入)/.test(title)) return "利多";
+  if (/(增长|中标|签订|回购|增持|扭亏|突破|上涨|提价|扩产|净流入)/.test(title)) return "利好";
   if (/(下降|亏损|处罚|诉讼|减持|质押|跌破|风险|终止|下跌|死叉|净流出)/.test(title)) return "利空";
   return "中性";
 }

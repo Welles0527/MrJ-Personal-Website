@@ -70,7 +70,7 @@
   }
 
   function directNewsSentiment(title) {
-    if (/(增长|中标|签订|回购|增持|扭亏|突破|上涨|提价|扩产|净流入)/.test(title)) return "利多";
+    if (/(增长|中标|签订|回购|增持|扭亏|突破|上涨|提价|扩产|净流入)/.test(title)) return "利好";
     if (/(下降|亏损|处罚|诉讼|减持|质押|跌破|风险|终止|下跌|死叉|净流出)/.test(title)) return "利空";
     return "中性";
   }
@@ -105,6 +105,10 @@
     const aggregateTitle = /短线防风险|均线.{0,8}(死叉|金叉)|\d+\s*(只|个)\s*(A股|股票|个股)|(A股|个股).{0,12}(大宗交易|龙虎榜|融资|主力|异动|榜单|名单|汇总)|(融资|资金流向|大宗交易).{0,10}(排名|榜|一览)/;
     if (aggregateTitle.test(title)) return false;
     return content.slice(0, 220).includes(stockName);
+  }
+
+  function normalizeSentiment(sentiment) {
+    return sentiment === "利多" ? "利好" : sentiment;
   }
 
   function sentimentFromTitle(title) {
@@ -386,7 +390,9 @@
       try {
         const payload = await this.requestJson(this.proxyUrl(code, sections, options));
         let news = Array.isArray(payload?.news)
-          ? payload.news.filter(item => isRelevantNewsItem(item, options.name))
+          ? payload.news
+            .filter(item => isRelevantNewsItem(item, options.name))
+            .map(item => ({ ...item, sentiment: normalizeSentiment(item.sentiment) }))
           : [];
         const errors = { ...(payload?.errors || {}) };
         if (sections.includes("news") && !news.length) {
@@ -398,7 +404,9 @@
           }
         }
         return {
-          announcements: Array.isArray(payload?.announcements) ? payload.announcements : [],
+          announcements: Array.isArray(payload?.announcements)
+            ? payload.announcements.map(item => ({ ...item, sentiment: normalizeSentiment(item.sentiment) }))
+            : [],
           news,
           errors,
           checkedAt: payload?.checkedAt || new Date().toISOString()

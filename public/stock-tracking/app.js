@@ -5,7 +5,7 @@
   const accountStorage = window.StockTrackingAccountStorage;
   const seedStocks = (data?.stocks || []).map(stock => ({
     ...stock,
-    messages: [...(stock.messages || [])]
+    messages: (stock.messages || []).map(normalizeMessage)
   }));
   const seedStockCodes = seedStocks.map(stock => stock.code);
   const stockCache = new Map(seedStocks.map(stock => [stock.code, stock]));
@@ -305,8 +305,16 @@
     return messages.filter(isUnread).length;
   }
 
+  function normalizeSentiment(sentiment) {
+    return sentiment === "利多" ? "利好" : sentiment;
+  }
+
+  function normalizeMessage(message) {
+    return { ...message, sentiment: normalizeSentiment(message.sentiment) };
+  }
+
   function sentimentLabel(sentiment) {
-    return sentiment === "利好" ? "利多" : sentiment;
+    return normalizeSentiment(sentiment);
   }
 
   function messageMatchesFilters(message) {
@@ -438,7 +446,7 @@
       message.live && String(message.id).startsWith("live-news-")
     );
     const preserveReadState = messages => messages.map(message => ({
-      ...message,
+      ...normalizeMessage(message),
       unread: existingById.has(message.id) ? existingById.get(message.id).unread : true
     }));
     const announcements = sections.includes("announcements")
@@ -922,7 +930,7 @@
       <section class="message-filters" aria-label="消息筛选">
         ${renderFilterGroup("消息类型", "sentiment", [
           ["all", "全部"],
-          ["利好", "利多"],
+          ["利好", "利好"],
           ["利空", "利空"],
           ["中性", "中性"]
         ])}
@@ -958,7 +966,7 @@
   function renderMessageResults(messages) {
     if (state.filters.sentiment !== "all") return renderTimeline(messages);
     const columns = [
-      { value: "利好", label: "利多", tone: "positive" },
+      { value: "利好", label: "利好", tone: "positive" },
       { value: "利空", label: "利空", tone: "negative" },
       { value: "中性", label: "中性", tone: "neutral" }
     ];
