@@ -377,6 +377,8 @@
       const url = new URL(value, window.location.href);
       if (!["http:", "https:"].includes(url.protocol)) return "";
       const path = url.pathname.replace(/\/+$/, "") || "/";
+      const current = new URL(window.location.href);
+      if (url.origin === current.origin && path === (current.pathname.replace(/\/+$/, "") || "/")) return "";
       const genericPaths = new Set([
         "/",
         "/officialwebsite",
@@ -386,7 +388,15 @@
         "/stockcalendar",
         "/dzjy"
       ]);
-      return genericPaths.has(path.toLowerCase()) ? "" : url.href;
+      const normalizedPath = path.toLowerCase();
+      if (genericPaths.has(normalizedPath)) return "";
+      if (/^\/(?:stockcalendar|bbsj)\/\d{6}\.html$/.test(normalizedPath)) return "";
+      if (/^\/dzjy\/detail\/\d{6}\.html$/.test(normalizedPath)) return "";
+      const pathParts = normalizedPath.split("/").filter(Boolean);
+      if (pathParts.length === 1 && !/\.(?:s?html?|pdf)$/.test(pathParts[0]) && !/\d{6,}/.test(pathParts[0])) {
+        return "";
+      }
+      return url.href;
     } catch {
       return "";
     }

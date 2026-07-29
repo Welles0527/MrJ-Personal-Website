@@ -5,7 +5,7 @@ const https = require("https");
 const QUOTE_ENDPOINT = "https://push2.eastmoney.com/api/qt/stock/get";
 const ANNOUNCEMENT_ENDPOINT = "https://np-anotice-stock.eastmoney.com/api/security/ann";
 const NEWS_ENDPOINT = "https://search-api-web.eastmoney.com/search/jsonp";
-const STOCK_CALENDAR_ENDPOINT = "https://data.eastmoney.com/stockcalendar";
+const DATA_CENTER_ENDPOINT = "https://datacenter-web.eastmoney.com/api/data/v1/get";
 const CACHE = new Map();
 const CACHE_TTL = {
   quote: 10 * 1000,
@@ -122,7 +122,7 @@ function jsonResponse(origin, statusCode, data, cacheControl = "no-store") {
   };
 }
 
-function requestText(url, timeoutMs = 8000) {
+function requestTextOnce(url, timeoutMs = 8000) {
   return new Promise((resolve, reject) => {
     const request = https.get(url, {
       headers: {
@@ -151,6 +151,15 @@ function requestText(url, timeoutMs = 8000) {
   });
 }
 
+async function requestText(url, timeoutMs = 8000) {
+  try {
+    return await requestTextOnce(url, timeoutMs);
+  } catch (error) {
+    if (!["ECONNRESET", "ETIMEDOUT", "EAI_AGAIN"].includes(error?.code)) throw error;
+    return requestTextOnce(url, timeoutMs);
+  }
+}
+
 async function requestJson(url) {
   return JSON.parse(await requestText(url));
 }
@@ -160,37 +169,6 @@ function parseJsonp(text) {
   const end = text.lastIndexOf(")");
   if (start < 0 || end <= start) throw new Error("Upstream returned invalid JSONP");
   return JSON.parse(text.slice(start + 1, end));
-}
-
-function parseAssignedJson(text, variableName) {
-  const marker = `var ${variableName}`;
-  const markerIndex = text.indexOf(marker);
-  if (markerIndex < 0) throw new Error(`Upstream page is missing ${variableName}`);
-  const start = text.indexOf("{", markerIndex + marker.length);
-  if (start < 0) throw new Error(`Upstream page returned invalid ${variableName}`);
-
-  let depth = 0;
-  let inString = false;
-  let escaped = false;
-  for (let index = start; index < text.length; index += 1) {
-    const character = text[index];
-    if (inString) {
-      if (escaped) escaped = false;
-      else if (character === "\\") escaped = true;
-      else if (character === "\"") inString = false;
-      continue;
-    }
-    if (character === "\"") {
-      inString = true;
-      continue;
-    }
-    if (character === "{") depth += 1;
-    if (character === "}") {
-      depth -= 1;
-      if (depth === 0) return JSON.parse(text.slice(start, index + 1));
-    }
-  }
-  throw new Error(`Upstream page returned incomplete ${variableName}`);
 }
 
 function stableId(value) {
@@ -208,11 +186,6 @@ function companyEventKind(eventType) {
     return { kind: "calendar", label: "个股日历" };
   }
   return { kind: "reminder", label: "大事提醒" };
-}
-
-function companyEventSourceUrl(code, eventType) {
-  if (eventType === "大宗交易") return `https://data.eastmoney.com/dzjy/detail/${code}.html`;
-  return `${STOCK_CALENDAR_ENDPOINT}/${code}.html`;
 }
 
 function readCache(key) {
@@ -355,34 +328,51 @@ async function fetchNews(code, name, limit) {
   });
 }
 
+function mapCompanyEvent(code, item) {
+  const eventType = plainText(item.EVENT_TYPE);
+  const title = plainText(item.LEVEL1_CONTENT);
+  const publishedAt = normalizeDate(item.NOTICE_DATE);
+  const event = companyEventKind(eventType);
+  return {
+    id: `live-event-${code}-${item.EVENT_TYPE_CODE || "other"}-${stableId(`${publishedAt}-${title}`)}`,
+    category: "company",
+    title,
+    publishedAt,
+    source: "东方财富Choice数据",
+    sourceUrl: "",
+    evidence: "事实",
+    importance: importanceFromTitle(`${eventType} ${title}`),
+    sentiment: "中性",
+    eventKind: event.kind,
+    eventLabel: event.label,
+    eventType,
+    live: true
+  };
+}
+
 async function fetchCompanyEvents(code, limit) {
-  const html = await requestText(`${STOCK_CALENDAR_ENDPOINT}/${code}.html`);
-  const pageData = parseAssignedJson(html, "pagedata");
-  const items = Array.isArray(pageData?.sjyl?.result?.data) ? pageData.sjyl.result.data : [];
+  const url = new URL(DATA_CENTER_ENDPOINT);
+  url.searchParams.set("reportName", "RPT_STOCKCALENDAR");
+  url.searchParams.set(
+    "columns",
+    "SECUCODE,SECURITY_CODE,NOTICE_DATE,INFO_CODE,EVENT_TYPE,EVENT_TYPE_CODE,LEVEL1_CONTENT,CHANGE_RATE,CLOSE_PRICE,DAILY_RANK"
+  );
+  url.searchParams.set("filter", `(SECURITY_CODE="${code}")`);
+  url.searchParams.set("pageNumber", "1");
+  url.searchParams.set("pageSize", String(Math.max(Number(limit) * 4, 64)));
+  url.searchParams.set("sortColumns", "NOTICE_DATE,DAILY_RANK");
+  url.searchParams.set("sortTypes", "-1,1");
+  url.searchParams.set("source", "WEB");
+  url.searchParams.set("client", "WEB");
+  const payload = await requestJson(url);
+  const items = Array.isArray(payload?.result?.data) ? payload.result.data : [];
   return items
-    .filter(item => plainText(item.EVENT_TYPE) && plainText(item.EVENT_TYPE) !== "公告")
-    .slice(0, limit)
-    .map(item => {
+    .filter(item => {
       const eventType = plainText(item.EVENT_TYPE);
-      const title = plainText(item.LEVEL1_CONTENT);
-      const publishedAt = normalizeDate(item.NOTICE_DATE);
-      const event = companyEventKind(eventType);
-      return {
-        id: `live-event-${code}-${item.EVENT_TYPE_CODE || "other"}-${stableId(`${publishedAt}-${title}`)}`,
-        category: "company",
-        title,
-        publishedAt,
-        source: "东方财富Choice数据",
-        sourceUrl: companyEventSourceUrl(code, eventType),
-        evidence: "事实",
-        importance: importanceFromTitle(`${eventType} ${title}`),
-        sentiment: "中性",
-        eventKind: event.kind,
-        eventLabel: event.label,
-        eventType,
-        live: true
-      };
-    });
+      return eventType && !["公告", "研报"].includes(eventType);
+    })
+    .slice(0, limit)
+    .map(item => mapCompanyEvent(code, item));
 }
 
 function validateCode(value) {
@@ -484,9 +474,8 @@ module.exports = {
   fetchAnnouncements,
   fetchNews,
   fetchCompanyEvents,
+  mapCompanyEvent,
   companyEventKind,
-  companyEventSourceUrl,
-  parseAssignedJson,
   loadSections,
   handleRequest,
   main

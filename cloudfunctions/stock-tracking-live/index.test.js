@@ -12,6 +12,16 @@ async function run() {
   assert.deepStrictEqual(service.companyEventKind("预约披露日"), { kind: "calendar", label: "个股日历" });
   assert.deepStrictEqual(service.companyEventKind("大宗交易"), { kind: "block-trade", label: "大宗交易" });
   assert.deepStrictEqual(service.companyEventKind("高管持股"), { kind: "reminder", label: "大事提醒" });
+  const mappedEvent = service.mapCompanyEvent("301026", {
+    NOTICE_DATE: "2026-07-23 00:00:00",
+    EVENT_TYPE: "大宗交易",
+    EVENT_TYPE_CODE: "002",
+    LEVEL1_CONTENT: "2026年07月23日共有1笔大宗交易，成交量40万股，成交额556.8万元"
+  });
+  assert.strictEqual(mappedEvent.category, "company");
+  assert.strictEqual(mappedEvent.sentiment, "中性");
+  assert.strictEqual(mappedEvent.eventLabel, "大宗交易");
+  assert.strictEqual(mappedEvent.sourceUrl, "");
 
   const quote = await service.fetchQuote("301026");
   assert.strictEqual(quote.code, "301026");
@@ -23,6 +33,9 @@ async function run() {
   assert.ok(events.every(item => item.category === "company" && item.sentiment === "中性"));
   assert.ok(events.every(item => ["个股日历", "大事提醒", "大宗交易"].includes(item.eventLabel)));
   assert.ok(events.every(item => item.eventType !== "公告"));
+  assert.ok(events.every(item => item.sourceUrl === ""));
+  assert.ok(events.some(item => item.title.includes("2026年半年报预约2026年08月21日披露")));
+  assert.ok(events.some(item => item.title.includes("2026年07月23日共有1笔大宗交易")));
   assert.ok(events.some(item => item.eventLabel === "大宗交易"));
 
   const response = await service.handleRequest(
