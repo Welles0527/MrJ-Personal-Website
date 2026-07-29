@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
+import { mkdir } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import net from 'node:net';
 import path from 'node:path';
@@ -149,6 +150,32 @@ try {
   await page.waitForTimeout(1300);
   assert.match(await page.locator('body').innerText(), /MODAL SUCCESS REGRESSION/, 'confirmed task must remain visible');
 
+  await page.locator('[data-action="open-search"]').click();
+  const searchModal = page.locator('[data-search-modal]');
+  await searchModal.waitFor({ state: 'visible' });
+  await page.locator('[data-search-input]').fill('MDLSCC');
+  await page.waitForFunction(() => document.querySelectorAll('[data-search-results] .todo-search-item').length === 1);
+  const searchResultText = await page.locator('[data-search-results]').innerText();
+  assert.match(searchResultText, /MODAL SUCCESS REGRESSION/, 'fuzzy search must find a task by non-contiguous title characters');
+  assert.match(searchResultText, /创建于 \d{4}年\d{1,2}月\d{1,2}日 \d{2}:\d{2}/, 'search result must show the task creation time');
+  if (process.env.TODO_SEARCH_SCREENSHOT_DIR) {
+    const screenshotDir = path.resolve(process.env.TODO_SEARCH_SCREENSHOT_DIR);
+    await mkdir(screenshotDir, { recursive: true });
+    await page.screenshot({ path: path.join(screenshotDir, 'todo-search-desktop.png') });
+    await page.locator('[data-action="close-search"]').click();
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.locator('[data-action="open-sidebar"]').click();
+    await page.locator('[data-action="open-search"]').click();
+    await page.waitForTimeout(220);
+    await page.locator('[data-search-input]').fill('MDLSCC');
+    await page.waitForFunction(() => document.querySelectorAll('[data-search-results] .todo-search-item').length === 1);
+    await page.screenshot({ path: path.join(screenshotDir, 'todo-search-mobile.png') });
+    await page.locator('[data-action="close-search"]').click();
+    await page.setViewportSize({ width: 1440, height: 900 });
+  } else {
+    await page.locator('[data-action="close-search"]').click();
+  }
+
   const failure = await submitTask(page, 'MODAL FAIL REGRESSION');
   assert.equal(failure.openAfterSubmit, false, 'failed cloud save must not keep the modal open');
   await page.waitForTimeout(1300);
@@ -157,7 +184,7 @@ try {
 
   const counters = await page.evaluate(() => globalThis.__todoModalRegression);
   assert.deepEqual(counters, { calls: 2, confirmed: 1, failures: 1 });
-  console.log('Todo modal regression test passed.');
+  console.log('Todo modal and search regression test passed.');
 } finally {
   await browser?.close();
   stopProcessTree(server);

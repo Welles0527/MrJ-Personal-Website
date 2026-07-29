@@ -177,6 +177,29 @@ const timeValue = (value: string) => {
   const parsed = Date.parse(value);
   return Number.isNaN(parsed) ? 0 : parsed;
 };
+const normalizeSearchText = (value: string) => value
+  .normalize('NFKC')
+  .toLocaleLowerCase('zh-CN')
+  .replace(/\s+/g, '');
+const fuzzySearchScore = (value: string, query: string) => {
+  const candidate = normalizeSearchText(value);
+  const normalizedQuery = normalizeSearchText(query);
+  if (!candidate || !normalizedQuery) return null;
+  const directIndex = candidate.indexOf(normalizedQuery);
+  if (directIndex >= 0) return directIndex;
+
+  let queryIndex = 0;
+  let firstMatch = -1;
+  let lastMatch = -1;
+  for (let index = 0; index < candidate.length && queryIndex < normalizedQuery.length; index += 1) {
+    if (candidate[index] !== normalizedQuery[queryIndex]) continue;
+    if (firstMatch < 0) firstMatch = index;
+    lastMatch = index;
+    queryIndex += 1;
+  }
+  if (queryIndex !== normalizedQuery.length) return null;
+  return 100 + firstMatch + (lastMatch - firstMatch + 1 - normalizedQuery.length) * 3;
+};
 const sortOrderValue = (todo: Todo) => typeof todo.sortOrder === 'number' ? todo.sortOrder : timeValue(todo.createdAt);
 const compareTodos = (first: Todo, second: Todo) =>
   (first.date || '9999-12-31').localeCompare(second.date || '9999-12-31')
@@ -234,6 +257,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
   const backdrop = getElement<HTMLElement>('[data-sidebar-backdrop]');
   const todoModal = getElement<HTMLDialogElement>('[data-todo-modal]');
   const deleteModal = getElement<HTMLDialogElement>('[data-delete-modal]');
+  const searchModal = getElement<HTMLDialogElement>('[data-search-modal]');
   const trashModal = getElement<HTMLDialogElement>('[data-trash-modal]');
   const migrationModal = getElement<HTMLDialogElement>('[data-migration-modal]');
   const exportReminderModal = getElement<HTMLDialogElement>('[data-export-reminder-modal]');
@@ -243,6 +267,9 @@ export function mountTodoWorkspace(root: HTMLElement) {
   const formTitle = getElement<HTMLElement>('[data-form-title]');
   const titleError = getElement<HTMLElement>('[data-title-error]');
   const deleteMessage = getElement<HTMLElement>('[data-delete-message]');
+  const searchInput = getElement<HTMLInputElement>('[data-search-input]');
+  const searchSummary = getElement<HTMLElement>('[data-search-summary]');
+  const searchResults = getElement<HTMLElement>('[data-search-results]');
   const trashList = getElement<HTMLElement>('[data-trash-list]');
   const migrationStatus = getElement<HTMLElement>('[data-migration-status]');
   const migrationConfirm = getElement<HTMLButtonElement>('[data-action="confirm-migration"]');
@@ -577,6 +604,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
     renderMobileDays();
     renderBoard();
     renderStats();
+    if (searchModal.open) renderSearchResults();
   };
 
   const openForm = (date?: Date, todo?: Todo, placement: TodoPlacement = 'upcoming') => {
@@ -632,6 +660,67 @@ export function mountTodoWorkspace(root: HTMLElement) {
         <button class="todo-danger-button" type="button" data-action="delete-trash" data-todo-id="${todo.id}">彻底删除</button>
       </div>
     </section>`).join('');
+  };
+
+  const createdTimeLabel = (value: string) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '创建时间未知';
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `创建于 ${dateDescription(date)} ${hours}:${minutes}`;
+  };
+
+  const renderSearchResults = () => {
+    const query = searchInput.value.trim();
+    const historyById = new Map<string, { todo: Todo; deleted: boolean }>();
+    state.todos.forEach((todo) => historyById.set(todo.id, { todo, deleted: false }));
+    state.trash.forEach((todo) => historyById.set(todo.id, { todo, deleted: true }));
+    const history = [...historyById.values()];
+
+    if (!query) {
+      searchSummary.textContent = `可搜索 ${history.length} 条历史任务`;
+      searchResults.innerHTML = '<p class="todo-trash-empty">输入文字开始搜索。</p>';
+      return;
+    }
+
+    const matches = history.map((item) => {
+      const titleScore = fuzzySearchScore(item.todo.title, query);
+      const noteScore = item.todo.note ? fuzzySearchScore(item.todo.note, query) : null;
+      const score = titleScore === null
+        ? noteScore === null ? null : noteScore + 500
+        : noteScore === null ? titleScore : Math.min(titleScore, noteScore + 500);
+      return { ...item, score };
+    }).filter((item): item is typeof item & { score: number } => item.score !== null)
+      .sort((first, second) => first.score - second.score
+        || second.todo.createdAt.localeCompare(first.todo.createdAt));
+
+    searchSummary.textContent = `${matches.length} 条匹配结果`;
+    if (!matches.length) {
+      searchResults.innerHTML = '<p class="todo-trash-empty">没有找到匹配的历史任务。</p>';
+      return;
+    }
+
+    searchResults.innerHTML = matches.map(({ todo, deleted }) => {
+      const status = deleted ? '已删除' : todo.completed ? '已完成' : '进行中';
+      return `<section class="todo-search-item">
+        <div class="todo-search-title-row">
+          ${todo.important ? '<span class="todo-item-star" aria-label="重要">★</span>' : ''}
+          <p class="todo-search-title">${escapeHtml(todo.title)}</p>
+          <span class="todo-search-category">${escapeHtml(categoryLabel(todo.category))}</span>
+          <span class="todo-search-status ${deleted ? 'is-deleted' : ''}">${status}</span>
+        </div>
+        <time class="todo-search-created" datetime="${escapeHtml(todo.createdAt)}">${createdTimeLabel(todo.createdAt)}</time>
+        ${todo.note ? `<p class="todo-search-note">${escapeHtml(todo.note)}</p>` : ''}
+        <p class="todo-search-meta"><span>${escapeHtml(todoDateLabel(todo))}</span><span>${escapeHtml(placementLabel(todo.placement))}</span></p>
+      </section>`;
+    }).join('');
+  };
+
+  const openSearch = () => {
+    searchInput.value = '';
+    renderSearchResults();
+    if (!searchModal.open) searchModal.showModal();
+    searchInput.focus();
   };
 
   const openTrash = () => {
@@ -1362,6 +1451,13 @@ export function mountTodoWorkspace(root: HTMLElement) {
 
     if (action === 'open-sidebar') openSidebar();
     if (action === 'close-sidebar') closeSidebar();
+    if (action === 'open-search') {
+      openSearch();
+      closeSidebar();
+    }
+    if (action === 'close-search') {
+      if (searchModal.open) searchModal.close();
+    }
     if (action === 'open-trash') {
       openTrash();
       closeSidebar();
@@ -1592,6 +1688,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
   });
 
   titleInput.addEventListener('input', () => { titleError.textContent = ''; });
+  searchInput.addEventListener('input', renderSearchResults);
   todoModal.addEventListener('close', () => { state.editingId = null; });
   deleteModal.addEventListener('close', () => { state.pendingDeleteId = null; });
   migrationModal.addEventListener('close', () => {
