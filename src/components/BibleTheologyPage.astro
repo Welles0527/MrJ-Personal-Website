@@ -4,6 +4,50 @@ const characterMapHref = `${basePath}topics/applications/inspiration-station/the
 const lifespanRankingHref = `${basePath}topics/applications/inspiration-station/theology/age-rankings?view=lifespan`;
 const accessionRankingHref = `${basePath}topics/applications/inspiration-station/theology/age-rankings?view=accession`;
 const worshipMusicHref = `${basePath}worship/`;
+const groupAlbumFolder = '20260728 Gloria-Welles家';
+const groupAlbumBase = `${basePath}images/bible-theology/albums/${encodeURIComponent(groupAlbumFolder)}/`;
+const groupAlbumPhotos = [
+  {
+    src: `${groupAlbumBase}01-group-wide.webp`,
+    alt: '小组成员围在餐桌旁合影',
+    caption: '聚会大合影'
+  },
+  {
+    src: `${groupAlbumBase}02-group-photo.webp`,
+    alt: '小组成员在家中合影',
+    caption: '一起留下聚会时光'
+  },
+  {
+    src: `${groupAlbumBase}03-two-members.webp`,
+    alt: '两位成员在家中合影',
+    caption: '温暖合影'
+  },
+  {
+    src: `${groupAlbumBase}04-table-group.webp`,
+    alt: '聚会成员围桌合影',
+    caption: '围桌相聚'
+  },
+  {
+    src: `${groupAlbumBase}05-meal.webp`,
+    alt: '聚会餐桌上的餐点',
+    caption: '一起分享的晚餐'
+  },
+  {
+    src: `${groupAlbumBase}06-reading.webp`,
+    alt: '成员在窗边阅读',
+    caption: '安静的阅读时光'
+  },
+  {
+    src: `${groupAlbumBase}07-game.webp`,
+    alt: '成员一起玩桌游',
+    caption: '桌游时间'
+  },
+  {
+    src: `${groupAlbumBase}08-selfie.webp`,
+    alt: '聚会成员自拍合影',
+    caption: '聚会自拍'
+  }
+];
 
 const featurePages = [
   {
@@ -609,8 +653,72 @@ const hymnCards = [
           <button type="button" data-action="copy-group-guide">复制提纲</button>
         </article>
       </div>
+      <div class="bible-album-block">
+        <div class="bible-album-heading">
+          <span>MEETING ALBUM</span>
+          <h3>聚会相册</h3>
+          <p>把一起吃饭、分享和欢笑的片段，收进同一个相册里。</p>
+        </div>
+        <button class="bible-album-folder" type="button" data-action="open-group-album" aria-haspopup="dialog">
+          <span class="bible-album-collage" aria-hidden="true">
+            {groupAlbumPhotos.slice(0, 3).map((photo) => (
+              <img src={photo.src} alt="" loading="lazy" decoding="async" />
+            ))}
+          </span>
+          <span class="bible-album-folder-copy">
+            <small>2026.07.28 · {groupAlbumPhotos.length} 张照片</small>
+            <strong>{groupAlbumFolder}</strong>
+            <span class="bible-album-open">打开相册 <i aria-hidden="true">↗</i></span>
+          </span>
+        </button>
+      </div>
     </div>
   </section>
+
+  <dialog class="bible-album-modal" data-group-album-modal aria-labelledby="bible-group-album-title">
+    <div class="bible-album-viewer">
+      <header>
+        <div>
+          <p>MEETING ALBUM · 2026.07.28</p>
+          <h2 id="bible-group-album-title">{groupAlbumFolder}</h2>
+        </div>
+        <button type="button" data-action="close-group-album" aria-label="关闭聚会相册">×</button>
+      </header>
+      <div class="bible-album-stage">
+        <button type="button" data-action="previous-album-photo" aria-label="上一张照片">←</button>
+        <figure>
+          <img
+            src={groupAlbumPhotos[0].src}
+            alt={groupAlbumPhotos[0].alt}
+            data-album-main-image
+            decoding="async"
+          />
+          <figcaption>
+            <span data-album-caption>{groupAlbumPhotos[0].caption}</span>
+            <small data-album-counter>1 / {groupAlbumPhotos.length}</small>
+          </figcaption>
+        </figure>
+        <button type="button" data-action="next-album-photo" aria-label="下一张照片">→</button>
+      </div>
+      <div class="bible-album-thumbnails" aria-label="相册照片列表">
+        {groupAlbumPhotos.map((photo, index) => (
+          <button
+            class:list={{ 'is-active': index === 0 }}
+            type="button"
+            data-album-thumbnail
+            data-album-index={index}
+            data-album-src={photo.src}
+            data-album-alt={photo.alt}
+            data-album-caption={photo.caption}
+            aria-label={`查看第 ${index + 1} 张照片：${photo.caption}`}
+            aria-pressed={index === 0 ? 'true' : 'false'}
+          >
+            <img src={photo.src} alt="" loading="lazy" decoding="async" />
+          </button>
+        ))}
+      </div>
+    </div>
+  </dialog>
 
   <section class="bible-feature-section" id="bible-hymns" aria-labelledby="bible-hymns-title">
     <div class="bible-section-shell">
@@ -715,6 +823,61 @@ const hymnCards = [
     if (root && dataElement?.textContent) {
       mountBibleReader(root, JSON.parse(dataElement.textContent));
     }
+
+    const albumModal = root?.querySelector<HTMLDialogElement>('[data-group-album-modal]');
+    const albumMainImage = albumModal?.querySelector<HTMLImageElement>('[data-album-main-image]');
+    const albumCaption = albumModal?.querySelector<HTMLElement>('[data-album-caption]');
+    const albumCounter = albumModal?.querySelector<HTMLElement>('[data-album-counter]');
+    const albumThumbnailStrip = albumModal?.querySelector<HTMLElement>('.bible-album-thumbnails');
+    const albumThumbnails = Array.from(
+      albumModal?.querySelectorAll<HTMLButtonElement>('[data-album-thumbnail]') ?? []
+    );
+    let activeAlbumIndex = 0;
+
+    const showAlbumPhoto = (index: number) => {
+      if (!albumMainImage || !albumCaption || !albumCounter || albumThumbnails.length === 0) return;
+      activeAlbumIndex = (index + albumThumbnails.length) % albumThumbnails.length;
+      const thumbnail = albumThumbnails[activeAlbumIndex];
+      albumMainImage.src = thumbnail.dataset.albumSrc ?? '';
+      albumMainImage.alt = thumbnail.dataset.albumAlt ?? '';
+      albumCaption.textContent = thumbnail.dataset.albumCaption ?? '';
+      albumCounter.textContent = `${activeAlbumIndex + 1} / ${albumThumbnails.length}`;
+      albumThumbnails.forEach((button, buttonIndex) => {
+        const isActive = buttonIndex === activeAlbumIndex;
+        button.classList.toggle('is-active', isActive);
+        button.setAttribute('aria-pressed', String(isActive));
+      });
+      if (albumThumbnailStrip) {
+        albumThumbnailStrip.scrollTo({
+          left: thumbnail.offsetLeft - (albumThumbnailStrip.clientWidth - thumbnail.offsetWidth) / 2,
+          behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+        });
+      }
+    };
+
+    root?.querySelector<HTMLButtonElement>('[data-action="open-group-album"]')?.addEventListener('click', () => {
+      showAlbumPhoto(0);
+      albumModal?.showModal();
+    });
+    albumModal?.querySelector<HTMLButtonElement>('[data-action="close-group-album"]')?.addEventListener('click', () => {
+      albumModal.close();
+    });
+    albumModal?.querySelector<HTMLButtonElement>('[data-action="previous-album-photo"]')?.addEventListener('click', () => {
+      showAlbumPhoto(activeAlbumIndex - 1);
+    });
+    albumModal?.querySelector<HTMLButtonElement>('[data-action="next-album-photo"]')?.addEventListener('click', () => {
+      showAlbumPhoto(activeAlbumIndex + 1);
+    });
+    albumThumbnails.forEach((button, index) => {
+      button.addEventListener('click', () => showAlbumPhoto(index));
+    });
+    albumModal?.addEventListener('click', (event) => {
+      if (event.target === albumModal) albumModal.close();
+    });
+    albumModal?.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowLeft') showAlbumPhoto(activeAlbumIndex - 1);
+      if (event.key === 'ArrowRight') showAlbumPhoto(activeAlbumIndex + 1);
+    });
   </script>
 </section>
 
@@ -2647,6 +2810,162 @@ const hymnCards = [
     text-decoration: none;
   }
 
+  .bible-album-block {
+    margin-top: clamp(2rem, 4vw, 3.4rem);
+    border-top: 1px solid rgba(216, 179, 95, 0.18);
+    padding-top: clamp(1.4rem, 3vw, 2.2rem);
+  }
+
+  .bible-album-heading {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: baseline;
+    gap: 0.4rem 0.8rem;
+    margin-bottom: 1rem;
+  }
+
+  .bible-album-heading > span {
+    color: var(--gold);
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+  }
+
+  .bible-album-heading h3 {
+    margin: 0;
+    color: #fff4d8;
+    font-family: "Noto Serif SC", "Songti SC", SimSun, serif;
+    font-size: clamp(1.35rem, 2.4vw, 2rem);
+  }
+
+  .bible-album-heading p {
+    grid-column: 2;
+    margin: 0;
+    color: rgba(255, 247, 224, 0.58);
+    font-size: 0.82rem;
+    line-height: 1.6;
+  }
+
+  .bible-album-folder {
+    position: relative;
+    display: grid;
+    overflow: hidden;
+    width: 100%;
+    grid-template-columns: minmax(0, 1.55fr) minmax(15rem, 0.6fr);
+    gap: 0.85rem;
+    border: 1px solid rgba(216, 179, 95, 0.32);
+    border-radius: 1.1rem;
+    padding: 0.72rem;
+    background:
+      radial-gradient(circle at 82% 18%, rgba(216, 179, 95, 0.17), transparent 13rem),
+      linear-gradient(135deg, #18130c, #0b0906 64%);
+    color: #fff4d8;
+    box-shadow: 0 1.4rem 3.5rem rgba(0, 0, 0, 0.28);
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+  }
+
+  .bible-album-folder:hover {
+    border-color: rgba(240, 207, 133, 0.82);
+    box-shadow: 0 1.7rem 4rem rgba(0, 0, 0, 0.38);
+    transform: translateY(-3px);
+  }
+
+  .bible-album-folder:focus-visible {
+    outline: 3px solid rgba(240, 207, 133, 0.78);
+    outline-offset: 3px;
+  }
+
+  .bible-album-collage {
+    display: grid;
+    overflow: hidden;
+    min-height: 21rem;
+    grid-template-columns: minmax(0, 1.52fr) minmax(0, 0.72fr);
+    grid-template-rows: 1fr 1fr;
+    gap: 0.36rem;
+    border-radius: 0.72rem;
+    background: #020201;
+  }
+
+  .bible-album-collage img {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    object-fit: cover;
+    transition: filter 260ms ease, transform 500ms cubic-bezier(0.2, 0.72, 0.18, 1);
+  }
+
+  .bible-album-collage img:first-child {
+    grid-row: 1 / -1;
+  }
+
+  .bible-album-folder:hover .bible-album-collage img:first-child {
+    transform: scale(1.025);
+  }
+
+  .bible-album-folder-copy {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: clamp(0.75rem, 2.5vw, 1.5rem) clamp(0.4rem, 1.2vw, 0.9rem);
+  }
+
+  .bible-album-folder-copy::before {
+    position: absolute;
+    z-index: -1;
+    top: 0.4rem;
+    right: -1rem;
+    width: 7rem;
+    height: 7rem;
+    border: 1px solid rgba(216, 179, 95, 0.12);
+    border-radius: 50%;
+    content: "";
+  }
+
+  .bible-album-folder-copy small {
+    color: rgba(255, 247, 224, 0.54);
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 0.67rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+  }
+
+  .bible-album-folder-copy > strong {
+    display: block;
+    margin: 0.7rem 0 1.6rem;
+    color: #fff4d8;
+    font-family: "Noto Serif SC", "Songti SC", SimSun, serif;
+    font-size: clamp(1.45rem, 2.7vw, 2.35rem);
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+  }
+
+  .bible-album-open {
+    display: inline-flex;
+    width: fit-content;
+    align-items: center;
+    gap: 0.55rem;
+    border-bottom: 1px solid rgba(216, 179, 95, 0.42);
+    padding-bottom: 0.28rem;
+    color: #f4d88f;
+    font-size: 0.78rem;
+    font-weight: 900;
+  }
+
+  .bible-album-open i {
+    font-style: normal;
+    transition: transform 180ms ease;
+  }
+
+  .bible-album-folder:hover .bible-album-open i {
+    transform: translate(0.16rem, -0.16rem);
+  }
+
   .bible-worship-entry {
     display: grid;
     width: min(100%, 28rem);
@@ -2870,6 +3189,156 @@ const hymnCards = [
     line-height: 1.65;
   }
 
+  .bible-album-modal {
+    width: min(96vw, 1180px);
+    max-height: 94vh;
+    border: 1px solid rgba(216, 179, 95, 0.28);
+    border-radius: 1rem;
+    padding: 0;
+    background: #090806;
+    color: #fff4d8;
+    box-shadow: 0 2rem 7rem rgba(0, 0, 0, 0.66);
+  }
+
+  .bible-album-modal::backdrop {
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(7px);
+  }
+
+  .bible-album-viewer {
+    display: grid;
+    overflow: hidden;
+    max-height: 94vh;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+
+  .bible-album-viewer > header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px solid rgba(216, 179, 95, 0.18);
+    padding: 0.9rem 1.1rem;
+    background: #0f0c08;
+  }
+
+  .bible-album-viewer > header p {
+    margin: 0 0 0.22rem;
+    color: var(--gold);
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 0.64rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+  }
+
+  .bible-album-viewer > header h2 {
+    margin: 0;
+    color: #fff4d8;
+    font-family: "Noto Serif SC", "Songti SC", SimSun, serif;
+    font-size: clamp(1rem, 2vw, 1.45rem);
+  }
+
+  .bible-album-viewer > header > button,
+  .bible-album-stage > button {
+    display: grid;
+    flex: none;
+    width: 2.5rem;
+    height: 2.5rem;
+    place-items: center;
+    border: 1px solid rgba(216, 179, 95, 0.28);
+    border-radius: 50%;
+    background: rgba(255, 246, 218, 0.06);
+    color: #fff4d8;
+    cursor: pointer;
+    font-size: 1.1rem;
+  }
+
+  .bible-album-viewer > header > button:hover,
+  .bible-album-stage > button:hover {
+    border-color: rgba(240, 207, 133, 0.82);
+    background: rgba(216, 179, 95, 0.14);
+  }
+
+  .bible-album-stage {
+    display: grid;
+    min-height: 0;
+    grid-template-columns: 2.8rem minmax(0, 1fr) 2.8rem;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.8rem 1rem 0.7rem;
+    background:
+      radial-gradient(circle at 50% 48%, rgba(216, 179, 95, 0.08), transparent 28rem),
+      #050403;
+  }
+
+  .bible-album-stage figure {
+    display: grid;
+    min-width: 0;
+    gap: 0.55rem;
+    margin: 0;
+  }
+
+  .bible-album-stage figure > img {
+    display: block;
+    width: 100%;
+    height: min(62vh, 650px);
+    border-radius: 0.55rem;
+    background: #020201;
+    object-fit: contain;
+  }
+
+  .bible-album-stage figcaption {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    color: rgba(255, 247, 224, 0.76);
+    font-size: 0.78rem;
+  }
+
+  .bible-album-stage figcaption small {
+    flex: none;
+    color: rgba(255, 247, 224, 0.46);
+    font-family: ui-monospace, Consolas, monospace;
+  }
+
+  .bible-album-thumbnails {
+    display: flex;
+    gap: 0.48rem;
+    overflow-x: auto;
+    border-top: 1px solid rgba(216, 179, 95, 0.18);
+    padding: 0.68rem 1rem 0.82rem;
+    background: #0f0c08;
+    scrollbar-color: rgba(216, 179, 95, 0.42) transparent;
+  }
+
+  .bible-album-thumbnails button {
+    overflow: hidden;
+    width: 5.4rem;
+    height: 3.9rem;
+    flex: 0 0 auto;
+    border: 2px solid transparent;
+    border-radius: 0.4rem;
+    padding: 0;
+    background: #030201;
+    cursor: pointer;
+    opacity: 0.56;
+    transition: border-color 160ms ease, opacity 160ms ease, transform 160ms ease;
+  }
+
+  .bible-album-thumbnails button:hover,
+  .bible-album-thumbnails button.is-active {
+    border-color: #d8b35f;
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+
+  .bible-album-thumbnails img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
   .bible-login-modal,
   .bible-note-modal {
     width: min(92vw, 430px);
@@ -2997,8 +3466,13 @@ const hymnCards = [
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .bible-book.is-turning .bible-turn-page {
+    .bible-book.is-turning .bible-turn-page,
+    .bible-album-folder,
+    .bible-album-collage img,
+    .bible-album-open i,
+    .bible-album-thumbnails button {
       animation: none;
+      transition: none;
     }
   }
 
@@ -3287,6 +3761,88 @@ const hymnCards = [
     .bible-card-grid,
     .bible-group-layout {
       grid-template-columns: 1fr;
+    }
+
+    .bible-album-heading {
+      display: block;
+    }
+
+    .bible-album-heading h3 {
+      margin-top: 0.35rem;
+    }
+
+    .bible-album-heading p {
+      margin-top: 0.35rem;
+    }
+
+    .bible-album-folder {
+      grid-template-columns: 1fr;
+      gap: 0;
+      padding: 0.48rem;
+    }
+
+    .bible-album-collage {
+      min-height: 14rem;
+    }
+
+    .bible-album-folder-copy {
+      padding: 1rem 0.65rem 0.8rem;
+    }
+
+    .bible-album-folder-copy > strong {
+      margin-bottom: 0.9rem;
+      font-size: clamp(1.4rem, 7.5vw, 2rem);
+    }
+
+    .bible-album-modal {
+      width: 100vw;
+      max-width: none;
+      height: 100dvh;
+      max-height: none;
+      border: 0;
+      border-radius: 0;
+    }
+
+    .bible-album-viewer {
+      height: 100dvh;
+      max-height: none;
+    }
+
+    .bible-album-viewer > header {
+      padding: 0.75rem 0.8rem;
+    }
+
+    .bible-album-stage {
+      grid-template-columns: 2.3rem minmax(0, 1fr) 2.3rem;
+      gap: 0.28rem;
+      padding: 0.55rem 0.45rem;
+    }
+
+    .bible-album-stage > button {
+      width: 2.25rem;
+      height: 2.25rem;
+    }
+
+    .bible-album-stage figure > img {
+      height: auto;
+      max-height: 58vh;
+      background: transparent;
+    }
+
+    .bible-album-stage figcaption {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 0.18rem;
+      padding: 0 0.2rem;
+    }
+
+    .bible-album-thumbnails {
+      padding: 0.6rem 0.7rem 0.75rem;
+    }
+
+    .bible-album-thumbnails button {
+      width: 4.5rem;
+      height: 3.35rem;
     }
 
     .bible-feature-section {
