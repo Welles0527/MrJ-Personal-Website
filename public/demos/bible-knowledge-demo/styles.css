@@ -747,25 +747,36 @@ h1 {
 }
 
 .detail-dialog > img {
+  position: sticky;
+  top: 0;
+  grid-row: 1;
+  grid-column: 1;
+  align-self: start;
   width: 100%;
-  height: 100%;
-  min-height: 640px;
+  height: min(88vh, 820px);
+  min-height: min(640px, 88vh);
   object-fit: cover;
 }
 
 .dialog-content {
-  align-self: center;
+  grid-row: 1;
+  grid-column: 2;
+  align-self: start;
   padding: clamp(34px, 5vw, 66px);
 }
 
 .dialog-close {
-  position: fixed;
+  position: sticky;
   top: 18px;
-  right: 18px;
   z-index: 2;
+  grid-row: 1;
+  grid-column: 1 / -1;
+  align-self: start;
+  justify-self: end;
   display: grid;
   width: 46px;
   height: 46px;
+  margin: 18px 18px 0 0;
   place-items: center;
   border: 1px solid rgba(255, 225, 172, 0.3);
   border-radius: 50%;
@@ -800,6 +811,38 @@ h1 {
   font-size: 16px;
 }
 
+.dialog-section-label {
+  margin: 0 0 6px;
+  color: var(--gold);
+  font: 700 10px/1.4 Georgia, serif;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+}
+
+.dialog-story {
+  margin-top: 26px;
+  padding: 24px 0 4px;
+  border-top: 1px solid rgba(255, 210, 119, 0.14);
+}
+
+.dialog-story h3,
+.scripture-guide h3 {
+  margin: 0 0 14px;
+  font-size: 22px;
+  line-height: 1.35;
+}
+
+.dialog-story #dialog-story p {
+  margin-bottom: 12px;
+  color: #d9c19d;
+  font-size: 14px;
+  line-height: 1.9;
+}
+
+.dialog-story #dialog-story p:last-child {
+  margin-bottom: 0;
+}
+
 .dialog-facts {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -830,6 +873,132 @@ h1 {
 .dialog-facts strong {
   color: var(--cream);
   font-size: 13px;
+}
+
+.scripture-guide {
+  margin: 0 0 28px;
+  padding: 22px;
+  border: 1px solid rgba(255, 203, 94, 0.3);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 100% 0, rgba(255, 194, 69, 0.12), transparent 15rem),
+    rgba(255, 194, 69, 0.035);
+}
+
+.scripture-guide-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 16px;
+}
+
+.scripture-guide-heading h3 {
+  margin-bottom: 0;
+}
+
+.scripture-guide-heading > span {
+  flex: 0 0 auto;
+  padding: 6px 9px;
+  border: 1px solid rgba(255, 211, 126, 0.2);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+
+.scripture-tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.scripture-tabs button {
+  min-width: 0;
+  min-height: 68px;
+  padding: 12px 13px;
+  border: 1px solid rgba(255, 211, 126, 0.16);
+  border-radius: 12px;
+  color: var(--paper);
+  background: rgba(20, 12, 8, 0.7);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 180ms ease, color 180ms ease, background 180ms ease, transform 180ms ease;
+  animation: scripture-tab-in 320ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.scripture-tabs button:hover {
+  border-color: rgba(255, 206, 108, 0.5);
+  color: var(--gold-bright);
+  transform: translateY(-2px);
+}
+
+.scripture-tabs button.is-active {
+  border-color: rgba(255, 206, 108, 0.72);
+  color: #241308;
+  background: linear-gradient(135deg, #ffe4a0, #e9a23f);
+  box-shadow: 0 10px 24px rgba(218, 124, 34, 0.16);
+}
+
+.scripture-tabs strong,
+.scripture-tabs small {
+  display: block;
+}
+
+.scripture-tabs strong {
+  font-family: "Noto Serif SC", "STSong", serif;
+  font-size: 14px;
+}
+
+.scripture-tabs small {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.scripture-tabs button.is-active small {
+  color: #70431c;
+}
+
+.scripture-reader {
+  margin-top: 12px;
+  padding: 20px;
+  border: 1px solid rgba(255, 218, 145, 0.17);
+  border-radius: 14px;
+  background:
+    linear-gradient(90deg, rgba(255, 196, 77, 0.06), transparent 48%),
+    #170e09;
+  animation: scripture-reader-in 260ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.scripture-reference {
+  margin-bottom: 2px;
+  color: var(--gold-bright);
+  font: 700 18px/1.45 "Noto Serif SC", "STSong", serif;
+}
+
+.scripture-cue {
+  margin-bottom: 15px;
+  color: var(--amber);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+.scripture-text {
+  color: #f2ddbb;
+  font-family: "Noto Serif SC", "STSong", serif;
+  font-size: 15px;
+  line-height: 1.95;
+  white-space: pre-line;
+}
+
+.scripture-source {
+  margin: 16px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 211, 126, 0.1);
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.6;
 }
 
 .dialog-content blockquote {
@@ -869,6 +1038,16 @@ h1 {
 @keyframes dialog-in {
   from { opacity: 0; transform: translateY(18px) scale(0.985); }
   to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes scripture-tab-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scripture-reader-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @media (max-width: 1050px) {
@@ -1077,7 +1256,12 @@ h1 {
     display: block;
   }
 
+  .dialog-close {
+    margin: 18px 18px -64px auto;
+  }
+
   .detail-dialog > img {
+    position: static;
     height: 300px;
     min-height: 0;
   }
@@ -1088,6 +1272,41 @@ h1 {
 
   .dialog-facts {
     grid-template-columns: 1fr;
+  }
+
+  .dialog-story {
+    margin-top: 22px;
+    padding-top: 20px;
+  }
+
+  .scripture-guide {
+    padding: 18px;
+  }
+
+  .scripture-guide-heading {
+    display: block;
+  }
+
+  .scripture-guide-heading > span {
+    display: inline-block;
+    margin-top: 10px;
+  }
+
+  .scripture-tabs {
+    grid-template-columns: 1fr;
+  }
+
+  .scripture-tabs button {
+    min-height: 62px;
+  }
+
+  .scripture-reader {
+    padding: 17px;
+  }
+
+  .scripture-text {
+    font-size: 14px;
+    line-height: 1.9;
   }
 }
 

@@ -191,11 +191,32 @@
         <p class="dialog-kicker" id="dialog-kicker"></p>
         <h2 id="dialog-title"></h2>
         <p class="dialog-summary" id="dialog-summary"></p>
+        <section class="dialog-story" id="dialog-story-section" aria-labelledby="dialog-story-title" hidden>
+          <p class="dialog-section-label">STORY · 故事脉络</p>
+          <h3 id="dialog-story-title">山上发生了什么？</h3>
+          <div id="dialog-story"></div>
+        </section>
         <div class="dialog-facts">
           <div><span>关键经文</span><strong id="dialog-reference"></strong></div>
           <div><span>相关人物</span><strong id="dialog-people"></strong></div>
           <div><span>核心主题</span><strong id="dialog-theme"></strong></div>
         </div>
+        <section class="scripture-guide" id="scripture-guide" aria-labelledby="scripture-guide-title" hidden>
+          <div class="scripture-guide-heading">
+            <div>
+              <p class="dialog-section-label">SCRIPTURE GUIDE · 经文指引</p>
+              <h3 id="scripture-guide-title">点击经文，展开重点节选</h3>
+            </div>
+            <span>和合本 · 简体</span>
+          </div>
+          <div class="scripture-tabs" id="scripture-tabs" role="tablist" aria-label="经文指引"></div>
+          <article class="scripture-reader" id="scripture-reader" role="tabpanel" aria-live="polite" hidden>
+            <p class="scripture-reference" id="scripture-reference"></p>
+            <p class="scripture-cue" id="scripture-cue"></p>
+            <div class="scripture-text" id="scripture-text"></div>
+            <p class="scripture-source">经文摘录自和合本（公开领域简体）；较长章节仅展示与本山故事直接相关的重点经节。</p>
+          </article>
+        </section>
         <blockquote id="dialog-question"></blockquote>
         <p class="dialog-note" id="dialog-note"></p>
       </div>
