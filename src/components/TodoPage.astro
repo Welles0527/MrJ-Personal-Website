@@ -31,9 +31,9 @@ const navItems: NavItem[] = [
       (() => {
         try {
           const savedTheme = localStorage.getItem('mywebsite.todo-theme.v1');
-          document.documentElement.dataset.todoTheme = savedTheme === 'dark' ? 'dark' : 'light';
+          document.documentElement.dataset.todoTheme = savedTheme === 'light' ? 'light' : 'dark';
         } catch {
-          document.documentElement.dataset.todoTheme = 'light';
+          document.documentElement.dataset.todoTheme = 'dark';
         }
       })();
     </script>
@@ -2374,6 +2374,844 @@ const navItems: NavItem[] = [
         box-shadow: 0 14px 34px rgba(2, 6, 7, 0.46);
       }
 
+      /*
+       * Refined dark productivity system.
+       * Layout and behavior remain owned by the existing rules above; this layer
+       * only unifies material, depth, color, spacing rhythm, and interaction feel.
+       */
+      html[data-todo-theme="dark"] .todo-shell {
+        --surface-canvas: #0d1112;
+        --surface-main: #111718;
+        --surface-sidebar: #12191a;
+        --surface-panel: #171d1e;
+        --surface-card: #1b2223;
+        --surface-item: #202829;
+        --surface-raised: #252e2f;
+        --surface-recessed: #101617;
+        --border-subtle: rgba(255, 255, 255, 0.07);
+        --border-bright: rgba(255, 255, 255, 0.11);
+        --text-primary: #f1f0eb;
+        --text-secondary: #b4b7b2;
+        --text-muted: #747b78;
+        --accent-copper: #c9874d;
+        --accent-copper-bright: #d99a5a;
+        --accent-copper-deep: #7b4b2c;
+        --radius-panel: 14px;
+        --radius-card: 10px;
+        --radius-item: 7px;
+        --radius-pill: 999px;
+        --shadow-panel:
+          0 1px 0 rgba(255, 255, 255, 0.04) inset,
+          0 -1px 0 rgba(0, 0, 0, 0.35) inset,
+          0 12px 28px rgba(0, 0, 0, 0.28);
+        --shadow-raised:
+          0 1px 0 rgba(255, 255, 255, 0.05) inset,
+          0 8px 18px rgba(0, 0, 0, 0.3),
+          0 2px 5px rgba(0, 0, 0, 0.22);
+        --shadow-selected:
+          0 0 0 1px rgba(201, 135, 77, 0.55),
+          0 1px 0 rgba(255, 220, 180, 0.12) inset,
+          0 10px 24px rgba(0, 0, 0, 0.32),
+          0 0 18px rgba(201, 135, 77, 0.07);
+        --category-all: #c9874d;
+        --category-work: #9b8bb0;
+        --category-study: #b66759;
+        --category-life: #718ea0;
+        --category-health: #788c62;
+        --category-other: #b18a4d;
+        --important-star: #c96f5c;
+        --important-text: var(--text-primary);
+        --line: var(--border-subtle);
+        --muted: var(--text-secondary);
+        --shadow: var(--shadow-panel);
+        background:
+          radial-gradient(circle at 56% 18%, rgba(61, 72, 71, 0.22), transparent 34rem),
+          radial-gradient(circle at 92% 78%, rgba(90, 62, 39, 0.07), transparent 28rem),
+          linear-gradient(112deg, #0d1112 0%, #111718 48%, #0c1011 100%);
+        color: var(--text-primary);
+        font-family: "Aptos", "Segoe UI Variable Text", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+      }
+
+      html[data-todo-theme="dark"] .todo-shell::before {
+        background-image:
+          repeating-linear-gradient(32deg, transparent 0 19px, rgba(255, 255, 255, 0.012) 19px 20px),
+          radial-gradient(rgba(255, 255, 255, 0.045) 0.5px, transparent 0.6px);
+        background-size: auto, 15px 15px;
+        opacity: 0.5;
+      }
+
+      html[data-todo-theme="dark"] :is(
+        button,
+        a,
+        .todo-overview-item,
+        .todo-item,
+        .todo-day-column,
+        .todo-day-overview,
+        .todo-month-day
+      ) {
+        transition:
+          transform 180ms ease-out,
+          border-color 180ms ease-out,
+          background-color 180ms ease-out,
+          color 180ms ease-out,
+          box-shadow 180ms ease-out;
+      }
+
+      html[data-todo-theme="dark"] .todo-sidebar {
+        border-color: var(--border-bright);
+        border-radius: var(--radius-panel);
+        background:
+          radial-gradient(circle at 12% 3%, rgba(201, 135, 77, 0.055), transparent 12rem),
+          repeating-linear-gradient(30deg, rgba(255, 255, 255, 0.014) 0 1px, transparent 1px 11px),
+          linear-gradient(160deg, #141c1d 0%, var(--surface-sidebar) 55%, #0f1516 100%);
+        color: var(--text-primary);
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.045) inset,
+          -1px 0 0 rgba(0, 0, 0, 0.42) inset,
+          12px 0 32px rgba(0, 0, 0, 0.27);
+      }
+
+      html[data-todo-theme="dark"] .todo-brand {
+        border-bottom-color: var(--border-subtle);
+        padding-bottom: 1.05rem;
+      }
+
+      html[data-todo-theme="dark"] .todo-brand-mark {
+        border: 1px solid var(--border-bright);
+        background:
+          radial-gradient(circle at 38% 32%, #d7a374 0 12%, #b66e4c 13% 34%, #5a4659 35% 54%, #242c2e 55% 100%);
+        color: transparent;
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.16) inset,
+          0 7px 16px rgba(0, 0, 0, 0.34);
+      }
+
+      html[data-todo-theme="dark"] .todo-brand strong {
+        color: var(--text-primary);
+        font-size: 1.18rem;
+        letter-spacing: 0.05em;
+      }
+
+      html[data-todo-theme="dark"] .todo-brand div span {
+        color: var(--text-muted);
+        font-weight: 700;
+        letter-spacing: 0.11em;
+      }
+
+      html[data-todo-theme="dark"] .todo-nav {
+        gap: 0.34rem;
+      }
+
+      html[data-todo-theme="dark"] .todo-nav a,
+      html[data-todo-theme="dark"] .todo-nav button,
+      html[data-todo-theme="dark"] .todo-nav > span {
+        position: relative;
+        min-height: 2.8rem;
+        border-radius: var(--radius-item);
+        color: var(--text-secondary);
+        font-weight: 750;
+      }
+
+      html[data-todo-theme="dark"] .todo-nav :is(a, button):hover {
+        border-color: var(--border-subtle);
+        background: rgba(255, 255, 255, 0.035);
+        color: var(--text-primary);
+        transform: translateY(-1px);
+      }
+
+      html[data-todo-theme="dark"] .todo-nav :is(a, button):active {
+        transform: translateY(1px);
+      }
+
+      html[data-todo-theme="dark"] .todo-nav .is-active {
+        border-color: rgba(201, 135, 77, 0.3);
+        background:
+          linear-gradient(90deg, rgba(123, 75, 44, 0.27), rgba(201, 135, 77, 0.055)),
+          var(--surface-card);
+        color: var(--text-primary);
+        box-shadow:
+          3px 0 0 var(--accent-copper) inset,
+          0 1px 0 rgba(255, 230, 205, 0.06) inset,
+          0 8px 18px rgba(0, 0, 0, 0.18);
+      }
+
+      html[data-todo-theme="dark"] .todo-nav-icon {
+        color: var(--accent-copper);
+      }
+
+      html[data-todo-theme="dark"] .todo-sidebar-lanes {
+        gap: 0.72rem;
+      }
+
+      html[data-todo-theme="dark"] .todo-sidebar-lanes .todo-overview-lane {
+        border-color: var(--border-subtle);
+        border-radius: var(--radius-card);
+        padding: 0.64rem;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 50%),
+          var(--surface-panel);
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.035) inset,
+          0 -1px 0 rgba(0, 0, 0, 0.32) inset,
+          0 8px 18px rgba(0, 0, 0, 0.2);
+      }
+
+      html[data-todo-theme="dark"] .todo-sidebar-lanes .todo-overview-item {
+        border-color: var(--border-subtle);
+        border-radius: var(--radius-item);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent),
+          var(--surface-item);
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.03) inset,
+          0 3px 7px rgba(0, 0, 0, 0.18);
+      }
+
+      html[data-todo-theme="dark"] .todo-sidebar-lanes .todo-overview-item:hover {
+        border-color: var(--border-bright);
+        background: var(--surface-raised);
+        transform: translateY(-1px);
+      }
+
+      html[data-todo-theme="dark"] .todo-sidebar-lanes .todo-overview-lane-title,
+      html[data-todo-theme="dark"] .todo-sidebar-lanes .todo-overview-title {
+        color: var(--text-primary);
+      }
+
+      html[data-todo-theme="dark"] .todo-sidebar-lanes .todo-overview-lane-count,
+      html[data-todo-theme="dark"] .todo-sidebar-lanes .todo-overview-empty,
+      html[data-todo-theme="dark"] .todo-sidebar-lanes .todo-overview-note {
+        color: var(--text-muted);
+      }
+
+      html[data-todo-theme="dark"] .todo-main {
+        padding-top: 1.2rem;
+      }
+
+      html[data-todo-theme="dark"] .todo-kicker {
+        color: var(--text-secondary);
+        font-weight: 700;
+        letter-spacing: 0.045em;
+      }
+
+      html[data-todo-theme="dark"] .todo-heading h1 {
+        color: var(--text-primary);
+        font-weight: 720;
+        letter-spacing: 0.015em;
+        text-shadow: 0 2px 16px rgba(0, 0, 0, 0.34);
+      }
+
+      html[data-todo-theme="dark"] .todo-title-cup {
+        border: 1px solid var(--border-bright);
+        background:
+          radial-gradient(circle at 35% 30%, rgba(217, 154, 90, 0.22), transparent 46%),
+          var(--surface-card);
+        color: var(--accent-copper);
+        box-shadow: var(--shadow-raised);
+      }
+
+      html[data-todo-theme="dark"] .todo-account {
+        color: var(--text-primary);
+        font-weight: 720;
+      }
+
+      html[data-todo-theme="dark"] .todo-last-sync {
+        color: var(--text-muted);
+      }
+
+      html[data-todo-theme="dark"] .todo-account-button,
+      html[data-todo-theme="dark"] .todo-utility,
+      html[data-todo-theme="dark"] .todo-data-button,
+      html[data-todo-theme="dark"] .todo-secondary-button {
+        border-color: var(--border-bright);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.038), rgba(0, 0, 0, 0.06)),
+          var(--surface-card);
+        color: var(--text-secondary);
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.045) inset,
+          0 6px 14px rgba(0, 0, 0, 0.23);
+      }
+
+      html[data-todo-theme="dark"] :is(
+        .todo-account-button,
+        .todo-utility,
+        .todo-data-button,
+        .todo-secondary-button
+      ):hover {
+        border-color: rgba(201, 135, 77, 0.36);
+        color: var(--text-primary);
+        transform: translateY(-1px);
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.065) inset,
+          0 9px 18px rgba(0, 0, 0, 0.3);
+      }
+
+      html[data-todo-theme="dark"] :is(
+        .todo-account-button,
+        .todo-utility,
+        .todo-data-button,
+        .todo-secondary-button
+      ):active {
+        transform: translateY(1px);
+        box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+      }
+
+      html[data-todo-theme="dark"] .todo-primary-button {
+        border-color: rgba(224, 172, 122, 0.46);
+        background:
+          linear-gradient(180deg, rgba(255, 224, 190, 0.11), rgba(70, 34, 13, 0.12)),
+          var(--accent-copper-deep);
+        color: #f8eee4;
+        box-shadow:
+          0 1px 0 rgba(255, 230, 204, 0.17) inset,
+          0 -1px 0 rgba(45, 20, 7, 0.48) inset,
+          0 9px 20px rgba(0, 0, 0, 0.32);
+      }
+
+      html[data-todo-theme="dark"] .todo-primary-button:hover {
+        border-color: rgba(225, 170, 119, 0.7);
+        background:
+          linear-gradient(180deg, rgba(255, 226, 196, 0.12), rgba(72, 32, 11, 0.11)),
+          #8a542f;
+        transform: translateY(-1px);
+      }
+
+      html[data-todo-theme="dark"] .todo-primary-button:active {
+        transform: translateY(1px);
+      }
+
+      html[data-todo-theme="dark"] .todo-theme-toggle[aria-pressed="true"] {
+        border-color: rgba(201, 135, 77, 0.55);
+        background:
+          radial-gradient(circle at 40% 35%, rgba(217, 154, 90, 0.18), transparent 55%),
+          var(--surface-card);
+        color: var(--accent-copper-bright);
+        box-shadow: var(--shadow-selected);
+      }
+
+      html[data-todo-theme="dark"] .todo-filter-section {
+        gap: 0.65rem;
+        margin: 0.55rem 0 0.9rem;
+      }
+
+      html[data-todo-theme="dark"] .todo-filter-list {
+        gap: 0.46rem;
+      }
+
+      html[data-todo-theme="dark"] .todo-filter {
+        min-height: 2.25rem;
+        border-color: color-mix(in srgb, var(--filter-color) 36%, var(--border-subtle));
+        border-radius: var(--radius-pill);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(0, 0, 0, 0.06)),
+          color-mix(in srgb, var(--filter-color) 8%, var(--surface-card));
+        color: color-mix(in srgb, var(--filter-color) 78%, var(--text-primary));
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.04) inset,
+          0 5px 12px rgba(0, 0, 0, 0.2);
+      }
+
+      html[data-todo-theme="dark"] .todo-filter:hover {
+        border-color: color-mix(in srgb, var(--filter-color) 58%, var(--border-bright));
+        transform: translateY(-1px);
+      }
+
+      html[data-todo-theme="dark"] .todo-filter:active {
+        transform: translateY(1px);
+      }
+
+      html[data-todo-theme="dark"] .todo-filter.is-active {
+        border-color: rgba(217, 154, 90, 0.62);
+        background:
+          linear-gradient(180deg, rgba(255, 225, 193, 0.11), rgba(66, 31, 12, 0.14)),
+          var(--accent-copper-deep);
+        color: #f8eee4;
+        outline: none;
+        box-shadow:
+          0 1px 0 rgba(255, 226, 194, 0.14) inset,
+          0 -1px 0 rgba(41, 18, 6, 0.45) inset,
+          0 8px 16px rgba(0, 0, 0, 0.28);
+      }
+
+      html[data-todo-theme="dark"] .todo-planner-card {
+        overflow: hidden;
+        border-color: var(--border-bright);
+        border-radius: var(--radius-panel);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 22%),
+          var(--surface-panel);
+        box-shadow: var(--shadow-panel);
+      }
+
+      html[data-todo-theme="dark"] .todo-calendar-panel {
+        border-right-color: var(--border-subtle);
+        background:
+          radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.018), transparent 15rem),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.012), rgba(0, 0, 0, 0.045));
+      }
+
+      html[data-todo-theme="dark"] .todo-select-row {
+        gap: 0.5rem;
+        border-bottom: 1px solid var(--border-subtle);
+        padding-bottom: 0.48rem;
+      }
+
+      html[data-todo-theme="dark"] .todo-select-row select {
+        border: 1px solid transparent;
+        border-radius: var(--radius-item);
+        padding: 0 0.35rem;
+        color: var(--text-primary);
+        font-weight: 680;
+      }
+
+      html[data-todo-theme="dark"] .todo-select-row select:hover,
+      html[data-todo-theme="dark"] .todo-select-row select:focus-visible {
+        border-color: var(--border-bright);
+        background: rgba(255, 255, 255, 0.035);
+      }
+
+      html[data-todo-theme="dark"] .todo-weekday-row {
+        color: var(--text-secondary);
+        font-weight: 700;
+      }
+
+      html[data-todo-theme="dark"] .todo-month-day {
+        color: var(--text-secondary);
+        font-weight: 520;
+      }
+
+      html[data-todo-theme="dark"] .todo-month-day:hover {
+        background: rgba(255, 255, 255, 0.045);
+        color: var(--text-primary);
+        transform: translateY(-1px);
+      }
+
+      html[data-todo-theme="dark"] .todo-month-day.is-in-week::before {
+        border: 1px solid rgba(255, 255, 255, 0.025);
+        background: rgba(255, 255, 255, 0.025);
+      }
+
+      html[data-todo-theme="dark"] .todo-month-day.is-selected span {
+        border: 1px solid rgba(231, 180, 132, 0.52);
+        background:
+          linear-gradient(180deg, rgba(255, 225, 194, 0.13), rgba(67, 30, 10, 0.12)),
+          var(--accent-copper-deep);
+        color: #fff3e7;
+        box-shadow:
+          0 1px 0 rgba(255, 229, 203, 0.18) inset,
+          0 -1px 0 rgba(44, 20, 7, 0.42) inset,
+          0 6px 13px rgba(0, 0, 0, 0.37);
+      }
+
+      html[data-todo-theme="dark"] .todo-month-star {
+        color: #c86952;
+      }
+
+      html[data-todo-theme="dark"] .todo-week-overview-panel {
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.012), transparent 40%),
+          var(--surface-panel);
+      }
+
+      html[data-todo-theme="dark"] .todo-section-label {
+        color: var(--text-primary);
+      }
+
+      html[data-todo-theme="dark"] .todo-section-label span {
+        font-weight: 750;
+      }
+
+      html[data-todo-theme="dark"] .todo-section-label small {
+        color: var(--text-muted);
+        font-weight: 650;
+      }
+
+      html[data-todo-theme="dark"] .todo-week-overview {
+        gap: 0;
+      }
+
+      html[data-todo-theme="dark"] .todo-day-overview {
+        position: relative;
+        border: 0;
+        border-left: 1px solid var(--border-subtle);
+        border-radius: 0;
+        color: var(--text-primary);
+      }
+
+      html[data-todo-theme="dark"] .todo-day-overview:first-child {
+        border-left: 0;
+      }
+
+      html[data-todo-theme="dark"] .todo-day-overview:hover {
+        background: rgba(255, 255, 255, 0.025);
+        transform: translateY(-1px);
+      }
+
+      html[data-todo-theme="dark"] .todo-day-overview.is-selected,
+      html[data-todo-theme="dark"] .todo-day-overview.is-today {
+        z-index: 1;
+        border: 1px solid rgba(201, 135, 77, 0.44);
+        border-radius: var(--radius-card);
+        background:
+          linear-gradient(180deg, rgba(217, 154, 90, 0.07), rgba(0, 0, 0, 0.05)),
+          var(--surface-card);
+        box-shadow: var(--shadow-selected);
+        transform: translateY(-2px);
+      }
+
+      html[data-todo-theme="dark"] .todo-day-name,
+      html[data-todo-theme="dark"] .todo-day-count {
+        color: var(--text-muted);
+      }
+
+      html[data-todo-theme="dark"] .todo-day-date {
+        color: var(--text-primary);
+        font-weight: 720;
+      }
+
+      html[data-todo-theme="dark"] .todo-day-overview.is-weekend .todo-day-name,
+      html[data-todo-theme="dark"] .todo-day-column.is-weekend .todo-column-name {
+        color: #b96554;
+      }
+
+      html[data-todo-theme="dark"] .todo-day-dot {
+        background: var(--accent-copper);
+        box-shadow: 0 2px 6px rgba(201, 135, 77, 0.18);
+      }
+
+      html[data-todo-theme="dark"] .todo-overview-lanes {
+        border-top: 1px solid var(--border-subtle);
+        padding-top: 0.62rem;
+      }
+
+      html[data-todo-theme="dark"] .todo-overview-lane {
+        border-color: var(--border-subtle);
+        border-radius: var(--radius-card);
+        background:
+          linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(255, 255, 255, 0.012)),
+          var(--surface-recessed);
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.025),
+          0 4px 14px rgba(0, 0, 0, 0.18) inset;
+      }
+
+      html[data-todo-theme="dark"] .todo-overview-lane-title,
+      html[data-todo-theme="dark"] .todo-overview-title {
+        color: var(--text-primary);
+      }
+
+      html[data-todo-theme="dark"] .todo-overview-lane-count,
+      html[data-todo-theme="dark"] .todo-overview-category-count,
+      html[data-todo-theme="dark"] .todo-overview-note,
+      html[data-todo-theme="dark"] .todo-overview-meta {
+        color: var(--text-muted);
+      }
+
+      html[data-todo-theme="dark"] .todo-overview-weekly-column-header {
+        border-bottom-color: var(--border-subtle);
+      }
+
+      html[data-todo-theme="dark"] .todo-overview-item,
+      html[data-todo-theme="dark"] .todo-overview-item.is-inline-category {
+        border-color: var(--border-subtle);
+        border-radius: var(--radius-item);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 55%),
+          var(--surface-item);
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.035) inset,
+          0 4px 10px rgba(0, 0, 0, 0.23);
+      }
+
+      html[data-todo-theme="dark"] .todo-overview-item:hover {
+        border-color: var(--border-bright);
+        background: var(--surface-raised);
+        transform: translateY(-1px);
+      }
+
+      html[data-todo-theme="dark"] .todo-overview-actions button,
+      html[data-todo-theme="dark"] .todo-overview-menu-summary,
+      html[data-todo-theme="dark"] .todo-overview-menu-panel button,
+      html[data-todo-theme="dark"] .todo-lane-add {
+        border-color: var(--border-bright);
+        border-radius: 50%;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(0, 0, 0, 0.07)),
+          var(--surface-card);
+        color: var(--text-muted);
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.045) inset,
+          0 4px 9px rgba(0, 0, 0, 0.22);
+      }
+
+      html[data-todo-theme="dark"] :is(
+        .todo-overview-actions button,
+        .todo-overview-menu-summary,
+        .todo-overview-menu-panel button,
+        .todo-lane-add
+      ):hover {
+        border-color: rgba(201, 135, 77, 0.42);
+        color: var(--text-primary);
+        transform: translateY(-1px);
+      }
+
+      html[data-todo-theme="dark"] .todo-overview-menu-panel {
+        border-color: var(--border-bright);
+        background: var(--surface-panel);
+        box-shadow: var(--shadow-raised);
+      }
+
+      html[data-todo-theme="dark"] .todo-board-section {
+        margin-top: 0.9rem;
+      }
+
+      html[data-todo-theme="dark"] .todo-weekly-board {
+        gap: 0.72rem;
+      }
+
+      html[data-todo-theme="dark"] .todo-day-column {
+        border-color: var(--border-subtle);
+        border-radius: var(--radius-panel);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 24%),
+          var(--surface-panel);
+        box-shadow: var(--shadow-panel);
+      }
+
+      html[data-todo-theme="dark"] .todo-day-column:hover {
+        border-color: var(--border-bright);
+      }
+
+      html[data-todo-theme="dark"] .todo-day-column.is-selected,
+      html[data-todo-theme="dark"] .todo-day-column.is-today {
+        border-color: rgba(201, 135, 77, 0.5);
+        background:
+          linear-gradient(180deg, rgba(201, 135, 77, 0.045), transparent 28%),
+          var(--surface-panel);
+        box-shadow: var(--shadow-selected);
+      }
+
+      html[data-todo-theme="dark"] .todo-column-header {
+        margin: -0.1rem -0.12rem 0.7rem;
+        border-bottom: 1px solid var(--border-subtle);
+        padding: 0.12rem 0.12rem 0.68rem;
+      }
+
+      html[data-todo-theme="dark"] .todo-column-name {
+        color: var(--text-primary);
+        font-weight: 740;
+      }
+
+      html[data-todo-theme="dark"] .todo-column-date {
+        color: var(--text-secondary);
+        font-weight: 620;
+      }
+
+      html[data-todo-theme="dark"] .todo-list {
+        gap: 0.45rem;
+      }
+
+      html[data-todo-theme="dark"] .todo-item {
+        border-color: var(--border-subtle);
+        border-radius: var(--radius-item);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.038), transparent 52%),
+          var(--surface-item);
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.04) inset,
+          0 4px 10px rgba(0, 0, 0, 0.24);
+      }
+
+      html[data-todo-theme="dark"] .todo-item:hover {
+        border-color: var(--border-bright);
+        background: var(--surface-raised);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-raised);
+      }
+
+      html[data-todo-theme="dark"] .todo-item:active {
+        transform: translateY(1px);
+      }
+
+      html[data-todo-theme="dark"] .todo-checkbox {
+        position: relative;
+        appearance: none;
+        display: grid;
+        place-content: center;
+        border: 1px solid color-mix(in srgb, currentColor 50%, var(--border-bright));
+        border-radius: 3px;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.08)),
+          var(--surface-card);
+        color: var(--accent-copper);
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.05) inset,
+          0 2px 4px rgba(0, 0, 0, 0.28);
+      }
+
+      html[data-todo-theme="dark"] .todo-checkbox::before {
+        width: 0.42rem;
+        height: 0.24rem;
+        border-bottom: 2px solid #17100b;
+        border-left: 2px solid #17100b;
+        content: "";
+        opacity: 0;
+        transform: translateY(-1px) rotate(-45deg) scale(0.65);
+        transition: opacity 150ms ease-out, transform 150ms ease-out;
+      }
+
+      html[data-todo-theme="dark"] .todo-checkbox:checked {
+        border-color: var(--accent-copper-bright);
+        background:
+          linear-gradient(180deg, #d99a5a, #a46537);
+      }
+
+      html[data-todo-theme="dark"] .todo-checkbox:checked::before {
+        opacity: 1;
+        transform: translateY(-1px) rotate(-45deg) scale(1);
+      }
+
+      html[data-todo-theme="dark"] .todo-item-title {
+        color: var(--text-primary);
+        font-weight: 650;
+      }
+
+      html[data-todo-theme="dark"] .todo-item-note,
+      html[data-todo-theme="dark"] .todo-empty-day {
+        color: var(--text-muted);
+      }
+
+      html[data-todo-theme="dark"] .todo-item.is-completed .todo-item-title {
+        opacity: 0.62;
+      }
+
+      html[data-todo-theme="dark"] .todo-item-actions button {
+        border: 1px solid transparent;
+        border-radius: 50%;
+        color: var(--text-muted);
+      }
+
+      html[data-todo-theme="dark"] .todo-item-actions button:hover {
+        border-color: var(--border-bright);
+        background: var(--surface-card);
+        color: var(--text-primary);
+      }
+
+      html[data-todo-theme="dark"] .todo-add-bottom {
+        border-color: var(--border-subtle);
+        border-radius: var(--radius-item);
+        background:
+          linear-gradient(180deg, rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.015)),
+          var(--surface-recessed);
+        color: var(--text-muted);
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.025),
+          0 4px 11px rgba(0, 0, 0, 0.22) inset;
+      }
+
+      html[data-todo-theme="dark"] .todo-add-bottom:hover {
+        border-color: rgba(201, 135, 77, 0.34);
+        background: var(--surface-card);
+        color: var(--accent-copper-bright);
+        transform: translateY(-1px);
+      }
+
+      html[data-todo-theme="dark"] .todo-modal {
+        border-color: var(--border-bright);
+        border-radius: var(--radius-panel);
+        background: var(--surface-panel);
+        color: var(--text-primary);
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.055) inset,
+          0 34px 90px rgba(0, 0, 0, 0.62);
+      }
+
+      html[data-todo-theme="dark"] .todo-modal::backdrop {
+        background: rgba(4, 7, 8, 0.76);
+        backdrop-filter: blur(5px);
+      }
+
+      html[data-todo-theme="dark"] .todo-form,
+      html[data-todo-theme="dark"] .todo-delete-content {
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 12rem),
+          var(--surface-panel);
+      }
+
+      html[data-todo-theme="dark"] .todo-dialog-close {
+        border-color: var(--border-bright);
+        background: var(--surface-item);
+        color: var(--text-secondary);
+        box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+      }
+
+      html[data-todo-theme="dark"] .todo-dialog-close:hover {
+        border-color: rgba(201, 135, 77, 0.38);
+        color: var(--text-primary);
+        transform: translateY(-1px);
+      }
+
+      html[data-todo-theme="dark"] .todo-field,
+      html[data-todo-theme="dark"] .todo-important-toggle {
+        color: var(--text-secondary);
+      }
+
+      html[data-todo-theme="dark"] .todo-field input,
+      html[data-todo-theme="dark"] .todo-field select,
+      html[data-todo-theme="dark"] .todo-field textarea,
+      html[data-todo-theme="dark"] .todo-search-input-wrap {
+        border-color: var(--border-bright);
+        border-radius: var(--radius-item);
+        background:
+          linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(255, 255, 255, 0.012)),
+          var(--surface-recessed);
+        color: var(--text-primary);
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.022),
+          0 3px 8px rgba(0, 0, 0, 0.2) inset;
+      }
+
+      html[data-todo-theme="dark"] :is(
+        .todo-field input,
+        .todo-field select,
+        .todo-field textarea,
+        .todo-search-input-wrap
+      ):focus-within {
+        border-color: rgba(201, 135, 77, 0.58);
+        box-shadow:
+          0 0 0 3px rgba(201, 135, 77, 0.1),
+          0 3px 8px rgba(0, 0, 0, 0.18) inset;
+      }
+
+      html[data-todo-theme="dark"] .todo-trash-empty,
+      html[data-todo-theme="dark"] .todo-trash-item,
+      html[data-todo-theme="dark"] .todo-search-item {
+        border-color: var(--border-subtle);
+        border-radius: var(--radius-item);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 55%),
+          var(--surface-item);
+        color: var(--text-secondary);
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.035) inset,
+          0 5px 12px rgba(0, 0, 0, 0.23);
+      }
+
+      html[data-todo-theme="dark"] .todo-search-item:hover {
+        border-color: rgba(201, 135, 77, 0.38);
+        background: var(--surface-raised);
+        box-shadow: var(--shadow-raised);
+      }
+
+      html[data-todo-theme="dark"] .todo-toast,
+      html[data-todo-theme="dark"] .site-update-notice {
+        border-color: var(--border-bright);
+        background: var(--surface-recessed);
+        color: var(--text-primary);
+        box-shadow: var(--shadow-raised);
+      }
+
       .sr-only {
         position: absolute;
         width: 1px;
@@ -2522,6 +3360,51 @@ const navItems: NavItem[] = [
       @media (max-width: 420px) {
         .todo-modal { width: calc(100vw - 1.5rem); }
         .todo-login-modal .todo-modal-actions { grid-template-columns: 1fr; }
+      }
+
+      @media (max-width: 760px) {
+        html[data-todo-theme="dark"] .todo-backdrop {
+          background: rgba(4, 7, 8, 0.72);
+          backdrop-filter: blur(3px);
+        }
+
+        html[data-todo-theme="dark"] .todo-menu-button,
+        html[data-todo-theme="dark"] .todo-mobile-day {
+          border-color: var(--border-bright);
+          background:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.038), rgba(0, 0, 0, 0.07)),
+            var(--surface-card);
+          color: var(--text-secondary);
+          box-shadow:
+            0 1px 0 rgba(255, 255, 255, 0.045) inset,
+            0 6px 14px rgba(0, 0, 0, 0.24);
+        }
+
+        html[data-todo-theme="dark"] .todo-mobile-day.is-selected {
+          border-color: rgba(217, 154, 90, 0.56);
+          background:
+            linear-gradient(180deg, rgba(255, 225, 193, 0.12), rgba(66, 31, 12, 0.12)),
+            var(--accent-copper-deep);
+          color: #fff1e3;
+          box-shadow:
+            0 1px 0 rgba(255, 226, 194, 0.15) inset,
+            0 7px 16px rgba(0, 0, 0, 0.28);
+        }
+
+        html[data-todo-theme="dark"] .todo-calendar-panel {
+          border-bottom-color: var(--border-subtle);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .todo-shell *,
+        .todo-shell *::before,
+        .todo-shell *::after {
+          scroll-behavior: auto !important;
+          transition-duration: 0.01ms !important;
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+        }
       }
     </style>
   </body>
