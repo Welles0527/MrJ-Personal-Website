@@ -179,7 +179,7 @@ const data = {
       tags: ["covenant", "mission"],
       reference: "申 34:1–8",
       people: "摩西、约书亚",
-      image: "./assets/images/hero-mountains.png",
+      image: "./assets/images/mount-nebo.png",
       summary: "摩西在山顶遥望应许之地，却把下一段使命交给约书亚；未完成不等于失信。",
       story: [
         "摩西从摩押平原登上尼波山的毗斯迦山顶，神让他看见从基列到犹大、从约旦河谷到西海的应许之地。那是他四十年旷野旅程一直朝向的目标；然而，他只能远远观看，不能亲自渡过约旦河。",
