@@ -435,6 +435,7 @@ const navItems: NavItem[] = [
         --category-other: #d28a1e;
         --important-star: #e03131;
         --important-text: #3f2613;
+        --todo-main-offset: clamp(0px, calc(30vw - 33.6rem), 30rem);
         position: relative;
         display: grid;
         min-height: 100vh;
@@ -634,10 +635,10 @@ const navItems: NavItem[] = [
 
       .todo-main {
         display: flex;
-        width: min(100%, 1480px);
+        width: min(calc(100% - var(--todo-main-offset)), 1480px);
         min-height: 100vh;
         flex-direction: column;
-        margin: 0 auto;
+        margin: 0 auto 0 var(--todo-main-offset);
         padding: 1.35rem clamp(1.1rem, 2.2vw, 2.35rem) 1.05rem;
       }
 
