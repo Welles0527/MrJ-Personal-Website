@@ -31,7 +31,9 @@ const navItems: NavItem[] = [
       (() => {
         try {
           const savedTheme = localStorage.getItem('mywebsite.todo-theme.v1');
+          const isNoirAmber = savedTheme === 'noir-amber';
           document.documentElement.dataset.todoTheme = savedTheme === 'light' ? 'light' : 'dark';
+          document.documentElement.classList.toggle('theme-noir-amber', isNoirAmber);
         } catch {
           document.documentElement.dataset.todoTheme = 'dark';
         }
@@ -318,20 +320,37 @@ const navItems: NavItem[] = [
       const themeKey = 'mywebsite.todo-theme.v1';
       const themeToggle = document.querySelector<HTMLButtonElement>('[data-theme-toggle]');
       const themeIcon = themeToggle?.querySelector<HTMLElement>('[data-theme-icon]');
-      const applyTheme = (theme: 'light' | 'dark') => {
-        document.documentElement.dataset.todoTheme = theme;
+      type TodoTheme = 'light' | 'dark' | 'noir-amber';
+      const themeOrder: TodoTheme[] = ['light', 'dark', 'noir-amber'];
+      let activeTheme: TodoTheme = document.documentElement.classList.contains('theme-noir-amber')
+        ? 'noir-amber'
+        : document.documentElement.dataset.todoTheme === 'light'
+          ? 'light'
+          : 'dark';
+
+      const applyTheme = (theme: TodoTheme) => {
+        activeTheme = theme;
+        const isNoirAmber = theme === 'noir-amber';
+        document.documentElement.dataset.todoTheme = theme === 'light' ? 'light' : 'dark';
+        document.documentElement.classList.toggle('theme-noir-amber', isNoirAmber);
         if (!themeToggle || !themeIcon) return;
-        const isDark = theme === 'dark';
-        const label = isDark ? '切换浅色皮肤' : '切换深色皮肤';
-        themeIcon.textContent = isDark ? '☀' : '☾';
+        const nextTheme = themeOrder[(themeOrder.indexOf(theme) + 1) % themeOrder.length];
+        const nextThemeLabel = {
+          light: '浅色',
+          dark: '深色',
+          'noir-amber': '黑金'
+        }[nextTheme];
+        const label = `切换${nextThemeLabel}皮肤`;
+        themeIcon.textContent = nextTheme === 'light' ? '☀' : '☾';
+        themeToggle.dataset.themeCurrent = theme;
         themeToggle.setAttribute('aria-label', label);
         themeToggle.setAttribute('title', label);
-        themeToggle.setAttribute('aria-pressed', String(isDark));
+        themeToggle.setAttribute('aria-pressed', String(theme !== 'light'));
       };
 
-      applyTheme(document.documentElement.dataset.todoTheme === 'dark' ? 'dark' : 'light');
+      applyTheme(activeTheme);
       themeToggle?.addEventListener('click', () => {
-        const nextTheme = document.documentElement.dataset.todoTheme === 'dark' ? 'light' : 'dark';
+        const nextTheme = themeOrder[(themeOrder.indexOf(activeTheme) + 1) % themeOrder.length];
         applyTheme(nextTheme);
         try {
           localStorage.setItem(themeKey, nextTheme);
@@ -3422,6 +3441,567 @@ const navItems: NavItem[] = [
 
         html[data-todo-theme="dark"] .todo-calendar-panel {
           border-bottom-color: var(--border-subtle);
+        }
+      }
+
+      /*
+       * Noir amber theme.
+       * This is a visual-only third skin layered on the existing dark theme;
+       * layout, content, and interaction selectors stay unchanged.
+       */
+      html.theme-noir-amber,
+      html.theme-noir-amber body {
+        background: #0d0f10;
+        color-scheme: dark;
+      }
+
+      html.theme-noir-amber .todo-shell {
+        --page-bg: #0d0f10;
+        --page-bg-secondary: #121416;
+        --sidebar-bg: #101214;
+        --panel-bg: #17191b;
+        --panel-bg-elevated: #1d1f21;
+        --card-bg: #202224;
+        --task-bg: #252729;
+        --text-primary: #f7f0e5;
+        --text-secondary: #d1c7ba;
+        --text-muted: #a59b8e;
+        --accent-primary: #d59a3b;
+        --accent-light: #efb657;
+        --accent-dark: #8f5b1e;
+        --border-default: rgba(235, 184, 93, 0.14);
+        --border-strong: rgba(235, 184, 93, 0.38);
+        --danger: #d97861;
+        --success: #93a575;
+        --surface-canvas: var(--page-bg);
+        --surface-main: var(--page-bg-secondary);
+        --surface-sidebar: var(--sidebar-bg);
+        --surface-panel: var(--panel-bg);
+        --surface-card: var(--panel-bg-elevated);
+        --surface-item: var(--card-bg);
+        --surface-raised: var(--task-bg);
+        --surface-recessed: #111314;
+        --border-subtle: var(--border-default);
+        --border-bright: rgba(235, 184, 93, 0.24);
+        --accent-copper: var(--accent-primary);
+        --accent-copper-bright: var(--accent-light);
+        --accent-copper-deep: var(--accent-dark);
+        --category-all: #d59a3b;
+        --category-work: #bca7c9;
+        --category-study: #d67e68;
+        --category-life: #8eafc0;
+        --category-health: #96aa76;
+        --category-other: #d0a85e;
+        --task-text-work: #dac6e6;
+        --task-text-study: #ee9984;
+        --task-text-life: #a9ccdc;
+        --task-text-health: #b8cd95;
+        --task-text-other: #e8c06f;
+        --important-star: #e08368;
+        --line: var(--border-default);
+        --muted: var(--text-secondary);
+        background:
+          radial-gradient(circle at 65% 0%, rgba(136, 86, 30, 0.15), transparent 38%),
+          radial-gradient(circle at 15% 35%, rgba(96, 67, 34, 0.08), transparent 34%),
+          linear-gradient(135deg, #0c0e0f 0%, #111314 50%, #0b0d0e 100%);
+      }
+
+      html.theme-noir-amber .todo-shell::before {
+        background-image:
+          repeating-linear-gradient(31deg, transparent 0 21px, rgba(239, 182, 87, 0.014) 21px 22px),
+          radial-gradient(rgba(241, 234, 223, 0.04) 0.5px, transparent 0.6px);
+        opacity: 0.44;
+      }
+
+      html.theme-noir-amber .todo-sidebar {
+        border-color: rgba(235, 184, 93, 0.22);
+        background:
+          radial-gradient(circle at 13% 4%, rgba(213, 154, 59, 0.1), transparent 11rem),
+          repeating-linear-gradient(31deg, rgba(239, 182, 87, 0.018) 0 1px, transparent 1px 12px),
+          linear-gradient(160deg, #161819 0%, #101214 58%, #0d0f10 100%);
+        box-shadow:
+          0 1px 0 rgba(255, 239, 211, 0.06) inset,
+          -1px 0 0 rgba(91, 56, 18, 0.6) inset,
+          14px 0 34px rgba(0, 0, 0, 0.34);
+      }
+
+      html.theme-noir-amber .todo-brand {
+        border-bottom-color: rgba(235, 184, 93, 0.13);
+      }
+
+      html.theme-noir-amber .todo-brand-mark {
+        border-color: rgba(239, 182, 87, 0.44);
+        background:
+          radial-gradient(circle at 38% 30%, #f5c269 0 11%, #c8892e 12% 32%, #624a79 33% 53%, #272326 54% 100%);
+        box-shadow:
+          0 1px 0 rgba(255, 242, 216, 0.22) inset,
+          0 0 0 5px rgba(213, 154, 59, 0.06),
+          0 8px 18px rgba(0, 0, 0, 0.42);
+      }
+
+      html.theme-noir-amber .todo-nav a,
+      html.theme-noir-amber .todo-nav button,
+      html.theme-noir-amber .todo-nav > span {
+        color: var(--text-secondary);
+      }
+
+      html.theme-noir-amber .todo-nav :is(a, button):hover {
+        border-color: rgba(235, 184, 93, 0.18);
+        background: rgba(213, 154, 59, 0.055);
+      }
+
+      html.theme-noir-amber .todo-nav .is-active {
+        border-color: rgba(235, 184, 93, 0.42);
+        background:
+          linear-gradient(90deg, rgba(143, 91, 30, 0.35), rgba(213, 154, 59, 0.08)),
+          #1b1814;
+        box-shadow:
+          3px 0 0 var(--accent-primary) inset,
+          0 1px 0 rgba(255, 225, 172, 0.1) inset,
+          0 7px 16px rgba(0, 0, 0, 0.28),
+          0 0 15px rgba(213, 154, 59, 0.045);
+      }
+
+      html.theme-noir-amber .todo-nav-icon {
+        color: var(--accent-light);
+      }
+
+      html.theme-noir-amber .todo-sidebar-lanes .todo-overview-lane {
+        border-color: rgba(235, 184, 93, 0.17);
+        background:
+          linear-gradient(180deg, rgba(239, 182, 87, 0.03), transparent 48%),
+          #17191b;
+        box-shadow:
+          0 1px 0 rgba(255, 236, 199, 0.05) inset,
+          0 -1px 0 rgba(0, 0, 0, 0.42) inset,
+          0 9px 20px rgba(0, 0, 0, 0.26);
+      }
+
+      html.theme-noir-amber .todo-sidebar-lanes .todo-overview-item {
+        border-color: rgba(235, 184, 93, 0.13);
+        background:
+          linear-gradient(180deg, rgba(255, 239, 211, 0.045), transparent 52%),
+          #222426;
+        box-shadow:
+          0 1px 0 rgba(255, 239, 211, 0.055) inset,
+          0 4px 9px rgba(0, 0, 0, 0.29);
+      }
+
+      html.theme-noir-amber .todo-sidebar-lanes .todo-overview-item:hover {
+        border-color: rgba(239, 182, 87, 0.3);
+        background: #292a2a;
+      }
+
+      html.theme-noir-amber .todo-heading h1 {
+        color: #fff5e8;
+        text-shadow: 0 2px 18px rgba(0, 0, 0, 0.46);
+      }
+
+      html.theme-noir-amber .todo-title-cup {
+        border-color: rgba(239, 182, 87, 0.38);
+        background:
+          radial-gradient(circle at 35% 30%, rgba(239, 182, 87, 0.24), transparent 48%),
+          #1d1f21;
+        color: var(--accent-light);
+      }
+
+      html.theme-noir-amber .todo-account-button,
+      html.theme-noir-amber .todo-utility,
+      html.theme-noir-amber .todo-data-button,
+      html.theme-noir-amber .todo-secondary-button {
+        border-color: rgba(235, 184, 93, 0.2);
+        background:
+          linear-gradient(180deg, rgba(255, 239, 211, 0.055), rgba(0, 0, 0, 0.1)),
+          #1b1d1f;
+        color: var(--text-secondary);
+        box-shadow:
+          0 1px 0 rgba(255, 239, 211, 0.06) inset,
+          0 7px 16px rgba(0, 0, 0, 0.28);
+      }
+
+      html.theme-noir-amber :is(
+        .todo-account-button,
+        .todo-utility,
+        .todo-data-button,
+        .todo-secondary-button
+      ):hover {
+        border-color: rgba(239, 182, 87, 0.48);
+        color: #fff3df;
+      }
+
+      html.theme-noir-amber .todo-theme-toggle[data-theme-current="noir-amber"] {
+        border-color: rgba(239, 182, 87, 0.66);
+        background:
+          radial-gradient(circle at 38% 34%, rgba(239, 182, 87, 0.25), transparent 54%),
+          linear-gradient(180deg, #28241e, #1b1814);
+        color: var(--accent-light);
+        box-shadow:
+          0 0 0 1px rgba(213, 154, 59, 0.28),
+          0 1px 0 rgba(255, 226, 177, 0.15) inset,
+          0 8px 18px rgba(0, 0, 0, 0.34),
+          0 0 14px rgba(213, 154, 59, 0.08);
+      }
+
+      html.theme-noir-amber .todo-primary-button {
+        border-color: rgba(244, 190, 96, 0.58);
+        background: linear-gradient(180deg, #cb8f38 0%, #92561f 100%);
+        color: #fff8eb;
+        box-shadow:
+          0 6px 18px rgba(139, 82, 24, 0.28),
+          0 1px 0 rgba(255, 231, 184, 0.24) inset,
+          0 -1px 0 rgba(75, 38, 7, 0.48) inset;
+      }
+
+      html.theme-noir-amber .todo-primary-button:hover {
+        border-color: rgba(255, 206, 119, 0.76);
+        background: linear-gradient(180deg, #d99a40 0%, #a66324 100%);
+      }
+
+      html.theme-noir-amber .todo-filter {
+        border-color: color-mix(in srgb, var(--filter-color) 38%, rgba(235, 184, 93, 0.13));
+        background:
+          linear-gradient(180deg, rgba(255, 239, 211, 0.04), rgba(0, 0, 0, 0.1)),
+          color-mix(in srgb, var(--filter-color) 7%, #1b1c1d);
+        color: color-mix(in srgb, var(--filter-color) 80%, #fff3df);
+      }
+
+      html.theme-noir-amber .todo-filter.is-active {
+        border-color: rgba(239, 182, 87, 0.68);
+        background: linear-gradient(180deg, #c98b34 0%, #91541f 100%);
+        color: #fff8ec;
+        box-shadow:
+          0 1px 0 rgba(255, 231, 184, 0.24) inset,
+          0 8px 18px rgba(124, 70, 18, 0.32);
+      }
+
+      html.theme-noir-amber .todo-planner-card,
+      html.theme-noir-amber .todo-day-column {
+        border-color: rgba(235, 184, 93, 0.2);
+        background:
+          linear-gradient(160deg, rgba(33, 34, 35, 0.99) 0%, rgba(20, 22, 23, 0.99) 100%);
+        box-shadow:
+          0 1px 0 rgba(255, 236, 199, 0.055) inset,
+          0 -1px 0 rgba(0, 0, 0, 0.42) inset,
+          0 16px 34px rgba(0, 0, 0, 0.26);
+      }
+
+      html.theme-noir-amber .todo-calendar-panel {
+        border-right-color: rgba(235, 184, 93, 0.14);
+        background:
+          radial-gradient(circle at 50% 38%, rgba(213, 154, 59, 0.035), transparent 14rem),
+          linear-gradient(180deg, rgba(255, 239, 211, 0.025), rgba(0, 0, 0, 0.08));
+      }
+
+      html.theme-noir-amber .todo-select-row {
+        border-bottom-color: rgba(235, 184, 93, 0.15);
+      }
+
+      html.theme-noir-amber .todo-select-row select {
+        color: #f8efe2;
+      }
+
+      html.theme-noir-amber .todo-select-row select:hover,
+      html.theme-noir-amber .todo-select-row select:focus-visible {
+        border-color: rgba(239, 182, 87, 0.3);
+        background: rgba(213, 154, 59, 0.065);
+      }
+
+      html.theme-noir-amber .todo-weekday-row,
+      html.theme-noir-amber .todo-month-day {
+        color: #cfc4b6;
+      }
+
+      html.theme-noir-amber .todo-month-day:hover {
+        background: rgba(213, 154, 59, 0.08);
+        color: #fff5e8;
+      }
+
+      html.theme-noir-amber .todo-month-day.is-in-week::before {
+        border-color: rgba(235, 184, 93, 0.08);
+        background: rgba(213, 154, 59, 0.045);
+      }
+
+      html.theme-noir-amber .todo-month-day.is-selected span {
+        border-color: rgba(255, 205, 112, 0.72);
+        background:
+          linear-gradient(180deg, rgba(255, 226, 171, 0.19), rgba(86, 43, 9, 0.15)),
+          linear-gradient(180deg, #ba7727, #754217);
+        color: #fff8ec;
+        box-shadow:
+          0 1px 0 rgba(255, 232, 191, 0.3) inset,
+          0 -1px 0 rgba(58, 27, 5, 0.52) inset,
+          0 6px 14px rgba(0, 0, 0, 0.4),
+          0 0 12px rgba(213, 154, 59, 0.1);
+      }
+
+      html.theme-noir-amber .todo-month-star,
+      html.theme-noir-amber .todo-day-dot {
+        color: var(--accent-light);
+      }
+
+      html.theme-noir-amber .todo-day-dot {
+        background: var(--accent-primary);
+      }
+
+      html.theme-noir-amber .todo-week-overview-panel {
+        background:
+          linear-gradient(180deg, rgba(255, 239, 211, 0.025), transparent 42%),
+          #17191b;
+      }
+
+      html.theme-noir-amber .todo-day-overview {
+        border-left-color: rgba(235, 184, 93, 0.13);
+      }
+
+      html.theme-noir-amber .todo-day-overview:hover {
+        background: rgba(213, 154, 59, 0.05);
+      }
+
+      html.theme-noir-amber .todo-day-overview.is-selected,
+      html.theme-noir-amber .todo-day-overview.is-today {
+        border-color: rgba(239, 182, 87, 0.48);
+        background:
+          linear-gradient(180deg, rgba(213, 154, 59, 0.12), rgba(44, 28, 12, 0.08)),
+          #1d1f21;
+        box-shadow:
+          0 0 0 1px rgba(213, 154, 59, 0.22),
+          0 1px 0 rgba(255, 225, 174, 0.13) inset,
+          0 10px 24px rgba(0, 0, 0, 0.34),
+          0 0 16px rgba(213, 154, 59, 0.06);
+      }
+
+      html.theme-noir-amber .todo-day-overview.is-weekend .todo-day-name,
+      html.theme-noir-amber .todo-day-column.is-weekend .todo-column-name {
+        color: #dc775d;
+      }
+
+      html.theme-noir-amber .todo-overview-lanes {
+        border-top-color: rgba(235, 184, 93, 0.14);
+      }
+
+      html.theme-noir-amber .todo-overview-lane {
+        border-color: rgba(235, 184, 93, 0.14);
+        background:
+          linear-gradient(180deg, rgba(0, 0, 0, 0.13), rgba(255, 239, 211, 0.018)),
+          #121415;
+        box-shadow:
+          0 1px 0 rgba(255, 239, 211, 0.03),
+          0 5px 16px rgba(0, 0, 0, 0.24) inset;
+      }
+
+      html.theme-noir-amber .todo-overview-item,
+      html.theme-noir-amber .todo-overview-item.is-inline-category,
+      html.theme-noir-amber .todo-item {
+        border-color: rgba(235, 184, 93, 0.13);
+        background:
+          linear-gradient(180deg, rgba(255, 239, 211, 0.05), transparent 52%),
+          #242627;
+        box-shadow:
+          0 1px 0 rgba(255, 239, 211, 0.065) inset,
+          0 5px 12px rgba(0, 0, 0, 0.3);
+      }
+
+      html.theme-noir-amber .todo-overview-item:hover,
+      html.theme-noir-amber .todo-item:hover {
+        border-color: rgba(239, 182, 87, 0.3);
+        background: #2b2d2d;
+      }
+
+      html.theme-noir-amber .todo-overview-actions button,
+      html.theme-noir-amber .todo-overview-menu-summary,
+      html.theme-noir-amber .todo-overview-menu-panel button,
+      html.theme-noir-amber .todo-lane-add,
+      html.theme-noir-amber .todo-item-actions button {
+        border-color: rgba(235, 184, 93, 0.13);
+        background:
+          linear-gradient(180deg, rgba(255, 239, 211, 0.05), rgba(0, 0, 0, 0.12)),
+          #1d1f20;
+        color: #aaa194;
+      }
+
+      html.theme-noir-amber :is(
+        .todo-overview-actions button,
+        .todo-overview-menu-summary,
+        .todo-overview-menu-panel button,
+        .todo-lane-add,
+        .todo-item-actions button
+      ):hover {
+        border-color: rgba(239, 182, 87, 0.42);
+        color: var(--accent-light);
+      }
+
+      html.theme-noir-amber .todo-day-column.is-selected,
+      html.theme-noir-amber .todo-day-column.is-today {
+        border-color: rgba(239, 182, 87, 0.58);
+        background:
+          linear-gradient(180deg, rgba(213, 154, 59, 0.075), transparent 28%),
+          #17191b;
+        box-shadow:
+          0 0 0 1px rgba(213, 154, 59, 0.18),
+          0 1px 0 rgba(255, 229, 183, 0.1) inset,
+          0 14px 30px rgba(0, 0, 0, 0.34),
+          0 0 16px rgba(213, 154, 59, 0.055);
+      }
+
+      html.theme-noir-amber .todo-column-header {
+        border-bottom-color: rgba(235, 184, 93, 0.14);
+      }
+
+      html.theme-noir-amber .todo-column-name,
+      html.theme-noir-amber .todo-column-date {
+        color: #f1e8dc;
+      }
+
+      html.theme-noir-amber .todo-day-column.is-weekend .todo-column-date {
+        color: #c99a8b;
+      }
+
+      html.theme-noir-amber .todo-checkbox {
+        border-color: rgba(239, 182, 87, 0.46);
+        background:
+          linear-gradient(180deg, rgba(255, 239, 211, 0.06), rgba(0, 0, 0, 0.12)),
+          #1a1c1d;
+        color: var(--accent-primary);
+      }
+
+      html.theme-noir-amber .todo-checkbox:checked {
+        border-color: #f1bd62;
+        background: linear-gradient(180deg, #e4a748, #aa691f);
+      }
+
+      html.theme-noir-amber .todo-item.is-completed .todo-item-title {
+        opacity: 0.78;
+      }
+
+      html.theme-noir-amber .todo-add-bottom {
+        border-color: rgba(235, 184, 93, 0.14);
+        background:
+          linear-gradient(180deg, rgba(0, 0, 0, 0.18), rgba(255, 239, 211, 0.018)),
+          #111314;
+        color: #b4aa9e;
+        box-shadow:
+          0 1px 0 rgba(255, 239, 211, 0.025),
+          0 5px 13px rgba(0, 0, 0, 0.3) inset;
+      }
+
+      html.theme-noir-amber .todo-add-bottom:hover {
+        border-color: rgba(239, 182, 87, 0.44);
+        background: #1d1f20;
+        color: var(--accent-light);
+      }
+
+      html.theme-noir-amber :is(
+        .todo-month-day,
+        .todo-day-column,
+        .todo-overview-lane,
+        .todo-overview-item,
+        .todo-item
+      ).is-drop-target {
+        border-color: rgba(239, 182, 87, 0.72);
+        box-shadow:
+          0 0 0 2px rgba(213, 154, 59, 0.22),
+          0 10px 24px rgba(0, 0, 0, 0.34);
+      }
+
+      html.theme-noir-amber :is(.todo-overview-item, .todo-item).is-dragging {
+        opacity: 0.62;
+        border-color: rgba(239, 182, 87, 0.52);
+      }
+
+      html.theme-noir-amber .todo-modal {
+        border-color: rgba(235, 184, 93, 0.26);
+        background:
+          linear-gradient(160deg, rgba(34, 35, 35, 0.99), rgba(18, 20, 21, 0.99));
+        box-shadow:
+          0 1px 0 rgba(255, 236, 199, 0.07) inset,
+          0 34px 90px rgba(0, 0, 0, 0.7);
+      }
+
+      html.theme-noir-amber .todo-modal::backdrop {
+        background: rgba(5, 5, 5, 0.8);
+        backdrop-filter: blur(4px);
+      }
+
+      html.theme-noir-amber .todo-form,
+      html.theme-noir-amber .todo-delete-content {
+        background:
+          linear-gradient(180deg, rgba(213, 154, 59, 0.025), transparent 11rem),
+          #17191b;
+      }
+
+      html.theme-noir-amber .todo-field input,
+      html.theme-noir-amber .todo-field select,
+      html.theme-noir-amber .todo-field textarea,
+      html.theme-noir-amber .todo-search-input-wrap {
+        border-color: rgba(235, 184, 93, 0.2);
+        background:
+          linear-gradient(180deg, rgba(0, 0, 0, 0.12), rgba(255, 239, 211, 0.02)),
+          #111314;
+        color: #f7f0e5;
+      }
+
+      html.theme-noir-amber :is(
+        .todo-field input,
+        .todo-field select,
+        .todo-field textarea,
+        .todo-search-input-wrap
+      ):focus-within {
+        border-color: rgba(239, 182, 87, 0.65);
+        box-shadow:
+          0 0 0 3px rgba(213, 154, 59, 0.12),
+          0 3px 8px rgba(0, 0, 0, 0.22) inset;
+      }
+
+      html.theme-noir-amber .todo-trash-empty,
+      html.theme-noir-amber .todo-trash-item,
+      html.theme-noir-amber .todo-search-item,
+      html.theme-noir-amber .todo-overview-menu-panel {
+        border-color: rgba(235, 184, 93, 0.16);
+        background:
+          linear-gradient(180deg, rgba(255, 239, 211, 0.045), transparent 55%),
+          #222426;
+        color: var(--text-secondary);
+      }
+
+      html.theme-noir-amber .todo-toast,
+      html.theme-noir-amber .site-update-notice {
+        border-color: rgba(239, 182, 87, 0.3);
+        background: #141516;
+        color: #f7f0e5;
+      }
+
+      html.theme-noir-amber :is(button, a, input, select, textarea):focus-visible {
+        outline: 2px solid rgba(239, 182, 87, 0.78);
+        outline-offset: 2px;
+      }
+
+      html.theme-noir-amber :is(button, input, select, textarea):disabled {
+        cursor: not-allowed;
+        opacity: 0.48;
+      }
+
+      @media (max-width: 760px) {
+        html.theme-noir-amber .todo-backdrop {
+          background: rgba(5, 5, 5, 0.8);
+        }
+
+        html.theme-noir-amber .todo-menu-button,
+        html.theme-noir-amber .todo-mobile-day {
+          border-color: rgba(235, 184, 93, 0.2);
+          background:
+            linear-gradient(180deg, rgba(255, 239, 211, 0.05), rgba(0, 0, 0, 0.1)),
+            #1b1d1f;
+          color: var(--text-secondary);
+        }
+
+        html.theme-noir-amber .todo-mobile-day.is-selected {
+          border-color: rgba(239, 182, 87, 0.62);
+          background: linear-gradient(180deg, #a86b25, #704017);
+          color: #fff7e9;
+        }
+
+        html.theme-noir-amber .todo-calendar-panel {
+          border-bottom-color: rgba(235, 184, 93, 0.14);
         }
       }
 

@@ -145,6 +145,24 @@ try {
     ].join('\n'));
   }
 
+  const themeToggle = page.locator('[data-theme-toggle]');
+  assert.equal(await themeToggle.getAttribute('data-theme-current'), 'dark', 'default Todo theme must remain dark');
+  await themeToggle.click();
+  assert.equal(await themeToggle.getAttribute('data-theme-current'), 'noir-amber', 'dark theme must cycle to noir amber');
+  assert.equal(await page.locator('html.theme-noir-amber').count(), 1, 'noir amber theme must set its root class');
+  assert.equal(
+    await page.evaluate(() => localStorage.getItem('mywebsite.todo-theme.v1')),
+    'noir-amber',
+    'noir amber selection must persist'
+  );
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.waitForFunction(() => document.body.textContent.includes('modal-regression@example.com'));
+  assert.equal(await themeToggle.getAttribute('data-theme-current'), 'noir-amber', 'noir amber theme must survive reload');
+  await themeToggle.click();
+  assert.equal(await themeToggle.getAttribute('data-theme-current'), 'light', 'noir amber theme must cycle to light');
+  await themeToggle.click();
+  assert.equal(await themeToggle.getAttribute('data-theme-current'), 'dark', 'light theme must cycle back to dark');
+
   const success = await submitTask(page, 'MODAL SUCCESS REGRESSION');
   assert.equal(success.openAfterSubmit, false, 'valid submit must close before the delayed cloud response');
   await page.waitForTimeout(1300);

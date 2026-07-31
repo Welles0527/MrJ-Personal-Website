@@ -60,3 +60,36 @@ The ranking tabs and chart rows were checked in the desktop and mobile captures.
 - [x] Verify desktop and mobile layout, tab behavior, console errors, lint, and production build.
 
 final result: passed
+
+# Todo noir amber theme QA
+
+## Visual comparison
+
+- Source: `C:\Users\huawei\AppData\Local\Temp\codex-clipboard-1283e204-57da-4d22-8ee1-59533bac41d3.png`
+- Implementation: `D:\Personal Data Huawei\Personal Data\AI\Projects\MyWebsite\tmp\screenshots\todo-noir-amber\todo-noir-reference-size.png`
+- Side-by-side comparison: `D:\Personal Data Huawei\Personal Data\AI\Projects\MyWebsite\tmp\screenshots\todo-noir-amber\todo-noir-comparison.png`
+- Local preview: `http://127.0.0.1:4321/officialwebsite/topics/space/planning/todo`
+- Reference comparison viewport: 1664 × 946
+- Desktop verification viewport: 1440 × 900
+- Mobile verification viewport: 390 × 844
+
+The reference and implementation were reviewed together at the same viewport. The implementation preserves the existing application geometry while matching the reference's black, charcoal, and warm-gold material language. Compared with the source, text, category colors, and task surfaces are intentionally brighter to meet the user's readability requirement.
+
+## Findings
+
+- P0: none. No route, data structure, API, task rendering, or interaction logic was changed.
+- P1: none after iteration. Theme startup, three-state cycling, persistence, modal proportions, seven-column board, and mobile sidebar all passed.
+- P2: seeded QA task content differs from the reference's real account data; this is intentional so the isolated browser did not read or modify production tasks.
+
+## Verification
+
+- `npm run lint`: passed, 0 errors, 0 warnings, 0 hints.
+- `npm run test:todo-modal`: passed, including noir amber theme cycling and reload persistence.
+- `npm run build`: passed, 93 pages generated.
+- Reference-size 1664 × 946: no horizontal overflow, clipping, or layout movement.
+- Desktop 1440 × 900: task creation modal stayed within the viewport.
+- Mobile 390 × 844: sidebar opened normally and no horizontal overflow was present.
+- Seven day columns remained rendered and task items remained draggable.
+- Browser console and page errors: none.
+
+final result: passed
