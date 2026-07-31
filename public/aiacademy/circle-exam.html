@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>龙虾学院考试 · AI智能体</title>
+  <link rel="stylesheet" href="/aiacademy/styles.css">
+  <script src="/aiacademy/config.js"></script>
+  <style>
+    :root { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; }
+    html, body {
+      overflow: auto;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(180deg, #e6f7ff 0%, #b8e6ff 100%);
+      color: #0d2a3d;
+    }
+    .exam-container {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 24px 16px 48px;
+    }
+    .exam-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 14px;
+      padding: 8px 16px;
+      border: 0;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #7dd3fc, #0ea5e9);
+      color: #0d2a3d;
+      font-weight: 850;
+      font-size: 0.92rem;
+      cursor: pointer;
+      box-shadow: 0 8px 16px rgba(14, 120, 170, 0.14);
+    }
+    .exam-header h1 {
+      margin: 6px 0;
+      font-size: 1.5rem;
+      color: #0c4a6e;
+    }
+    .exam-header p {
+      margin: 0;
+      color: #376783;
+      font-size: 0.9rem;
+    }
+    .progress-bar {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .progress-dot {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: rgba(12, 74, 110, 0.14);
+      display: grid;
+      place-items: center;
+      font-size: 0.65rem;
+      font-weight: 900;
+      color: #0c4a6e;
+      transition: background 0.25s, color 0.25s;
+    }
+    .progress-dot.answered { background: rgba(14, 165, 233, 0.65); color: #fff; }
+    .question-card {
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 16px;
+      padding: 20px 18px;
+      margin-bottom: 14px;
+      box-shadow: 0 4px 14px rgba(12, 74, 110, 0.08);
+      border: 1px solid rgba(14, 165, 233, 0.12);
+    }
+    .q-type {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 900;
+      margin-bottom: 10px;
+      background: rgba(14, 165, 233, 0.14);
+      color: #075985;
+    }
+    .q-title {
+      font-weight: 800;
+      font-size: 1.05rem;
+      line-height: 1.55;
+      margin-bottom: 14px;
+      color: #0d2a3d;
+    }
+    .options { display: flex; flex-direction: column; gap: 8px; }
+    .opt-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: rgba(230, 247, 255, 0.65);
+      cursor: pointer;
+      transition: all 0.15s;
+      border: 2px solid transparent;
+      font-size: 0.96rem;
+    }
+    .opt-label:hover { background: rgba(255, 255, 255, 0.98); border-color: rgba(14, 165, 233, 0.35); }
+    .opt-label input { flex-shrink: 0; width: 18px; height: 18px; margin: 0; accent-color: #0284c7; }
+    .opt-label span { line-height: 1.5; }
+    .opt-label.correct { background: rgba(101, 255, 183, 0.28) !important; border-color: rgba(77, 128, 45, 0.55) !important; }
+    .opt-label.wrong   { background: rgba(255, 101, 93, 0.18) !important; border-color: rgba(158, 63, 26, 0.45) !important; }
+    .opt-label.missed  { background: rgba(101, 255, 183, 0.18) !important; border-color: rgba(77, 128, 45, 0.35) !important; }
+    .opt-label.disabled { pointer-events: none; opacity: 0.85; }
+    .judge-btns { display: flex; gap: 12px; }
+    .judge-btn {
+      flex: 1;
+      padding: 12px;
+      border: 2px solid rgba(14, 165, 233, 0.25);
+      border-radius: 12px;
+      background: rgba(230, 247, 255, 0.65);
+      color: #0d2a3d;
+      font-weight: 850;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .judge-btn:hover { border-color: rgba(14, 165, 233, 0.5); background: rgba(255, 255, 255, 0.9); }
+    .judge-btn.selected { background: linear-gradient(135deg, #7dd3fc, #0ea5e9); border-color: rgba(14, 120, 170, 0.45); box-shadow: 0 6px 12px rgba(14, 120, 170, 0.18); }
+    .judge-btn.correct { background: rgba(101, 255, 183, 0.35) !important; border-color: rgba(77, 128, 45, 0.6) !important; }
+    .judge-btn.wrong   { background: rgba(255, 101, 93, 0.2) !important; border-color: rgba(158, 63, 26, 0.5) !important; }
+    .judge-btn.disabled { pointer-events: none; }
+    .submit-row { text-align: center; margin-top: 32px; }
+    .submit-btn {
+      min-height: 48px;
+      padding: 0 36px;
+      border: 0;
+      border-radius: 999px;
+      color: #0d2a3d;
+      background: linear-gradient(135deg, #7dd3fc, #0ea5e9);
+      box-shadow: 0 12px 22px rgba(14, 120, 170, 0.18);
+      cursor: pointer;
+      font-weight: 900;
+      font-size: 1.05rem;
+    }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .score-overlay {
+      position: fixed; inset: 0;
+      display: none; place-items: center;
+      background: rgba(8, 17, 33, 0.72);
+      z-index: 1000;
+      backdrop-filter: blur(4px);
+    }
+    .score-overlay.open { display: grid; }
+    .score-card {
+      background: linear-gradient(180deg, #e6f7ff, #b8e6ff);
+      border-radius: 22px;
+      padding: 32px 28px;
+      text-align: center;
+      max-width: 340px;
+      width: 88%;
+      box-shadow: 0 20px 50px rgba(12, 74, 110, 0.25);
+      border: 1px solid rgba(14, 165, 233, 0.2);
+    }
+    .score-card h2 { margin: 0 0 8px; color: #0c4a6e; }
+    .score-num {
+      font-size: 3rem;
+      font-weight: 950;
+      color: #0284c7;
+      margin: 8px 0;
+      line-height: 1;
+    }
+    .score-msg { color: #376783; font-weight: 700; margin-bottom: 20px; }
+    .score-card .primary { width: 100%; margin-bottom: 10px; }
+    .score-card .secondary { width: 100%; }
+    .secondary-btn {
+      min-height: 42px;
+      padding: 0 22px;
+      border: 0;
+      border-radius: 999px;
+      color: #0d2a3d;
+      background: rgba(255, 255, 255, 0.7);
+      box-shadow: 0 4px 10px rgba(14, 120, 170, 0.1);
+      cursor: pointer;
+      font-weight: 850;
+      font-size: 0.95rem;
+    }
+    .explain-tag {
+      display: inline-block;
+      margin-left: 8px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 900;
+    }
+    .explain-tag.ok { background: rgba(77, 128, 45, 0.15); color: #3e6f22; }
+    .explain-tag.err { background: rgba(158, 63, 26, 0.12); color: #9e3f1a; }
+    @media (max-width: 560px) {
+      .exam-container { padding: 16px 12px 40px; }
+      .exam-header h1 { font-size: 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="exam-container">
+    <div class="exam-header">
+      <button class="back-btn" onclick="location.href='/aiacademy/?route=%2Facademy%2Fcircle%2Fcourses%2Flesson-1#exam'">← 返回课程</button>
+      <h1>龙虾学院考试 · AI智能体</h1>
+      <p>共 5 题，每题 20 分，满分 100 分</p>
+    </div>
+
+    <div class="progress-bar" id="progress-bar"></div>
+    <div id="exam-form"></div>
+
+    <div class="submit-row">
+      <button class="submit-btn" id="submit-btn">提交考试</button>
+    </div>
+  </div>
+
+  <div class="score-overlay" id="score-overlay">
+    <div class="score-card">
+      <p class="eyebrow" style="color:#376783;margin:0;font-weight:850;">Exam Result</p>
+      <h2>考试结果</h2>
+      <div class="score-num" id="score-num">0<span style="font-size:1.4rem;">分</span></div>
+      <p class="score-msg" id="score-msg">继续加油！</p>
+      <button class="submit-btn primary" onclick="document.getElementById('score-overlay').classList.remove('open')">查看答题情况</button>
+      <button class="secondary-btn secondary" onclick="location.href='/aiacademy/?route=%2Facademy%2Fcircle%2Fcourses%2Flesson-1#exam'">返回课程</button>
+    </div>
+  </div>
+
+  <script>
+    const DEVICE_USER_KEY = "jma-device-user-id";
+    function getDeviceUserId() {
+      let id = localStorage.getItem(DEVICE_USER_KEY);
+      if (!id) {
+        id = `student-${Math.random().toString(36).slice(2, 8)}-${Date.now().toString(36).slice(-4)}`;
+        localStorage.setItem(DEVICE_USER_KEY, id);
+      }
+      return id;
+    }
+    function userStorageKey(key) {
+      return `${getDeviceUserId()}_${key}`;
+    }
+
+    const questions = [
+      { type: "single", title: "做workbuddy可选的几种模式里，只对话不执行是哪种模式", options: ["Craft", "Plan", "Ask", "Auto"], answer: ["C"], score: 20 },
+      { type: "single", title: "以下哪些是云端智能体", options: ["Workbuddy", "Codex", "Arkclaw", "Qclaw"], answer: ["C"], score: 20 },
+      { type: "single", title: "先列计划，确认后在执行，这个模式通常在Agent里是指哪个模式", options: ["Auto", "Ask", "Plan", "Craft"], answer: ["C"], score: 20 },
+      { type: "multi", title: "以下关于skills说法正确的是", options: ["能极大扩展Agent的能力", "应尽量多的加载Skills", "需关注和记录Skills动态发展，但按需加载", "去专业的网站（如Github上安装Skills）"], answer: ["A", "C", "D"], score: 20 },
+      { type: "multi", title: "云端智能体比起本地智能体的优势有哪些（多选）", options: ["24小时在线", "需电脑保持开机状态", "高性能云端算力匹配，无需本地电脑高配置", "随处可用"], answer: ["A", "C", "D"], score: 20 },
+    ];
+
+    const form = document.getElementById('exam-form');
+    const progressBar = document.getElementById('progress-bar');
+    const userAnswers = questions.map(() => []);
+
+    function render() {
+      progressBar.innerHTML = questions.map((_, i) => `<div class="progress-dot" id="dot-${i}">${i + 1}</div>`).join('');
+      form.innerHTML = questions.map((q, i) => {
+        const typeLabel = q.type === 'single' ? '单选题' : q.type === 'multi' ? '多选题' : '判断题';
+        let body = '';
+        if (q.type === 'judge') {
+          const selT = userAnswers[i].includes('true') ? 'selected' : '';
+          const selF = userAnswers[i].includes('false') ? 'selected' : '';
+          body = `<div class="judge-btns" data-idx="${i}">
+            <button class="judge-btn ${selT}" data-val="true" onclick="setJudge(${i},'true')">✓ 正确</button>
+            <button class="judge-btn ${selF}" data-val="false" onclick="setJudge(${i},'false')">✗ 错误</button>
+          </div>`;
+        } else {
+          const inputType = q.type === 'single' ? 'radio' : 'checkbox';
+          body = `<div class="options">` + q.options.map((opt, j) => {
+            const val = String.fromCharCode(65 + j);
+            const checked = userAnswers[i].includes(val) ? 'checked' : '';
+            return `<label class="opt-label" id="opt-${i}-${j}">
+              <input type="${inputType}" name="q${i}" value="${val}" ${checked} onchange="setOpt(${i},'${val}',this.checked)">
+              <span><strong>${val}.</strong> ${opt}</span>
+            </label>`;
+          }).join('') + `</div>`;
+        }
+        return `<div class="question-card" id="card-${i}">
+          <div class="q-type">${typeLabel} · ${q.score}分</div>
+          <div class="q-title">${i + 1}. ${q.title}</div>
+          ${body}
+        </div>`;
+      }).join('');
+    }
+
+    function setOpt(idx, val, checked) {
+      const q = questions[idx];
+      if (q.type === 'single') {
+        userAnswers[idx] = checked ? [val] : [];
+      } else {
+        const set = new Set(userAnswers[idx]);
+        if (checked) set.add(val); else set.delete(val);
+        userAnswers[idx] = Array.from(set).sort();
+      }
+      updateDot(idx);
+    }
+
+    function setJudge(idx, val) {
+      userAnswers[idx] = [val];
+      updateDot(idx);
+      const btns = document.querySelectorAll('.judge-btns[data-idx="' + idx + '"] .judge-btn');
+      btns.forEach(function(b) {
+        b.classList.toggle('selected', b.dataset.val === val);
+      });
+    }
+
+    function updateDot(idx) {
+      const dot = document.getElementById('dot-' + idx);
+      if (dot) dot.classList.toggle('answered', userAnswers[idx].length > 0);
+    }
+
+    function grade() {
+      let total = 0;
+      questions.forEach((q, i) => {
+        const ua = userAnswers[i].slice().sort().join(',');
+        const ca = q.answer.slice().sort().join(',');
+        const correct = ua === ca;
+        if (correct) total += q.score;
+
+        // highlight options
+        if (q.type === 'judge') {
+          const btns = document.querySelectorAll(`.judge-btns[data-idx="${i}"] .judge-btn`);
+          btns.forEach(b => {
+            b.classList.add('disabled');
+            const v = b.dataset.val;
+            if (q.answer.includes(v)) b.classList.add('correct');
+            else if (userAnswers[i].includes(v) && !q.answer.includes(v)) b.classList.add('wrong');
+          });
+        } else {
+          q.options.forEach((_, j) => {
+            const val = String.fromCharCode(65 + j);
+            const label = document.getElementById('opt-' + i + '-' + j);
+            if (!label) return;
+            label.classList.add('disabled');
+            if (q.answer.includes(val)) label.classList.add('correct');
+            else if (userAnswers[i].includes(val) && !q.answer.includes(val)) label.classList.add('wrong');
+          });
+        }
+      });
+      return total;
+    }
+
+    document.getElementById('submit-btn').addEventListener('click', () => {
+      const unanswered = userAnswers.map((a, i) => a.length === 0 ? i + 1 : null).filter(Boolean);
+      if (unanswered.length > 0) {
+        if (!confirm(`还有 ${unanswered.length} 道题未作答（第 ${unanswered.join('、')} 题），确定要提交吗？`)) return;
+      }
+      const score = grade();
+      document.getElementById('score-num').innerHTML = score + '<span style="font-size:1.4rem;">分</span>';
+      const msg = score >= 90 ? '太棒了！完美通关龙虾学院！' : score >= 60 ? '恭喜通过考试，继续加油！' : '还需要再复习一下哦！';
+      document.getElementById('score-msg').textContent = msg;
+      document.getElementById('score-overlay').classList.add('open');
+      document.getElementById('submit-btn').disabled = true;
+      document.getElementById('submit-btn').textContent = '已提交';
+
+      // sync to localStorage so main app can know exam is done
+      localStorage.setItem(userStorageKey('circle_exam_score'), String(score));
+      localStorage.setItem(userStorageKey('circle_exam_completed'), 'true');
+      localStorage.setItem(userStorageKey('circle_exam_submitted_at'), new Date().toISOString());
+
+      // sync to server
+      const apiBase = String(window.JMA_API_BASE || '').replace(/\/$/, '');
+      fetch(apiBase + '/api/exam-results', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          academy_id: 'circle',
+          lesson_id: 'lesson-1',
+          score: score,
+          completedAt: new Date().toISOString(),
+          examUrl: location.href,
+        }),
+      }).catch(function() {});
+    });
+
+    render();
+  </script>
+</body>
+</html>

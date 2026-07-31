@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>J先生AI魔法学院 · 入学仪式Demo</title>
+    <link rel="icon" href="/aiacademy/assets/logo.png" />
+    <link rel="stylesheet" href="/aiacademy/styles.css?v=20260603-auth-switch" />
+    <link rel="stylesheet" href="/aiacademy/map-fix.css?v=20260607-magic-popup-sample" />
+    <link rel="stylesheet" href="/aiacademy/lesson.css?v=20260722-impeccable-scoreboard" />
+    <script src="/aiacademy/config.js?v=20260731-path-move"></script>
+  </head>
+  <body>
+    <main class="academy-shell">
+      <div class="hero-backdrop" aria-hidden="true"></div>
+      <div class="aurora" aria-hidden="true"></div>
+
+      <header class="topbar">
+        <section class="brand-block" aria-label="学院品牌">
+          <div class="logo-mark"><img src="/aiacademy/assets/logo.png" alt="J先生AI魔法学院" /></div>
+          <div>
+            <p class="eyebrow">AI Magic Academy · Enrollment Demo</p>
+            <h1>J先生AI魔法学院</h1>
+          </div>
+        </section>
+
+        <nav class="top-actions" aria-label="学院入口">
+          <button class="ghost-button" type="button" data-admin-link hidden>院长后台</button>
+          <button class="ghost-button" type="button" data-open-feedback>给院长留言</button>
+          <button class="ghost-button" type="button" data-reenroll>入院登记</button>
+        </nav>
+      </header>
+
+      <section class="layout-grid">
+        <section class="map-stage" aria-label="五座学院城堡" data-map-stage>
+          <button class="map-guide-button" type="button" data-open-guide aria-label="打开学院使用指南">
+            <span>?</span>
+            <strong>使用指南</strong>
+          </button>
+
+          <div class="academy-map" data-castle-layer>
+            <div class="ambient-sky" aria-hidden="true">
+              <span class="cloud cloud-one"></span>
+              <span class="cloud cloud-two"></span>
+              <span class="bird bird-one"></span>
+              <span class="bird bird-two"></span>
+              <span class="stardust dust-one"></span>
+              <span class="stardust dust-two"></span>
+              <span class="stardust dust-three"></span>
+            </div>
+            <svg class="active-route" data-active-route viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+              <path data-active-route-path d="" pathLength="100"></path>
+            </svg>
+            <span class="route-spark spark-one" aria-hidden="true"></span>
+            <span class="route-spark spark-two" aria-hidden="true"></span>
+            <span class="route-spark spark-three" aria-hidden="true"></span>
+            <span class="route-spark spark-four" aria-hidden="true"></span>
+            <span class="route-spark spark-five" aria-hidden="true"></span>
+
+            <button class="castle castle-spell" type="button" data-trial="0" style="--accent: #37c27a">
+              <span class="castle-emblem"><span class="artifact-icon artifact-wand"></span></span>
+              <span class="rune-ring"></span>
+              <span class="spark-burst" aria-hidden="true"></span>
+              <span class="castle-glow"></span>
+              <span class="magic-orb"></span>
+              <span class="castle-sign"><b>I</b><strong>咒语学院</strong><small>0/20</small></span>
+            </button>
+
+            <button class="castle castle-pet" type="button" data-trial="1" style="--accent: #b46cff">
+              <span class="castle-emblem"><span class="artifact-icon artifact-pet"></span></span>
+              <span class="rune-ring"></span>
+              <span class="spark-burst" aria-hidden="true"></span>
+              <span class="castle-glow"></span>
+              <span class="magic-orb"></span>
+              <span class="castle-sign"><b>II</b><strong>灵宠学院</strong><small>0/20</small></span>
+            </button>
+
+            <button class="castle castle-array" type="button" data-trial="2" style="--accent: #37b9ff">
+              <span class="castle-emblem"><span class="artifact-icon artifact-book"></span></span>
+              <span class="rune-ring"></span>
+              <span class="spark-burst" aria-hidden="true"></span>
+              <span class="castle-glow"></span>
+              <span class="magic-orb"></span>
+              <span class="castle-sign"><b>III</b><strong>龙虾学院</strong><small>0/20</small></span>
+            </button>
+
+            <button class="castle castle-legion" type="button" data-trial="3" style="--accent: #4c7cff">
+              <span class="castle-emblem"><span class="artifact-icon artifact-orb"></span></span>
+              <span class="rune-ring"></span>
+              <span class="spark-burst" aria-hidden="true"></span>
+              <span class="castle-glow"></span>
+              <span class="magic-orb"></span>
+              <span class="castle-sign"><b>IV</b><strong>OPC学院</strong><small>0/20</small></span>
+            </button>
+
+            <button class="castle castle-alchemy" type="button" data-trial="4" style="--accent: #e5a31c">
+              <span class="castle-emblem"><span class="artifact-icon artifact-key"></span></span>
+              <span class="rune-ring"></span>
+              <span class="spark-burst" aria-hidden="true"></span>
+              <span class="castle-glow"></span>
+              <span class="magic-orb"></span>
+              <span class="castle-sign"><b>V</b><strong>炼金学院</strong><small>0/20</small></span>
+            </button>
+          </div>
+
+          <section class="castle-popup" data-castle-popup hidden>
+            <button class="close-button parchment-close" type="button" data-close-popup>×</button>
+            <section class="popup-section">
+              <p class="panel-label" data-popup-kicker>学院概况</p>
+              <h3 data-popup-title>咒语学院</h3>
+              <div class="popup-overview" data-popup-overview></div>
+            </section>
+            <section class="popup-section">
+              <p class="panel-label">学院档案</p>
+              <div class="popup-list" data-popup-learning></div>
+            </section>
+            <div class="popup-tools" data-popup-tools></div>
+            <div class="popup-actions">
+              <button class="primary-button" type="button" data-popup-enter>进入学院</button>
+              <button class="ghost-button" type="button" data-popup-courses>查看课程</button>
+              <button class="ghost-button" type="button" data-popup-homework>查看作业</button>
+              <button class="ghost-button" type="button" data-popup-exam>进入考试</button>
+            </div>
+          </section>
+
+          <div class="wand-trail" data-wand aria-hidden="true"></div>
+        </section>
+
+        <aside class="academy-panel guide-panel">
+          <section class="panel-hero">
+            <p class="panel-label">魔法书侧页</p>
+            <h2>学院任务书</h2>
+          </section>
+
+          <section class="student-ledger" aria-label="当前学员状态">
+            <div class="avatar-ring">
+              <span class="artifact-icon artifact-wand" data-artifact-icon></span>
+            </div>
+            <div>
+              <p class="panel-label">当前学员</p>
+              <h3 data-level-title>见习魔法师</h3>
+              <p class="student-id">
+                <span data-student-name>新同学</span>
+                <span> · </span>
+                <span data-student-id>JMA-2026-042</span>
+              </p>
+            </div>
+          </section>
+
+          <section class="energy-ledger">
+            <div class="energy-card">
+              <span>当前魔能</span>
+              <strong data-energy>0</strong>
+              <small data-level-no>Lv.1</small>
+            </div>
+            <div class="progress-track" aria-label="魔能进度">
+              <span data-progress></span>
+            </div>
+            <div class="student-stats">
+              <span>点亮 <b data-lit-count>0/5</b></span>
+              <span data-main-task>主线：点亮咒语学院</span>
+            </div>
+            <p class="artifact-note" data-artifact-label>第一课已完成 · 获得魔法杖</p>
+          </section>
+
+          <section class="academy-list" aria-label="学院导航" data-academy-list></section>
+
+          <section class="guide-card current-guide">
+            <p class="panel-label">学习入口</p>
+            <h3 data-guide-title>咒语学院</h3>
+            <p data-guide-desc>下一站：灵宠学院</p>
+            <div class="stage-score">
+              <span>当前得分</span>
+              <strong><b data-stage-score>0</b>/20</strong>
+              <div class="mini-track"><i data-stage-progress></i></div>
+            </div>
+            <div class="learning-entry-list" data-learning-entry-list></div>
+            <div class="checklist compact-checklist" data-next-tasks></div>
+            <div class="score-actions" data-score-actions></div>
+          </section>
+
+          <button class="primary-button wide-button enter-current" type="button" data-enter-current>进入当前学院</button>
+          <button class="certificate-button" type="button" data-open-certificate>查看魔法证书预览</button>
+
+          <span class="hidden-selected" data-selected-title>咒语学院</span>
+          <span class="hidden-selected" data-selected-desc>学习提示词与 AI 对话逻辑，让 AI 更像能听懂你的魔法伙伴。</span>
+          <div class="hidden-selected" data-selected-tools></div>
+        </aside>
+      </section>
+    </main>
+
+    <main class="lesson-shell" data-lesson-page hidden>
+      <header class="lesson-topbar">
+        <div class="lesson-brand">
+          <div class="lesson-mark"><img src="/aiacademy/assets/logo.png" alt="J先生AI魔法学院" /></div>
+          <div>
+            <p data-lesson-breadcrumb>咒语学院 / 第一试炼 / 第一课</p>
+            <strong>J先生AI魔法学院</strong>
+          </div>
+        </div>
+        <nav class="lesson-actions" aria-label="课程导航">
+          <button type="button" data-return-map>返回地图</button>
+        </nav>
+      </header>
+
+      <section class="lesson-hero">
+        <div>
+          <h1 data-lesson-title>第一课 · 魔法理论</h1>
+          <p class="lesson-subtitle" data-lesson-subtitle>理解 AI 运行的底层咒语，开启你的第一段 AI 修炼。</p>
+        </div>
+        <div class="lesson-status-board">
+          <span data-lesson-power-label>当前课魔能</span>
+          <strong><b data-lesson-magic-power>0</b>/20</strong>
+        </div>
+        <span class="lesson-complete-stamp" data-lesson-complete-stamp hidden>第一课已完成</span>
+      </section>
+
+      <section class="lesson-step-flow" aria-label="第一课三步修炼流程">
+        <article data-flow-step="course">
+          <span>第一步</span>
+          <h2>学习课程</h2>
+          <em data-flow-status="course">未开始</em>
+        </article>
+        <article data-flow-step="homework">
+          <span>第二步</span>
+          <h2>完成作业</h2>
+          <em data-flow-status="homework">未开始</em>
+        </article>
+        <article data-flow-step="exam">
+          <span>第三步</span>
+          <h2>参加考试</h2>
+          <em data-flow-status="exam">未开始</em>
+        </article>
+      </section>
+
+      <section class="lesson-layout">
+        <article class="lesson-main">
+          <section class="lesson-card course-card" id="course">
+            <span class="status-stamp" data-stamp-course>待完成</span>
+            <div class="lesson-section-head">
+              <div style="flex:1;display:flex;align-items:center;gap:8px;">
+                <p class="lesson-kicker" style="margin:0;">任务一</p>
+                <h2 style="margin:0;" data-task1-title>学习魔法第1课_魔法理论</h2>
+              </div>
+              <span class="lesson-pill" data-course-status hidden>未完成</span>
+            </div>
+
+            <div class="course-check-list">
+              <button class="course-check-item" type="button" data-course-check="live">
+                <span>已参加直播课程</span>
+                <small><span data-course-live-time>2026-05-31 19:30</span> · 完成可获得 5 魔能</small>
+              </button>
+              <div class="course-check-item recorded-item">
+                <button type="button" data-course-check="recorded">
+                  <span>已参加录播课程</span>
+                  <small>补充学习，不额外计分</small>
+                </button>
+                <div class="recorded-resource-card compact-resource">
+                  <button class="lesson-primary-button" type="button" data-open-course-resource>打开录播课程</button>
+                  <span>提取码：<b data-extract-code>tpds</b></span>
+                  <button class="lesson-secondary-button" type="button" data-copy-extract-code>复制</button>
+                </div>
+              </div>
+            </div>
+            <p class="task-feedback" data-course-feedback hidden></p>
+          </section>
+
+          <section class="lesson-card homework-card" id="homework">
+            <div class="lesson-section-head">
+              <div style="flex:1;display:flex;align-items:center;gap:8px;">
+                <p class="lesson-kicker" style="margin:0;">任务二</p>
+                <h2 style="margin:0;" data-task2-title>第一课作业 · 梦想与提问练习</h2>
+              </div>
+              <span class="lesson-pill" data-homework-count>0/2</span>
+            </div>
+            <div class="homework-progress-note" data-homework-message>请完成两个小练习，开启你的第一课作业。</div>
+
+            <div data-homework-questions>
+            <article class="question-card" id="dream-board" data-question-card="dream-board">
+              <span class="status-stamp" data-question-stamp="dream-board">待完成</span>
+              <div class="question-head">
+                <h3>作业一：AI梦想题板</h3>
+                <p data-question-state="dream-board" hidden>未完成</p>
+              </div>
+              <div class="prompt-hint">写下你的AI梦想，例如：用AI做个人网站，用AI做漫画....</div>
+              <label class="homework-field">
+                <textarea data-homework-input="dream-board" maxlength="500" rows="6" placeholder=""></textarea>
+              </label>
+              <section class="visibility-section">
+                <h4>选择可见范围</h4>
+                <div class="visibility-options" data-visibility-group="dream-board">
+                  <button type="button" data-question-id="dream-board" data-visibility-option="academy">
+                    <strong>全体可见</strong>
+                  </button>
+                  <button type="button" data-question-id="dream-board" data-visibility-option="dean">
+                    <strong>仅院长可见</strong>
+                  </button>
+                </div>
+                <p class="visibility-hint" data-visibility-hint="dream-board">院长会来协助你，共同实现这个愿望。</p>
+                <p class="visibility-admin-note">院长可在后台查看学习记录，用于课程辅导和进度管理。</p>
+              </section>
+              <div class="question-footer">
+                <button class="completion-button" type="button" data-complete-question="dream-board">提交</button>
+                <p class="question-warning" data-question-warning="dream-board" hidden></p>
+              </div>
+              <p class="task-feedback" data-question-feedback="dream-board" hidden></p>
+            </article>
+
+            <article class="question-card" id="prompt-golden-rule" data-question-card="prompt-golden-rule">
+              <span class="status-stamp" data-question-stamp="prompt-golden-rule">待完成</span>
+              <div class="question-head">
+                <h3>作业二：用Prompt黄金法则提问</h3>
+                <p data-question-state="prompt-golden-rule" hidden>未完成</p>
+              </div>
+              <div class="prompt-hint">Prompt 黄金法则：角色 + 背景 + 任务 + 要求 + 格式 + 禁忌</div>
+              <label class="homework-field">
+                <textarea data-homework-input="prompt-golden-rule" maxlength="1500" rows="9" placeholder="请将问题和大模型的回答粘贴到文本框内，并点击提交"></textarea>
+              </label>
+              <section class="visibility-section">
+                <h4>选择可见范围</h4>
+                <div class="visibility-options" data-visibility-group="prompt-golden-rule">
+                  <button type="button" data-question-id="prompt-golden-rule" data-visibility-option="academy">
+                    <strong>全体可见</strong>
+                  </button>
+                  <button type="button" data-question-id="prompt-golden-rule" data-visibility-option="dean">
+                    <strong>仅院长可见</strong>
+                  </button>
+                </div>
+                <p class="visibility-hint" data-visibility-hint="prompt-golden-rule">院长可以查看你的 Prompt 写法，并帮助你优化提问方式。</p>
+                <p class="visibility-admin-note">院长可在后台查看学习记录，用于课程辅导和进度管理。</p>
+              </section>
+              <div class="question-footer">
+                <button class="completion-button" type="button" data-complete-question="prompt-golden-rule">提交</button>
+                <p class="question-warning" data-question-warning="prompt-golden-rule" hidden></p>
+              </div>
+              <p class="task-feedback" data-question-feedback="prompt-golden-rule" hidden></p>
+            </article>
+            </div>
+
+          </section>
+
+          <section class="lesson-card exam-card" id="exam">
+            <span class="status-stamp" data-stamp-exam>待完成</span>
+            <div class="lesson-section-head">
+              <div style="flex:1;display:flex;align-items:center;gap:8px;">
+                <p class="lesson-kicker" style="margin:0;">任务三</p>
+                <h2 style="margin:0;">魔法考试</h2>
+              </div>
+              <span class="lesson-pill" data-exam-status hidden>未开始</span>
+            </div>
+            <p class="lesson-copy" data-exam-copy>完成考试，升级魔法咒语</p>
+            <div class="lesson-button-row">
+              <button class="lesson-primary-button" type="button" data-start-exam>开始考试</button>
+              <button class="lesson-secondary-button" type="button" data-complete-exam-fallback>我已完成</button>
+            </div>
+            <p class="task-feedback" data-exam-feedback hidden></p>
+          </section>
+        </article>
+
+        <aside class="lesson-progress-sidebar" aria-label="修炼进度卷轴">
+          <p class="lesson-kicker" data-sidebar-kicker>第一课修炼进度</p>
+          <h2>任务卷轴</h2>
+          <button type="button" data-scroll-target="course"><span>直播课程</span><b data-side-live>未完成</b></button>
+          <button type="button" data-scroll-target="course"><span>录播课程</span><b data-side-recorded>未完成</b></button>
+          <button type="button" data-scroll-target="course"><span>课程任务<small>直播计 5 魔能，录播不额外计分</small></span><b data-side-course>待完成</b></button>
+          <button type="button" data-scroll-target="dream-board"><span>作业一</span><b data-side-q1>未完成</b></button>
+          <button type="button" data-scroll-target="prompt-golden-rule"><span>作业二</span><b data-side-q2>未完成</b></button>
+          <div class="sidebar-reward">两份作业提交后同步魔能。</div>
+          <button type="button" data-scroll-target="exam"><span>考试挑战<small>完成后获得魔能</small></span><b data-side-exam>未开始</b></button>
+          <div class="magic-power-card">
+            <span>当前获得</span>
+            <strong><b data-side-magic-power>0</b>/20</strong>
+            <i><em data-side-magic-bar></em></i>
+          </div>
+          <div class="sidebar-advice">
+            <span>当前下一步</span>
+            <p data-side-advice>先完成课程，再完成两份作业。</p>
+          </div>
+        </aside>
+      </section>
+
+      <div class="lesson-toast" data-lesson-toast hidden></div>
+    </main>
+
+    <main class="admin-shell" data-admin-page hidden>
+      <header class="admin-topbar">
+        <div>
+          <p class="lesson-kicker">Dean Dashboard</p>
+          <h1>院长后台</h1>
+          <p>查看学员学习记录、作业内容、考试分数和学院进度。</p>
+        </div>
+        <nav class="admin-actions">
+          <select class="user-switch" data-user-switch aria-label="当前账号">
+            <option value="dean-001">院长账号</option>
+            <option value="student-001">学员账号</option>
+          </select>
+          <button type="button" data-admin-back>返回地图</button>
+        </nav>
+      </header>
+
+      <section class="admin-denied" data-admin-denied hidden>
+        <h2>你没有权限访问院长后台。</h2>
+        <p>当前账号不是院长或助教。数据读取已在后端 API 按 role 拦截。</p>
+      </section>
+
+      <section class="admin-main" data-admin-main>
+        <nav class="admin-tabs" aria-label="院长后台导航">
+          <button type="button" data-admin-route="/admin">总览</button>
+          <button type="button" data-admin-route="/admin/homework">作业管理</button>
+          <button type="button" data-admin-route="/admin/exams">考试成绩</button>
+          <button type="button" data-admin-route="/admin/feedback">学员留言</button>
+        </nav>
+        <div class="admin-content" data-admin-content></div>
+      </section>
+    </main>
+
+    <dialog class="modal lesson-completion-modal" data-lesson-completion-modal>
+      <div class="modal-card compact lesson-completion-card">
+        <p class="eyebrow" data-completion-eyebrow>Spell Academy Complete</p>
+        <h2 style="text-align: center;" data-completion-title>恭喜晋级成为"初阶咒术师"！</h2>
+        <p class="modal-copy" style="text-align: center; margin-top: 8px;" data-completion-desc>请前往下一个"灵宠学院"继续修炼！</p>
+        <button class="primary-button wide-button" type="button" data-completion-return-map>回到主地图</button>
+        <small data-completion-hint>返回主地图，查看已解锁的第二学院任务。</small>
+      </div>
+    </dialog>
+
+    <dialog class="modal onboarding-modal" data-onboarding-modal>
+      <form class="modal-card onboarding-card" data-onboarding-form method="dialog" novalidate>
+        <p class="eyebrow" data-auth-eyebrow>First Login</p>
+        <h2 data-auth-title>入院登记</h2>
+        <p class="modal-copy" data-auth-copy>第一次入院登记就是注册。请填全信息并设置 6 位数字密码，之后用昵称和密码登录。</p>
+
+        <div class="form-grid">
+          <label>
+            昵称
+            <input name="name" placeholder="" required />
+          </label>
+          <label>
+            密码
+            <input name="password" type="password" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" placeholder="6位数字" required />
+          </label>
+          <label>
+            星座
+            <select name="zodiac" required data-register-field>
+              <option value="">请选择</option>
+              <option>白羊座</option>
+              <option>金牛座</option>
+              <option>双子座</option>
+              <option>巨蟹座</option>
+              <option>狮子座</option>
+              <option>处女座</option>
+              <option>天秤座</option>
+              <option>天蝎座</option>
+              <option>射手座</option>
+              <option>摩羯座</option>
+              <option>水瓶座</option>
+              <option>双鱼座</option>
+            </select>
+          </label>
+          <label>
+            期待AI的使用场景
+            <select name="project" required data-register-field>
+              <option value="">请选择</option>
+              <option>办公</option>
+              <option>生活</option>
+              <option>创业</option>
+              <option>亲子教育</option>
+            </select>
+          </label>
+          <label>
+            想重点学习的工具
+            <input name="tools" placeholder="" required data-register-field />
+          </label>
+        </div>
+
+        <p class="auth-message" data-auth-message hidden></p>
+        <button class="primary-button wide-button" type="submit" formnovalidate data-auth-submit>完成登记，领取魔杖</button>
+        <button class="ghost-button wide-button auth-switch" type="button" data-auth-switch>已有账号，去登录</button>
+      </form>
+    </dialog>
+
+    <dialog class="modal ritual-modal" data-ritual-modal>
+      <div class="modal-card ritual-card">
+        <div class="floating-artifact">
+          <span class="artifact-icon artifact-wand" data-ritual-icon></span>
+        </div>
+        <p class="eyebrow" data-ritual-step>Enrollment Ritual</p>
+        <h2 data-ritual-title>领取魔法杖</h2>
+        <p class="modal-copy" data-ritual-copy></p>
+        <div class="ritual-body" data-ritual-body></div>
+        <div class="modal-actions">
+          <button class="ghost-button" type="button" data-ritual-prev>上一页</button>
+          <button class="primary-button" type="button" data-ritual-next>继续</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog class="modal level-modal" data-level-modal>
+      <div class="modal-card compact level-card">
+        <div class="floating-artifact">
+          <span class="artifact-icon artifact-wand" data-level-icon></span>
+        </div>
+        <p class="eyebrow">Title Upgrade</p>
+        <h2 data-level-modal-title>称号更新</h2>
+        <p class="modal-copy" data-level-modal-copy></p>
+        <button class="primary-button wide-button" type="button" data-close-level>收下新称号</button>
+      </div>
+    </dialog>
+
+    <dialog class="modal reward-modal" data-reward-modal>
+      <div class="modal-card reward-card">
+        <button class="close-button" type="button" data-close-reward>×</button>
+        <p class="eyebrow">Castle Lit</p>
+        <h2 data-reward-title>城堡已点亮</h2>
+        <p class="modal-copy" data-reward-copy></p>
+        <div class="reward-layout">
+          <div class="reward-wheel" aria-label="惊喜奖励大转盘">
+            <span>红包</span>
+            <span>优惠券</span>
+            <span>点评</span>
+            <span>工具券</span>
+            <span>加餐课</span>
+            <span>神秘奖</span>
+          </div>
+          <div class="reward-note">
+            <strong>惊喜奖励池占位</strong>
+            <p>后续可配置奖品、概率、库存和中奖记录。当前先展示大转盘形式。</p>
+            <p>提示：点亮5座城堡后，魔能排名前2名可获得学费减半终极大奖。</p>
+          </div>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog class="modal" data-modal>
+      <div class="modal-card">
+        <button class="close-button" type="button" data-close>×</button>
+        <div class="modal-guardian" data-guardian>咒</div>
+        <p class="eyebrow" data-trial-subtitle>第一试炼</p>
+        <h2 data-trial-title>咒语学院</h2>
+        <p class="modal-copy" data-trial-desc></p>
+
+        <div class="course-tools">
+          <section>
+            <span>课程介绍</span>
+            <p data-course-intro></p>
+          </section>
+          <section>
+            <span>可掌握工具</span>
+            <div class="tool-tags" data-course-tools></div>
+          </section>
+        </div>
+
+        <div class="score-summary">
+          <span>积分总览：拿满20分即可点亮本城堡</span>
+          <table>
+            <thead>
+              <tr>
+                <th>任务</th>
+                <th>魔能</th>
+                <th>状态</th>
+              </tr>
+            </thead>
+            <tbody data-score-table></tbody>
+          </table>
+        </div>
+        <div class="task-list" data-task-list></div>
+        <div class="score-actions modal-score-actions" data-modal-score-actions></div>
+        <div class="modal-actions">
+          <button class="ghost-button" type="button">课程回放</button>
+          <button class="ghost-button" type="button">提交作业</button>
+          <button class="primary-button" type="button" data-checkin>用魔杖点亮魔法球</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog class="modal" data-feedback-modal>
+      <div class="modal-card compact">
+        <button class="close-button" type="button" data-close-feedback>×</button>
+        <p class="eyebrow">Feedback</p>
+        <h2>给院长传信</h2>
+        <textarea data-feedback-input placeholder="写下你想学的AI项目、工具或课程建议"></textarea>
+        <button class="primary-button" type="button" data-submit-feedback>发送魔法信笺</button>
+      </div>
+    </dialog>
+
+    <dialog class="modal" data-guide-modal>
+      <div class="modal-card compact academy-guide-card">
+        <button class="close-button" type="button" data-close-guide>×</button>
+        <p class="eyebrow">Academy Guide</p>
+        <h2>学院使用指南</h2>
+        <ol class="academy-guide-list">
+          <li>
+            <strong>先选学院</strong>
+            <span>点击地图上的城堡，右侧任务书会显示当前学院的课程、作业和考试入口。</span>
+          </li>
+          <li>
+            <strong>按顺序修炼</strong>
+            <span>每座学院依次完成课程打卡、提交作业、参加考试，累计魔能。</span>
+          </li>
+          <li>
+            <strong>点亮城堡</strong>
+            <span>单座学院拿满 20 魔能后，使用魔杖点亮魔法球，解锁下一座学院。</span>
+          </li>
+          <li>
+            <strong>查看进度</strong>
+            <span>右侧任务书会同步显示当前魔能、主线任务和每座学院的解锁状态。</span>
+          </li>
+        </ol>
+        <button class="primary-button wide-button" type="button" data-close-guide>知道了</button>
+      </div>
+    </dialog>
+
+    <dialog class="modal" data-certificate-modal>
+      <div class="modal-card certificate">
+        <button class="close-button" type="button" data-close-certificate>×</button>
+        <p class="eyebrow">Certificate Preview</p>
+        <h2>炼金大术士证书</h2>
+        <p>证书记载：魔法等级、使用工具、学院编号、J先生签名与学院印章。</p>
+        <div class="seal">J先生魔法学院</div>
+      </div>
+    </dialog>
+
+    <script src="/aiacademy/app.js?v=20260722-impeccable-scoreboard"></script>
+  </body>
+</html>

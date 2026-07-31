@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#fafafa" />
+    <meta name="robots" content="noindex" />
+    <title>生活相册 · 整理中</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        display: grid;
+        min-width: 320px;
+        min-height: 100svh;
+        margin: 0;
+        place-items: center;
+        padding: 24px;
+        background:
+          radial-gradient(circle at 50% 110%, rgba(122, 143, 255, 0.28), transparent 42%),
+          #fafafa;
+        color: #111318;
+        font-family: "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+      }
+
+      main {
+        width: min(100%, 520px);
+        text-align: center;
+      }
+
+      svg {
+        width: 58px;
+        height: 58px;
+        color: #6e87ff;
+      }
+
+      h1 {
+        margin: 24px 0 10px;
+        font-size: clamp(30px, 7vw, 46px);
+        letter-spacing: -0.04em;
+      }
+
+      p {
+        margin: 0;
+        color: #626773;
+        line-height: 1.7;
+      }
+
+      a {
+        display: inline-flex;
+        min-height: 44px;
+        align-items: center;
+        margin-top: 28px;
+        padding: 0 20px;
+        border: 1px solid rgba(17, 19, 24, 0.12);
+        border-radius: 999px;
+        color: inherit;
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      a:focus-visible {
+        outline: 3px solid rgba(110, 135, 255, 0.32);
+        outline-offset: 3px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <svg viewBox="0 0 32 32" aria-hidden="true">
+        <rect x="4.5" y="5.5" width="23" height="21" rx="3.5" fill="none" stroke="currentColor" stroke-width="1.8" />
+        <circle cx="12" cy="12" r="2" fill="none" stroke="currentColor" stroke-width="1.8" />
+        <path d="m7.5 23 6.5-7 4.5 4 3.5-4 5.5 6.5" fill="none" stroke="currentColor" stroke-width="1.8" />
+      </svg>
+      <h1>生活相册</h1>
+      <p>页面正在整理中，稍后再来看看。</p>
+      <a href="/">返回主站</a>
+    </main>
+  </body>
+</html>

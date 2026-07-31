@@ -1,82 +1,1301 @@
----
-import BaseLayout from '../layouts/BaseLayout.astro';
-import TopicCard from '../components/TopicCard.astro';
-import { sitePath, themePath, themes } from '../data/site';
----
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#fafafa" />
+    <meta
+      name="description"
+      content="J先生 AI 学习网站浅色入口选择器首页 Demo。"
+    />
+    <title>今天想探索什么？· J先生 AI 学习网站</title>
+    <script is:inline>
+      const requestedTheme = new URLSearchParams(window.location.search).get("theme");
+      const supportedThemes = new Set(["dark", "dark-black", "dark-reference"]);
+      const activeTheme = supportedThemes.has(requestedTheme) ? requestedTheme : "light";
+      document.documentElement.dataset.theme = activeTheme;
+      const themeColors = { dark: "#070912", "dark-black": "#050506", "dark-reference": "#1f1f1e" };
+      document.querySelector('meta[name="theme-color"]').content = themeColors[activeTheme] || "#fafafa";
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Noto+Sans+SC:wght@500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style is:inline>
+      :root {
+        --ink: #08090b;
+        --muted: #555963;
+        --card: rgba(252, 252, 252, 0.9);
+        --card-border: rgba(20, 22, 27, 0.1);
+        --focus: #6e87ff;
+        --font: "Manrope", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+      }
 
-<BaseLayout title="学问笔记｜J先生AI学习网站">
-  <div class="home-topbar" aria-label="首页快捷导航">
-    <span>首页</span>
-    <nav>
-      {themes.map((theme) => <a href={themePath(theme)}>{theme.shortLabel}</a>)}
-      <a href={sitePath('/topics/space')}>关于</a>
-    </nav>
-    <div class="site-auth-card home-login" data-site-auth>
-      <span data-site-auth-status>正在检查登录状态…</span>
-      <a href={sitePath('/topics/space/planning/todo')} data-site-auth-login>登录</a>
-      <button type="button" data-site-auth-sign-out hidden>退出登录</button>
-    </div>
-  </div>
+      * {
+        box-sizing: border-box;
+      }
 
-  <section class="hero-panel">
-    <div class="hero-copy">
-      <p class="eyebrow">J先生AI学习网站</p>
-      <h1>J先生的AI学习资料馆</h1>
-      <p class="lede">从知识到实践，从学习到应用。这里沉淀 AI 知识、实用工具、项目搭建和个人学习记录。</p>
-      <div class="hero-actions">
-        <a class="button primary" href={sitePath('/topics/courses/catalog')}>开始学习</a>
-        <a class="button secondary" href={sitePath('/topics/knowledge')}>浏览知识地图</a>
-      </div>
-      <dl class="hero-facts" aria-label="网站内容概况">
-        <div><dt>6</dt><dd>学习主题</dd></div>
-        <div><dt>3级</dt><dd>内容目录</dd></div>
-        <div><dt>持续</dt><dd>整理更新</dd></div>
-      </dl>
-      <nav class="hero-shortcuts" aria-label="重点内容快捷入口">
-        <a class="hero-shortcut" href={sitePath('/topics/space/planning/todo')}>
-          <span>个人待办事项</span>
-          <small>打开周计划与每日任务看板</small>
+      html {
+        min-width: 320px;
+        min-height: 100%;
+        background: #fafafa;
+      }
+
+      body {
+        min-width: 320px;
+        min-height: 100svh;
+        margin: 0;
+        overflow-x: hidden;
+        background: #fafafa;
+        color: var(--ink);
+        font-family: var(--font);
+        text-rendering: optimizeLegibility;
+      }
+
+      body::before {
+        position: fixed;
+        z-index: 0;
+        right: -10vw;
+        bottom: -18vh;
+        left: -10vw;
+        height: 104vh;
+        background:
+          radial-gradient(
+            ellipse 30% 60% at 50% 36%,
+            rgba(251, 253, 255, 0.98) 0%,
+            rgba(246, 250, 255, 0.92) 42%,
+            rgba(232, 241, 255, 0.5) 65%,
+            transparent 78%
+          ),
+          radial-gradient(
+            ellipse 42% 48% at 2% 100%,
+            rgba(255, 123, 226, 1) 0%,
+            rgba(224, 138, 247, 0.86) 43%,
+            transparent 76%
+          ),
+          radial-gradient(
+            ellipse 42% 48% at 98% 100%,
+            rgba(255, 124, 220, 1) 0%,
+            rgba(219, 137, 246, 0.86) 43%,
+            transparent 76%
+          ),
+          radial-gradient(
+            ellipse 52% 75% at 50% 91%,
+            rgba(91, 142, 255, 0.92) 0%,
+            rgba(113, 151, 255, 0.68) 42%,
+            transparent 74%
+          ),
+          radial-gradient(
+            ellipse 52% 78% at -2% 66%,
+            rgba(120, 170, 255, 0.76) 0%,
+            rgba(146, 181, 255, 0.44) 43%,
+            transparent 72%
+          ),
+          radial-gradient(
+            ellipse 52% 78% at 102% 66%,
+            rgba(120, 170, 255, 0.76) 0%,
+            rgba(146, 181, 255, 0.44) 43%,
+            transparent 72%
+          ),
+          radial-gradient(
+            ellipse 43% 58% at 2% 94%,
+            rgba(236, 142, 244, 0.95) 0%,
+            rgba(173, 148, 255, 0.76) 39%,
+            transparent 71%
+          ),
+          radial-gradient(
+            ellipse 43% 58% at 98% 94%,
+            rgba(242, 148, 235, 0.96) 0%,
+            rgba(166, 143, 255, 0.75) 39%,
+            transparent 71%
+          );
+        filter: blur(42px) saturate(108%);
+        content: "";
+        pointer-events: none;
+        transform: translateZ(0);
+      }
+
+      body::after {
+        position: fixed;
+        z-index: 0;
+        inset: 0;
+        opacity: 0.018;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.86' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        content: "";
+        pointer-events: none;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .space-brand {
+        display: none;
+      }
+
+      .page {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        min-height: 100svh;
+        flex-direction: column;
+        align-items: center;
+        padding: clamp(118px, 15.3vh, 148px) 24px 70px;
+      }
+
+      .mark-link {
+        display: block;
+        border-radius: 22px;
+        outline: none;
+        animation: enter-mark 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+
+      .mark-link:focus-visible {
+        box-shadow: 0 0 0 4px rgba(110, 135, 255, 0.22);
+      }
+
+      .brand-mark {
+        display: block;
+        width: clamp(54px, 4.3vw, 65px);
+        height: auto;
+        filter: drop-shadow(0 12px 21px rgba(125, 113, 255, 0.15));
+        transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      .mark-link:hover .brand-mark {
+        transform: rotate(-4deg) scale(1.055);
+      }
+
+      h1 {
+        margin: clamp(28px, 3.8vh, 37px) 0 0;
+        font-size: clamp(35px, 3.25vw, 50px);
+        font-weight: 800;
+        letter-spacing: -0.045em;
+        line-height: 1.08;
+        text-align: center;
+        animation: enter-title 0.7s 0.08s cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+
+      .choices {
+        display: grid;
+        width: min(800px, calc(100vw - 48px));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+        margin-top: clamp(34px, 4.2vh, 42px);
+      }
+
+      .choice {
+        position: relative;
+        display: flex;
+        min-height: clamp(116px, 13.1vh, 130px);
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        overflow: hidden;
+        border: 1px solid var(--card-border);
+        border-radius: 19px;
+        background: var(--card);
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.95) inset,
+          0 9px 24px rgba(35, 48, 78, 0.025);
+        outline: none;
+        backdrop-filter: blur(14px);
+        animation: enter-card 0.62s cubic-bezier(0.22, 1, 0.36, 1) both;
+        transition:
+          border-color 0.28s ease,
+          box-shadow 0.28s ease,
+          transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+          background 0.28s ease;
+      }
+
+      .choice--button {
+        width: 100%;
+        padding: 0;
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+      }
+
+      .choice:nth-child(1) {
+        animation-delay: 0.14s;
+      }
+
+      .choice:nth-child(2) {
+        animation-delay: 0.18s;
+      }
+
+      .choice:nth-child(3) {
+        animation-delay: 0.22s;
+      }
+
+      .choice:nth-child(4) {
+        animation-delay: 0.26s;
+      }
+
+      .choice:nth-child(5) {
+        animation-delay: 0.3s;
+      }
+
+      .choice:nth-child(6) {
+        animation-delay: 0.34s;
+      }
+
+      .choice:nth-child(7) {
+        animation-delay: 0.38s;
+      }
+
+      .choice:nth-child(8) {
+        animation-delay: 0.42s;
+      }
+
+      .choice::before {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        background:
+          radial-gradient(circle at 30% 0%, rgba(255, 99, 63, 0.09), transparent 38%),
+          radial-gradient(circle at 70% 100%, rgba(109, 127, 255, 0.13), transparent 44%);
+        content: "";
+        transition: opacity 0.28s ease;
+      }
+
+      .choice::after {
+        position: absolute;
+        right: 14px;
+        bottom: 12px;
+        color: rgba(58, 66, 91, 0);
+        content: "↗";
+        font-size: 13px;
+        font-weight: 700;
+        transform: translate(-4px, 4px);
+        transition: color 0.28s ease, transform 0.28s ease;
+      }
+
+      .choice:hover,
+      .choice:focus-visible {
+        border-color: rgba(102, 123, 220, 0.25);
+        background: rgba(255, 255, 255, 0.94);
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.95) inset,
+          0 18px 40px rgba(91, 108, 176, 0.13);
+        transform: translateY(-5px);
+      }
+
+      .choice:hover::before,
+      .choice:focus-visible::before {
+        opacity: 1;
+      }
+
+      .choice:hover::after,
+      .choice:focus-visible::after {
+        color: rgba(58, 66, 91, 0.65);
+        transform: translate(0, 0);
+      }
+
+      .choice:active {
+        transform: translateY(-1px) scale(0.985);
+      }
+
+      .choice svg {
+        position: relative;
+        z-index: 1;
+        width: 29px;
+        height: 29px;
+        overflow: visible;
+        stroke: var(--ink);
+        stroke-width: 2.15;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        fill: none;
+        transition: stroke 0.28s ease, transform 0.28s ease;
+      }
+
+      .choice:hover svg,
+      .choice:focus-visible svg {
+        stroke: #536edf;
+        transform: translateY(-1px) scale(1.05);
+      }
+
+      .choice__label {
+        position: relative;
+        z-index: 1;
+        font-size: clamp(15px, 1.32vw, 18px);
+        font-weight: 700;
+        letter-spacing: -0.025em;
+        line-height: 1.15;
+        text-align: center;
+      }
+
+      html[data-theme="dark"] {
+        --ink: #f7f8fc;
+        --muted: #a6acbd;
+        --card: rgba(15, 18, 29, 0.84);
+        --card-border: rgba(255, 255, 255, 0.13);
+        --focus: #91a4ff;
+        background: #070912;
+        color-scheme: dark;
+      }
+
+      html[data-theme="dark"] body {
+        background:
+          radial-gradient(circle at 50% 18%, rgba(28, 34, 56, 0.28), transparent 31%),
+          #070912;
+      }
+
+      html[data-theme="dark"] body::before {
+        background:
+          radial-gradient(
+            ellipse 31% 58% at 50% 34%,
+            rgba(8, 11, 20, 0.97) 0%,
+            rgba(11, 16, 30, 0.9) 43%,
+            rgba(16, 28, 56, 0.45) 67%,
+            transparent 79%
+          ),
+          radial-gradient(
+            ellipse 42% 48% at 2% 100%,
+            rgba(228, 53, 207, 0.92) 0%,
+            rgba(142, 66, 235, 0.72) 43%,
+            transparent 76%
+          ),
+          radial-gradient(
+            ellipse 42% 48% at 98% 100%,
+            rgba(238, 55, 196, 0.92) 0%,
+            rgba(132, 60, 229, 0.72) 43%,
+            transparent 76%
+          ),
+          radial-gradient(
+            ellipse 52% 75% at 50% 91%,
+            rgba(42, 91, 232, 0.94) 0%,
+            rgba(62, 88, 201, 0.73) 42%,
+            transparent 74%
+          ),
+          radial-gradient(
+            ellipse 52% 78% at -2% 66%,
+            rgba(35, 81, 190, 0.74) 0%,
+            rgba(48, 70, 156, 0.4) 43%,
+            transparent 72%
+          ),
+          radial-gradient(
+            ellipse 52% 78% at 102% 66%,
+            rgba(35, 81, 190, 0.74) 0%,
+            rgba(48, 70, 156, 0.4) 43%,
+            transparent 72%
+          );
+        filter: blur(46px) saturate(122%);
+      }
+
+      html[data-theme="dark"] body::after {
+        opacity: 0.035;
+        mix-blend-mode: soft-light;
+      }
+
+      html[data-theme="dark"] .brand-mark {
+        filter:
+          drop-shadow(0 13px 24px rgba(129, 75, 255, 0.3))
+          drop-shadow(0 0 30px rgba(244, 56, 151, 0.12));
+      }
+
+      html[data-theme="dark"] .choice {
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.06) inset,
+          0 20px 55px rgba(0, 0, 0, 0.12);
+      }
+
+      html[data-theme="dark"] .choice::before {
+        background:
+          radial-gradient(circle at 30% 0%, rgba(255, 66, 115, 0.16), transparent 40%),
+          radial-gradient(circle at 70% 100%, rgba(100, 124, 255, 0.24), transparent 46%);
+      }
+
+      html[data-theme="dark"] .choice:hover,
+      html[data-theme="dark"] .choice:focus-visible {
+        border-color: rgba(144, 162, 255, 0.42);
+        background: rgba(22, 26, 43, 0.94);
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.08) inset,
+          0 22px 46px rgba(0, 0, 0, 0.3),
+          0 0 0 1px rgba(112, 135, 255, 0.05);
+      }
+
+      html[data-theme="dark"] .choice:hover svg,
+      html[data-theme="dark"] .choice:focus-visible svg {
+        stroke: #9baaff;
+      }
+
+      html[data-theme="dark"] .choice:hover::after,
+      html[data-theme="dark"] .choice:focus-visible::after {
+        color: rgba(220, 225, 255, 0.72);
+      }
+
+      html[data-theme="dark-black"] {
+        --ink: #f3f3f5;
+        --muted: #9698a1;
+        --card: rgba(13, 14, 17, 0.9);
+        --card-border: rgba(255, 255, 255, 0.11);
+        --focus: #b1b3bd;
+        background: #050506;
+        color-scheme: dark;
+      }
+
+      html[data-theme="dark-black"] body {
+        background:
+          radial-gradient(circle at 50% 17%, rgba(34, 34, 39, 0.25), transparent 30%),
+          #050506;
+      }
+
+      html[data-theme="dark-black"] body::before {
+        background:
+          radial-gradient(
+            ellipse 32% 58% at 50% 34%,
+            rgba(5, 5, 6, 0.99) 0%,
+            rgba(7, 8, 10, 0.96) 44%,
+            rgba(18, 19, 23, 0.66) 68%,
+            transparent 80%
+          ),
+          radial-gradient(
+            ellipse 43% 48% at 2% 100%,
+            rgba(52, 35, 52, 0.78) 0%,
+            rgba(35, 29, 43, 0.58) 44%,
+            transparent 77%
+          ),
+          radial-gradient(
+            ellipse 43% 48% at 98% 100%,
+            rgba(50, 34, 48, 0.78) 0%,
+            rgba(34, 28, 41, 0.58) 44%,
+            transparent 77%
+          ),
+          radial-gradient(
+            ellipse 54% 76% at 50% 91%,
+            rgba(30, 31, 37, 0.96) 0%,
+            rgba(24, 26, 32, 0.82) 43%,
+            transparent 75%
+          ),
+          radial-gradient(
+            ellipse 54% 79% at -2% 66%,
+            rgba(25, 27, 33, 0.8) 0%,
+            rgba(18, 20, 25, 0.52) 44%,
+            transparent 73%
+          ),
+          radial-gradient(
+            ellipse 54% 79% at 102% 66%,
+            rgba(25, 27, 33, 0.8) 0%,
+            rgba(18, 20, 25, 0.52) 44%,
+            transparent 73%
+          );
+        filter: blur(46px) saturate(104%);
+      }
+
+      html[data-theme="dark-black"] body::after {
+        opacity: 0.04;
+        mix-blend-mode: soft-light;
+      }
+
+      html[data-theme="dark-black"] .brand-mark {
+        filter:
+          drop-shadow(0 13px 26px rgba(118, 79, 171, 0.22))
+          drop-shadow(0 0 28px rgba(235, 62, 137, 0.1));
+      }
+
+      html[data-theme="dark-black"] .choice {
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.045) inset,
+          0 22px 60px rgba(0, 0, 0, 0.2);
+      }
+
+      html[data-theme="dark-black"] .choice::before {
+        background:
+          radial-gradient(circle at 30% 0%, rgba(120, 86, 112, 0.13), transparent 40%),
+          radial-gradient(circle at 70% 100%, rgba(96, 99, 115, 0.16), transparent 46%);
+      }
+
+      html[data-theme="dark-black"] .choice:hover,
+      html[data-theme="dark-black"] .choice:focus-visible {
+        border-color: rgba(183, 185, 197, 0.28);
+        background: rgba(22, 23, 27, 0.96);
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.06) inset,
+          0 24px 48px rgba(0, 0, 0, 0.36),
+          0 0 0 1px rgba(190, 192, 202, 0.025);
+      }
+
+      html[data-theme="dark-black"] .choice:hover svg,
+      html[data-theme="dark-black"] .choice:focus-visible svg {
+        stroke: #c4c5cc;
+      }
+
+      html[data-theme="dark-black"] .choice:hover::after,
+      html[data-theme="dark-black"] .choice:focus-visible::after {
+        color: rgba(226, 226, 231, 0.68);
+      }
+
+      html[data-theme="dark-reference"] {
+        --ink: #f4f4f5;
+        --muted: #a9abb2;
+        --card: rgba(31, 31, 30, 0.98);
+        --card-border: rgba(255, 255, 255, 0.13);
+        --focus: #aab6ff;
+        background: #1f1f1e;
+        color-scheme: dark;
+      }
+
+      html[data-theme="dark-reference"] body {
+        background: #1f1f1e;
+      }
+
+      html[data-theme="dark-reference"] body::before {
+        right: -8vw;
+        bottom: -10vh;
+        left: -8vw;
+        height: 121vh;
+        background:
+          radial-gradient(
+            ellipse 38% 64% at 50% 28%,
+            rgba(31, 31, 30, 1) 0%,
+            rgba(31, 31, 30, 0.96) 45%,
+            rgba(30, 36, 43, 0.56) 67%,
+            transparent 81%
+          ),
+          radial-gradient(
+            ellipse 36% 52% at 10% 100%,
+            rgba(209, 46, 117, 1) 0%,
+            rgba(202, 120, 189, 0.96) 42%,
+            transparent 75%
+          ),
+          radial-gradient(
+            ellipse 36% 52% at 90% 100%,
+            rgba(210, 48, 119, 1) 0%,
+            rgba(200, 122, 193, 0.96) 42%,
+            transparent 75%
+          ),
+          radial-gradient(
+            ellipse 75% 70% at 50% 100%,
+            rgba(64, 84, 183, 1) 0%,
+            rgba(55, 83, 165, 0.9) 55%,
+            transparent 86%
+          ),
+          radial-gradient(
+            ellipse 110% 55% at 0% 75%,
+            rgba(72, 119, 224, 0.98) 0%,
+            rgba(63, 100, 170, 0.86) 52%,
+            transparent 86%
+          ),
+          radial-gradient(
+            ellipse 110% 55% at 100% 75%,
+            rgba(72, 119, 224, 0.98) 0%,
+            rgba(63, 100, 170, 0.86) 52%,
+            transparent 86%
+          );
+        filter: blur(48px) saturate(108%);
+      }
+
+      html[data-theme="dark-reference"] body::after {
+        opacity: 0.025;
+        mix-blend-mode: soft-light;
+      }
+
+      html[data-theme="dark-reference"] .brand-mark {
+        filter: none;
+      }
+
+      html[data-theme="dark-reference"] .space-brand {
+        position: fixed;
+        z-index: 4;
+        top: 18px;
+        left: 24px;
+        display: flex;
+        align-items: center;
+        gap: 17px;
+        border-radius: 14px;
+        color: #f2f2f3;
+        outline: none;
+        animation: enter-mark 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+
+      html[data-theme="dark-reference"] .space-brand:focus-visible {
+        box-shadow: 0 0 0 4px rgba(145, 164, 255, 0.24);
+      }
+
+      html[data-theme="dark-reference"] .space-brand__mark {
+        display: block;
+        width: 42px;
+        height: 42px;
+        transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      html[data-theme="dark-reference"] .space-brand:hover .space-brand__mark {
+        transform: rotate(-4deg) scale(1.055);
+      }
+
+      html[data-theme="dark-reference"] .space-brand__text {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: 0.015em;
+        line-height: 1;
+        white-space: nowrap;
+      }
+
+      html[data-theme="dark-reference"] h1 {
+        font-size: 0;
+        letter-spacing: -0.035em;
+      }
+
+      html[data-theme="dark-reference"] h1::after {
+        content: attr(data-reference-label);
+        font-size: 31px;
+        font-weight: 800;
+        line-height: 1.08;
+      }
+
+      html[data-theme="dark-reference"] .choice {
+        box-shadow: none;
+      }
+
+      html[data-theme="dark-reference"] .choice__label {
+        font-size: 0;
+      }
+
+      html[data-theme="dark-reference"] .choice__label::after {
+        content: attr(data-reference-label);
+        font-size: 20px;
+        font-weight: 700;
+        line-height: 1.15;
+      }
+
+      html[data-theme="dark-reference"] .choice::before {
+        background:
+          radial-gradient(circle at 30% 0%, rgba(255, 73, 128, 0.13), transparent 40%),
+          radial-gradient(circle at 70% 100%, rgba(101, 126, 255, 0.2), transparent 46%);
+      }
+
+      html[data-theme="dark-reference"] .choice:hover,
+      html[data-theme="dark-reference"] .choice:focus-visible {
+        border-color: rgba(158, 171, 255, 0.34);
+        background: rgba(32, 33, 36, 0.98);
+        box-shadow: 0 20px 42px rgba(8, 12, 23, 0.28);
+      }
+
+      html[data-theme="dark-reference"] .choice:hover svg,
+      html[data-theme="dark-reference"] .choice:focus-visible svg {
+        stroke: #aeb8ff;
+      }
+
+      @media (min-width: 761px) {
+        html[data-theme="dark-reference"] .page {
+          padding-top: clamp(90px, 12.2vh, 106px);
+          transform: translateX(-18px);
+        }
+
+        html[data-theme="dark-reference"] .brand-mark {
+          width: 52px;
+        }
+
+        html[data-theme="dark-reference"] h1 {
+          margin-top: 34px;
+        }
+
+        html[data-theme="dark-reference"] .choices {
+          width: min(880px, calc(100vw - 48px));
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 18px;
+          margin-top: 35px;
+        }
+
+        html[data-theme="dark-reference"] .choice {
+          min-height: 190px;
+          gap: 28px;
+          border-radius: 18px;
+        }
+
+        html[data-theme="dark-reference"] .choice svg {
+          width: 48px;
+          height: 48px;
+        }
+      }
+
+      .reference-pager {
+        position: fixed;
+        z-index: 3;
+        bottom: 22px;
+        left: 50%;
+        display: none;
+        align-items: center;
+        gap: 12px;
+        transform: translateX(-50%);
+      }
+
+      html[data-theme="dark-reference"] .reference-pager {
+        display: flex;
+        margin-left: -18px;
+      }
+
+      .reference-pager span {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: rgba(246, 247, 249, 0.9);
+      }
+
+      .reference-pager .is-active {
+        width: 22px;
+        background: #fff;
+      }
+
+      .reference-pager span:last-child {
+        background: rgba(201, 204, 186, 0.78);
+      }
+
+      .investment-overlay {
+        position: fixed;
+        z-index: 8;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        opacity: 0;
+        background: rgba(4, 6, 12, 0.64);
+        backdrop-filter: blur(16px);
+        transition: opacity 0.24s ease;
+      }
+
+      .investment-overlay[hidden] {
+        display: none;
+      }
+
+      .investment-overlay.is-open {
+        opacity: 1;
+      }
+
+      .investment-menu {
+        position: relative;
+        width: min(500px, 100%);
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 25px;
+        background:
+          radial-gradient(circle at 12% 0%, rgba(102, 124, 255, 0.13), transparent 40%),
+          radial-gradient(circle at 90% 100%, rgba(255, 74, 151, 0.1), transparent 40%),
+          rgba(22, 23, 27, 0.98);
+        box-shadow:
+          0 34px 90px rgba(0, 0, 0, 0.48),
+          0 1px 0 rgba(255, 255, 255, 0.06) inset;
+        padding: 30px;
+        color: #f6f6f7;
+        transform: translateY(16px) scale(0.975);
+        transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      .investment-overlay.is-open .investment-menu {
+        transform: translateY(0) scale(1);
+      }
+
+      .investment-menu__eyebrow {
+        margin: 0 0 7px;
+        color: #9da8ff;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .investment-menu h2 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 800;
+        letter-spacing: -0.035em;
+        line-height: 1.12;
+      }
+
+      .investment-menu__hint {
+        margin: 9px 0 22px;
+        color: #aeb1ba;
+        font-size: 14px;
+        line-height: 1.55;
+      }
+
+      .investment-menu__close {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        display: grid;
+        width: 36px;
+        height: 36px;
+        place-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.055);
+        color: #e8e9ed;
+        font: inherit;
+        cursor: pointer;
+        transition:
+          border-color 0.22s ease,
+          background 0.22s ease,
+          transform 0.22s ease;
+      }
+
+      .investment-menu__close:hover,
+      .investment-menu__close:focus-visible {
+        border-color: rgba(164, 177, 255, 0.4);
+        background: rgba(255, 255, 255, 0.1);
+        outline: none;
+        transform: rotate(4deg);
+      }
+
+      .investment-options {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .investment-option {
+        position: relative;
+        display: grid;
+        min-height: 152px;
+        align-content: space-between;
+        gap: 22px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 18px;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.045);
+        outline: none;
+        transition:
+          border-color 0.24s ease,
+          background 0.24s ease,
+          transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      .investment-option:hover,
+      .investment-option:focus-visible {
+        border-color: rgba(156, 171, 255, 0.4);
+        background: rgba(255, 255, 255, 0.085);
+        transform: translateY(-3px);
+      }
+
+      .investment-option svg {
+        width: 32px;
+        height: 32px;
+        fill: none;
+        stroke: #f0f1f5;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .investment-option strong {
+        display: block;
+        margin-bottom: 5px;
+        font-size: 18px;
+        font-weight: 800;
+      }
+
+      .investment-option small {
+        display: block;
+        color: #a8abb5;
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      .investment-option__arrow {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        color: rgba(233, 235, 241, 0.68);
+        font-size: 16px;
+        transition: transform 0.22s ease;
+      }
+
+      .investment-option:hover .investment-option__arrow,
+      .investment-option:focus-visible .investment-option__arrow {
+        transform: translate(2px, -2px);
+      }
+
+      body.investment-menu-open {
+        overflow: hidden;
+      }
+
+      @keyframes enter-mark {
+        from {
+          opacity: 0;
+          transform: translateY(-10px) scale(0.9);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @keyframes enter-title {
+        from {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes enter-card {
+        from {
+          opacity: 0;
+          transform: translateY(18px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @media (max-width: 760px) {
+        body::before {
+          right: -42vw;
+          bottom: -12vh;
+          left: -42vw;
+          height: 72vh;
+          filter: blur(32px) saturate(108%);
+        }
+
+        .page {
+          min-height: max(100svh, 820px);
+          justify-content: flex-start;
+          padding: 64px 14px 48px;
+        }
+
+        .brand-mark {
+          width: 51px;
+        }
+
+        h1 {
+          max-width: 340px;
+          margin-top: 25px;
+          font-size: clamp(31px, 9.2vw, 39px);
+          line-height: 1.13;
+        }
+
+        .choices {
+          width: min(100%, 480px);
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 11px;
+          margin-top: 34px;
+        }
+
+        .choice {
+          min-height: 129px;
+          gap: 16px;
+          border-radius: 16px;
+        }
+
+        .choice svg {
+          width: 27px;
+          height: 27px;
+        }
+
+        .choice__label {
+          max-width: 92%;
+          font-size: 14px;
+        }
+
+        html[data-theme="dark-reference"] .space-brand {
+          top: 14px;
+          left: 14px;
+          gap: 11px;
+        }
+
+        html[data-theme="dark-reference"] .space-brand__mark {
+          width: 32px;
+          height: 32px;
+        }
+
+        html[data-theme="dark-reference"] .space-brand__text {
+          font-size: 17px;
+        }
+
+        html[data-theme="dark-reference"] .page {
+          padding-top: 64px;
+        }
+
+        html[data-theme="dark-reference"] h1::after {
+          font-size: 29px;
+        }
+
+        html[data-theme="dark-reference"] .choices {
+          margin-top: 28px;
+        }
+
+        html[data-theme="dark-reference"] .choice {
+          gap: 18px;
+        }
+
+        html[data-theme="dark-reference"] .choice svg {
+          width: 36px;
+          height: 36px;
+        }
+
+        html[data-theme="dark-reference"] .choice__label::after {
+          font-size: 16px;
+        }
+
+        html[data-theme="dark-reference"] .reference-pager {
+          margin-left: 0;
+        }
+
+        .investment-overlay {
+          align-items: end;
+          padding: 14px;
+        }
+
+        .investment-menu {
+          border-radius: 22px;
+          padding: 26px 20px 20px;
+        }
+
+        .investment-menu h2 {
+          font-size: 25px;
+        }
+
+        .investment-options {
+          grid-template-columns: 1fr;
+        }
+
+        .investment-option {
+          min-height: 118px;
+        }
+
+      }
+
+      @media (max-width: 360px) {
+        .page {
+          min-height: 850px;
+          padding-inline: 10px;
+        }
+
+        .choices {
+          gap: 9px;
+        }
+
+        .choice {
+          min-height: 132px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="space-brand" href="/officialwebsite/topics/space/" aria-label="进入 J先生个人空间">
+      <svg class="space-brand__mark" viewBox="0 0 64 64" aria-hidden="true">
+        <defs>
+          <linearGradient id="space-brand-gradient" x1="0.12" y1="0.98" x2="0.85" y2="0.08">
+            <stop offset="0" stop-color="#6887ff" />
+            <stop offset="0.34" stop-color="#a961ff" />
+            <stop offset="0.61" stop-color="#ff3868" />
+            <stop offset="1" stop-color="#ff7200" />
+          </linearGradient>
+        </defs>
+        <path
+          fill="url(#space-brand-gradient)"
+          d="M0 64V22C0 9.85 9.85 0 22 0s22 9.85 22 22v3h2c9.94 0 18 8.06 18 18s-8.06 18-18 18H21.5C13.9 61 6.56 62.04 0 64Z"
+        />
+      </svg>
+      <span class="space-brand__text">J先生个人空间</span>
+    </a>
+
+    <main class="page">
+      <a class="mark-link" href="/" aria-label="返回 J先生 AI 学习网站首页">
+        <svg class="brand-mark" viewBox="0 0 64 64" role="img" aria-label="J先生 AI 学习网站">
+          <defs>
+            <linearGradient id="brand-gradient" x1="0.12" y1="0.98" x2="0.85" y2="0.08">
+              <stop offset="0" stop-color="#6887ff" />
+              <stop offset="0.34" stop-color="#a961ff" />
+              <stop offset="0.61" stop-color="#ff3868" />
+              <stop offset="1" stop-color="#ff7200" />
+            </linearGradient>
+          </defs>
+          <path
+            fill="url(#brand-gradient)"
+            d="M0 64V22C0 9.85 9.85 0 22 0s22 9.85 22 22v3h2c9.94 0 18 8.06 18 18s-8.06 18-18 18H21.5C13.9 61 6.56 62.04 0 64Z"
+          />
+        </svg>
+      </a>
+
+      <h1 data-reference-label="Welcome to My Space">Welcome to My Space</h1>
+
+      <nav class="choices" aria-label="个人空间主要入口">
+        <a class="choice" href="/officialwebsite/topics/space/planning/todo">
+          <svg viewBox="0 0 32 32" aria-hidden="true">
+            <rect x="5" y="6.5" width="22" height="21" rx="3.5" />
+            <path d="M10 4v5M22 4v5M5 12h22M10.5 19l3.2 3.2L21.5 14" />
+          </svg>
+          <span class="choice__label" data-reference-label="个人计划">个人计划</span>
         </a>
-        <a class="hero-shortcut" href="https://www.magicj.cn/officialwebsite/topics/applications/inspiration-station/theology?book=gen&chapter=1">
-          <span>微读圣经</span>
-          <small>直接进入创世记第 1 章阅读</small>
+
+        <a class="choice" href="/officialwebsite/topics/space/travel/photo-wall/">
+          <svg viewBox="0 0 32 32" aria-hidden="true">
+            <rect x="4.5" y="5.5" width="23" height="21" rx="3.5" />
+            <circle cx="12" cy="12" r="2" />
+            <path d="m7.5 23 6.5-7 4.5 4 3.5-4 5.5 6.5" />
+          </svg>
+          <span class="choice__label" data-reference-label="生活相册">生活相册</span>
         </a>
-        <a class="hero-shortcut" href="https://www.magicj.cn/officialwebsite/topics/space/investing/funds/#funds">
-          <span>基金看板</span>
-          <small>查看基金数据与投资看板</small>
+
+        <a class="choice" href="/officialwebsite/topics/applications/inspiration-station/theology?book=lev&amp;chapter=7&amp;verse=1">
+          <svg viewBox="0 0 32 32" aria-hidden="true">
+            <path d="M8 5.5h14.5a3.5 3.5 0 0 1 3.5 3.5v18H10a4 4 0 0 1-4-4V8a2.5 2.5 0 0 1 2-2.5Z" />
+            <path d="M10 27V9h16M18 12v9M13.5 16.5h9" />
+          </svg>
+          <span class="choice__label" data-reference-label="微读圣经">微读圣经</span>
         </a>
-        <a class="hero-shortcut" href={sitePath('/topics/ai-information/codex-reset-radar/')}>
-          <span>AI资讯</span>
-          <small>查看 Codex 额度重置信号看板</small>
+
+        <a class="choice" href="/officialwebsite/topics/ai-information/codex-reset-radar/">
+          <svg viewBox="0 0 32 32" aria-hidden="true">
+            <rect x="7" y="7" width="18" height="18" rx="3" />
+            <path d="M11 3v4M16 3v4M21 3v4M11 25v4M16 25v4M21 25v4M3 11h4M3 16h4M3 21h4M25 11h4M25 16h4M25 21h4" />
+            <path d="m11 21 3-10 3 10M12 18h4M21 11v10" />
+          </svg>
+          <span class="choice__label" data-reference-label="AI前沿资讯">AI前沿资讯</span>
         </a>
-        <a class="hero-shortcut" href={sitePath('/topics/tools/skills-mcp/skills-mcp-directory')}>
-          <span>实用 Skills/MCP 亲测大全</span>
-          <small>筛选亲测工具、MCP 与网站</small>
+
+        <a class="choice" href="/aiacademy/">
+          <svg viewBox="0 0 32 32" aria-hidden="true">
+            <path d="m3 12.5 13-6 13 6-13 6-13-6Z" />
+            <path d="M8 15.5v7c5 3.8 11 3.8 16 0v-7M28 13v8" />
+          </svg>
+          <span class="choice__label" data-reference-label="AI魔法学院">AI魔法学院</span>
         </a>
-        <a class="hero-shortcut" href={sitePath('/topics/space/investing/stock-tracking/')}>
-          <span>个股跟踪</span>
-          <small>查看 A 股持仓、市场事件与技术走势</small>
-        </a>
-        <a class="hero-shortcut" href={sitePath('/topics/applications/original-applications')}>
-          <span>自创工具</span>
-          <small>查看个人自创应用入口</small>
-        </a>
+
+        <button
+          class="choice choice--button"
+          type="button"
+          aria-haspopup="dialog"
+          aria-controls="investment-menu"
+          aria-expanded="false"
+          data-investment-trigger
+        >
+          <svg viewBox="0 0 32 32" aria-hidden="true">
+            <path d="m4 24 8-8 5.5 5.5L28 10" />
+            <path d="M21 10h7v7" />
+          </svg>
+          <span class="choice__label" data-reference-label="AI投资理财">AI投资理财</span>
+        </button>
       </nav>
-    </div>
-    <img class="hero-illustration" src={sitePath('/images/hero-learning-atlas.png')} alt="以书本和六个主题组成的AI学习地图插画" />
-  </section>
+    </main>
 
-  <section class="topics-section" aria-labelledby="topics-title">
-    <div class="section-heading">
-      <div>
-        <p class="eyebrow">学习地图</p>
-        <h2 id="topics-title">六大学习板块</h2>
-        <p>覆盖 AI 学习与实践的完整路径；首页仅展示二级入口。</p>
-      </div>
-      <a class="all-topics-link" href={sitePath('/topics/knowledge')}>查看全部板块</a>
+    <div class="investment-overlay" id="investment-menu" data-investment-menu hidden>
+      <section
+        class="investment-menu"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="investment-menu-title"
+        aria-describedby="investment-menu-hint"
+      >
+        <button class="investment-menu__close" type="button" aria-label="关闭投资看板选项" data-investment-close>
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </button>
+        <p class="investment-menu__eyebrow">Investment Hub</p>
+        <h2 id="investment-menu-title">选择投资看板</h2>
+        <p class="investment-menu__hint" id="investment-menu-hint">进入个股行情追踪，或查看基金数据与投资记录。</p>
+        <div class="investment-options">
+          <a class="investment-option" href="/officialwebsite/topics/space/investing/stock-tracking/">
+            <svg viewBox="0 0 32 32" aria-hidden="true">
+              <path d="M5 25V9M5 25h23" />
+              <path d="m9 21 5-6 4 3 8-10" />
+              <path d="M21 8h5v5" />
+            </svg>
+            <span>
+              <strong>个股看板</strong>
+              <small>A 股持仓、市场事件与技术走势</small>
+            </span>
+            <span class="investment-option__arrow" aria-hidden="true">↗</span>
+          </a>
+          <a class="investment-option" href="/officialwebsite/topics/space/investing/funds/#funds">
+            <svg viewBox="0 0 32 32" aria-hidden="true">
+              <path d="M5 12 16 6l11 6-11 6-11-6Z" />
+              <path d="M8 15v8M13 18v5M19 18v5M24 15v8M5 26h22" />
+            </svg>
+            <span>
+              <strong>基金看板</strong>
+              <small>基金数据、经理跟踪与投资笔记</small>
+            </span>
+            <span class="investment-option__arrow" aria-hidden="true">↗</span>
+          </a>
+        </div>
+      </section>
     </div>
-    <div class="topic-map" aria-label="六大学习板块">
-      {themes.map((theme, index) => <TopicCard theme={theme} index={index} />)}
+
+    <div class="reference-pager" aria-hidden="true">
+      <span></span>
+      <span></span>
+      <span class="is-active"></span>
+      <span></span>
     </div>
-  </section>
-</BaseLayout>
+    <script is:inline>
+      const investmentTrigger = document.querySelector("[data-investment-trigger]");
+      const investmentOverlay = document.querySelector("[data-investment-menu]");
+      const investmentClose = document.querySelector("[data-investment-close]");
+      let investmentCloseTimer;
+
+      const investmentFocusable = () =>
+        [...investmentOverlay.querySelectorAll('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])')];
+
+      const openInvestmentMenu = () => {
+        window.clearTimeout(investmentCloseTimer);
+        investmentOverlay.hidden = false;
+        investmentTrigger.setAttribute("aria-expanded", "true");
+        document.body.classList.add("investment-menu-open");
+        window.requestAnimationFrame(() => {
+          investmentOverlay.classList.add("is-open");
+          investmentFocusable()[0]?.focus();
+        });
+      };
+
+      const closeInvestmentMenu = () => {
+        investmentOverlay.classList.remove("is-open");
+        investmentTrigger.setAttribute("aria-expanded", "false");
+        document.body.classList.remove("investment-menu-open");
+        investmentCloseTimer = window.setTimeout(() => {
+          investmentOverlay.hidden = true;
+          investmentTrigger.focus();
+        }, 240);
+      };
+
+      investmentTrigger.addEventListener("click", openInvestmentMenu);
+      investmentClose.addEventListener("click", closeInvestmentMenu);
+      investmentOverlay.addEventListener("click", (event) => {
+        if (event.target === investmentOverlay) closeInvestmentMenu();
+      });
+      document.addEventListener("keydown", (event) => {
+        if (investmentOverlay.hidden) return;
+        if (event.key === "Escape") {
+          event.preventDefault();
+          closeInvestmentMenu();
+          return;
+        }
+        if (event.key !== "Tab") return;
+        const focusable = investmentFocusable();
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      });
+    </script>
+  </body>
+</html>
