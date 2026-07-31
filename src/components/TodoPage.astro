@@ -2382,20 +2382,20 @@ const navItems: NavItem[] = [
       html[data-todo-theme="dark"] .todo-shell {
         --surface-canvas: #0d1112;
         --surface-main: #111718;
-        --surface-sidebar: #12191a;
-        --surface-panel: #171d1e;
-        --surface-card: #1b2223;
-        --surface-item: #202829;
-        --surface-raised: #252e2f;
-        --surface-recessed: #101617;
-        --border-subtle: rgba(255, 255, 255, 0.07);
-        --border-bright: rgba(255, 255, 255, 0.11);
-        --text-primary: #f1f0eb;
-        --text-secondary: #b4b7b2;
-        --text-muted: #747b78;
-        --accent-copper: #c9874d;
-        --accent-copper-bright: #d99a5a;
-        --accent-copper-deep: #7b4b2c;
+        --surface-sidebar: #171f20;
+        --surface-panel: #1c2425;
+        --surface-card: #222b2d;
+        --surface-item: #293436;
+        --surface-raised: #323f41;
+        --surface-recessed: #151c1d;
+        --border-subtle: rgba(255, 255, 255, 0.1);
+        --border-bright: rgba(255, 255, 255, 0.16);
+        --text-primary: #fbf7f0;
+        --text-secondary: #d7d6d0;
+        --text-muted: #9ea5a1;
+        --accent-copper: #d39458;
+        --accent-copper-bright: #efb171;
+        --accent-copper-deep: #925b35;
         --radius-panel: 14px;
         --radius-card: 10px;
         --radius-item: 7px;
@@ -2413,13 +2413,18 @@ const navItems: NavItem[] = [
           0 1px 0 rgba(255, 220, 180, 0.12) inset,
           0 10px 24px rgba(0, 0, 0, 0.32),
           0 0 18px rgba(201, 135, 77, 0.07);
-        --category-all: #c9874d;
-        --category-work: #9b8bb0;
-        --category-study: #b66759;
-        --category-life: #718ea0;
-        --category-health: #788c62;
-        --category-other: #b18a4d;
-        --important-star: #c96f5c;
+        --category-all: #d39458;
+        --category-work: #b7a5c9;
+        --category-study: #d27b6b;
+        --category-life: #88aabd;
+        --category-health: #91aa75;
+        --category-other: #cfaa68;
+        --task-text-work: #d7c5ef;
+        --task-text-study: #ff9b88;
+        --task-text-life: #a8d5ee;
+        --task-text-health: #b6d995;
+        --task-text-other: #f4c972;
+        --important-star: #df806c;
         --important-text: var(--text-primary);
         --line: var(--border-subtle);
         --muted: var(--text-secondary);
@@ -2463,7 +2468,7 @@ const navItems: NavItem[] = [
         background:
           radial-gradient(circle at 12% 3%, rgba(201, 135, 77, 0.055), transparent 12rem),
           repeating-linear-gradient(30deg, rgba(255, 255, 255, 0.014) 0 1px, transparent 1px 11px),
-          linear-gradient(160deg, #141c1d 0%, var(--surface-sidebar) 55%, #0f1516 100%);
+          linear-gradient(160deg, #1b2425 0%, var(--surface-sidebar) 55%, #131a1b 100%);
         color: var(--text-primary);
         box-shadow:
           0 1px 0 rgba(255, 255, 255, 0.045) inset,
@@ -3077,13 +3082,37 @@ const navItems: NavItem[] = [
         font-weight: 650;
       }
 
+      html[data-todo-theme="dark"] .todo-day-column .todo-item-title {
+        font-weight: 700;
+      }
+
+      html[data-todo-theme="dark"] .todo-day-column .todo-item-title.todo-category-title-work {
+        color: var(--task-text-work);
+      }
+
+      html[data-todo-theme="dark"] .todo-day-column .todo-item-title.todo-category-title-study {
+        color: var(--task-text-study);
+      }
+
+      html[data-todo-theme="dark"] .todo-day-column .todo-item-title.todo-category-title-life {
+        color: var(--task-text-life);
+      }
+
+      html[data-todo-theme="dark"] .todo-day-column .todo-item-title.todo-category-title-health {
+        color: var(--task-text-health);
+      }
+
+      html[data-todo-theme="dark"] .todo-day-column .todo-item-title.todo-category-title-other {
+        color: var(--task-text-other);
+      }
+
       html[data-todo-theme="dark"] .todo-item-note,
       html[data-todo-theme="dark"] .todo-empty-day {
         color: var(--text-muted);
       }
 
       html[data-todo-theme="dark"] .todo-item.is-completed .todo-item-title {
-        opacity: 0.62;
+        opacity: 0.84;
       }
 
       html[data-todo-theme="dark"] .todo-item-actions button {
