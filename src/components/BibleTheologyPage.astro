@@ -484,8 +484,20 @@ const hymnCards = [
                 <option value="2">2×</option>
                 <option value="3">3×</option>
               </select>
-              <button type="button" data-action="read-chapter" aria-pressed="false">朗读本章</button>
-              <button class="bible-speech-toggle" type="button" data-action="toggle-speech-pause" aria-label="暂停朗读" aria-pressed="false" title="暂停朗读" disabled>暂停</button>
+              <button class="bible-speech-icon bible-speech-start" type="button" data-action="read-chapter" aria-label="朗读本章" aria-pressed="false" title="朗读本章">
+                <svg class="bible-speech-control-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M5 10v4h3l4 3V7l-4 3H5Z" />
+                  <path d="M15 9a4 4 0 0 1 0 6M17.5 6.5a7.5 7.5 0 0 1 0 11" />
+                </svg>
+              </button>
+              <button class="bible-speech-icon bible-speech-toggle" type="button" data-action="toggle-speech-pause" data-speech-state="playing" aria-label="暂停朗读" aria-pressed="false" title="暂停朗读" disabled>
+                <svg class="bible-speech-control-icon" data-speech-icon="pause" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M8 6v12M16 6v12" />
+                </svg>
+                <svg class="bible-speech-control-icon" data-speech-icon="resume" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m8 5 11 7-11 7Z" />
+                </svg>
+              </button>
               <button class="bible-speech-icon" type="button" data-action="replay-chapter" aria-label="重新播放本章" title="重新播放本章" disabled>↻</button>
               <button class="bible-speech-icon" type="button" data-action="stop-reading" aria-label="停止朗读" title="停止朗读" disabled>■</button>
             </div>
@@ -1625,14 +1637,42 @@ const hymnCards = [
     padding-right: 0.35rem;
   }
 
-  .bible-reading-actions .bible-speech-toggle {
-    min-width: 3.55rem;
-  }
-
   .bible-reading-actions .bible-speech-icon {
-    width: 2.35rem;
+    width: 2.75rem;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
     padding: 0;
     font-size: 1rem;
+  }
+
+  .bible-speech-control-icon {
+    width: 1.15rem;
+    height: 1.15rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.9;
+  }
+
+  .bible-speech-toggle [data-speech-icon="resume"] {
+    display: none;
+  }
+
+  .bible-speech-toggle[data-speech-state="paused"] [data-speech-icon="pause"] {
+    display: none;
+  }
+
+  .bible-speech-toggle[data-speech-state="paused"] [data-speech-icon="resume"] {
+    display: block;
+  }
+
+  .bible-speech-start[aria-pressed="true"] {
+    border-color: #a77a25;
+    background: #fbecd0;
+    color: #6c4714;
   }
 
   .bible-reading-actions button:disabled {
@@ -3174,10 +3214,6 @@ const hymnCards = [
       padding: 0.8rem 0.82rem 1.2rem;
     }
 
-    .bible-app.is-direct-reader .bible-stage {
-      display: none;
-    }
-
     .bible-app.is-direct-reader .bible-reader-section {
       padding-top: 0;
     }
@@ -3349,7 +3385,8 @@ const hymnCards = [
     }
 
     .bible-reading-actions .bible-speech-icon {
-      width: 2rem;
+      width: 2.75rem;
+      min-height: 2.75rem;
     }
 
     .bible-login-account,

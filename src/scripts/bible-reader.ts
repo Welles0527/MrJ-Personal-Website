@@ -1436,9 +1436,11 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     const isActive = speechState !== 'idle';
     const isPaused = speechState === 'paused';
     const pauseActionLabel = isPaused ? '继续朗读' : '暂停朗读';
-    readChapterButton.textContent = isPaused ? '已暂停' : isActive ? '正在朗读' : '朗读本章';
+    const readActionLabel = isActive ? '重新朗读本章' : '朗读本章';
+    readChapterButton.setAttribute('aria-label', readActionLabel);
+    readChapterButton.setAttribute('title', readActionLabel);
     readChapterButton.setAttribute('aria-pressed', String(isActive));
-    pauseReadingButton.textContent = isPaused ? '继续' : '暂停';
+    pauseReadingButton.dataset.speechState = isPaused ? 'paused' : 'playing';
     pauseReadingButton.setAttribute('aria-label', pauseActionLabel);
     pauseReadingButton.setAttribute('title', pauseActionLabel);
     pauseReadingButton.setAttribute('aria-pressed', String(isPaused));
