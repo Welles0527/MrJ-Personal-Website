@@ -328,8 +328,6 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   const cloudLoginButton = root.querySelector<HTMLButtonElement>('[data-action="cloud-login"]');
   const readChapterButton = get<HTMLButtonElement>('[data-action="read-chapter"]');
   const pauseReadingButton = get<HTMLButtonElement>('[data-action="toggle-speech-pause"]');
-  const replayChapterButton = get<HTMLButtonElement>('[data-action="replay-chapter"]');
-  const stopReadingButton = get<HTMLButtonElement>('[data-action="stop-reading"]');
   const speechRateSelect = get<HTMLSelectElement>('[data-speech-rate]');
   const loginAccount = root.querySelector<HTMLElement>('[data-login-account]');
   const readingSyncStatus = root.querySelector<HTMLElement>('[data-reading-sync-status]');
@@ -396,7 +394,6 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   let activeAudioUrl: string | null = null;
   let activeSpeechController: AbortController | null = null;
   let speechRequestToken = 0;
-  let lastSpeechText = '';
   let speechState: 'idle' | 'playing' | 'paused' = 'idle';
   let activeBookStatusSlug: string | null = null;
   let pendingBookSlug: string | null = null;
@@ -634,7 +631,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     const nextBook = bookBySlug(bookSlug);
     if (!nextBook) return;
     const lastPosition = state.lastRead.book === nextBook.slug ? state.lastRead : null;
-    stopSpeech(true);
+    stopSpeech();
     currentBook = nextBook.slug;
     currentChapter = Math.min(Math.max(lastPosition?.chapter ?? 1, 1), nextBook.chapters);
     selectedTestament = nextBook.testament;
@@ -1335,7 +1332,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   const gotoReference = (book: string, chapter: number, verse?: number) => {
     const nextBook = bookBySlug(book);
     if (!nextBook) return;
-    stopSpeech(true);
+    stopSpeech();
     currentBook = book;
     currentChapter = Math.min(Math.max(chapter, 1), nextBook.chapters);
     selectedTestament = nextBook.testament;
@@ -1436,7 +1433,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     const isActive = speechState !== 'idle';
     const isPaused = speechState === 'paused';
     const pauseActionLabel = isPaused ? '继续朗读' : '暂停朗读';
-    const readActionLabel = isActive ? '重新朗读本章' : '朗读本章';
+    const readActionLabel = isActive ? '重新从未读处朗读本章' : '从未读处朗读本章';
     readChapterButton.setAttribute('aria-label', readActionLabel);
     readChapterButton.setAttribute('title', readActionLabel);
     readChapterButton.setAttribute('aria-pressed', String(isActive));
@@ -1445,8 +1442,6 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     pauseReadingButton.setAttribute('title', pauseActionLabel);
     pauseReadingButton.setAttribute('aria-pressed', String(isPaused));
     pauseReadingButton.disabled = !isActive;
-    replayChapterButton.disabled = !lastSpeechText;
-    stopReadingButton.disabled = !isActive;
   };
 
   const setSpeechState = (nextState: typeof speechState) => {
@@ -1467,12 +1462,11 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     }
   };
 
-  const stopSpeech = (clearReplay = false) => {
+  const stopSpeech = () => {
     speechRequestToken += 1;
     activeSpeechController?.abort();
     activeSpeechController = null;
     releaseActiveAudio();
-    if (clearReplay) lastSpeechText = '';
     setSpeechState('idle');
   };
 
@@ -1643,7 +1637,6 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
 
   const speak = (text: string) => {
     stopSpeech();
-    lastSpeechText = text;
     const requestToken = speechRequestToken;
     const segments = splitSpeechText(text);
     if (!segments.length) {
@@ -1947,7 +1940,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     }
     if (trigger.dataset.book) handleBookCardClick(trigger.dataset.book);
     if (trigger.dataset.chapter) {
-      stopSpeech(true);
+      stopSpeech();
       currentChapter = Number(trigger.dataset.chapter);
       renderAll(1);
     }
@@ -2019,16 +2012,16 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     if (trigger.dataset.action === 'read-chapter') {
       const sample = currentSample();
       const book = sample ? bookBySlug(sample.book) : undefined;
-      if (sample) void speak(`${book?.title || sample.title}，第${sample.chapter}章。${sample.verses.join('')}`);
+      if (sample) {
+        const firstUnreadIndex = sample.verses.findIndex((_, index) => !isReadVerse(sample.book, sample.chapter, index + 1));
+        const startIndex = firstUnreadIndex >= 0 ? firstUnreadIndex : 0;
+        const startCue = startIndex > 0 ? `从第${startIndex + 1}节开始。` : '';
+        void speak(`${book?.title || sample.title}，第${sample.chapter}章。${startCue}${sample.verses.slice(startIndex).join('')}`);
+      }
       else notify('该章正文暂未导入，无法朗读。');
     }
-    if (trigger.dataset.action === 'replay-chapter' && lastSpeechText) void speak(lastSpeechText);
     if (trigger.dataset.action === 'toggle-speech-pause') void toggleSpeechPause();
     if (trigger.dataset.action === 'resume-reading') resumeSelectedBook();
-    if (trigger.dataset.action === 'stop-reading') {
-      stopSpeech();
-      notify('已停止朗读。');
-    }
     const verse = Number(trigger.dataset.verse || '');
     if (verse && trigger.dataset.action === 'toggle-bookmark') toggleBookmark(verse);
     if (verse && trigger.dataset.action === 'toggle-read-verse') void toggleReadVerse(verse, trigger);

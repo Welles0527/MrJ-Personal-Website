@@ -498,8 +498,6 @@ const hymnCards = [
                   <path d="m8 5 11 7-11 7Z" />
                 </svg>
               </button>
-              <button class="bible-speech-icon" type="button" data-action="replay-chapter" aria-label="重新播放本章" title="重新播放本章" disabled>↻</button>
-              <button class="bible-speech-icon" type="button" data-action="stop-reading" aria-label="停止朗读" title="停止朗读" disabled>■</button>
             </div>
             <span class="bible-login-account" data-login-account hidden></span>
             <span class="bible-reading-sync-status" data-reading-sync-status aria-live="polite"></span>
@@ -1638,6 +1636,7 @@ const hymnCards = [
   }
 
   .bible-reading-actions .bible-speech-icon {
+    display: inline-flex;
     width: 2.75rem;
     min-width: 2.75rem;
     min-height: 2.75rem;
