@@ -41,6 +41,7 @@ const baseSongs = (worshipCatalog.length ? worshipCatalog : featuredSongs).map(s
 }));
 let customSongs = [];
 let categoryOverrides = {};
+let lyricsOverrides = {};
 let deletedCatalogKeys = new Set();
 let songs = [...baseSongs];
 const sourceMap = worshipSources;
@@ -51,15 +52,101 @@ let selectedQueueKeys = new Set();
 let batchPlaybackKeys = [];
 let youtubePlaylistEntries = [];
 let youtubeAdvanceFallbackTimer = 0;
+let youtubeLoadGeneration = 0;
+let youtubeReadyGeneration = 0;
+let requestedYoutubeId = "";
+let requestedYoutubeConfirmed = false;
 const $ = selector => document.querySelector(selector);
 const coverClass = song => `cover-${song.cover || "sun"}`;
 const isCurrent = song => state.current?.title === song.title && state.current?.artist === song.artist;
 const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[character]));
 const resolveSongSource = song => song?.source || sourceMap[`${song?.artist || ""}::${song?.title || ""}`] || {};
+const getSongLyrics = song => String(lyricsOverrides[songKey(song)] || song?.lyrics || "").trim();
 let editingCustomSongId = null;
 let editingCategorySongKey = null;
 let songEditorReturnView = "mine";
 document.documentElement.dataset.worshipAppVersion = "content-hashed-assets-v1";
+
+function getFallbackArtwork(song) {
+  const feature = $(".feature");
+  const options = [
+    feature?.dataset.fallbackAlbum,
+    feature?.dataset.fallbackBand,
+    feature?.dataset.fallbackQuiet,
+    feature?.dataset.fallbackVideo,
+  ].filter(Boolean);
+  const seed = `${song?.artist || ""}${song?.title || ""}`;
+  const index = [...seed].reduce((total, character) => total + character.codePointAt(0), 0) % Math.max(options.length, 1);
+  return options[index] || "";
+}
+
+function getSongArtwork(song) {
+  const source = resolveSongSource(song);
+  const fallback = getFallbackArtwork(song);
+  if (source.youtubeId) {
+    return {
+      cover: `https://i.ytimg.com/vi/${encodeURIComponent(source.youtubeId)}/hqdefault.jpg`,
+      backdrop: `https://i.ytimg.com/vi/${encodeURIComponent(source.youtubeId)}/maxresdefault.jpg`,
+      fallback,
+    };
+  }
+  return { cover: fallback, backdrop: fallback, fallback };
+}
+
+function setImageSource(node, source, fallback) {
+  if (!node) return;
+  node.onerror = source !== fallback && fallback
+    ? () => {
+      node.onerror = null;
+      node.src = fallback;
+    }
+    : null;
+  node.src = source || fallback || "";
+}
+
+function renderLyrics(song) {
+  const lyrics = getSongLyrics(song);
+  const dialogLyrics = $("#dialogLyrics");
+  if (dialogLyrics) {
+    dialogLyrics.textContent = lyrics || "这首歌暂未收录授权歌词。";
+    dialogLyrics.classList.toggle("is-empty", !lyrics);
+  }
+  const editLabel = lyrics ? "编辑歌词" : "补充歌词";
+  if ($("#editLyricsButton")) $("#editLyricsButton").textContent = editLabel;
+}
+
+function updateFeatureSong(song) {
+  const artwork = getSongArtwork(song);
+  setImageSource($("#featureArt"), artwork.backdrop, artwork.cover || artwork.fallback);
+  setImageSource($("#featureAlbumImage"), artwork.cover, artwork.fallback);
+  setImageSource($("#queueCoverImage"), artwork.cover, artwork.fallback);
+  if ($("#featureAlbumImage")) $("#featureAlbumImage").alt = `${song.title}歌曲图片`;
+  if ($("#queueCoverImage")) $("#queueCoverImage").alt = `${song.title} · ${song.artist}封面`;
+  const playerShell = $("#mediaPlayer")?.closest(".media-player-shell");
+  if (playerShell) playerShell.style.setProperty("--video-poster", `url("${artwork.cover || artwork.fallback}")`);
+  if ($("#playerPrompt strong")) $("#playerPrompt strong").textContent = song.title;
+  if ($("#playerPrompt small")) $("#playerPrompt small").textContent = song.artist;
+  $("#featureAlbumBadge").textContent = song.artist;
+  $("#featureHeroTitle").textContent = song.title;
+  $("#featureHeroTitle").dataset.play = song.title;
+  $("#featureHeroTitle").dataset.artist = song.artist;
+  $("#featureHeroArtist").textContent = song.artist;
+  $("#featureHeroArtist").dataset.artistFilter = song.artist;
+  $("#featureHeroDescription").textContent = [song.album, ...(song.moods || [])].filter(Boolean).join(" · ");
+  $("#featureReason").textContent = song.reason || song.theme || "收录于你的敬拜音乐歌单";
+  $("#featureTime").textContent = `00:00 / ${song.duration || "--:--"}`;
+  document.querySelectorAll(".feature-controls [data-play]").forEach(node => {
+    node.dataset.play = song.title;
+    node.dataset.artist = song.artist;
+  });
+  document.querySelectorAll(".player-cover,.now-card .cover").forEach(node => {
+    node.style.backgroundImage = artwork.cover
+      ? `linear-gradient(145deg, rgba(17, 30, 32, 0.08), rgba(17, 30, 32, 0.34)), url("${artwork.cover}")`
+      : "";
+    node.classList.toggle("has-artwork", Boolean(artwork.cover));
+  });
+  renderLyrics(song);
+}
 
 function extractPlayableSource(sourceUrl) {
   try {
@@ -114,7 +201,12 @@ async function saveLibrarySettings() {
       .map(([key, moods]) => [key, normalizeCategoryMoods(moods)])
       .filter(([, moods]) => moods.length),
   );
-  await cloudStore.save("librarySettings", { categories, deleted: [...deletedCatalogKeys] });
+  const lyrics = Object.fromEntries(
+    Object.entries(lyricsOverrides)
+      .map(([key, value]) => [key, String(value || "").trim()])
+      .filter(([, value]) => value),
+  );
+  await cloudStore.save("librarySettings", { categories, lyrics, deleted: [...deletedCatalogKeys] });
 }
 
 async function savePlaylist() {
@@ -326,6 +418,7 @@ function setPlaybackState(playing) {
     return;
   }
   state.playing = nextState;
+  if ($("#featureKicker")) $("#featureKicker").textContent = state.playing ? "正在播放" : "已暂停";
   setProgress(state.playing ? 47 : 0);
   updatePlayIndicators();
 }
@@ -373,6 +466,7 @@ function updateCurrentSong(song, { recordRecent = true, render = true } = {}) {
   }
   $(".mini-heart").dataset.favorite = song.title;
   $("#dialogSong").textContent = song.title; $("#dialogArtist").textContent = song.artist;
+  updateFeatureSong(song);
   document.querySelectorAll(".player-cover,.now-card .cover").forEach(node => {
     node.className = `cover ${node.classList.contains("player-cover") ? "player-cover " : ""}${coverClass(song)}`;
     node.textContent = "";
@@ -384,8 +478,13 @@ function updateCurrentSong(song, { recordRecent = true, render = true } = {}) {
   }
 }
 
-function syncSongFromEmbeddedPlaylist(videoId) {
-  if (!videoId || !youtubePlaylistEntries.length) return;
+function syncSongFromEmbeddedPlaylist(videoId, playerState) {
+  if (!videoId || !youtubePlaylistEntries.length || youtubeReadyGeneration !== youtubeLoadGeneration) return;
+  if (requestedYoutubeId && !requestedYoutubeConfirmed) {
+    if (videoId === requestedYoutubeId) requestedYoutubeConfirmed = true;
+    return;
+  }
+  if (playerState !== 1 && playerState !== 3) return;
   const currentIndex = youtubePlaylistEntries.findIndex(entry => songKey(entry.song) === songKey(state.current));
   const laterMatch = youtubePlaylistEntries.findIndex((entry, index) => index > currentIndex && entry.youtubeId === videoId);
   const match = laterMatch >= 0
@@ -425,8 +524,8 @@ window.addEventListener("message", event => {
   if (typeof payload === "string") {
     try { payload = JSON.parse(payload); } catch { return; }
   }
-  syncSongFromEmbeddedPlaylist(readPlayerVideoId(payload));
   const playerState = readPlayerState(payload);
+  syncSongFromEmbeddedPlaylist(readPlayerVideoId(payload), playerState);
   if (playerState === 1 || playerState === 3) {
     window.clearTimeout(youtubeAdvanceFallbackTimer);
     setPlaybackState(true);
@@ -454,6 +553,7 @@ window.addEventListener("message", event => {
 });
 
 $("#mediaPlayer").addEventListener("load", () => {
+  youtubeReadyGeneration = Number($("#mediaPlayer").dataset.loadGeneration || 0);
   [0, 250, 800].forEach(delay => window.setTimeout(sendYouTubeListening, delay));
 });
 window.addEventListener("pageshow", () => window.setTimeout(sendYouTubeListening, 100));
@@ -468,27 +568,38 @@ function playSong(title, artist, { preserveBatch = false } = {}) {
   const source = resolveSongSource(activeSong);
   const mediaPlayer = $("#mediaPlayer");
   const playerShell = mediaPlayer.closest(".media-player-shell");
+  youtubeLoadGeneration += 1;
+  youtubeReadyGeneration = 0;
+  mediaPlayer.dataset.loadGeneration = String(youtubeLoadGeneration);
   if (source.youtubeId) {
     youtubePlaylistEntries = buildYouTubePlaylistEntries(activeSong);
-    const remainingIds = youtubePlaylistEntries.slice(1).map(entry => encodeURIComponent(entry.youtubeId));
-    const playlistParameter = remainingIds.length ? `&playlist=${remainingIds.join(",")}` : "";
+    const playlistIds = youtubePlaylistEntries.map(entry => encodeURIComponent(entry.youtubeId));
+    const playlistParameter = playlistIds.length > 1 ? `&playlist=${playlistIds.join(",")}&index=0` : "";
+    requestedYoutubeId = String(source.youtubeId);
+    requestedYoutubeConfirmed = false;
     mediaPlayer.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(source.youtubeId)}?autoplay=1&rel=0&playsinline=1&enablejsapi=1&origin=${encodeURIComponent(location.origin)}${playlistParameter}`;
     playerShell.classList.add("is-playing");
     $("#sourceLink").href = `https://www.youtube.com/watch?v=${source.youtubeId}`;
     $("#playerSourceLabel").textContent = "YouTube";
   } else if (source.bvid) {
     youtubePlaylistEntries = [];
+    requestedYoutubeId = "";
+    requestedYoutubeConfirmed = false;
     mediaPlayer.src = `https://player.bilibili.com/player.html?bvid=${encodeURIComponent(source.bvid)}&page=1&autoplay=1&high_quality=1&danmaku=0`;
     playerShell.classList.add("is-playing");
     $("#sourceLink").href = `https://www.bilibili.com/video/${source.bvid}/`;
     $("#playerSourceLabel").textContent = "B站";
   } else {
     youtubePlaylistEntries = [];
+    requestedYoutubeId = "";
+    requestedYoutubeConfirmed = false;
     mediaPlayer.removeAttribute("src");
     playerShell.classList.remove("is-playing");
     $("#sourceLink").href = song.sourceUrl || `https://www.youtube.com/results?search_query=${encodeURIComponent(`${song.artist} ${song.title}`)}`;
   }
-  state.playing = Boolean(source.youtubeId || source.bvid); setProgress(state.playing ? 47 : 0); renderSongs(); renderQueue(); updatePlayIndicators();
+  state.playing = Boolean(source.youtubeId || source.bvid);
+  if ($("#featureKicker")) $("#featureKicker").textContent = state.playing ? "正在播放" : "等待播放";
+  setProgress(state.playing ? 47 : 0); renderSongs(); renderQueue(); updatePlayIndicators();
 }
 
 function togglePlayback() {
@@ -521,8 +632,12 @@ async function loadSavedState() {
   categoryOverrides = savedLibrarySettings?.categories && typeof savedLibrarySettings.categories === "object"
     ? savedLibrarySettings.categories
     : {};
+  lyricsOverrides = savedLibrarySettings?.lyrics && typeof savedLibrarySettings.lyrics === "object"
+    ? savedLibrarySettings.lyrics
+    : {};
   deletedCatalogKeys = new Set(Array.isArray(savedLibrarySettings?.deleted) ? savedLibrarySettings.deleted : []);
   rebuildSongs();
+  if (state.current) updateCurrentSong(state.current, { recordRecent: false, render: false });
   if (Array.isArray(savedPlaylist)) {
     const restoredQueue = savedPlaylist
       .map(key => songs.find(song => songKey(song) === key))
@@ -605,8 +720,10 @@ async function submitSongForm(event) {
 async function deleteCustomSong(id) {
   const song = customSongs.find(item => item.id === id);
   if (!song || !window.confirm(`确定从“我的歌曲”中删除《${song.title}》吗？`)) return;
+  const deletingKey = songKey(song);
   const deletingCurrent = state.current?.id === id;
   customSongs = customSongs.filter(item => item.id !== id);
+  delete lyricsOverrides[deletingKey];
   rebuildSongs();
   for (let index = queue.length - 1; index >= 0; index -= 1) if (queue[index].id === id) queue.splice(index, 1);
   if (deletingCurrent) {
@@ -615,6 +732,7 @@ async function deleteCustomSong(id) {
     $("#mediaPlayer").closest(".media-player-shell").classList.remove("is-playing");
   }
   await saveCustomSongs();
+  await saveLibrarySettings();
   renderSongs();
   renderQueue();
 }
@@ -658,6 +776,37 @@ async function submitCategoryForm(event) {
   renderQueue();
 }
 
+function setLyricsEditing(editing) {
+  $("#lyricsForm").hidden = !editing;
+  $("#dialogLyrics").hidden = editing;
+  $(".dialog-lyrics-actions").hidden = editing;
+  if (editing) {
+    $("#lyricsInput").value = getSongLyrics(state.current);
+    window.setTimeout(() => $("#lyricsInput").focus(), 0);
+  }
+}
+
+function openLyricsDialog(editing = false) {
+  if (!state.current) return;
+  $("#dialogSong").textContent = state.current.title;
+  $("#dialogArtist").textContent = state.current.artist;
+  renderLyrics(state.current);
+  setLyricsEditing(editing);
+  if (!$("#lyricsDialog").open) $("#lyricsDialog").showModal();
+}
+
+async function submitLyricsForm(event) {
+  event.preventDefault();
+  if (!state.current) return;
+  const key = songKey(state.current);
+  const lyrics = $("#lyricsInput").value.replace(/\r\n/g, "\n").trim();
+  if (lyrics) lyricsOverrides[key] = lyrics;
+  else delete lyricsOverrides[key];
+  await saveLibrarySettings();
+  renderLyrics(state.current);
+  setLyricsEditing(false);
+}
+
 async function deleteLibrarySong(key) {
   const song = songs.find(item => songKey(item) === key);
   if (!song || !window.confirm(`确定从“全部歌单”中删除《${song.title}》吗？`)) return;
@@ -668,8 +817,9 @@ async function deleteLibrarySong(key) {
   } else {
     deletedCatalogKeys.add(key);
     delete categoryOverrides[key];
-    await saveLibrarySettings();
   }
+  delete lyricsOverrides[key];
+  await saveLibrarySettings();
   rebuildSongs();
   if (deletingCurrent) {
     state.playing = false;
@@ -831,7 +981,15 @@ $("#categoryForm").addEventListener("submit", submitCategoryForm);
 $("#closeCategoryDialog").addEventListener("click", () => $("#categoryDialog").close());
 $("#cancelCategoryEdit").addEventListener("click", () => $("#categoryDialog").close());
 $("#playToggle").addEventListener("click", togglePlayback);
-$("#lyricsButton").addEventListener("click", () => $("#lyricsDialog").showModal()); $("#lyricsButtonBottom").addEventListener("click", () => $("#lyricsDialog").showModal()); $("#closeDialog").addEventListener("click", () => $("#lyricsDialog").close());
+$("#lyricsButton").addEventListener("click", () => openLyricsDialog(false));
+$("#lyricsButtonBottom").addEventListener("click", () => openLyricsDialog(false));
+$("#editLyricsButton").addEventListener("click", () => setLyricsEditing(true));
+$("#lyricsForm").addEventListener("submit", submitLyricsForm);
+$("#cancelLyricsEdit").addEventListener("click", () => setLyricsEditing(false));
+$("#closeDialog").addEventListener("click", () => {
+  setLyricsEditing(false);
+  $("#lyricsDialog").close();
+});
 $("#clearQueue").addEventListener("click", () => {
   if (!queue.length || !window.confirm(`确定清理播放列表中的 ${queue.length} 首歌曲吗？`)) return;
   queue.splice(0);

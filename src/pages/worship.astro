@@ -54,11 +54,44 @@ const worshipAssets = {
       <main id="top">
         <header class="topbar"><button class="mobile-menu" id="mobileMenu" aria-label="打开导航">☰</button><label class="search"><input id="searchInput" type="search" placeholder="搜索歌曲、歌手或心情…" /><span>⌕</span></label><a class="member-link" href={accountHref}>♛ <span>会员中心</span></a><button class="theme-toggle" id="themeToggle" type="button" aria-label="切换到深色皮肤" aria-pressed="false"><span aria-hidden="true">◐</span><b>深色</b></button><button class="top-action" id="randomButton">随心听一首 <span>↗</span></button></header>
 
-        <section class="feature reveal">
-          <img class="feature-art" src={worshipAssets.hero} alt="" />
-          <div class="feature-album"><img src={worshipAssets.album} alt="回声之恩典专辑封面" /><span>敬拜音乐专辑</span></div>
-          <div class="feature-copy"><span class="kicker">全新专辑</span><h1>回声之恩典</h1><p class="tagline">从山谷到高处，让赞美成为心灵的回声。</p><p class="feature-description">精选华语敬拜与赞美诗歌，带你胜过低谷，进入恩典与盼望。</p><div class="feature-track"><div><h2><button type="button" class="feature-song-title" data-play="这一生最美的祝福" data-artist="赞美之泉">这一生最美的祝福</button></h2><p><button type="button" class="feature-artist" data-artist-filter="赞美之泉">赞美之泉</button> <span>·</span> 永恒的盼望</p></div></div><div class="feature-controls"><button class="big-play" data-play="这一生最美的祝福" data-artist="赞美之泉">▶</button><button data-skip="prev" aria-label="上一首">|◀</button><button class="feature-play" data-play="这一生最美的祝福" data-artist="赞美之泉" aria-label="播放">▶</button><button data-skip="next" aria-label="下一首">▶|</button><div class="feature-progress"><i id="featureProgress"></i></div><small>02:28 / 05:26</small></div></div>
-          <button class="add-song-trigger feature-add-song" id="addSongButton"><span>＋</span> 添加歌曲</button>
+        <section
+          class="feature reveal"
+          data-fallback-album={worshipAssets.album}
+          data-fallback-band={worshipAssets.band}
+          data-fallback-quiet={worshipAssets.quiet}
+          data-fallback-video={worshipAssets.video}
+        >
+          <img class="feature-art" id="featureArt" src={worshipAssets.hero} alt="" />
+          <div class="feature-media-card" aria-label="当前歌曲视频">
+            <div class="media-player-shell" style={`--video-poster:url("${worshipAssets.video}")`}>
+              <iframe id="mediaPlayer" title="敬拜音乐播放器" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+              <div id="playerPrompt"><span>▶</span><strong>这一生最美的祝福</strong><small>赞美之泉</small></div>
+            </div>
+          </div>
+          <div class="feature-copy">
+            <div class="feature-heading">
+              <div class="feature-album">
+                <img id="featureAlbumImage" src={worshipAssets.album} alt="这一生最美的祝福歌曲图片" />
+                <span id="featureAlbumBadge">赞美之泉</span>
+              </div>
+              <div class="feature-identity">
+                <span class="kicker" id="featureKicker">正在播放</span>
+                <h1><button type="button" class="feature-hero-title" id="featureHeroTitle" data-play="这一生最美的祝福" data-artist="赞美之泉">这一生最美的祝福</button></h1>
+                <p class="tagline"><button type="button" class="feature-hero-artist" id="featureHeroArtist" data-artist-filter="赞美之泉">赞美之泉</button></p>
+              </div>
+            </div>
+            <p class="feature-description" id="featureHeroDescription">永恒的盼望 · 温暖治愈</p>
+            <div class="feature-track"><span>入选理由</span><p id="featureReason">官方版本、现场敬拜与翻唱长期流传</p></div>
+            <div class="feature-controls">
+              <button class="big-play" data-play="这一生最美的祝福" data-artist="赞美之泉">▶</button>
+              <button data-skip="prev" aria-label="上一首">|◀</button>
+              <button class="feature-play" data-play="这一生最美的祝福" data-artist="赞美之泉" aria-label="播放">▶</button>
+              <button data-skip="next" aria-label="下一首">▶|</button>
+              <div class="feature-progress"><i id="featureProgress"></i></div>
+              <small id="featureTime">00:00 / 05:26</small>
+            </div>
+            <button class="add-song-trigger feature-add-song" id="addSongButton"><span>＋</span> 添加歌曲</button>
+          </div>
         </section>
 
         <div class="content-grid">
@@ -78,14 +111,41 @@ const worshipAssets = {
             <div class="category-row"><h2>歌曲分类</h2><section class="moods"><button class="mood" data-mood="温暖治愈"><span>☼</span>温暖治愈</button><button class="mood" data-mood="激情敬拜"><span>♨</span>激情敬拜</button><button class="mood" data-mood="欢快感恩"><span>☺</span>欢快感恩</button></section></div>
             <div class="section-head"><div><h2 id="listTitle">为你精选</h2></div><div class="section-actions"><button class="library-add-button" id="libraryAddButton" hidden>＋ 添加歌曲</button><button class="all-button" id="clearFilter">查看全部 →</button></div></div><div id="songList" class="song-list"></div><div id="artistList" class="artist-grid" hidden></div><div id="emptyState" class="empty" hidden>没有找到匹配歌曲，换个关键词试试。</div>
           </section>
-          <aside class="queue-panel reveal delay-3" id="queuePanel"><div class="queue-head"><div><h2>正在播放</h2></div><button id="clearQueue">清理列表</button></div><div class="now-card"><div class="cover cover-sun">这一生最美的祝福</div><div><button type="button" class="now-song-title" id="nowTitle" data-play="这一生最美的祝福" data-artist="赞美之泉">这一生最美的祝福</button><button type="button" class="now-artist" id="nowArtist" data-artist-filter="赞美之泉">赞美之泉</button></div><span class="heart filled">♥</span><div class="now-progress"><i id="nowProgress"></i></div><small class="time">点击歌曲开始播放</small></div><div class="now-controls"><button data-skip="prev" aria-label="上一首">|◀</button><button id="queuePlayToggle" data-play="这一生最美的祝福" data-artist="赞美之泉" class="queue-main-play">▶</button><button data-skip="next" aria-label="下一首">▶|</button></div><button class="lyrics-button" id="lyricsButton">查看歌词</button><div class="media-player-shell" style={`--video-poster:url("${worshipAssets.video}")`}><iframe id="mediaPlayer" title="敬拜音乐播放器" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin"></iframe><div id="playerPrompt"><span>▶</span><strong>30分钟敬拜赞美</strong><small>平静内心，回到主的同在</small></div></div><div class="queue-head queue-list-head"><h3 id="queueTitle" role="button" tabindex="0" aria-pressed="false" title="双击进入多选模式">播放列表 · <span id="queueCount">12</span><small>双击多选</small></h3><button id="addQueue">＋ 当前列表</button></div><div class="queue-batch-actions" id="queueBatchActions" hidden><span>已选 <b id="queueSelectedCount">0</b> 首</span><button id="queueSelectAll">全选</button><button id="queuePlaySelected" disabled>▶ 播放</button><button id="queueDeleteSelected" class="danger" disabled>删除</button><button id="queueCancelSelection">完成</button></div><p class="queue-status" id="queueStatus" aria-live="polite"></p><div id="queueList" class="queue-list"></div></aside>
+          <aside class="queue-panel reveal delay-3" id="queuePanel">
+            <div class="queue-head"><div><h2>正在播放</h2></div><button id="clearQueue">清理列表</button></div>
+            <div class="now-card"><div class="cover cover-sun">这一生最美的祝福</div><div><button type="button" class="now-song-title" id="nowTitle" data-play="这一生最美的祝福" data-artist="赞美之泉">这一生最美的祝福</button><button type="button" class="now-artist" id="nowArtist" data-artist-filter="赞美之泉">赞美之泉</button></div><span class="heart filled">♥</span><div class="now-progress"><i id="nowProgress"></i></div><small class="time">点击歌曲开始播放</small></div>
+            <div class="now-controls"><button data-skip="prev" aria-label="上一首">|◀</button><button id="queuePlayToggle" data-play="这一生最美的祝福" data-artist="赞美之泉" class="queue-main-play">▶</button><button data-skip="next" aria-label="下一首">▶|</button></div>
+            <button class="lyrics-button" id="lyricsButton">查看歌词</button>
+            <div class="queue-cover-stage">
+              <img id="queueCoverImage" src={worshipAssets.album} alt="当前播放歌曲封面" />
+              <span>当前歌曲封面</span>
+            </div>
+            <div class="queue-head queue-list-head"><h3 id="queueTitle" role="button" tabindex="0" aria-pressed="false" title="双击进入多选模式">播放列表 · <span id="queueCount">12</span><small>双击多选</small></h3><button id="addQueue">＋ 当前列表</button></div>
+            <div class="queue-batch-actions" id="queueBatchActions" hidden><span>已选 <b id="queueSelectedCount">0</b> 首</span><button id="queueSelectAll">全选</button><button id="queuePlaySelected" disabled>▶ 播放</button><button id="queueDeleteSelected" class="danger" disabled>删除</button><button id="queueCancelSelection">完成</button></div>
+            <p class="queue-status" id="queueStatus" aria-live="polite"></p>
+            <div id="queueList" class="queue-list"></div>
+          </aside>
         </div>
       </main>
     </div>
 
     <div class="player"><div class="player-cover cover cover-sun" aria-hidden="true"></div><div class="player-meta"><button type="button" class="player-song-title" id="playerTitle" data-play="这一生最美的祝福" data-artist="赞美之泉">这一生最美的祝福</button><button type="button" class="player-artist" id="playerArtist" data-artist-filter="赞美之泉">赞美之泉</button><button class="mini-heart" data-favorite="这一生最美的祝福" aria-label="收藏">♥</button></div><div class="player-controls"><button data-skip="prev" aria-label="上一首">|◀</button><button class="pause" id="playToggle" aria-label="播放">▶</button><button data-skip="next" aria-label="下一首">▶|</button></div><div class="player-seek"><span>来源</span><div><i id="playerProgress"></i></div><span id="playerSourceLabel">YouTube</span></div><button class="player-icon" id="lyricsButtonBottom" aria-label="歌词">▤</button><button class="player-icon" id="fullscreenPlayer" aria-label="全屏播放器">⛶</button></div>
 
-    <dialog id="lyricsDialog"><div class="dialog-head"><div><span class="kicker">LYRICS & SCRIPTURE</span><h2 id="dialogSong">这一生最美的祝福</h2><p id="dialogArtist">赞美之泉</p></div><button id="closeDialog" aria-label="关闭">×</button></div><div class="dialog-body"><blockquote>在你身边，有最美的祝福<br />每一天都充满盼望</blockquote><p class="scripture">“我的心哪，你要称颂耶和华，不可忘记他的一切恩惠。”<br /><small>诗篇 103:2 · 主题相关</small></p><a id="sourceLink" href="https://www.youtube.com/" target="_blank" rel="noreferrer">打开真实播放源 ↗</a></div></dialog>
+    <dialog id="lyricsDialog" class="lyrics-dialog">
+      <div class="dialog-head"><div><span class="kicker">LYRICS</span><h2 id="dialogSong">这一生最美的祝福</h2><p id="dialogArtist">赞美之泉</p></div><button id="closeDialog" aria-label="关闭">×</button></div>
+      <div class="dialog-body">
+        <div class="dialog-lyrics is-empty" id="dialogLyrics">这首歌暂未收录授权歌词。</div>
+        <p class="lyrics-permission-note">请只粘贴官方允许转载、你自行创作或你已获得使用许可的歌词。网站不会自动抓取第三方完整歌词。</p>
+        <div class="dialog-lyrics-actions">
+          <button type="button" class="secondary-button" id="editLyricsButton">补充歌词</button>
+          <a id="sourceLink" href="https://www.youtube.com/" target="_blank" rel="noreferrer">打开真实播放源 ↗</a>
+        </div>
+        <form id="lyricsForm" hidden>
+          <label class="field field-wide"><span>歌词内容</span><textarea id="lyricsInput" maxlength="12000" rows="12" placeholder="在这里粘贴你有权使用的歌词；换行会按原样显示。"></textarea></label>
+          <div class="song-form-actions"><button type="button" class="secondary-button" id="cancelLyricsEdit">取消</button><button type="submit" class="primary-button">保存歌词</button></div>
+        </form>
+      </div>
+    </dialog>
     <dialog id="songDialog" class="song-editor-dialog">
       <form id="songForm" method="dialog">
         <div class="dialog-head"><div><span class="kicker">MY WORSHIP LIBRARY</span><h2 id="songDialogTitle">添加我喜欢的歌曲</h2><p>保存到当前主站账号，登录后可跨设备同步。</p></div><button type="button" id="closeSongDialog" aria-label="关闭">×</button></div>
