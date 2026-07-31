@@ -327,6 +327,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   const loginStatus = get<HTMLElement>('[data-login-status]');
   const cloudLoginButton = root.querySelector<HTMLButtonElement>('[data-action="cloud-login"]');
   const readChapterButton = get<HTMLButtonElement>('[data-action="read-chapter"]');
+  const pauseReadingButton = get<HTMLButtonElement>('[data-action="toggle-speech-pause"]');
   const replayChapterButton = get<HTMLButtonElement>('[data-action="replay-chapter"]');
   const stopReadingButton = get<HTMLButtonElement>('[data-action="stop-reading"]');
   const speechRateSelect = get<HTMLSelectElement>('[data-speech-rate]');
@@ -396,6 +397,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   let activeSpeechController: AbortController | null = null;
   let speechRequestToken = 0;
   let lastSpeechText = '';
+  let speechState: 'idle' | 'playing' | 'paused' = 'idle';
   let activeBookStatusSlug: string | null = null;
   let pendingBookSlug: string | null = null;
   let bookClickTimer: number | undefined;
@@ -1430,11 +1432,24 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     }).join('') : '<p>当前收录经文中没有找到匹配内容。</p>';
   };
 
-  const renderSpeechControls = (isSpeaking: boolean) => {
-    readChapterButton.textContent = isSpeaking ? '正在朗读' : '朗读本章';
-    readChapterButton.setAttribute('aria-pressed', String(isSpeaking));
+  const renderSpeechControls = () => {
+    const isActive = speechState !== 'idle';
+    const isPaused = speechState === 'paused';
+    const pauseActionLabel = isPaused ? '继续朗读' : '暂停朗读';
+    readChapterButton.textContent = isPaused ? '已暂停' : isActive ? '正在朗读' : '朗读本章';
+    readChapterButton.setAttribute('aria-pressed', String(isActive));
+    pauseReadingButton.textContent = isPaused ? '继续' : '暂停';
+    pauseReadingButton.setAttribute('aria-label', pauseActionLabel);
+    pauseReadingButton.setAttribute('title', pauseActionLabel);
+    pauseReadingButton.setAttribute('aria-pressed', String(isPaused));
+    pauseReadingButton.disabled = !isActive;
     replayChapterButton.disabled = !lastSpeechText;
-    stopReadingButton.disabled = !isSpeaking;
+    stopReadingButton.disabled = !isActive;
+  };
+
+  const setSpeechState = (nextState: typeof speechState) => {
+    speechState = nextState;
+    renderSpeechControls();
   };
 
   const releaseActiveAudio = () => {
@@ -1456,7 +1471,31 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     activeSpeechController = null;
     releaseActiveAudio();
     if (clearReplay) lastSpeechText = '';
-    renderSpeechControls(false);
+    setSpeechState('idle');
+  };
+
+  const toggleSpeechPause = async () => {
+    if (speechState === 'playing') {
+      setSpeechState('paused');
+      activeAudio?.pause();
+      notify('已暂停朗读。');
+      return;
+    }
+    if (speechState !== 'paused') return;
+
+    setSpeechState('playing');
+    if (!activeAudio) {
+      notify('已继续朗读，音频准备完成后将播放。');
+      return;
+    }
+    try {
+      await activeAudio.play();
+      notify('已继续朗读。');
+    } catch {
+      if (speechState === 'paused') return;
+      stopSpeech();
+      notify('浏览器未能继续播放，请重新朗读。');
+    }
   };
 
   const speechEndpoint = () => {
@@ -1568,13 +1607,21 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     audio.preservesPitch = true;
     activeAudio = audio;
     activeAudioUrl = audioUrl;
+    audio.onplay = () => {
+      if (activeAudio === audio && requestToken === speechRequestToken) setSpeechState('playing');
+    };
+    audio.onpause = () => {
+      if (activeAudio === audio && requestToken === speechRequestToken && !audio.ended && speechState !== 'idle') {
+        setSpeechState('paused');
+      }
+    };
     audio.onended = () => {
       if (activeAudio !== audio || requestToken !== speechRequestToken) return;
       releaseActiveAudio();
       if (index + 1 < segments.length) {
         void playSpeechSegment(segments, index + 1, requestToken, nextAudio);
       } else {
-        renderSpeechControls(false);
+        setSpeechState('idle');
       }
     };
     audio.onerror = () => {
@@ -1582,10 +1629,11 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       stopSpeech();
       notify('云端男声播放失败，请重新播放。');
     };
+    if (speechState === 'paused') return;
     try {
       await audio.play();
     } catch {
-      if (requestToken !== speechRequestToken) return;
+      if (requestToken !== speechRequestToken || speechState === 'paused') return;
       stopSpeech();
       notify('浏览器未能开始播放，请再次点击朗读。');
     }
@@ -1600,7 +1648,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       notify('该章没有可朗读的正文。');
       return;
     }
-    renderSpeechControls(true);
+    setSpeechState('playing');
     void playSpeechSegment(segments, 0, requestToken);
   };
 
@@ -1973,6 +2021,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       else notify('该章正文暂未导入，无法朗读。');
     }
     if (trigger.dataset.action === 'replay-chapter' && lastSpeechText) void speak(lastSpeechText);
+    if (trigger.dataset.action === 'toggle-speech-pause') void toggleSpeechPause();
     if (trigger.dataset.action === 'resume-reading') resumeSelectedBook();
     if (trigger.dataset.action === 'stop-reading') {
       stopSpeech();

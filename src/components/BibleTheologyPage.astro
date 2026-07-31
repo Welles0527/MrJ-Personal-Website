@@ -485,6 +485,7 @@ const hymnCards = [
                 <option value="3">3×</option>
               </select>
               <button type="button" data-action="read-chapter" aria-pressed="false">朗读本章</button>
+              <button class="bible-speech-toggle" type="button" data-action="toggle-speech-pause" aria-label="暂停朗读" aria-pressed="false" title="暂停朗读" disabled>暂停</button>
               <button class="bible-speech-icon" type="button" data-action="replay-chapter" aria-label="重新播放本章" title="重新播放本章" disabled>↻</button>
               <button class="bible-speech-icon" type="button" data-action="stop-reading" aria-label="停止朗读" title="停止朗读" disabled>■</button>
             </div>
@@ -1622,6 +1623,10 @@ const hymnCards = [
   .bible-reading-actions .bible-speech-rate {
     width: 4.15rem;
     padding-right: 0.35rem;
+  }
+
+  .bible-reading-actions .bible-speech-toggle {
+    min-width: 3.55rem;
   }
 
   .bible-reading-actions .bible-speech-icon {
