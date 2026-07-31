@@ -679,6 +679,135 @@ h1 {
   color: var(--muted);
 }
 
+.offering-comparison {
+  margin-top: 60px;
+  padding: clamp(28px, 4vw, 54px);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(circle at 88% 8%, rgba(245, 163, 55, 0.12), transparent 22rem),
+    linear-gradient(135deg, #26170f, #15100c);
+}
+
+.offering-comparison-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 36px;
+  margin-bottom: 28px;
+}
+
+.offering-comparison-heading h3 {
+  margin-bottom: 0;
+  font-size: clamp(28px, 3vw, 46px);
+  line-height: 1.2;
+}
+
+.offering-comparison-heading > p {
+  max-width: 480px;
+  margin: 0;
+  color: var(--muted);
+}
+
+.offering-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid rgba(255, 210, 119, 0.16);
+  border-radius: 18px;
+  scrollbar-color: rgba(255, 200, 92, 0.55) rgba(255, 255, 255, 0.04);
+  scrollbar-width: thin;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.offering-table-scroll:focus-visible {
+  outline: 3px solid var(--gold-bright);
+  outline-offset: 4px;
+}
+
+.offering-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  background: rgba(15, 9, 6, 0.52);
+}
+
+.offering-table th,
+.offering-table td {
+  padding: 19px 20px;
+  border-bottom: 1px solid rgba(255, 211, 126, 0.12);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.offering-table thead th {
+  color: var(--gold);
+  background: rgba(255, 190, 66, 0.08);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+}
+
+.offering-table tbody th {
+  color: var(--cream);
+  font-family: "Noto Serif SC", "STSong", serif;
+  font-size: 19px;
+  white-space: nowrap;
+}
+
+.offering-table tbody td {
+  color: var(--paper);
+  font-size: 14px;
+}
+
+.offering-table tbody tr:last-child th,
+.offering-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.offering-table tbody tr:hover {
+  background: rgba(255, 196, 77, 0.045);
+}
+
+.comparison-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 58px;
+  min-height: 30px;
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 211, 126, 0.22);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.comparison-status.is-blood {
+  color: #ffd3c3;
+  background: rgba(159, 74, 61, 0.2);
+}
+
+.comparison-status.is-bloodless {
+  color: #e5edbd;
+  background: rgba(127, 138, 83, 0.2);
+}
+
+.comparison-status.is-qualified {
+  color: var(--gold-bright);
+  background: rgba(229, 141, 50, 0.16);
+}
+
+.offering-table-note {
+  margin: 16px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.offering-table-swipe {
+  display: none;
+}
+
 .ritual-flow {
   display: grid;
   grid-template-columns: minmax(250px, 0.8fr) minmax(600px, 2.2fr);
@@ -1266,6 +1395,46 @@ h1 {
 
   .context-note {
     grid-template-columns: 1fr;
+  }
+
+  .offering-comparison {
+    margin-top: 42px;
+    padding: 26px 20px;
+  }
+
+  .offering-comparison-heading {
+    display: block;
+  }
+
+  .offering-comparison-heading > p {
+    margin-top: 14px;
+  }
+
+  .offering-table-scroll {
+    margin-right: -20px;
+    border-right: 0;
+    border-radius: 14px 0 0 14px;
+  }
+
+  .offering-table {
+    min-width: 720px;
+  }
+
+  .offering-table th,
+  .offering-table td {
+    padding: 16px;
+  }
+
+  .offering-table-swipe {
+    display: block;
+    margin: 10px 0 0;
+    color: var(--gold);
+    font-size: 11px;
+    text-align: right;
+  }
+
+  .offering-table-note {
+    margin-top: 9px;
   }
 
   .ritual-flow {
