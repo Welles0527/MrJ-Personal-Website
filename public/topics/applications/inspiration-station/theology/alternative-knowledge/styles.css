@@ -728,7 +728,7 @@ h1 {
 
 .offering-table {
   width: 100%;
-  min-width: 760px;
+  min-width: 980px;
   border-collapse: collapse;
   background: rgba(15, 9, 6, 0.52);
 }
@@ -796,6 +796,15 @@ h1 {
 .comparison-status.is-qualified {
   color: var(--gold-bright);
   background: rgba(229, 141, 50, 0.16);
+}
+
+.food-rule {
+  color: #ffd3c3;
+  font-weight: 700;
+}
+
+.food-rule.is-edible {
+  color: #e5edbd;
 }
 
 .offering-table-note {
@@ -1417,7 +1426,7 @@ h1 {
   }
 
   .offering-table {
-    min-width: 720px;
+    min-width: 920px;
   }
 
   .offering-table th,
