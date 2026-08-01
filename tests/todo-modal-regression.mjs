@@ -145,6 +145,12 @@ try {
     ].join('\n'));
   }
 
+  const exportReminderModal = page.locator('[data-export-reminder-modal]');
+  if (await exportReminderModal.isVisible()) {
+    await page.locator('[data-action="dismiss-export-reminder"]').click();
+    await exportReminderModal.waitFor({ state: 'hidden' });
+  }
+
   const themeToggle = page.locator('[data-theme-toggle]');
   assert.equal(await themeToggle.getAttribute('data-theme-current'), 'dark', 'default Todo theme must remain dark');
   await themeToggle.click();

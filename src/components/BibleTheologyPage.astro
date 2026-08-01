@@ -446,6 +446,8 @@ const hymnCards = [
           <p data-bible-search-status>已导入创世记1、诗篇23、约翰福音3。</p>
         </div>
 
+        <div class="bible-sidebar-result-list" data-mobile-search-results hidden></div>
+
         <div class="bible-segmented" aria-label="旧约新约切换">
           <button type="button" data-testament="旧约" class="is-active">旧约</button>
           <button type="button" data-testament="新约">新约</button>
@@ -1783,6 +1785,10 @@ const hymnCards = [
     color: var(--ink);
     cursor: pointer;
     text-align: left;
+  }
+
+  .bible-sidebar-result-list {
+    display: none;
   }
 
   .bible-verses {
@@ -3308,6 +3314,44 @@ const hymnCards = [
       pointer-events: auto;
       transform: translateX(0);
       visibility: visible;
+    }
+
+    .bible-sidebar-result-list:not([hidden]) {
+      display: grid;
+      max-height: min(52vh, 28rem);
+      gap: 0.45rem;
+      margin: 0.2rem 0 0.85rem;
+      padding-right: 0.2rem;
+      overflow-y: auto;
+    }
+
+    .bible-sidebar-result-list button {
+      display: grid;
+      gap: 0.28rem;
+      width: 100%;
+      min-height: 3.4rem;
+      border: 1px solid rgba(216, 179, 95, 0.3);
+      border-radius: 0.7rem;
+      padding: 0.68rem 0.72rem;
+      background: rgba(255, 248, 226, 0.04);
+      color: #fff2cc;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .bible-sidebar-result-list button:focus-visible {
+      outline: 2px solid #f4d36f;
+      outline-offset: 2px;
+    }
+
+    .bible-sidebar-result-list button strong {
+      color: #f4d36f;
+      font-size: 0.8rem;
+    }
+
+    .bible-sidebar-result-list button span {
+      font-size: 0.74rem;
+      line-height: 1.55;
     }
 
     .bible-directory-close {

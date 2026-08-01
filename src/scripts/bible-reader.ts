@@ -299,6 +299,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   const searchInput = get<HTMLInputElement>('[data-bible-search]');
   const searchStatus = get<HTMLElement>('[data-bible-search-status]');
   const searchResults = get<HTMLElement>('[data-search-results]');
+  const mobileSearchResults = root.querySelector<HTMLElement>('[data-mobile-search-results]');
   const currentTitle = get<HTMLElement>('[data-current-title]');
   const lastRead = get<HTMLElement>('[data-last-read]');
   const bookmarkList = get<HTMLElement>('[data-bookmark-list]');
@@ -1337,6 +1338,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     currentChapter = Math.min(Math.max(chapter, 1), nextBook.chapters);
     selectedTestament = nextBook.testament;
     searchResults.hidden = true;
+    if (mobileSearchResults) mobileSearchResults.hidden = true;
     directory.classList.remove('is-open');
     renderAll(verse);
   };
@@ -1397,8 +1399,10 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   const runSearch = () => {
     const keyword = searchInput.value.trim();
     searchResults.innerHTML = '';
+    if (mobileSearchResults) mobileSearchResults.innerHTML = '';
     if (!keyword) {
       searchResults.hidden = true;
+      if (mobileSearchResults) mobileSearchResults.hidden = true;
       searchStatus.textContent = '可搜关键词，也可输入创-1-2、创世-1-2、约3:16。';
       return;
     }
@@ -1418,7 +1422,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
 
     searchStatus.textContent = `找到 ${matches.length} 条经文结果。`;
     searchResults.hidden = false;
-    searchResults.innerHTML = matches.length ? matches.map((item) => {
+    const resultMarkup = matches.length ? matches.map((item) => {
       const book = bookBySlug(item.sample.book);
       return `
         <button type="button" data-goto-book="${item.sample.book}" data-goto-chapter="${item.sample.chapter}" data-goto-verse="${item.verse}">
@@ -1427,6 +1431,11 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
         </button>
       `;
     }).join('') : '<p>当前收录经文中没有找到匹配内容。</p>';
+    searchResults.innerHTML = resultMarkup;
+    if (mobileSearchResults) {
+      mobileSearchResults.hidden = false;
+      mobileSearchResults.innerHTML = resultMarkup;
+    }
   };
 
   const renderSpeechControls = () => {
