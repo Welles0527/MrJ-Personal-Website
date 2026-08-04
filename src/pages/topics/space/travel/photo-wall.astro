@@ -1,82 +1,342 @@
+---
+import albumData from '../../../../data/jamaica-photo-album.json';
+import { sitePath } from '../../../../data/site';
+
+const albumHref = sitePath('/topics/space/travel/photo-wall/jamaica');
+const coverSrc = sitePath(albumData.album.cover);
+const coverPhoto = albumData.photos.find((photo) => photo.id === albumData.album.coverId) ?? albumData.photos[0];
+---
+
 <!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#fafafa" />
+    <meta name="theme-color" content="#ebe6da" />
     <meta name="robots" content="noindex" />
-    <title>生活相册 · 整理中</title>
+    <meta name="description" content="J先生的旅行照片墙。" />
+    <title>照片墙 · J先生的旅行影集</title>
     <style>
+      :root {
+        color-scheme: light;
+        font-family: "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+        background: #ebe6da;
+        color: #18221e;
+      }
+
       * {
         box-sizing: border-box;
       }
 
       body {
-        display: grid;
         min-width: 320px;
         min-height: 100svh;
         margin: 0;
-        place-items: center;
-        padding: 24px;
+        overflow-x: hidden;
         background:
-          radial-gradient(circle at 50% 110%, rgba(122, 143, 255, 0.28), transparent 42%),
-          #fafafa;
-        color: #111318;
-        font-family: "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
-      }
-
-      main {
-        width: min(100%, 520px);
-        text-align: center;
-      }
-
-      svg {
-        width: 58px;
-        height: 58px;
-        color: #6e87ff;
-      }
-
-      h1 {
-        margin: 24px 0 10px;
-        font-size: clamp(30px, 7vw, 46px);
-        letter-spacing: -0.04em;
-      }
-
-      p {
-        margin: 0;
-        color: #626773;
-        line-height: 1.7;
+          radial-gradient(circle at 88% 2%, rgba(245, 199, 92, 0.26), transparent 28rem),
+          linear-gradient(180deg, #f3efe6 0%, #e5dfd1 100%);
       }
 
       a {
-        display: inline-flex;
-        min-height: 44px;
-        align-items: center;
-        margin-top: 28px;
-        padding: 0 20px;
-        border: 1px solid rgba(17, 19, 24, 0.12);
-        border-radius: 999px;
         color: inherit;
-        font-weight: 700;
+      }
+
+      .shell {
+        width: min(1180px, calc(100% - 48px));
+        margin: 0 auto;
+      }
+
+      header {
+        display: flex;
+        min-height: 88px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        border-bottom: 1px solid rgba(24, 34, 30, 0.13);
+      }
+
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 0.14em;
         text-decoration: none;
       }
 
-      a:focus-visible {
-        outline: 3px solid rgba(110, 135, 255, 0.32);
-        outline-offset: 3px;
+      .brand-mark {
+        display: grid;
+        width: 36px;
+        height: 36px;
+        place-items: center;
+        border: 1px solid currentColor;
+        border-radius: 50%;
+        font-family: Georgia, serif;
+        font-size: 15px;
+        letter-spacing: -0.08em;
+      }
+
+      .home-link {
+        font-size: 14px;
+        font-weight: 700;
+        text-underline-offset: 5px;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.3fr) minmax(230px, 0.7fr);
+        gap: 48px;
+        align-items: end;
+        padding: clamp(64px, 10vw, 126px) 0 58px;
+      }
+
+      .kicker,
+      .album-kicker {
+        margin: 0 0 18px;
+        color: #8c4a2f;
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 0.22em;
+      }
+
+      h1 {
+        max-width: 720px;
+        margin: 0;
+        font-family: Georgia, "Noto Serif SC", serif;
+        font-size: clamp(56px, 9.5vw, 118px);
+        font-weight: 500;
+        letter-spacing: -0.07em;
+        line-height: 0.88;
+      }
+
+      .hero-copy {
+        margin: 0 0 8px;
+        color: #58605c;
+        font-size: clamp(15px, 2vw, 18px);
+        line-height: 1.85;
+      }
+
+      .albums-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        margin-bottom: 22px;
+      }
+
+      .albums-heading h2 {
+        margin: 0;
+        font-size: 15px;
+        letter-spacing: 0.12em;
+      }
+
+      .albums-heading span {
+        color: #727873;
+        font-size: 13px;
+      }
+
+      .album-card {
+        display: grid;
+        min-height: min(650px, 68vw);
+        grid-template-columns: 1.45fr 0.55fr;
+        overflow: hidden;
+        border-radius: 28px;
+        background: #153e38;
+        box-shadow: 0 28px 80px rgba(30, 42, 35, 0.18);
+        color: #f7f2e8;
+        text-decoration: none;
+      }
+
+      .album-image {
+        min-height: 430px;
+        overflow: hidden;
+      }
+
+      .album-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 700ms cubic-bezier(0.2, 0.75, 0.25, 1);
+      }
+
+      .album-copy {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: clamp(30px, 5vw, 62px);
+      }
+
+      .album-kicker {
+        color: #f1c766;
+      }
+
+      .album-copy h3 {
+        margin: 0;
+        font-family: Georgia, "Noto Serif SC", serif;
+        font-size: clamp(46px, 6vw, 78px);
+        font-weight: 500;
+        letter-spacing: -0.06em;
+      }
+
+      .album-copy p {
+        margin: 20px 0 0;
+        color: rgba(247, 242, 232, 0.72);
+        line-height: 1.8;
+      }
+
+      .album-action {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding-top: 40px;
+        border-top: 1px solid rgba(247, 242, 232, 0.2);
+        font-weight: 800;
+      }
+
+      .arrow {
+        display: grid;
+        width: 50px;
+        height: 50px;
+        place-items: center;
+        border: 1px solid rgba(247, 242, 232, 0.4);
+        border-radius: 50%;
+        font-size: 22px;
+        transition: transform 180ms ease, background 180ms ease;
+      }
+
+      .album-card:hover .album-image img {
+        transform: scale(1.025);
+      }
+
+      .album-card:hover .arrow {
+        transform: translateX(4px);
+        background: rgba(247, 242, 232, 0.12);
+      }
+
+      .album-card:focus-visible,
+      .brand:focus-visible,
+      .home-link:focus-visible {
+        outline: 3px solid #d58d4d;
+        outline-offset: 5px;
+      }
+
+      footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 24px;
+        padding: 42px 0 50px;
+        color: #6c736e;
+        font-size: 12px;
+      }
+
+      @media (max-width: 760px) {
+        .shell {
+          width: min(100% - 28px, 1180px);
+        }
+
+        header {
+          min-height: 72px;
+        }
+
+        .brand {
+          letter-spacing: 0.08em;
+        }
+
+        .hero {
+          grid-template-columns: 1fr;
+          gap: 30px;
+          padding: 58px 0 42px;
+        }
+
+        h1 {
+          font-size: clamp(54px, 21vw, 84px);
+        }
+
+        .album-card {
+          min-height: 0;
+          grid-template-columns: 1fr;
+          border-radius: 20px;
+        }
+
+        .album-image {
+          min-height: 56vw;
+          max-height: 390px;
+        }
+
+        .album-copy {
+          gap: 38px;
+          padding: 28px;
+        }
+
+        .album-copy h3 {
+          font-size: 50px;
+        }
+
+        footer {
+          flex-direction: column;
+          padding-bottom: 32px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .album-image img,
+        .arrow {
+          transition: none;
+        }
       }
     </style>
   </head>
   <body>
-    <main>
-      <svg viewBox="0 0 32 32" aria-hidden="true">
-        <rect x="4.5" y="5.5" width="23" height="21" rx="3.5" fill="none" stroke="currentColor" stroke-width="1.8" />
-        <circle cx="12" cy="12" r="2" fill="none" stroke="currentColor" stroke-width="1.8" />
-        <path d="m7.5 23 6.5-7 4.5 4 3.5-4 5.5 6.5" fill="none" stroke="currentColor" stroke-width="1.8" />
-      </svg>
-      <h1>生活相册</h1>
-      <p>页面正在整理中，稍后再来看看。</p>
-      <a href="/">返回主站</a>
-    </main>
+    <div class="shell">
+      <header>
+        <a class="brand" href={sitePath('/')} aria-label="返回J先生魔法学院首页">
+          <span class="brand-mark">MJ</span>
+          <span>J先生 · 旅行影集</span>
+        </a>
+        <a class="home-link" href={sitePath('/')}>返回主站</a>
+      </header>
+
+      <main>
+        <section class="hero" aria-labelledby="page-title">
+          <div>
+            <p class="kicker">TRAVEL ARCHIVE</p>
+            <h1 id="page-title">照片墙</h1>
+          </div>
+          <p class="hero-copy">把散落在时间里的旅途重新装订。这里保存目的地，也保存同行的人、天气和不经意的瞬间。</p>
+        </section>
+
+        <section aria-labelledby="albums-title">
+          <div class="albums-heading">
+            <h2 id="albums-title">旅行相册</h2>
+            <span>共 1 本</span>
+          </div>
+
+          <a class="album-card" href={albumHref} aria-label={`打开牙买加相册，共${albumData.album.count}张照片`}>
+            <div class="album-image">
+              <img src={coverSrc} alt="牙买加旅行相册封面" width={coverPhoto.width} height={coverPhoto.height} loading="eager" fetchpriority="high" />
+            </div>
+            <div class="album-copy">
+              <div>
+                <p class="album-kicker">{albumData.album.eyebrow}</p>
+                <h3>{albumData.album.name}</h3>
+                <p>{albumData.album.description}</p>
+              </div>
+              <div class="album-action">
+                <span>{albumData.album.count} 张照片</span>
+                <span class="arrow" aria-hidden="true">→</span>
+              </div>
+            </div>
+          </a>
+        </section>
+      </main>
+
+      <footer>
+        <span>© 2026 J先生</span>
+        <span>旅行不是抵达，是把世界带回记忆。</span>
+      </footer>
+    </div>
   </body>
 </html>

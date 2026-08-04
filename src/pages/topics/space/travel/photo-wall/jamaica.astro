@@ -1,0 +1,568 @@
+---
+import albumData from '../../../../../data/jamaica-photo-album.json';
+import { sitePath } from '../../../../../data/site';
+
+const years = Object.entries(albumData.album.countsByYear).sort(([left], [right]) => Number(left) - Number(right));
+const photoWallHref = sitePath('/topics/space/travel/photo-wall');
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#101815" />
+    <meta name="robots" content="noindex" />
+    <meta name="description" content={`牙买加旅行相册，共${albumData.album.count}张照片。`} />
+    <title>牙买加 · 旅行相册</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+        background: #101815;
+        color: #f4efe3;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        min-width: 320px;
+        min-height: 100svh;
+        margin: 0;
+        overflow-x: hidden;
+        background:
+          radial-gradient(circle at 92% -4%, rgba(230, 174, 61, 0.18), transparent 30rem),
+          #101815;
+      }
+
+      button,
+      a {
+        font: inherit;
+      }
+
+      .shell {
+        width: min(1440px, calc(100% - 52px));
+        margin: 0 auto;
+      }
+
+      .topbar {
+        display: flex;
+        min-height: 78px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        border-bottom: 1px solid rgba(244, 239, 227, 0.14);
+      }
+
+      .back-link,
+      .home-link {
+        color: #f4efe3;
+        font-size: 13px;
+        font-weight: 800;
+        text-decoration: none;
+      }
+
+      .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .back-link span {
+        color: #e8c268;
+        font-size: 20px;
+      }
+
+      .home-link {
+        color: rgba(244, 239, 227, 0.68);
+        text-decoration: underline;
+        text-underline-offset: 5px;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 48px;
+        align-items: end;
+        padding: clamp(64px, 9vw, 128px) 0 54px;
+      }
+
+      .eyebrow {
+        margin: 0 0 18px;
+        color: #e8c268;
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 0.22em;
+      }
+
+      h1 {
+        margin: 0;
+        font-family: Georgia, "Noto Serif SC", serif;
+        font-size: clamp(66px, 11vw, 156px);
+        font-weight: 500;
+        letter-spacing: -0.08em;
+        line-height: 0.84;
+      }
+
+      .hero-meta {
+        display: grid;
+        min-width: 230px;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+        padding-bottom: 8px;
+      }
+
+      .stat {
+        padding-top: 14px;
+        border-top: 1px solid rgba(244, 239, 227, 0.24);
+      }
+
+      .stat strong,
+      .stat span {
+        display: block;
+      }
+
+      .stat strong {
+        font-family: Georgia, serif;
+        font-size: 28px;
+        font-weight: 500;
+      }
+
+      .stat span {
+        margin-top: 5px;
+        color: rgba(244, 239, 227, 0.56);
+        font-size: 11px;
+        letter-spacing: 0.1em;
+      }
+
+      .filter-row {
+        position: sticky;
+        z-index: 8;
+        top: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        margin-bottom: 28px;
+        padding: 12px 14px;
+        border: 1px solid rgba(244, 239, 227, 0.12);
+        border-radius: 16px;
+        background: rgba(16, 24, 21, 0.84);
+        box-shadow: 0 12px 38px rgba(0, 0, 0, 0.22);
+        backdrop-filter: blur(16px);
+      }
+
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .filter-button {
+        min-height: 38px;
+        padding: 0 15px;
+        border: 1px solid rgba(244, 239, 227, 0.16);
+        border-radius: 999px;
+        background: transparent;
+        color: rgba(244, 239, 227, 0.72);
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .filter-button[aria-pressed="true"] {
+        border-color: #e8c268;
+        background: #e8c268;
+        color: #17201c;
+      }
+
+      .visible-count {
+        flex: 0 0 auto;
+        color: rgba(244, 239, 227, 0.52);
+        font-size: 12px;
+      }
+
+      .gallery {
+        columns: 4;
+        column-gap: 16px;
+        padding-bottom: 70px;
+      }
+
+      .photo-card {
+        display: block;
+        width: 100%;
+        margin: 0 0 16px;
+        padding: 0;
+        break-inside: avoid;
+        overflow: hidden;
+        border: 0;
+        border-radius: 12px;
+        background: #1a2521;
+        color: inherit;
+        cursor: zoom-in;
+        content-visibility: auto;
+        contain-intrinsic-size: 320px 240px;
+      }
+
+      .photo-card[hidden] {
+        display: none;
+      }
+
+      .photo-card img {
+        display: block;
+        width: 100%;
+        height: auto;
+        transition: transform 420ms ease, filter 420ms ease;
+      }
+
+      .photo-card:hover img {
+        filter: brightness(1.06);
+        transform: scale(1.015);
+      }
+
+      .photo-card:focus-visible,
+      .filter-button:focus-visible,
+      .back-link:focus-visible,
+      .home-link:focus-visible,
+      .lightbox-control:focus-visible {
+        outline: 3px solid #e8c268;
+        outline-offset: 4px;
+      }
+
+      dialog {
+        width: 100vw;
+        max-width: none;
+        height: 100dvh;
+        max-height: none;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: rgba(7, 10, 9, 0.97);
+        color: #fff;
+      }
+
+      dialog::backdrop {
+        background: rgba(7, 10, 9, 0.98);
+      }
+
+      dialog[open] {
+        display: grid;
+        grid-template-rows: 1fr auto;
+      }
+
+      .lightbox-stage {
+        position: relative;
+        display: grid;
+        min-height: 0;
+        place-items: center;
+        padding: 62px 86px 24px;
+      }
+
+      .lightbox-stage img {
+        width: auto;
+        max-width: 100%;
+        height: auto;
+        max-height: calc(100dvh - 130px);
+        object-fit: contain;
+        border-radius: 8px;
+        box-shadow: 0 28px 90px rgba(0, 0, 0, 0.45);
+      }
+
+      .lightbox-control {
+        position: absolute;
+        display: grid;
+        width: 48px;
+        height: 48px;
+        place-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.34);
+        color: #fff;
+        cursor: pointer;
+        font-size: 24px;
+      }
+
+      .lightbox-close {
+        top: 18px;
+        right: 20px;
+      }
+
+      .lightbox-previous,
+      .lightbox-next {
+        top: 50%;
+        transform: translateY(-50%);
+      }
+
+      .lightbox-previous {
+        left: 20px;
+      }
+
+      .lightbox-next {
+        right: 20px;
+      }
+
+      .lightbox-caption {
+        display: flex;
+        justify-content: center;
+        gap: 18px;
+        padding: 10px 20px 24px;
+        color: rgba(255, 255, 255, 0.66);
+        font-size: 12px;
+      }
+
+      footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        padding: 34px 0 46px;
+        border-top: 1px solid rgba(244, 239, 227, 0.12);
+        color: rgba(244, 239, 227, 0.48);
+        font-size: 12px;
+      }
+
+      @media (max-width: 1050px) {
+        .gallery {
+          columns: 3;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .shell {
+          width: min(100% - 24px, 1440px);
+        }
+
+        .topbar {
+          min-height: 66px;
+        }
+
+        .hero {
+          grid-template-columns: 1fr;
+          gap: 36px;
+          padding: 58px 0 38px;
+        }
+
+        h1 {
+          font-size: clamp(66px, 23vw, 100px);
+        }
+
+        .hero-meta {
+          min-width: 0;
+        }
+
+        .filter-row {
+          align-items: flex-start;
+          flex-direction: column;
+          gap: 10px;
+          top: 6px;
+        }
+
+        .visible-count {
+          padding-left: 4px;
+        }
+
+        .gallery {
+          columns: 2;
+          column-gap: 10px;
+        }
+
+        .photo-card {
+          margin-bottom: 10px;
+          border-radius: 8px;
+        }
+
+        .lightbox-stage {
+          padding: 58px 10px 74px;
+        }
+
+        .lightbox-stage img {
+          max-height: calc(100dvh - 150px);
+        }
+
+        .lightbox-previous,
+        .lightbox-next {
+          top: auto;
+          bottom: 18px;
+          transform: none;
+        }
+
+        .lightbox-previous {
+          left: calc(50% - 58px);
+        }
+
+        .lightbox-next {
+          right: calc(50% - 58px);
+        }
+
+        .lightbox-caption {
+          position: absolute;
+          bottom: 78px;
+          width: 100%;
+          padding: 0 12px;
+        }
+
+        footer {
+          flex-direction: column;
+          padding-bottom: 30px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+
+        .photo-card img {
+          transition: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <nav class="topbar" aria-label="相册导航">
+        <a class="back-link" href={photoWallHref}><span aria-hidden="true">←</span> 返回照片墙</a>
+        <a class="home-link" href={sitePath('/')}>J先生魔法学院</a>
+      </nav>
+
+      <main>
+        <header class="hero">
+          <div>
+            <p class="eyebrow">{albumData.album.eyebrow}</p>
+            <h1>{albumData.album.name}</h1>
+          </div>
+          <div class="hero-meta" aria-label="相册信息">
+            <div class="stat">
+              <strong>{albumData.album.count}</strong>
+              <span>PHOTOS</span>
+            </div>
+            <div class="stat">
+              <strong>03—05</strong>
+              <span>YEARS</span>
+            </div>
+          </div>
+        </header>
+
+        <div class="filter-row">
+          <div class="filters" aria-label="按年份筛选">
+            <button class="filter-button" type="button" data-filter="all" aria-pressed="true">全部</button>
+            {years.map(([year, count]) => (
+              <button class="filter-button" type="button" data-filter={year} aria-pressed="false">{year} · {count}</button>
+            ))}
+          </div>
+          <span class="visible-count" aria-live="polite">显示 {albumData.album.count} 张</span>
+        </div>
+
+        <section class="gallery" aria-label="牙买加旅行照片">
+          {albumData.photos.map((photo, index) => (
+            <button
+              class="photo-card"
+              type="button"
+              data-year={String(photo.year)}
+              data-src={sitePath(photo.src)}
+              data-date={photo.date}
+              data-alt={`牙买加旅行照片，${photo.date}`}
+              aria-label={`查看${photo.date}的牙买加旅行照片`}
+            >
+              <img
+                src={sitePath(photo.src)}
+                alt={`牙买加旅行照片，${photo.date}`}
+                width={photo.width}
+                height={photo.height}
+                loading={index < 8 ? 'eager' : 'lazy'}
+                decoding="async"
+              />
+            </button>
+          ))}
+        </section>
+      </main>
+
+      <footer>
+        <span>牙买加 · 2003—2005</span>
+        <span>{albumData.album.count} 张照片，按拍摄时间排列</span>
+      </footer>
+    </div>
+
+    <dialog id="lightbox" aria-label="照片预览">
+      <div class="lightbox-stage">
+        <img id="lightbox-image" src="" alt="" />
+        <button class="lightbox-control lightbox-close" type="button" aria-label="关闭预览">×</button>
+        <button class="lightbox-control lightbox-previous" type="button" aria-label="上一张">‹</button>
+        <button class="lightbox-control lightbox-next" type="button" aria-label="下一张">›</button>
+      </div>
+      <div class="lightbox-caption">
+        <span id="lightbox-date"></span>
+        <span id="lightbox-position"></span>
+      </div>
+    </dialog>
+
+    <script>
+      const cards = Array.from(document.querySelectorAll<HTMLButtonElement>('.photo-card'));
+      const filterButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('.filter-button'));
+      const visibleCount = document.querySelector<HTMLElement>('.visible-count');
+      const dialog = document.querySelector<HTMLDialogElement>('#lightbox');
+      const lightboxImage = document.querySelector<HTMLImageElement>('#lightbox-image');
+      const lightboxDate = document.querySelector<HTMLElement>('#lightbox-date');
+      const lightboxPosition = document.querySelector<HTMLElement>('#lightbox-position');
+      const closeButton = document.querySelector<HTMLButtonElement>('.lightbox-close');
+      const previousButton = document.querySelector<HTMLButtonElement>('.lightbox-previous');
+      const nextButton = document.querySelector<HTMLButtonElement>('.lightbox-next');
+
+      let visibleCards = [...cards];
+      let currentIndex = 0;
+
+      const updateLightbox = () => {
+        const card = visibleCards[currentIndex];
+        if (!card || !lightboxImage || !lightboxDate || !lightboxPosition) return;
+        lightboxImage.src = card.dataset.src || '';
+        lightboxImage.alt = card.dataset.alt || '牙买加旅行照片';
+        lightboxDate.textContent = card.dataset.date || '';
+        lightboxPosition.textContent = `${currentIndex + 1} / ${visibleCards.length}`;
+      };
+
+      const openLightbox = (card: HTMLButtonElement) => {
+        if (!dialog) return;
+        visibleCards = cards.filter((item) => !item.hidden);
+        currentIndex = Math.max(0, visibleCards.indexOf(card));
+        updateLightbox();
+        dialog.showModal();
+      };
+
+      const moveLightbox = (direction: number) => {
+        if (visibleCards.length === 0) return;
+        currentIndex = (currentIndex + direction + visibleCards.length) % visibleCards.length;
+        updateLightbox();
+      };
+
+      cards.forEach((card) => card.addEventListener('click', () => openLightbox(card)));
+
+      filterButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          const filter = button.dataset.filter || 'all';
+          filterButtons.forEach((item) => item.setAttribute('aria-pressed', String(item === button)));
+          cards.forEach((card) => {
+            card.hidden = filter !== 'all' && card.dataset.year !== filter;
+          });
+          visibleCards = cards.filter((card) => !card.hidden);
+          if (visibleCount) visibleCount.textContent = `显示 ${visibleCards.length} 张`;
+        });
+      });
+
+      closeButton?.addEventListener('click', () => dialog?.close());
+      previousButton?.addEventListener('click', () => moveLightbox(-1));
+      nextButton?.addEventListener('click', () => moveLightbox(1));
+      dialog?.addEventListener('click', (event) => {
+        if (event.target === dialog) dialog.close();
+      });
+      dialog?.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowLeft') moveLightbox(-1);
+        if (event.key === 'ArrowRight') moveLightbox(1);
+      });
+    </script>
+  </body>
+</html>
