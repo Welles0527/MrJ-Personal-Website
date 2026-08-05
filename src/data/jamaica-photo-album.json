@@ -9,11 +9,11 @@
     "cover": "/images/photo-wall/jamaica/3f442b970c77667fb4861a9fab3bcf0f59e87fb8.webp",
     "coverId": "3f442b970c77667fb4861a9fab3bcf0f59e87fb8",
     "eventOrder": [
-      "Jamaica标志性照片",
       "大事记",
-      "其他",
+      "小事记",
+      "Jamaica标志性照片",
       "前期考察",
-      "小事记"
+      "其他"
     ],
     "countsByEvent": {
       "Jamaica标志性照片": 34,

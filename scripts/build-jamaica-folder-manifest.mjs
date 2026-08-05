@@ -41,7 +41,7 @@ const imageExtensions = new Set([
   '.heic',
 ]);
 const videoExtensions = new Set(['.avi', '.mp4', '.mov', '.mkv', '.wmv', '.m4v']);
-const preferredEventOrder = ['Jamaica标志性照片', '大事记', '其他', '前期考察', '小事记'];
+const preferredEventOrder = ['大事记', '小事记', 'Jamaica标志性照片', '前期考察', '其他'];
 const phashThreshold = 4;
 const pixelMadThreshold = 15;
 

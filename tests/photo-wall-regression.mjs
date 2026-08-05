@@ -8,11 +8,11 @@ const baseUrl = process.env.PHOTO_WALL_BASE_URL || 'http://127.0.0.1:4322/offici
 const outputDirectory = path.resolve('tmp/photo-wall-qa');
 const expectedAlbumCount = 2154;
 const expectedEventCounts = {
-  Jamaica标志性照片: 34,
   大事记: 1466,
-  其他: 100,
-  前期考察: 196,
   小事记: 358,
+  Jamaica标志性照片: 34,
+  前期考察: 196,
+  其他: 100,
 };
 const expectedCategoryCounts = { people: 1125, scenery: 1029 };
 await mkdir(outputDirectory, { recursive: true });
@@ -50,6 +50,12 @@ try {
   assert.equal(await page.locator('.photo-card:not([hidden])').count(), expectedAlbumCount);
   assert.equal(await page.locator('.chapter-section').count(), 58);
   assert.match(await page.locator('.hero h1').innerText(), /牙买加/);
+  assert.deepEqual(
+    await page.locator('.filter-button[data-filter-group="event"]:not([data-filter-value="all"])').evaluateAll((buttons) =>
+      buttons.map((button) => button.getAttribute('data-filter-value')),
+    ),
+    Object.keys(expectedEventCounts),
+  );
   await assertNoHorizontalOverflow();
 
   for (const [event, count] of Object.entries(expectedEventCounts)) {
