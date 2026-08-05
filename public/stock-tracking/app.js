@@ -3,6 +3,9 @@
 (function initializeStandaloneStockTracking() {
   const data = window.STOCK_TRACKING_MOCK_DATA;
   const accountStorage = window.StockTrackingAccountStorage;
+  const messageTaxonomy = window.StockTrackingMessageTaxonomy;
+  if (!messageTaxonomy) throw new Error("消息分类模块未加载");
+  const MESSAGE_CATEGORY = messageTaxonomy.categories;
   const seedStocks = (data?.stocks || []).map(stock => ({
     ...stock,
     messages: (stock.messages || []).map(normalizeMessage)
@@ -22,11 +25,11 @@
     ? new window.StockTechnicalAnalysis.MockTechnicalAnalysisProvider()
     : null;
   const stockGroups = [
-    { id: "all", title: "全部动态", icon: "all", categories: ["macro", "company", "risk", "valuation", "capital", "other"], size: "primary" },
-    { id: "industry", title: "行业大事件", icon: "globe", categories: ["macro"], size: "secondary" },
-    { id: "company", title: "公司动态", icon: "building", categories: ["company", "risk", "valuation", "capital", "other"], size: "secondary" },
-    { id: "technical", title: "技术分析", icon: "chart", categories: ["technical"], size: "secondary" },
-    { id: "health", title: "持仓结论", icon: "flag", categories: ["health"], size: "primary" }
+    { id: "all", title: "全部动态", icon: "all", categories: [MESSAGE_CATEGORY.INDUSTRY, MESSAGE_CATEGORY.COMPANY], size: "primary" },
+    { id: "industry", title: "行业大事件", icon: "globe", categories: [MESSAGE_CATEGORY.INDUSTRY], size: "secondary" },
+    { id: "company", title: "公司动态", icon: "building", categories: [MESSAGE_CATEGORY.COMPANY], size: "secondary" },
+    { id: "technical", title: "技术分析", icon: "chart", categories: [MESSAGE_CATEGORY.TECHNICAL], size: "secondary" },
+    { id: "health", title: "持仓结论", icon: "flag", categories: [MESSAGE_CATEGORY.HEALTH], size: "primary" }
   ];
   const iconPaths = {
     all: "<path d='M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z'/>",
@@ -314,7 +317,7 @@
   }
 
   function groupIncludes(group, message) {
-    return !group.categories || group.categories.includes(message.category);
+    return !group.categories || messageTaxonomy.groupIncludes(group.categories, message.category);
   }
 
   function messagesForGroup(stock, group = activeGroup()) {
@@ -332,7 +335,14 @@
   }
 
   function normalizeMessage(message) {
-    return { ...message, sentiment: normalizeSentiment(message.sentiment) };
+    if (!messageTaxonomy.isKnownCategory(message.category)) {
+      console.warn(`[StockTracking] 未知消息分类“${message.category || "空值"}”，已归入公司动态。`);
+    }
+    return {
+      ...message,
+      category: messageTaxonomy.normalizeCategory(message.category),
+      sentiment: normalizeSentiment(message.sentiment)
+    };
   }
 
   function sentimentLabel(sentiment) {
