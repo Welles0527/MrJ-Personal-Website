@@ -96,6 +96,7 @@
   let root;
   let technicalPage;
   let completeEmailSignUp;
+  let accountSyncPromise = null;
   const refreshTimers = [];
 
   function mount() {
@@ -113,14 +114,32 @@
     window.addEventListener("storage", handleExternalStorageChange);
     window.addEventListener("site-auth-change", handleExternalStorageChange);
     window.addEventListener("stock-auth-ready", handleAuthReady);
+    window.addEventListener("stock-preference-cloud-ready", syncAccountPreferences);
+    window.addEventListener("stock-preferences-cloud-change", handleCloudPreferencesChange);
     document.addEventListener("visibilitychange", handleVisibilityRefresh);
     render();
+    void syncAccountPreferences();
     loadStockUniverse();
     refreshAllInformation({ silent: true, force: true });
     startAutomaticRefresh();
   }
 
-  function handleExternalStorageChange() {
+  function handleExternalStorageChange(event) {
+    state.editField = null;
+    state.saveError = "";
+    state.readOverridesByScope.clear();
+    restoreWatchlist();
+    render();
+    if (event?.type === "site-auth-change") void syncAccountPreferences();
+  }
+
+  function handleAuthReady() {
+    state.authMessage = "";
+    render();
+    void syncAccountPreferences();
+  }
+
+  function handleCloudPreferencesChange() {
     state.editField = null;
     state.saveError = "";
     state.readOverridesByScope.clear();
@@ -128,9 +147,18 @@
     render();
   }
 
-  function handleAuthReady() {
-    state.authMessage = "";
-    render();
+  function syncAccountPreferences() {
+    if (accountSyncPromise || typeof accountStorage.sync !== "function") return accountSyncPromise;
+    accountSyncPromise = accountStorage.sync(seedStockCodes)
+      .then(() => {
+        state.readOverridesByScope.clear();
+        restoreWatchlist();
+        render();
+      })
+      .finally(() => {
+        accountSyncPromise = null;
+      });
+    return accountSyncPromise;
   }
 
   function shanghaiMarketClock() {
@@ -750,12 +778,20 @@
 
   function renderSharedAccount() {
     const account = accountStorage.getAccount();
+    const sync = accountStorage.getSyncStatus?.() || { mode: "local" };
+    const syncCopy = !account.signedIn
+      ? "与 magicj.cn 使用同一登录"
+      : sync.mode === "cloud"
+        ? "自选股与已读状态已同步云端"
+        : sync.mode === "error"
+          ? "云同步暂不可用 · 已保留本机"
+          : "正在同步云端账号";
     return `
       <section class="shared-account ${account.signedIn ? "signed-in" : ""}" aria-label="共享登录账号">
         <span class="shared-account-icon">${icon("user")}</span>
         <span class="shared-account-copy">
           <strong>${account.signedIn ? escapeHtml(account.label) : "官网共享账号"}</strong>
-          <small>${account.signedIn ? "自选股按当前账号保存" : "与 magicj.cn 使用同一登录"}</small>
+          <small>${syncCopy}</small>
         </span>
         <button type="button" data-action="${account.signedIn ? "auth-signout" : "open-auth"}"
           ${state.authBusy ? "disabled" : ""}>
@@ -862,6 +898,14 @@
     const position = positionValues(stock);
     const returnPct = hasQuote && position.cost > 0 ? ((stock.price - position.cost) / position.cost) * 100 : null;
     const account = accountStorage.getAccount();
+    const sync = accountStorage.getSyncStatus?.() || { mode: "local" };
+    const saveState = !account.signedIn
+      ? "未登录 · 当前浏览器访客空间"
+      : sync.mode === "cloud"
+        ? "已同步至登录账号云端"
+        : sync.mode === "error"
+          ? "云同步失败 · 已保留本机"
+          : "正在同步登录账号";
     return `
       <header class="position-header">
         <div class="quote-block">
@@ -890,7 +934,7 @@
           <div><dt>持仓占比</dt><dd>${formatNumber(stock.positionPct, 1)}%</dd></div>
           <div class="account-save-state">
             <span class="${account.signedIn ? "signed-in" : ""}"></span>
-            ${account.signedIn ? "已按登录账号保存" : "未登录 · 当前浏览器访客空间"}
+            ${saveState}
           </div>
         </dl>
         ${renderEditableThesis(position.thesis)}

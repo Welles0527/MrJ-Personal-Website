@@ -1,6 +1,7 @@
 import {
   cloudErrorMessage,
   describeSessionExpiry,
+  getCloudDb,
   getCloudSession,
   getRememberedSession,
   signInWithPassword,
@@ -11,6 +12,7 @@ import {
 type StockTrackingAuthBridge = {
   cloudErrorMessage: typeof cloudErrorMessage;
   describeSessionExpiry: typeof describeSessionExpiry;
+  getCloudDb: typeof getCloudDb;
   getCloudSession: typeof getCloudSession;
   getRememberedSession: typeof getRememberedSession;
   signInWithPassword: typeof signInWithPassword;
@@ -28,6 +30,7 @@ export const mountStockTrackingAuthBridge = () => {
   window.StockTrackingSharedAuth = {
     cloudErrorMessage,
     describeSessionExpiry,
+    getCloudDb,
     getCloudSession,
     getRememberedSession,
     signInWithPassword,
