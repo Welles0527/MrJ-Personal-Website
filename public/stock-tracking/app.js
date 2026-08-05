@@ -39,6 +39,7 @@
     flag: "<path d='M6 21V4M6 5h10l2 3-2 3H6'/>",
     pulse: "<path d='M3 12h4l2-5 4 10 2-5h6'/>",
     news: "<path d='M5 4h12a2 2 0 012 2v14H7a2 2 0 01-2-2zM8 8h8M8 12h8M8 16h5'/>",
+    digest: "<path d='M6 3.5h12v17H6zM9 8h6M9 12h6M9 16h3'/><path d='M4 7h2M4 12h2M4 17h2'/>",
     edit: "<path d='M4 20h4l11-11-4-4L4 16zM13.5 6.5l4 4'/>",
     search: "<circle cx='10.5' cy='10.5' r='6.5'/><path d='M15.5 15.5L21 21'/>",
     refresh: "<path d='M20 7v5h-5M4 17v-5h5M18.5 9A7 7 0 006 7l-2 5M5.5 15A7 7 0 0018 17l2-5'/>",
@@ -64,7 +65,7 @@
     : legacyGroupMap[requestedCategory] || "all";
   const state = {
     selectedStockId: requestedStockId || data?.stocks?.[0]?.id || "",
-    viewMode: requestedView === "technical" ? "technical" : "stock",
+    viewMode: ["technical", "daily"].includes(requestedView) ? requestedView : "stock",
     activeGroup: requestedGroup,
     query: "",
     readOverridesByScope: new Map(),
@@ -120,7 +121,11 @@
     render();
     void syncAccountPreferences();
     loadStockUniverse();
-    refreshAllInformation({ silent: true, force: true });
+    refreshAllInformation({
+      silent: true,
+      force: true,
+      feedCodes: state.viewMode === "daily" ? data.stocks.map(stock => stock.code) : undefined
+    });
     startAutomaticRefresh();
   }
 
@@ -187,10 +192,14 @@
 
   function runAutomaticRefresh(sections) {
     if (document.visibilityState !== "visible" || !liveDataProvider) return;
+    const feedSections = sections.filter(section => section !== "quote");
     const options = {
       silent: true,
       quoteCodes: sections.includes("quote") ? [selectedStock().code] : [],
-      feedSections: sections.filter(section => section !== "quote")
+      feedSections,
+      feedCodes: feedSections.length
+        ? state.viewMode === "daily" ? data.stocks.map(stock => stock.code) : [selectedStock().code]
+        : []
     };
     refreshAllInformation(options);
   }
@@ -213,10 +222,14 @@
 
   function handleVisibilityRefresh() {
     if (document.visibilityState !== "visible") return;
+    const feedCodes = state.viewMode === "daily"
+      ? data.stocks.map(stock => stock.code)
+      : [selectedStock().code];
     refreshAllInformation({
       silent: true,
       force: true,
       quoteCodes: [selectedStock().code],
+      feedCodes,
       feedSections: ["announcements", "news", "events"]
     });
   }
@@ -321,6 +334,14 @@
     if (stockId) return String(stockId);
     if (state.viewMode === "macro") return "market-macro";
     return String(selectedStock().id || "unknown");
+  }
+
+  function messageScopeId(message) {
+    return readStorageScope(message?.trackingStockId || "");
+  }
+
+  function messageIsUnread(message) {
+    return isUnread(message, messageScopeId(message));
   }
 
   function readOverridesFor(scopeId = readStorageScope()) {
@@ -429,6 +450,41 @@
 
   function filteredMacroNews() {
     return data.market.macroNews.filter(messageMatchesFilters).sort(sortByNewest);
+  }
+
+  function dailyDigestMessages(applySentimentFilter = true) {
+    const allDynamicsGroup = stockGroups.find(group => group.id === "all") || stockGroups[0];
+    return data.stocks
+      .flatMap(stock => messagesForGroup(stock, allDynamicsGroup)
+        .filter(message => messageMatchesDateFilter(message, "today"))
+        .map(message => ({
+          ...message,
+          trackingStockId: stock.id,
+          trackingStockCode: stock.code,
+          trackingStockName: stock.name
+        })))
+      .filter(message => !applySentimentFilter
+        || state.filters.sentiment === "all"
+        || message.sentiment === state.filters.sentiment)
+      .sort(sortByNewest);
+  }
+
+  function dailyDigestCounts() {
+    return dailyDigestMessages(false).reduce((counts, message) => {
+      if (Object.hasOwn(counts, message.sentiment)) counts[message.sentiment] += 1;
+      return counts;
+    }, { "利好": 0, "利空": 0, "中性": 0 });
+  }
+
+  function dailyDigestCheckState() {
+    const checkedTimes = data.stocks
+      .map(stock => state.dynamicsCheckedByCode.get(stock.code))
+      .filter(Boolean)
+      .sort((left, right) => new Date(right) - new Date(left));
+    return {
+      checkedCount: checkedTimes.length,
+      latestAt: checkedTimes[0] || null
+    };
   }
 
   function sortByNewest(left, right) {
@@ -611,7 +667,8 @@
         state.pendingRefreshOptions = {
           ...options,
           silent: true,
-          quoteCodes: options.quoteCodes || [selectedStock().code]
+          quoteCodes: options.quoteCodes || [selectedStock().code],
+          feedCodes: options.feedCodes || [selectedStock().code]
         };
       }
       return;
@@ -623,9 +680,14 @@
     const feedSections = Array.isArray(options.feedSections)
       ? options.feedSections.filter(section => ["announcements", "news", "events"].includes(section))
       : ["announcements", "news", "events"];
+    const feedCodes = Array.isArray(options.feedCodes)
+      ? [...new Set(options.feedCodes.map(code => String(code).padStart(6, "0")))]
+      : [selected.code];
+    const feedStocks = feedCodes.map(code => stockRecord(code));
     state.refreshing = true;
     if (!options.silent) {
-      state.refreshNotice = `正在刷新 ${quoteCodes.length} 只股票的实时行情与 ${selected.name} 最新公告、新闻、公司事件…`;
+      const feedLabel = feedStocks.length > 1 ? `${feedStocks.length} 只自选股` : selected.name;
+      state.refreshNotice = `正在刷新 ${quoteCodes.length} 只股票的实时行情与 ${feedLabel} 最新公告、新闻、公司事件…`;
       render();
     }
 
@@ -635,41 +697,46 @@
         return quote;
       })
     );
-    const informationRequest = feedSections.length
-      ? liveDataProvider
-        .getLatestInformation(selected.code, {
+    const informationRequests = feedSections.length
+      ? feedStocks.map(stock => liveDataProvider
+        .getLatestInformation(stock.code, {
           sections: feedSections,
           force: options.force,
-          name: selected.name
+          name: stock.name
         })
         .then(information => {
-          applyLatestInformation(selected.code, information, feedSections);
+          applyLatestInformation(stock.code, information, feedSections);
           return information;
-        })
-      : Promise.resolve(null);
-    const [quoteResults, informationResult] = await Promise.all([
+        }))
+      : [];
+    const [quoteResults, informationResults] = await Promise.all([
       Promise.allSettled(quoteRequests),
-      Promise.allSettled([informationRequest])
+      Promise.allSettled(informationRequests)
     ]);
 
     const quoteSuccesses = quoteResults.filter(result => result.status === "fulfilled").length;
-    const informationSucceeded = !feedSections.length || informationResult[0]?.status === "fulfilled";
-    const informationErrors = informationResult[0]?.status === "fulfilled"
-      ? Object.values(informationResult[0].value?.errors || {})
-      : [];
+    const informationSuccesses = informationResults.filter(result => result.status === "fulfilled").length;
+    const informationSucceeded = !feedSections.length || informationSuccesses > 0;
+    const informationErrors = informationResults
+      .filter(result => result.status === "fulfilled")
+      .flatMap(result => Object.values(result.value?.errors || {}));
     const errors = [
       ...quoteResults.filter(result => result.status === "rejected").map(result => result.reason?.message),
-      ...informationResult.filter(result => result.status === "rejected").map(result => result.reason?.message),
+      ...informationResults.filter(result => result.status === "rejected").map(result => result.reason?.message),
       ...informationErrors
     ].filter(Boolean);
 
     state.refreshing = false;
     if (quoteSuccesses || informationSucceeded) {
       const marketTime = state.marketUpdatedAt ? `行情 ${formatDateTime(state.marketUpdatedAt)}` : "行情暂未更新";
-      const announcementTime = state.announcementsCheckedByCode.get(selected.code);
-      const newsTime = state.newsCheckedByCode.get(selected.code);
-      const eventTime = state.eventsCheckedByCode.get(selected.code);
-      state.refreshNotice = `${marketTime} · 公告 ${announcementTime ? formatDateTime(announcementTime) : "待检查"} · 新闻 ${newsTime ? formatDateTime(newsTime) : "待检查"} · 事项 ${eventTime ? formatDateTime(eventTime) : "待检查"}`;
+      if (feedStocks.length > 1) {
+        state.refreshNotice = `${marketTime} · 已检查 ${informationSuccesses}/${feedStocks.length} 只自选股动态`;
+      } else {
+        const announcementTime = state.announcementsCheckedByCode.get(selected.code);
+        const newsTime = state.newsCheckedByCode.get(selected.code);
+        const eventTime = state.eventsCheckedByCode.get(selected.code);
+        state.refreshNotice = `${marketTime} · 公告 ${announcementTime ? formatDateTime(announcementTime) : "待检查"} · 新闻 ${newsTime ? formatDateTime(newsTime) : "待检查"} · 事项 ${eventTime ? formatDateTime(eventTime) : "待检查"}`;
+      }
       if (errors.length) state.refreshNotice += ` · ${errors.length} 项未成功`;
     } else {
       state.refreshNotice = `刷新失败：${errors[0] || "公开数据源暂不可用"}`;
@@ -684,12 +751,15 @@
     const stock = selectedStock();
     document.title = state.viewMode === "technical"
       ? `${stock.name}技术分析 - A股个股跟踪`
-      : "A股个股跟踪";
+      : state.viewMode === "daily"
+        ? "今日必读 - A股个股跟踪"
+        : "A股个股跟踪";
     root.innerHTML = `
       <div class="tracking-layout">
         ${renderSidebar(stock)}
         <main class="tracking-main ${state.viewMode === "technical" ? "technical-main" : ""}">
           ${state.viewMode === "stock" ? renderStockView(stock) : ""}
+          ${state.viewMode === "daily" ? renderDailyDigestView() : ""}
           ${state.viewMode === "macro" ? renderMacroView() : ""}
           ${state.viewMode === "market" ? renderMarketTechnicalView() : ""}
           ${state.viewMode === "technical" ? renderTechnicalView(stock) : ""}
@@ -719,10 +789,37 @@
     });
   }
 
+  function renderDailyDigestView() {
+    const account = accountStorage.getAccount();
+    const counts = dailyDigestCounts();
+    const checkState = dailyDigestCheckState();
+    const messages = dailyDigestMessages();
+    return `
+      <section class="global-view daily-digest-view">
+        <header class="global-header daily-digest-header">
+          <div class="global-title-icon">${icon("digest")}</div>
+          <div>
+            <p>${account.signedIn ? "登录账号自选股" : "当前浏览器自选股"} · 上海时间今日</p>
+            <h2>今日必读</h2>
+            <span>汇总 ${data.stocks.length} 只自选股当天发布的公告、新闻与公司事件</span>
+          </div>
+          <div class="daily-digest-summary" aria-label="今日消息汇总">
+            <span class="positive"><b>${counts["利好"]}</b>利好</span>
+            <span class="negative"><b>${counts["利空"]}</b>利空</span>
+            <span class="neutral"><b>${counts["中性"]}</b>中性</span>
+            <small>已检查 ${checkState.checkedCount}/${data.stocks.length}${checkState.latestAt ? ` · ${formatDateTime(checkState.latestAt)}` : ""}</small>
+          </div>
+        </header>
+        ${renderMessageHeader("daily")}
+        ${renderDailyDigestFilters()}
+        ${renderMessageResults(messages)}
+      </section>`;
+  }
+
   function syncUrl() {
     const url = new URL(window.location.href);
-    if (state.viewMode === "technical") {
-      url.searchParams.set("view", "technical");
+    if (["technical", "daily"].includes(state.viewMode)) {
+      url.searchParams.set("view", state.viewMode);
       url.searchParams.set("stock", state.selectedStockId);
       url.searchParams.delete("category");
     } else {
@@ -751,6 +848,7 @@
           </div>
           ${renderSharedAccount()}
           <nav class="market-tools" aria-label="全市场看板">
+            ${renderMarketTool("daily", "digest", "今日必读", `${data.stocks.length} 只自选 · 今日 ${dailyDigestMessages(false).length} 条`)}
             ${renderMarketTool("macro", "news", "宏观大事件", "5 则市场要闻")}
             ${renderMarketTool("market", "pulse", "大盘技术走势", "指数与技术指标")}
           </nav>
@@ -865,7 +963,7 @@
   function renderMarketTool(view, iconName, title, description) {
     const active = state.viewMode === view;
     return `
-      <button class="market-tool ${active ? "selected" : ""}" type="button" data-action="select-view" data-view="${view}" aria-pressed="${active}">
+      <button class="market-tool market-tool-${view} ${active ? "selected" : ""}" type="button" data-action="select-view" data-view="${view}" aria-pressed="${active}">
         <span class="market-tool-icon">${icon(iconName)}</span>
         <span><strong>${title}</strong><small>${description}</small></span>
         <span class="market-tool-arrow">›</span>
@@ -1060,9 +1158,13 @@
   function renderMessageHeader(mode) {
     const group = activeGroup();
     const stock = selectedStock();
-    const messages = mode === "macro" ? data.market.macroNews : messagesForGroup(stock);
-    const unread = messages.filter(message => isUnread(message)).length;
-    const title = mode === "macro" ? "宏观大事件" : group.title;
+    const messages = mode === "macro"
+      ? data.market.macroNews
+      : mode === "daily"
+        ? dailyDigestMessages()
+        : messagesForGroup(stock);
+    const unread = messages.filter(messageIsUnread).length;
+    const title = mode === "macro" ? "宏观大事件" : mode === "daily" ? "今日自选动态" : group.title;
     const checkedAt = mode === "stock" ? state.dynamicsCheckedByCode.get(stock.code) : null;
     return `
       <header class="message-header">
@@ -1097,6 +1199,19 @@
           ["month", "本月"]
         ])}
         ${filtersActive() ? `<button class="clear-filters" type="button" data-action="clear-filters">清除筛选</button>` : ""}
+      </section>`;
+  }
+
+  function renderDailyDigestFilters() {
+    return `
+      <section class="message-filters daily-digest-filters" aria-label="今日必读消息筛选">
+        ${renderFilterGroup("消息类型", "sentiment", [
+          ["all", "全部"],
+          ["利好", "利好"],
+          ["利空", "利空"],
+          ["中性", "中性"]
+        ])}
+        ${state.filters.sentiment !== "all" ? `<button class="clear-filters" type="button" data-action="clear-filters">清除筛选</button>` : ""}
       </section>`;
   }
 
@@ -1153,8 +1268,12 @@
   }
 
   function renderMessage(message) {
-    const unread = isUnread(message);
+    const scopeId = messageScopeId(message);
+    const unread = isUnread(message, scopeId);
     const sourceUrl = specificSourceUrl(message.sourceUrl);
+    const stockBadge = message.trackingStockId
+      ? `<button class="message-stock-link" type="button" data-action="select-stock" data-stock-id="${escapeHtml(message.trackingStockId)}" title="查看${escapeHtml(message.trackingStockName)}全部动态">${escapeHtml(message.trackingStockName)} <span>${escapeHtml(message.trackingStockCode)}</span></button>`
+      : "";
     const eventBadge = message.eventLabel
       ? `<span class="message-tag event-kind-${escapeHtml(message.eventKind || "reminder")}">${escapeHtml(message.eventLabel)}</span>`
       : "";
@@ -1168,7 +1287,7 @@
         <span class="message-time-cell">
           <time datetime="${message.publishedAt}">${formatMessageTime(message.publishedAt)}</time>
           <button class="message-read-check ${unread ? "" : "checked"}" type="button"
-            data-action="toggle-message-read" data-message-id="${message.id}"
+            data-action="toggle-message-read" data-message-id="${message.id}" data-message-scope="${escapeHtml(scopeId)}"
             role="checkbox" aria-label="${unread ? "标记为已读" : "取消已读"}" aria-checked="${!unread}">
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.2l2.8 2.8 6.2-6.2"/></svg>
           </button>
@@ -1179,6 +1298,7 @@
             <div class="message-heading">
               <strong>${escapeHtml(message.title)}</strong>
               <span class="message-badges">
+                ${stockBadge}
                 ${eventBadge}
                 <span class="message-tag evidence-${message.evidence}">${message.evidence}</span>
                 <span class="message-tag sentiment-${message.sentiment}">${sentimentLabel(message.sentiment)}</span>
@@ -1380,6 +1500,7 @@
     if (!target) return;
     const action = target.dataset.action;
     let refreshCodeAfterRender = "";
+    let refreshDailyAfterRender = false;
 
     if (action === "open-auth") {
       state.authMode = "login";
@@ -1398,6 +1519,7 @@
     } else if (action === "select-view") {
       state.viewMode = target.dataset.view;
       resetForNavigation();
+      refreshDailyAfterRender = state.viewMode === "daily";
     } else if (action === "select-stock") {
       state.selectedStockId = target.dataset.stockId;
       state.viewMode = state.viewMode === "technical" || target.dataset.stockView === "technical" ? "technical" : "stock";
@@ -1426,20 +1548,31 @@
       state.activeGroup = "all";
     } else if (action === "toggle-message-read") {
       const messageId = target.dataset.messageId;
-      const scopeId = readStorageScope();
+      const scopeId = target.dataset.messageScope || readStorageScope();
       const overrides = readOverridesFor(scopeId);
       if (overrides.has(messageId)) overrides.delete(messageId);
       else overrides.add(messageId);
       persistReadOverrides(scopeId, overrides);
     } else if (action === "mark-read") {
-      const messages = state.viewMode === "macro" ? filteredMacroNews() : filteredStockMessages(selectedStock());
-      const scopeId = readStorageScope();
-      const overrides = readOverridesFor(scopeId);
-      messages.filter(message => isUnread(message, scopeId)).forEach(message => {
-        if (overrides.has(message.id)) overrides.delete(message.id);
-        else overrides.add(message.id);
+      const messages = state.viewMode === "macro"
+        ? filteredMacroNews()
+        : state.viewMode === "daily"
+          ? dailyDigestMessages()
+          : filteredStockMessages(selectedStock());
+      const messagesByScope = new Map();
+      messages.forEach(message => {
+        const scopeId = messageScopeId(message);
+        if (!messagesByScope.has(scopeId)) messagesByScope.set(scopeId, []);
+        messagesByScope.get(scopeId).push(message);
       });
-      persistReadOverrides(scopeId, overrides);
+      messagesByScope.forEach((scopedMessages, scopeId) => {
+        const overrides = readOverridesFor(scopeId);
+        scopedMessages.filter(message => isUnread(message, scopeId)).forEach(message => {
+          if (overrides.has(message.id)) overrides.delete(message.id);
+          else overrides.add(message.id);
+        });
+        persistReadOverrides(scopeId, overrides);
+      });
     } else if (action === "edit-position") {
       const position = positionValues(selectedStock());
       state.editField = target.dataset.field;
@@ -1464,7 +1597,8 @@
     } else if (action === "set-filter") {
       state.filters[target.dataset.filterKey] = target.dataset.filterValue;
     } else if (action === "refresh-all") {
-      refreshAllInformation({ force: true });
+      const dailyCodes = state.viewMode === "daily" ? data.stocks.map(stock => stock.code) : undefined;
+      refreshAllInformation({ force: true, feedCodes: dailyCodes });
       return;
     } else if (state.viewMode === "technical" && technicalPage) {
       const handled = technicalPage.handleAction(target);
@@ -1478,6 +1612,15 @@
         silent: true,
         force: true,
         quoteCodes: [String(refreshCodeAfterRender).padStart(6, "0")],
+        feedSections: ["announcements", "news", "events"]
+      });
+    } else if (refreshDailyAfterRender) {
+      const dailyCodes = data.stocks.map(stock => stock.code);
+      refreshAllInformation({
+        silent: true,
+        force: true,
+        quoteCodes: dailyCodes,
+        feedCodes: dailyCodes,
         feedSections: ["announcements", "news", "events"]
       });
     }

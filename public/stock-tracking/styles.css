@@ -293,6 +293,8 @@ svg {
   color: #d0af87;
 }
 .market-tool.selected .market-tool-icon { background: #32211d; color: #ff896f; }
+.market-tool-daily .market-tool-icon { border: 1px solid #514325; background: #211d14; color: #e2bc67; }
+.market-tool-daily.selected .market-tool-icon { border-color: #765326; background: #302317; color: #ffd17a; }
 .market-tool-icon svg { width: 19px; height: 19px; }
 .market-tool strong, .market-tool small { display: block; }
 .market-tool strong { font-size: 14px; }
@@ -1056,6 +1058,22 @@ svg {
   line-height: 1;
   white-space: nowrap;
 }
+.message-stock-link {
+  min-height: 25px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid #334657;
+  border-radius: 4px;
+  background: #172431;
+  color: #b9d2e5;
+  padding: 4px 7px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+.message-stock-link span { color: #71889b; font-family: var(--mono); font-weight: 500; }
+.message-stock-link:hover { border-color: #54718a; background: #1b2d3d; color: #e1f0fb; }
 .evidence-事实 { border-color: #24394f; background: #172432; color: var(--blue); }
 .evidence-推断 { border-color: #463a24; background: #2b2417; color: var(--warning); }
 .evidence-传闻 { border-color: #512d34; background: #301b20; color: #ff7f86; }
@@ -1112,6 +1130,34 @@ svg {
 .global-header p { margin: 0 0 3px; color: #d18d65; font-size: 11px; font-weight: 700; letter-spacing: .07em; }
 .global-header h2 { margin: 0; font-size: 27px; letter-spacing: -.02em; }
 .global-header > div:nth-child(2) > span { display: block; margin-top: 5px; color: var(--muted); font-size: 13px; }
+.daily-digest-summary {
+  min-width: 260px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(62px, 1fr));
+  gap: 6px;
+}
+.daily-digest-summary > span {
+  min-height: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #101923;
+  color: var(--muted);
+  font-size: 10px;
+}
+.daily-digest-summary b { margin-bottom: 3px; font: 700 17px/1 var(--mono); }
+.daily-digest-summary .positive b { color: var(--positive); }
+.daily-digest-summary .negative b { color: var(--negative); }
+.daily-digest-summary .neutral b { color: #b1bcc7; }
+.daily-digest-summary small {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  text-align: right;
+  font-size: 10px;
+}
 .demo-source {
   border: 1px solid var(--line);
   border-radius: 4px;
@@ -1203,10 +1249,13 @@ svg {
   .position-metrics { grid-template-columns: repeat(4, minmax(90px, 1fr)); }
   .board-grid { grid-template-columns: repeat(5, minmax(150px, 1fr)); overflow-x: auto; }
   .sentiment-columns { grid-template-columns: 1fr; }
+  .daily-digest-header { grid-template-columns: 50px minmax(0, 1fr); }
+  .daily-digest-summary { grid-column: 1 / -1; width: 100%; }
 }
 
 @media (max-width: 620px) {
   .watchlist { padding-top: 18px; }
+  .market-tools { grid-template-columns: 1fr; }
   .watchlist-items { grid-template-columns: 1fr; }
   .position-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
   .position-return { display: flex; flex-wrap: wrap; gap: 5px; }
