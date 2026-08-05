@@ -6,8 +6,15 @@ import { chromium } from 'playwright';
 
 const baseUrl = process.env.PHOTO_WALL_BASE_URL || 'http://127.0.0.1:4322/officialwebsite';
 const outputDirectory = path.resolve('tmp/photo-wall-qa');
-const expectedAlbumCount = 448;
-const expectedYearCounts = { 2003: 55, 2004: 90, 2005: 303 };
+const expectedAlbumCount = 2154;
+const expectedEventCounts = {
+  Jamaica标志性照片: 34,
+  大事记: 1466,
+  其他: 100,
+  前期考察: 196,
+  小事记: 358,
+};
+const expectedCategoryCounts = { people: 1125, scenery: 1029 };
 await mkdir(outputDirectory, { recursive: true });
 
 const browserCandidates = [
@@ -41,30 +48,50 @@ try {
   assert.equal(await page.locator('.home-link').getAttribute('href'), '/officialwebsite/');
   assert.equal(await page.locator('.photo-card').count(), expectedAlbumCount);
   assert.equal(await page.locator('.photo-card:not([hidden])').count(), expectedAlbumCount);
-  assert.match(await page.locator('h1').innerText(), /牙买加/);
+  assert.equal(await page.locator('.chapter-section').count(), 58);
+  assert.match(await page.locator('.hero h1').innerText(), /牙买加/);
   await assertNoHorizontalOverflow();
 
-  for (const [year, count] of Object.entries(expectedYearCounts)) {
-    await page.locator(`.filter-button[data-filter="${year}"]`).click();
+  for (const [event, count] of Object.entries(expectedEventCounts)) {
+    await page.locator(`.filter-button[data-filter-group="event"][data-filter-value="${event}"]`).click();
     assert.equal(await page.locator('.photo-card:not([hidden])').count(), count);
     assert.equal((await page.locator('.visible-count').innerText()).trim(), `显示 ${count} 张`);
   }
 
-  await page.locator('.filter-button[data-filter="all"]').click();
-  await page.locator('.photo-card').first().click();
+  await page.locator('.filter-button[data-filter-group="event"][data-filter-value="all"]').click();
+  for (const [category, count] of Object.entries(expectedCategoryCounts)) {
+    await page.locator(`.filter-button[data-filter-group="category"][data-filter-value="${category}"]`).click();
+    assert.equal(await page.locator('.photo-card:not([hidden])').count(), count);
+  }
+
+  await page.locator('.filter-button[data-filter-group="category"][data-filter-value="people"]').click();
+  await page.locator('.filter-button[data-filter-group="event"][data-filter-value="大事记"]').click();
+  assert.equal(await page.locator('.photo-card:not([hidden])').count(), 828);
+  await page.locator('.filter-button[data-filter-group="event"][data-filter-value="all"]').click();
+  await page.locator('.filter-button[data-filter-group="category"][data-filter-value="all"]').click();
+  await page.locator('.photo-card:not([hidden])').first().click();
   await page.waitForFunction(() => document.querySelector('#lightbox')?.open === true);
   assert.equal((await page.locator('#lightbox-position').innerText()).trim(), `1 / ${expectedAlbumCount}`);
+  assert.match(await page.locator('#lightbox-chapter').innerText(), /Jamaica标志性照片/);
+  assert.equal((await page.locator('#lightbox-file').innerText()).trim(), '01.jpg');
   await page.locator('.lightbox-next').click();
   assert.equal((await page.locator('#lightbox-position').innerText()).trim(), `2 / ${expectedAlbumCount}`);
   await page.locator('.lightbox-close').click();
   assert.equal(await page.locator('#lightbox').evaluate((dialog) => dialog.open), false);
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({ path: path.join(outputDirectory, 'desktop-album.png'), fullPage: false });
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(`${baseUrl}/topics/space/travel/photo-wall/jamaica/`, { waitUntil: 'networkidle' });
+  await page.goto(`${baseUrl}/topics/space/travel/photo-wall/jamaica/`, { waitUntil: 'domcontentloaded' });
+  await page.locator('.photo-card').first().waitFor();
   assert.equal(await page.locator('.photo-card').count(), expectedAlbumCount);
   await assertNoHorizontalOverflow();
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.locator('.photo-card').first().click();
+  await page.waitForFunction(() => {
+    const image = document.querySelector('#lightbox-image');
+    return image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0;
+  });
   const controls = ['.lightbox-close', '.lightbox-previous', '.lightbox-next'];
   for (const selector of controls) {
     const box = await page.locator(selector).boundingBox();
@@ -73,12 +100,15 @@ try {
   }
   await page.screenshot({ path: path.join(outputDirectory, 'mobile-lightbox.png'), fullPage: false });
   await page.locator('.lightbox-close').click();
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({ path: path.join(outputDirectory, 'mobile-album.png'), fullPage: false });
 
   console.log(JSON.stringify({
     index: 'ok',
     albumPhotos: expectedAlbumCount,
-    filters: expectedYearCounts,
+    eventFilters: expectedEventCounts,
+    categoryFilters: expectedCategoryCounts,
+    combinedFilter: { event: '大事记', category: 'people', count: 828 },
     lightbox: 'ok',
     desktopViewport: '1440x900',
     mobileViewport: '390x844',
