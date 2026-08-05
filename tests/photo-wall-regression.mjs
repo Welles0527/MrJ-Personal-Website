@@ -6,6 +6,8 @@ import { chromium } from 'playwright';
 
 const baseUrl = process.env.PHOTO_WALL_BASE_URL || 'http://127.0.0.1:4322/officialwebsite';
 const outputDirectory = path.resolve('tmp/photo-wall-qa');
+const expectedAlbumCount = 448;
+const expectedYearCounts = { 2003: 126, 2004: 68, 2005: 254 };
 await mkdir(outputDirectory, { recursive: true });
 
 const browserCandidates = [
@@ -29,7 +31,7 @@ try {
   assert.equal(indexResponse?.status(), 200);
   assert.equal(await page.locator('.album-card').count(), 1);
   assert.match(await page.locator('.album-card').innerText(), /牙买加/);
-  assert.match(await page.locator('.album-card').innerText(), /450 张照片/);
+  assert.match(await page.locator('.album-card').innerText(), new RegExp(`${expectedAlbumCount} 张照片`));
   await assertNoHorizontalOverflow();
   await page.screenshot({ path: path.join(outputDirectory, 'desktop-index.png'), fullPage: true });
 
@@ -37,12 +39,11 @@ try {
   await page.waitForURL('**/photo-wall/jamaica**');
   assert.equal((await page.locator('.home-link').innerText()).trim(), 'J先生个人空间');
   assert.equal(await page.locator('.home-link').getAttribute('href'), '/officialwebsite/');
-  assert.equal(await page.locator('.photo-card').count(), 450);
-  assert.equal(await page.locator('.photo-card:not([hidden])').count(), 450);
+  assert.equal(await page.locator('.photo-card').count(), expectedAlbumCount);
+  assert.equal(await page.locator('.photo-card:not([hidden])').count(), expectedAlbumCount);
   assert.match(await page.locator('h1').innerText(), /牙买加/);
   await assertNoHorizontalOverflow();
 
-  const expectedYearCounts = { 2003: 53, 2004: 68, 2005: 329 };
   for (const [year, count] of Object.entries(expectedYearCounts)) {
     await page.locator(`.filter-button[data-filter="${year}"]`).click();
     assert.equal(await page.locator('.photo-card:not([hidden])').count(), count);
@@ -52,16 +53,16 @@ try {
   await page.locator('.filter-button[data-filter="all"]').click();
   await page.locator('.photo-card').first().click();
   await page.waitForFunction(() => document.querySelector('#lightbox')?.open === true);
-  assert.equal((await page.locator('#lightbox-position').innerText()).trim(), '1 / 450');
+  assert.equal((await page.locator('#lightbox-position').innerText()).trim(), `1 / ${expectedAlbumCount}`);
   await page.locator('.lightbox-next').click();
-  assert.equal((await page.locator('#lightbox-position').innerText()).trim(), '2 / 450');
+  assert.equal((await page.locator('#lightbox-position').innerText()).trim(), `2 / ${expectedAlbumCount}`);
   await page.locator('.lightbox-close').click();
   assert.equal(await page.locator('#lightbox').evaluate((dialog) => dialog.open), false);
   await page.screenshot({ path: path.join(outputDirectory, 'desktop-album.png'), fullPage: false });
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${baseUrl}/topics/space/travel/photo-wall/jamaica/`, { waitUntil: 'networkidle' });
-  assert.equal(await page.locator('.photo-card').count(), 450);
+  assert.equal(await page.locator('.photo-card').count(), expectedAlbumCount);
   await assertNoHorizontalOverflow();
   await page.locator('.photo-card').first().click();
   const controls = ['.lightbox-close', '.lightbox-previous', '.lightbox-next'];
@@ -76,7 +77,7 @@ try {
 
   console.log(JSON.stringify({
     index: 'ok',
-    albumPhotos: 450,
+    albumPhotos: expectedAlbumCount,
     filters: expectedYearCounts,
     lightbox: 'ok',
     desktopViewport: '1440x900',

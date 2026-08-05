@@ -98,15 +98,19 @@ const countsByYear = Object.fromEntries(
     .sort()
     .map((year) => [String(year), photos.filter((photo) => photo.year === year).length]),
 );
+const dateFrom = photos[0].date;
+const dateTo = photos.at(-1).date;
+const yearFrom = dateFrom.slice(0, 4);
+const yearTo = dateTo.slice(0, 4);
 
 const albumData = {
   album: {
     slug: 'jamaica',
     name: '牙买加',
-    eyebrow: 'JAMAICA · 2003—2005',
+    eyebrow: `JAMAICA · ${yearFrom}—${yearTo}`,
     description: '加勒比海的风、海岸线与那些被留住的日常。',
-    dateFrom: '2003-03-14',
-    dateTo: '2005-11-24',
+    dateFrom,
+    dateTo,
     count: photos.length,
     cover: cover.src,
     coverId,
