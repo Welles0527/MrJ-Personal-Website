@@ -35,6 +35,8 @@ try {
 
   await page.locator('.album-card').click();
   await page.waitForURL('**/photo-wall/jamaica**');
+  assert.equal((await page.locator('.home-link').innerText()).trim(), 'J先生个人空间');
+  assert.equal(await page.locator('.home-link').getAttribute('href'), '/officialwebsite/');
   assert.equal(await page.locator('.photo-card').count(), 450);
   assert.equal(await page.locator('.photo-card:not([hidden])').count(), 450);
   assert.match(await page.locator('h1').innerText(), /牙买加/);
