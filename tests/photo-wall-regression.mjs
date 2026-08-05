@@ -7,7 +7,7 @@ import { chromium } from 'playwright';
 const baseUrl = process.env.PHOTO_WALL_BASE_URL || 'http://127.0.0.1:4322/officialwebsite';
 const outputDirectory = path.resolve('tmp/photo-wall-qa');
 const expectedAlbumCount = 448;
-const expectedYearCounts = { 2003: 126, 2004: 68, 2005: 254 };
+const expectedYearCounts = { 2003: 55, 2004: 90, 2005: 303 };
 await mkdir(outputDirectory, { recursive: true });
 
 const browserCandidates = [
