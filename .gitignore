@@ -11,6 +11,7 @@ Desktop.ini
 .env
 .env.*
 !.env.example
+.private/
 
 # Dependency and build artifacts
 node_modules/

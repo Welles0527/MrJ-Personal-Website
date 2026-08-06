@@ -1,0 +1,1825 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="J先生 AI 学习网站深色沉浸式首页架构 Demo。"
+    />
+    <meta name="theme-color" content="#07090d" />
+    <title>J先生 AI 学习网站 · Dark Atlas Demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Noto+Sans+SC:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #07090d;
+        --bg-soft: #0a0d12;
+        --surface: #10151d;
+        --surface-strong: #151b24;
+        --text: #f4f4ef;
+        --muted: #8f99a6;
+        --muted-strong: #b7bec8;
+        --stroke: rgba(255, 255, 255, 0.1);
+        --stroke-soft: rgba(255, 255, 255, 0.06);
+        --accent-a: #8fb7dc;
+        --accent-b: #4f87c5;
+        --accent-c: #9fe2d2;
+        --font-body: "Noto Sans SC", "Microsoft YaHei", sans-serif;
+        --font-display: "Instrument Serif", "Songti SC", serif;
+        --page: min(1200px, calc(100vw - 48px));
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+        background: var(--bg);
+      }
+
+      body {
+        margin: 0;
+        overflow-x: hidden;
+        background:
+          radial-gradient(circle at 75% 8%, rgba(79, 135, 197, 0.09), transparent 29rem),
+          var(--bg);
+        color: var(--text);
+        font-family: var(--font-body);
+        font-weight: 300;
+        text-rendering: optimizeLegibility;
+      }
+
+      body::before {
+        position: fixed;
+        z-index: 50;
+        inset: 0;
+        opacity: 0.035;
+        pointer-events: none;
+        content: "";
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.75'/%3E%3C/svg%3E");
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      button {
+        color: inherit;
+        font: inherit;
+      }
+
+      img {
+        display: block;
+        max-width: 100%;
+      }
+
+      ::selection {
+        background: rgba(143, 183, 220, 0.32);
+      }
+
+      .display {
+        font-family: var(--font-display);
+        font-weight: 400;
+      }
+
+      .gradient-text {
+        color: transparent;
+        background: linear-gradient(110deg, #f7f7f2 0%, #c5d7e7 48%, #7da9d4 100%);
+        background-clip: text;
+        -webkit-background-clip: text;
+      }
+
+      .loading {
+        position: fixed;
+        z-index: 999;
+        inset: 0;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        padding: 28px 32px 0;
+        background: var(--bg);
+        transition: opacity 0.55s ease, visibility 0.55s ease;
+      }
+
+      .loading.is-complete {
+        opacity: 0;
+        visibility: hidden;
+      }
+
+      .loading__label {
+        color: var(--muted);
+        font-size: 0.68rem;
+        letter-spacing: 0.32em;
+        text-transform: uppercase;
+      }
+
+      .loading__word {
+        align-self: center;
+        justify-self: center;
+        margin: 0;
+        color: rgba(244, 244, 239, 0.8);
+        font-size: clamp(3rem, 7vw, 7rem);
+        font-style: italic;
+        animation: word-enter 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+
+      .loading__bottom {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        padding-bottom: 18px;
+      }
+
+      .loading__note {
+        max-width: 16rem;
+        color: var(--muted);
+        font-size: 0.72rem;
+        line-height: 1.7;
+      }
+
+      .loading__count {
+        font-size: clamp(4rem, 9vw, 8.5rem);
+        font-variant-numeric: tabular-nums;
+        line-height: 0.75;
+      }
+
+      .loading__track {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        height: 3px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .loading__progress {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, var(--accent-a), var(--accent-b), var(--accent-c));
+        box-shadow: 0 0 12px rgba(143, 183, 220, 0.45);
+        transform: scaleX(0);
+        transform-origin: left;
+      }
+
+      .nav-wrap {
+        position: fixed;
+        z-index: 60;
+        top: 20px;
+        left: 0;
+        width: 100%;
+        padding: 0 18px;
+        pointer-events: none;
+      }
+
+      .nav {
+        display: flex;
+        width: fit-content;
+        max-width: 100%;
+        margin: 0 auto;
+        padding: 6px;
+        border: 1px solid var(--stroke);
+        border-radius: 999px;
+        background: rgba(11, 14, 19, 0.74);
+        box-shadow: 0 16px 50px rgba(0, 0, 0, 0.24);
+        backdrop-filter: blur(20px);
+        pointer-events: auto;
+        transition: transform 0.3s ease, background 0.3s ease;
+      }
+
+      .nav.is-scrolled {
+        background: rgba(11, 14, 19, 0.92);
+        transform: translateY(-5px);
+      }
+
+      .brand {
+        display: grid;
+        width: 36px;
+        height: 36px;
+        place-items: center;
+        margin-right: 5px;
+        border-radius: 50%;
+        background:
+          linear-gradient(var(--bg), var(--bg)) padding-box,
+          linear-gradient(130deg, var(--accent-a), var(--accent-b), var(--accent-c)) border-box;
+        border: 1px solid transparent;
+        font-size: 1.1rem;
+        font-style: italic;
+        transition: transform 0.3s ease;
+      }
+
+      .brand:hover {
+        transform: rotate(-8deg) scale(1.08);
+      }
+
+      .nav__links {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        padding-right: 5px;
+        border-right: 1px solid var(--stroke);
+      }
+
+      .nav__links a,
+      .nav__enter {
+        border-radius: 999px;
+        padding: 8px 13px;
+        color: var(--muted);
+        font-size: 0.76rem;
+        font-weight: 400;
+        white-space: nowrap;
+        transition: color 0.25s ease, background 0.25s ease;
+      }
+
+      .nav__links a:hover,
+      .nav__links a.is-active {
+        background: rgba(255, 255, 255, 0.07);
+        color: var(--text);
+      }
+
+      .nav__enter {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        margin-left: 5px;
+        color: var(--text);
+        overflow: hidden;
+      }
+
+      .nav__enter::before {
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: linear-gradient(100deg, rgba(143, 183, 220, 0.2), rgba(159, 226, 210, 0.1));
+        opacity: 0;
+        content: "";
+        transition: opacity 0.25s ease;
+      }
+
+      .nav__enter:hover::before {
+        opacity: 1;
+      }
+
+      .nav__enter span {
+        position: relative;
+      }
+
+      .hero {
+        position: relative;
+        display: grid;
+        min-height: 100svh;
+        place-items: center;
+        overflow: hidden;
+        padding: 140px 0 96px;
+      }
+
+      .hero::before {
+        position: absolute;
+        inset: 0;
+        opacity: 0.5;
+        content: "";
+        background-image:
+          linear-gradient(var(--stroke-soft) 1px, transparent 1px),
+          linear-gradient(90deg, var(--stroke-soft) 1px, transparent 1px);
+        background-size: 88px 88px;
+        mask-image: radial-gradient(circle at 69% 40%, black, transparent 67%);
+      }
+
+      .hero__halo {
+        position: absolute;
+        top: 3%;
+        left: 61%;
+        width: min(720px, 72vw);
+        aspect-ratio: 1;
+        border: 1px solid rgba(143, 183, 220, 0.14);
+        border-radius: 50%;
+        box-shadow:
+          0 0 0 110px rgba(143, 183, 220, 0.018),
+          0 0 0 220px rgba(143, 183, 220, 0.012);
+        transform: translateX(-50%);
+        pointer-events: none;
+      }
+
+      .hero__inner {
+        position: relative;
+        z-index: 2;
+        display: grid;
+        width: var(--page);
+        grid-template-columns: minmax(0, 1.05fr) minmax(380px, 0.95fr);
+        gap: clamp(48px, 7vw, 110px);
+        align-items: center;
+      }
+
+      .eyebrow {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0 0 28px;
+        color: var(--muted);
+        font-size: 0.66rem;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+      }
+
+      .eyebrow::before {
+        width: 30px;
+        height: 1px;
+        background: var(--stroke);
+        content: "";
+      }
+
+      .hero h1 {
+        max-width: 800px;
+        margin: 0;
+        font-size: clamp(4.5rem, 8.3vw, 8.2rem);
+        line-height: 0.84;
+        letter-spacing: -0.045em;
+      }
+
+      .hero h1 em {
+        display: block;
+        margin-left: 0.7em;
+        font-weight: 400;
+      }
+
+      .hero__role {
+        min-height: 2rem;
+        margin: 30px 0 14px;
+        color: var(--muted-strong);
+        font-size: clamp(0.95rem, 1.2vw, 1.08rem);
+      }
+
+      .hero__role span {
+        display: inline-block;
+        min-width: 5.5em;
+        color: var(--text);
+        font-size: 1.35em;
+        font-style: italic;
+      }
+
+      .hero__description {
+        max-width: 510px;
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.91rem;
+        line-height: 1.9;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 34px;
+      }
+
+      .button {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        min-height: 48px;
+        overflow: hidden;
+        border: 1px solid var(--stroke);
+        border-radius: 999px;
+        padding: 0 24px;
+        color: var(--text);
+        font-size: 0.8rem;
+        font-weight: 500;
+        transition: transform 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+      }
+
+      .button:hover {
+        border-color: rgba(143, 183, 220, 0.55);
+        transform: translateY(-2px);
+      }
+
+      .button--primary {
+        border-color: var(--text);
+        background: var(--text);
+        color: var(--bg);
+      }
+
+      .button--primary:hover {
+        border-color: var(--accent-a);
+        background: var(--accent-a);
+      }
+
+      .hero__visual {
+        position: relative;
+        padding: 18px;
+        border: 1px solid var(--stroke);
+        border-radius: 32px;
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015));
+        box-shadow: 0 40px 90px rgba(0, 0, 0, 0.38);
+        transform: rotate(1.5deg);
+      }
+
+      .hero__visual::before {
+        position: absolute;
+        z-index: -1;
+        inset: -1px;
+        border-radius: inherit;
+        opacity: 0.35;
+        background: linear-gradient(120deg, var(--accent-a), transparent 35%, transparent 70%, var(--accent-c));
+        filter: blur(12px);
+        content: "";
+      }
+
+      .hero__image {
+        position: relative;
+        min-height: 480px;
+        overflow: hidden;
+        border-radius: 22px;
+        background: #e8e0cb;
+      }
+
+      .hero__image img {
+        width: 100%;
+        height: 100%;
+        min-height: 480px;
+        object-fit: cover;
+        filter: saturate(0.78) contrast(1.08);
+        transform: scale(1.06);
+      }
+
+      .hero__image::after {
+        position: absolute;
+        inset: 0;
+        background:
+          linear-gradient(to top, rgba(5, 7, 10, 0.7), transparent 50%),
+          linear-gradient(120deg, rgba(79, 135, 197, 0.16), transparent 48%);
+        content: "";
+      }
+
+      .visual__top,
+      .visual__bottom {
+        position: absolute;
+        z-index: 2;
+        right: 32px;
+        left: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .visual__top {
+        top: 34px;
+      }
+
+      .visual__bottom {
+        bottom: 34px;
+        align-items: end;
+      }
+
+      .visual__kicker,
+      .visual__index {
+        color: rgba(7, 9, 13, 0.65);
+        font-size: 0.62rem;
+        font-weight: 600;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+      }
+
+      .visual__orbit {
+        display: grid;
+        width: 42px;
+        aspect-ratio: 1;
+        place-items: center;
+        border: 1px solid rgba(7, 9, 13, 0.2);
+        border-radius: 50%;
+        color: rgba(7, 9, 13, 0.72);
+        animation: orbit-spin 9s linear infinite;
+      }
+
+      .visual__title {
+        max-width: 16rem;
+        color: var(--text);
+        font-size: clamp(2rem, 3vw, 3.6rem);
+        font-style: italic;
+        line-height: 0.9;
+        text-shadow: 0 3px 20px rgba(0, 0, 0, 0.5);
+      }
+
+      .visual__tag {
+        padding: 8px 12px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 999px;
+        background: rgba(5, 7, 10, 0.48);
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 0.65rem;
+        backdrop-filter: blur(12px);
+      }
+
+      .float-chip {
+        position: absolute;
+        z-index: 4;
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        border: 1px solid var(--stroke);
+        border-radius: 999px;
+        padding: 10px 15px;
+        background: rgba(12, 15, 20, 0.85);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        color: var(--muted-strong);
+        font-size: 0.7rem;
+        backdrop-filter: blur(12px);
+      }
+
+      .float-chip::before {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--accent-c);
+        box-shadow: 0 0 12px var(--accent-c);
+        content: "";
+      }
+
+      .float-chip--one {
+        top: 19%;
+        left: -44px;
+        animation: float 5s ease-in-out infinite;
+      }
+
+      .float-chip--two {
+        right: -40px;
+        bottom: 22%;
+        animation: float 5.7s ease-in-out -1.2s infinite;
+      }
+
+      .scroll-cue {
+        position: absolute;
+        z-index: 3;
+        bottom: 28px;
+        left: 50%;
+        display: grid;
+        justify-items: center;
+        gap: 8px;
+        color: var(--muted);
+        font-size: 0.56rem;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        transform: translateX(-50%);
+      }
+
+      .scroll-cue span:last-child {
+        position: relative;
+        width: 1px;
+        height: 35px;
+        overflow: hidden;
+        background: var(--stroke);
+      }
+
+      .scroll-cue span:last-child::after {
+        position: absolute;
+        top: -100%;
+        left: 0;
+        width: 100%;
+        height: 45%;
+        background: var(--accent-a);
+        content: "";
+        animation: scroll-line 1.7s ease-in-out infinite;
+      }
+
+      .ticker {
+        overflow: hidden;
+        border-block: 1px solid var(--stroke-soft);
+        background: var(--bg-soft);
+      }
+
+      .ticker__track {
+        display: flex;
+        width: max-content;
+        padding: 18px 0;
+        animation: ticker 34s linear infinite;
+      }
+
+      .ticker__item {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 0 34px;
+        color: var(--muted);
+        font-size: 0.64rem;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+      }
+
+      .ticker__item::after {
+        color: var(--accent-a);
+        content: "✦";
+      }
+
+      .section {
+        padding: clamp(92px, 10vw, 150px) 0;
+      }
+
+      .section__inner {
+        width: var(--page);
+        margin: 0 auto;
+      }
+
+      .section__head {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 32px;
+        margin-bottom: 48px;
+      }
+
+      .section__head h2 {
+        max-width: 720px;
+        margin: 0;
+        font-size: clamp(3.3rem, 6vw, 6.3rem);
+        line-height: 0.9;
+        letter-spacing: -0.035em;
+      }
+
+      .section__head h2 em {
+        color: var(--accent-a);
+        font-weight: 400;
+      }
+
+      .section__note {
+        max-width: 310px;
+        margin: 0 0 3px;
+        color: var(--muted);
+        font-size: 0.8rem;
+        line-height: 1.8;
+      }
+
+      .focus-grid {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 16px;
+      }
+
+      .focus-card {
+        position: relative;
+        min-height: 360px;
+        overflow: hidden;
+        border: 1px solid var(--stroke);
+        border-radius: 28px;
+        background: var(--surface);
+        isolation: isolate;
+      }
+
+      .focus-card:nth-child(1),
+      .focus-card:nth-child(4) {
+        grid-column: span 7;
+      }
+
+      .focus-card:nth-child(2),
+      .focus-card:nth-child(3) {
+        grid-column: span 5;
+      }
+
+      .focus-card::after {
+        position: absolute;
+        z-index: 3;
+        inset: 0;
+        opacity: 0;
+        background: linear-gradient(120deg, rgba(143, 183, 220, 0.1), transparent 40%);
+        content: "";
+        transition: opacity 0.45s ease;
+        pointer-events: none;
+      }
+
+      .focus-card:hover::after {
+        opacity: 1;
+      }
+
+      .focus-card__media {
+        position: absolute;
+        inset: 0;
+        opacity: 0.58;
+        transition: transform 0.75s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.45s ease;
+      }
+
+      .focus-card__media img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: saturate(0.55) brightness(0.55);
+      }
+
+      .focus-card:hover .focus-card__media {
+        opacity: 0.8;
+        transform: scale(1.045);
+      }
+
+      .focus-card__shade {
+        position: absolute;
+        z-index: 1;
+        inset: 0;
+        background:
+          linear-gradient(to top, rgba(5, 7, 10, 0.96), rgba(5, 7, 10, 0.08) 72%),
+          linear-gradient(to right, rgba(5, 7, 10, 0.5), transparent);
+      }
+
+      .focus-card__content {
+        position: absolute;
+        z-index: 4;
+        right: 28px;
+        bottom: 28px;
+        left: 28px;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 20px;
+        align-items: end;
+      }
+
+      .focus-card__number {
+        display: block;
+        margin-bottom: 12px;
+        color: var(--accent-a);
+        font-size: 0.61rem;
+        letter-spacing: 0.24em;
+      }
+
+      .focus-card h3 {
+        margin: 0 0 8px;
+        font-size: clamp(2rem, 4vw, 4.2rem);
+        font-style: italic;
+        line-height: 0.9;
+      }
+
+      .focus-card p {
+        max-width: 25rem;
+        margin: 0;
+        color: var(--muted-strong);
+        font-size: 0.76rem;
+        line-height: 1.7;
+      }
+
+      .round-arrow {
+        display: grid;
+        width: 46px;
+        aspect-ratio: 1;
+        place-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        background: rgba(5, 7, 10, 0.35);
+        font-size: 1.1rem;
+        backdrop-filter: blur(10px);
+        transition: color 0.3s ease, background 0.3s ease, transform 0.3s ease;
+      }
+
+      .focus-card:hover .round-arrow {
+        background: var(--text);
+        color: var(--bg);
+        transform: rotate(-35deg);
+      }
+
+      .architecture {
+        position: relative;
+        overflow: hidden;
+        border-block: 1px solid var(--stroke-soft);
+        background:
+          linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+          var(--bg-soft);
+        background-size: 100% 96px;
+      }
+
+      .route-map {
+        display: grid;
+        grid-template-columns: 0.8fr 1.2fr;
+        gap: clamp(50px, 8vw, 120px);
+        align-items: start;
+      }
+
+      .route-map__intro {
+        position: sticky;
+        top: 125px;
+      }
+
+      .route-map__intro h2 {
+        margin: 0;
+        font-size: clamp(3.4rem, 6vw, 6rem);
+        font-style: italic;
+        line-height: 0.88;
+      }
+
+      .route-map__intro p {
+        max-width: 25rem;
+        margin: 26px 0 0;
+        color: var(--muted);
+        font-size: 0.83rem;
+        line-height: 1.9;
+      }
+
+      .route-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        counter-reset: route;
+      }
+
+      .route-list li {
+        position: relative;
+        display: grid;
+        min-height: 180px;
+        grid-template-columns: 76px 1fr auto;
+        gap: 24px;
+        align-items: center;
+        border-top: 1px solid var(--stroke);
+        counter-increment: route;
+        transition: padding 0.35s ease, background 0.35s ease;
+      }
+
+      .route-list li:last-child {
+        border-bottom: 1px solid var(--stroke);
+      }
+
+      .route-list li::before {
+        color: var(--muted);
+        content: "0" counter(route);
+        font-family: var(--font-display);
+        font-size: 1.25rem;
+        font-style: italic;
+      }
+
+      .route-list li:hover {
+        padding-inline: 18px;
+        background: rgba(255, 255, 255, 0.025);
+      }
+
+      .route-list__title {
+        margin-bottom: 8px;
+        font-size: clamp(1.8rem, 3vw, 3rem);
+        font-style: italic;
+      }
+
+      .route-list__description {
+        max-width: 32rem;
+        color: var(--muted);
+        font-size: 0.74rem;
+        line-height: 1.75;
+      }
+
+      .route-list__meta {
+        color: var(--muted);
+        font-size: 0.63rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        writing-mode: vertical-rl;
+      }
+
+      .themes {
+        padding-bottom: clamp(110px, 12vw, 180px);
+      }
+
+      .theme-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+      }
+
+      .theme-card {
+        position: relative;
+        display: flex;
+        min-height: 410px;
+        flex-direction: column;
+        justify-content: space-between;
+        overflow: hidden;
+        border: 1px solid var(--stroke);
+        border-radius: 26px;
+        padding: 24px;
+        background: var(--surface);
+        transition: border-color 0.35s ease, transform 0.4s ease;
+      }
+
+      .theme-card:hover {
+        border-color: rgba(143, 183, 220, 0.42);
+        transform: translateY(-6px);
+      }
+
+      .theme-card::before {
+        position: absolute;
+        right: -25%;
+        bottom: -15%;
+        width: 110%;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        opacity: 0.35;
+        background: radial-gradient(circle, var(--glow), transparent 65%);
+        content: "";
+        transition: opacity 0.35s ease, transform 0.6s ease;
+      }
+
+      .theme-card:hover::before {
+        opacity: 0.65;
+        transform: scale(1.08);
+      }
+
+      .theme-card__top,
+      .theme-card__bottom {
+        position: relative;
+        z-index: 2;
+      }
+
+      .theme-card__top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        color: var(--muted);
+        font-size: 0.63rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+
+      .theme-card__image {
+        position: absolute;
+        top: 56px;
+        right: 20px;
+        bottom: 115px;
+        left: 20px;
+        overflow: hidden;
+        border-radius: 18px;
+        opacity: 0.48;
+        background: #ebe2cf;
+        transform: rotate(var(--tilt));
+        transition: opacity 0.4s ease, transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      .theme-card__image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: grayscale(0.55) contrast(1.05);
+      }
+
+      .theme-card:hover .theme-card__image {
+        opacity: 0.74;
+        transform: rotate(0) scale(1.025);
+      }
+
+      .theme-card__bottom h3 {
+        margin: 0 0 8px;
+        font-size: clamp(2rem, 3.3vw, 3.3rem);
+        font-style: italic;
+        line-height: 0.9;
+      }
+
+      .theme-card__bottom p {
+        margin: 0;
+        color: var(--muted-strong);
+        font-size: 0.69rem;
+        line-height: 1.6;
+      }
+
+      .theme-card:nth-child(1) {
+        --glow: rgba(159, 226, 210, 0.38);
+        --tilt: -2.5deg;
+      }
+
+      .theme-card:nth-child(2) {
+        --glow: rgba(143, 183, 220, 0.42);
+        --tilt: 2deg;
+      }
+
+      .theme-card:nth-child(3) {
+        --glow: rgba(177, 150, 226, 0.36);
+        --tilt: -1.2deg;
+      }
+
+      .theme-card:nth-child(4) {
+        --glow: rgba(226, 175, 143, 0.34);
+        --tilt: 2.5deg;
+      }
+
+      .theme-card:nth-child(5) {
+        --glow: rgba(208, 208, 143, 0.34);
+        --tilt: -2deg;
+      }
+
+      .theme-card:nth-child(6) {
+        --glow: rgba(143, 183, 220, 0.42);
+        --tilt: 1.2deg;
+      }
+
+      .closing {
+        position: relative;
+        min-height: 760px;
+        overflow: hidden;
+        border-top: 1px solid var(--stroke-soft);
+        background: #090c11;
+      }
+
+      .closing__image {
+        position: absolute;
+        inset: 0;
+        opacity: 0.18;
+        background:
+          linear-gradient(rgba(7, 9, 13, 0.8), rgba(7, 9, 13, 0.88)),
+          url("/officialwebsite/images/hero-learning-atlas.png") center 44% / cover;
+        filter: grayscale(1);
+        transform: scaleY(-1);
+      }
+
+      .closing__marquee {
+        position: absolute;
+        top: 60px;
+        display: flex;
+        width: max-content;
+        color: rgba(255, 255, 255, 0.035);
+        font-size: clamp(6rem, 14vw, 13rem);
+        font-style: italic;
+        line-height: 0.75;
+        white-space: nowrap;
+        animation: marquee 38s linear infinite;
+      }
+
+      .closing__content {
+        position: relative;
+        z-index: 2;
+        display: grid;
+        width: var(--page);
+        min-height: 760px;
+        place-items: center;
+        margin: 0 auto;
+        text-align: center;
+      }
+
+      .closing__content h2 {
+        max-width: 850px;
+        margin: 0;
+        font-size: clamp(4.5rem, 9vw, 9rem);
+        font-style: italic;
+        line-height: 0.83;
+        letter-spacing: -0.045em;
+      }
+
+      .closing__content p {
+        max-width: 31rem;
+        margin: 26px auto 0;
+        color: var(--muted);
+        font-size: 0.82rem;
+        line-height: 1.9;
+      }
+
+      .closing .actions {
+        justify-content: center;
+      }
+
+      .footer {
+        position: absolute;
+        z-index: 3;
+        right: 32px;
+        bottom: 28px;
+        left: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-top: 1px solid var(--stroke);
+        padding-top: 22px;
+        color: var(--muted);
+        font-size: 0.66rem;
+      }
+
+      .availability {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+      }
+
+      .availability::before {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #8bd9a6;
+        box-shadow: 0 0 12px rgba(139, 217, 166, 0.8);
+        content: "";
+        animation: pulse 1.8s ease-in-out infinite;
+      }
+
+      .reveal {
+        opacity: 0;
+        transform: translateY(28px);
+        transition:
+          opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1),
+          transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      .reveal.is-visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      @keyframes word-enter {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes orbit-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-10px);
+        }
+      }
+
+      @keyframes scroll-line {
+        to {
+          transform: translateY(310%);
+        }
+      }
+
+      @keyframes ticker {
+        to {
+          transform: translateX(-50%);
+        }
+      }
+
+      @keyframes marquee {
+        to {
+          transform: translateX(-50%);
+        }
+      }
+
+      @keyframes pulse {
+        50% {
+          opacity: 0.45;
+          transform: scale(0.8);
+        }
+      }
+
+      @media (max-width: 980px) {
+        :root {
+          --page: min(100% - 36px, 760px);
+        }
+
+        .hero {
+          min-height: auto;
+          padding: 145px 0 90px;
+        }
+
+        .hero__inner {
+          grid-template-columns: 1fr;
+          gap: 62px;
+        }
+
+        .hero__copy {
+          max-width: 680px;
+        }
+
+        .hero h1 {
+          font-size: clamp(4.7rem, 14vw, 7.5rem);
+        }
+
+        .hero__visual {
+          width: min(620px, 100%);
+          justify-self: center;
+        }
+
+        .scroll-cue {
+          display: none;
+        }
+
+        .focus-card {
+          grid-column: span 6 !important;
+          min-height: 330px;
+        }
+
+        .route-map {
+          grid-template-columns: 1fr;
+        }
+
+        .route-map__intro {
+          position: static;
+        }
+
+        .theme-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
+      @media (max-width: 680px) {
+        :root {
+          --page: calc(100% - 28px);
+        }
+
+        .loading {
+          padding: 24px 20px 0;
+        }
+
+        .loading__note {
+          display: none;
+        }
+
+        .nav-wrap {
+          top: 12px;
+          padding: 0 9px;
+        }
+
+        .nav {
+          width: 100%;
+          justify-content: space-between;
+        }
+
+        .nav__links a {
+          padding-inline: 10px;
+          font-size: 0.7rem;
+        }
+
+        .nav__links a:nth-child(3) {
+          display: none;
+        }
+
+        .nav__enter {
+          padding-inline: 10px;
+        }
+
+        .nav__enter span:first-child {
+          display: none;
+        }
+
+        .hero {
+          padding-top: 125px;
+        }
+
+        .hero::before {
+          background-size: 58px 58px;
+        }
+
+        .hero h1 {
+          font-size: clamp(4.2rem, 20vw, 6rem);
+          line-height: 0.82;
+        }
+
+        .hero h1 em {
+          margin-left: 0.26em;
+        }
+
+        .hero__description {
+          font-size: 0.8rem;
+        }
+
+        .hero__visual {
+          padding: 10px;
+          border-radius: 24px;
+          transform: rotate(0);
+        }
+
+        .hero__image,
+        .hero__image img {
+          min-height: 390px;
+        }
+
+        .visual__top,
+        .visual__bottom {
+          right: 24px;
+          left: 24px;
+        }
+
+        .visual__top {
+          top: 26px;
+        }
+
+        .visual__bottom {
+          bottom: 26px;
+        }
+
+        .float-chip--one {
+          top: 17%;
+          left: -5px;
+        }
+
+        .float-chip--two {
+          right: -4px;
+          bottom: 19%;
+        }
+
+        .section {
+          padding-block: 90px;
+        }
+
+        .section__head {
+          display: block;
+          margin-bottom: 34px;
+        }
+
+        .section__head h2 {
+          font-size: clamp(3.6rem, 17vw, 5.5rem);
+        }
+
+        .section__note {
+          margin-top: 24px;
+        }
+
+        .focus-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .focus-card {
+          min-height: 390px;
+          grid-column: auto !important;
+        }
+
+        .focus-card__content {
+          right: 20px;
+          bottom: 22px;
+          left: 20px;
+        }
+
+        .route-list li {
+          min-height: 160px;
+          grid-template-columns: 48px 1fr;
+          gap: 12px;
+        }
+
+        .route-list__meta {
+          display: none;
+        }
+
+        .route-map__intro h2 {
+          font-size: 4.5rem;
+        }
+
+        .theme-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .theme-card {
+          min-height: 460px;
+        }
+
+        .closing,
+        .closing__content {
+          min-height: 690px;
+        }
+
+        .closing__content h2 {
+          font-size: clamp(4.4rem, 20vw, 6.5rem);
+        }
+
+        .footer {
+          right: 18px;
+          left: 18px;
+        }
+
+        .footer span:first-child {
+          display: none;
+        }
+
+        .footer {
+          justify-content: center;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+        }
+
+        .reveal {
+          opacity: 1;
+          transform: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="loading" aria-live="polite">
+      <span class="loading__label">J's knowledge atlas</span>
+      <p class="loading__word display">Collecting</p>
+      <div class="loading__bottom">
+        <span class="loading__note">把散落的知识、工具、项目与生活记录，连接成一张持续生长的个人地图。</span>
+        <span class="loading__count display">000</span>
+      </div>
+      <div class="loading__track"><div class="loading__progress"></div></div>
+    </div>
+
+    <div class="nav-wrap">
+      <nav class="nav" aria-label="Demo 主导航">
+        <a class="brand display" href="#home" aria-label="返回顶部">J</a>
+        <div class="nav__links">
+          <a class="is-active" href="#home">首页</a>
+          <a href="#focus">现在</a>
+          <a href="#atlas">地图</a>
+        </div>
+        <a class="nav__enter" href="/officialwebsite/">
+          <span>进入现网站</span>
+          <span aria-hidden="true">↗</span>
+        </a>
+      </nav>
+    </div>
+
+    <main>
+      <section class="hero" id="home">
+        <div class="hero__halo" aria-hidden="true"></div>
+        <div class="hero__inner">
+          <div class="hero__copy">
+            <p class="eyebrow reveal">Collection · 2026 / Personal AI System</p>
+            <h1 class="display gradient-text reveal">
+              把学习，变成
+              <em>会生长的系统。</em>
+            </h1>
+            <p class="hero__role reveal">一座属于 J 先生的 <span class="display" data-role>知识库</span></p>
+            <p class="hero__description reveal">
+              从理解 AI，到真正用它解决问题。这里收集经过实践的知识、工具、项目与个人记录，让每一次学习都留下路径。
+            </p>
+            <div class="actions reveal">
+              <a class="button button--primary" href="#focus">开始探索 <span aria-hidden="true">↓</span></a>
+              <a class="button" href="/officialwebsite/topics/knowledge/">打开知识地图 <span aria-hidden="true">↗</span></a>
+            </div>
+          </div>
+
+          <div class="hero__visual reveal" aria-label="AI 学习地图预览">
+            <div class="hero__image">
+              <img
+                src="/officialwebsite/images/hero-learning-atlas.png"
+                alt="书本、电脑与 AI 学习节点组成的知识地图"
+              />
+              <div class="visual__top">
+                <span class="visual__kicker">Knowledge archive</span>
+                <span class="visual__orbit" aria-hidden="true">✦</span>
+              </div>
+              <div class="visual__bottom">
+                <span class="visual__title display">Learning<br />Atlas</span>
+                <span class="visual__tag">06 个主题 · 持续更新</span>
+              </div>
+            </div>
+            <span class="float-chip float-chip--one">正在整理：AI 工作流</span>
+            <span class="float-chip float-chip--two">系统在线 · 今日可用</span>
+          </div>
+        </div>
+        <div class="scroll-cue" aria-hidden="true"><span>Scroll</span><span></span></div>
+      </section>
+
+      <div class="ticker" aria-hidden="true">
+        <div class="ticker__track">
+          <span class="ticker__item">AI 知识库</span>
+          <span class="ticker__item">实用工具</span>
+          <span class="ticker__item">项目搭建</span>
+          <span class="ticker__item">个人应用</span>
+          <span class="ticker__item">课程学习</span>
+          <span class="ticker__item">空间站</span>
+          <span class="ticker__item">AI 知识库</span>
+          <span class="ticker__item">实用工具</span>
+          <span class="ticker__item">项目搭建</span>
+          <span class="ticker__item">个人应用</span>
+          <span class="ticker__item">课程学习</span>
+          <span class="ticker__item">空间站</span>
+        </div>
+      </div>
+
+      <section class="section" id="focus">
+        <div class="section__inner">
+          <header class="section__head reveal">
+            <div>
+              <p class="eyebrow">Open now / 高频入口</p>
+              <h2 class="display">此刻最常用的<br /><em>四个入口</em></h2>
+            </div>
+            <p class="section__note">
+              首页不再平均展示所有内容，而是先把真正高频、持续使用的工具推到最前面。
+            </p>
+          </header>
+
+          <div class="focus-grid">
+            <a class="focus-card reveal" href="/officialwebsite/topics/space/planning/todo/">
+              <div class="focus-card__media">
+                <img src="/officialwebsite/images/topic-space.png" alt="" />
+              </div>
+              <div class="focus-card__shade"></div>
+              <div class="focus-card__content">
+                <div>
+                  <span class="focus-card__number">01 / PLAN</span>
+                  <h3 class="display">个人待办事项</h3>
+                  <p>周计划、每日任务与节奏复盘，打开今天真正要完成的事。</p>
+                </div>
+                <span class="round-arrow" aria-hidden="true">↗</span>
+              </div>
+            </a>
+
+            <a
+              class="focus-card reveal"
+              href="/officialwebsite/topics/applications/inspiration-station/theology?book=gen&amp;chapter=1"
+            >
+              <div class="focus-card__media">
+                <img src="/officialwebsite/images/topic-applications.png" alt="" />
+              </div>
+              <div class="focus-card__shade"></div>
+              <div class="focus-card__content">
+                <div>
+                  <span class="focus-card__number">02 / READ</span>
+                  <h3 class="display">微读圣经</h3>
+                  <p>章节阅读、人物关系与个人笔记，在更安静的界面里进入文本。</p>
+                </div>
+                <span class="round-arrow" aria-hidden="true">↗</span>
+              </div>
+            </a>
+
+            <a class="focus-card reveal" href="/officialwebsite/topics/space/investing/funds/index.html#funds">
+              <div class="focus-card__media">
+                <img src="/officialwebsite/images/topic-knowledge.png" alt="" />
+              </div>
+              <div class="focus-card__shade"></div>
+              <div class="focus-card__content">
+                <div>
+                  <span class="focus-card__number">03 / OBSERVE</span>
+                  <h3 class="display">基金看板</h3>
+                  <p>把长期经理质量与当下可投资性分开，保留可核验的观察记录。</p>
+                </div>
+                <span class="round-arrow" aria-hidden="true">↗</span>
+              </div>
+            </a>
+
+            <a class="focus-card reveal" href="/officialwebsite/topics/ai-information/codex-reset-radar/index.html">
+              <div class="focus-card__media">
+                <img src="/officialwebsite/images/topic-tools.png" alt="" />
+              </div>
+              <div class="focus-card__shade"></div>
+              <div class="focus-card__content">
+                <div>
+                  <span class="focus-card__number">04 / SIGNAL</span>
+                  <h3 class="display">AI 资讯雷达</h3>
+                  <p>不过度追逐噪声，只收集真正会改变工作方式的产品、额度与能力信号。</p>
+                </div>
+                <span class="round-arrow" aria-hidden="true">↗</span>
+              </div>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section class="architecture section" id="atlas">
+        <div class="section__inner route-map">
+          <div class="route-map__intro reveal">
+            <p class="eyebrow">Information architecture</p>
+            <h2 class="display gradient-text">不是目录，<br />是一条路径。</h2>
+            <p>
+              新架构把内容从“六类平铺”变成三段旅程：先理解，再创造，最后回到自己的生活系统。六大板块依然保留，但层级更清楚。
+            </p>
+          </div>
+          <ol class="route-list">
+            <li class="reveal">
+              <div>
+                <div class="route-list__title display">理解 · Learn</div>
+                <div class="route-list__description">知识库 + 课程学习：先建立概念、方法与完整学习路径。</div>
+              </div>
+              <span class="route-list__meta">Knowledge / Courses</span>
+            </li>
+            <li class="reveal">
+              <div>
+                <div class="route-list__title display">创造 · Build</div>
+                <div class="route-list__description">实用工具 + 项目搭建：把学会的东西变成真正运行的作品。</div>
+              </div>
+              <span class="route-list__meta">Tools / Projects</span>
+            </li>
+            <li class="reveal">
+              <div>
+                <div class="route-list__title display">使用 · Live</div>
+                <div class="route-list__description">个人应用 + 空间站：把 AI 放进每天的阅读、计划、投资与兴趣里。</div>
+              </div>
+              <span class="route-list__meta">Apps / Space</span>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="section themes">
+        <div class="section__inner">
+          <header class="section__head reveal">
+            <div>
+              <p class="eyebrow">The six constellations</p>
+              <h2 class="display">六个板块，<br /><em>同一张地图</em></h2>
+            </div>
+            <p class="section__note">
+              每个板块拥有独立视觉线索，又通过统一的编号、信息密度和进入动作保持整体感。
+            </p>
+          </header>
+
+          <div class="theme-grid">
+            <a class="theme-card reveal" href="/officialwebsite/topics/knowledge/">
+              <div class="theme-card__top"><span>01 · Understand</span><span>↗</span></div>
+              <div class="theme-card__image">
+                <img src="/officialwebsite/images/topic-knowledge.png" alt="" />
+              </div>
+              <div class="theme-card__bottom">
+                <h3 class="display">AI 知识库</h3>
+                <p>概念 · 提示词 · CLI · AI 大事记</p>
+              </div>
+            </a>
+
+            <a class="theme-card reveal" href="/officialwebsite/topics/tools/">
+              <div class="theme-card__top"><span>02 · Equip</span><span>↗</span></div>
+              <div class="theme-card__image">
+                <img src="/officialwebsite/images/topic-tools.png" alt="" />
+              </div>
+              <div class="theme-card__bottom">
+                <h3 class="display">AI 实用工具</h3>
+                <p>大模型 · Skills / MCP · 智能体</p>
+              </div>
+            </a>
+
+            <a class="theme-card reveal" href="/officialwebsite/topics/build/">
+              <div class="theme-card__top"><span>03 · Construct</span><span>↗</span></div>
+              <div class="theme-card__image">
+                <img src="/officialwebsite/images/topic-build.png" alt="" />
+              </div>
+              <div class="theme-card__bottom">
+                <h3 class="display">AI 项目搭建</h3>
+                <p>Vibe Coding · OPC · 自动化工作流</p>
+              </div>
+            </a>
+
+            <a class="theme-card reveal" href="/officialwebsite/topics/applications/">
+              <div class="theme-card__top"><span>04 · Apply</span><span>↗</span></div>
+              <div class="theme-card__image">
+                <img src="/officialwebsite/images/topic-applications.png" alt="" />
+              </div>
+              <div class="theme-card__bottom">
+                <h3 class="display">AI 个人应用</h3>
+                <p>自创工具 · 灵感站 · 推荐应用</p>
+              </div>
+            </a>
+
+            <a class="theme-card reveal" href="/officialwebsite/topics/courses/">
+              <div class="theme-card__top"><span>05 · Practice</span><span>↗</span></div>
+              <div class="theme-card__image">
+                <img src="/officialwebsite/images/topic-courses.png" alt="" />
+              </div>
+              <div class="theme-card__bottom">
+                <h3 class="display">AI 课程学习</h3>
+                <p>课程路径 · 专家视频 · 学习脑图</p>
+              </div>
+            </a>
+
+            <a class="theme-card reveal" href="/officialwebsite/topics/space/">
+              <div class="theme-card__top"><span>06 · Live</span><span>↗</span></div>
+              <div class="theme-card__image">
+                <img src="/officialwebsite/images/topic-space.png" alt="" />
+              </div>
+              <div class="theme-card__bottom">
+                <h3 class="display">个人空间站</h3>
+                <p>待办 · 阅读 · 投资 · 旅行与生活</p>
+              </div>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section class="closing">
+        <div class="closing__image" aria-hidden="true"></div>
+        <div class="closing__marquee display" aria-hidden="true">
+          KEEP LEARNING · KEEP BUILDING · KEEP LEARNING · KEEP BUILDING ·
+        </div>
+        <div class="closing__content">
+          <div class="reveal">
+            <p class="eyebrow" style="justify-content: center">Your personal learning system</p>
+            <h2 class="display gradient-text">让每次好奇，<br />都有去处。</h2>
+            <p>
+              这不是一张静态首页，而是整个个人学习系统的入口。高频工具在前，知识路径居中，完整板块在后。
+            </p>
+            <div class="actions">
+              <a class="button button--primary" href="#home">回到顶部 <span aria-hidden="true">↑</span></a>
+              <a class="button" href="/officialwebsite/">进入现网站 <span aria-hidden="true">↗</span></a>
+            </div>
+          </div>
+        </div>
+        <footer class="footer">
+          <span>Dark Atlas · Homepage architecture demo</span>
+          <span class="availability">Concept ready for review</span>
+        </footer>
+      </section>
+    </main>
+
+    <script>
+      const loading = document.querySelector(".loading");
+      const count = document.querySelector(".loading__count");
+      const progress = document.querySelector(".loading__progress");
+      const loadingWord = document.querySelector(".loading__word");
+      const loadingWords = ["Collecting", "Connecting", "Learning"];
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const loadDuration = reduceMotion ? 100 : 1900;
+      const startTime = performance.now();
+      let lastWord = -1;
+      let loaderFinished = false;
+
+      const finishLoader = () => {
+        if (loaderFinished) return;
+        loaderFinished = true;
+        count.textContent = "100";
+        progress.style.transform = "scaleX(1)";
+        loading.classList.add("is-complete");
+      };
+
+      const runLoader = (time) => {
+        const ratio = Math.min((time - startTime) / loadDuration, 1);
+        const eased = 1 - Math.pow(1 - ratio, 3);
+        const value = Math.round(eased * 100);
+        const wordIndex = Math.min(Math.floor(ratio * loadingWords.length), loadingWords.length - 1);
+
+        count.textContent = String(value).padStart(3, "0");
+        progress.style.transform = `scaleX(${eased})`;
+
+        if (wordIndex !== lastWord) {
+          lastWord = wordIndex;
+          loadingWord.textContent = loadingWords[wordIndex];
+          loadingWord.style.animation = "none";
+          loadingWord.offsetHeight;
+          loadingWord.style.animation = "";
+        }
+
+        if (ratio < 1) {
+          requestAnimationFrame(runLoader);
+        } else {
+          window.setTimeout(finishLoader, reduceMotion ? 0 : 220);
+        }
+      };
+
+      requestAnimationFrame(runLoader);
+      window.setTimeout(finishLoader, loadDuration + 420);
+
+      const role = document.querySelector("[data-role]");
+      const roles = ["知识库", "工具箱", "项目场", "生活站"];
+      let roleIndex = 0;
+      window.setInterval(() => {
+        role.animate(
+          [
+            { opacity: 1, transform: "translateY(0)" },
+            { opacity: 0, transform: "translateY(-7px)", offset: 0.45 },
+            { opacity: 0, transform: "translateY(7px)", offset: 0.55 },
+            { opacity: 1, transform: "translateY(0)" }
+          ],
+          { duration: 520, easing: "ease-out" }
+        );
+        window.setTimeout(() => {
+          roleIndex = (roleIndex + 1) % roles.length;
+          role.textContent = roles[roleIndex];
+        }, 265);
+      }, 2400);
+
+      const revealItems = document.querySelectorAll(".reveal");
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("is-visible");
+              observer.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.12, rootMargin: "0px 0px -5% 0px" }
+      );
+      revealItems.forEach((item, index) => {
+        item.style.transitionDelay = `${Math.min(index % 4, 3) * 75}ms`;
+        observer.observe(item);
+      });
+
+      const revealInViewport = () => {
+        revealItems.forEach((item) => {
+          const bounds = item.getBoundingClientRect();
+          if (bounds.top < window.innerHeight * 0.94 && bounds.bottom > 0) {
+            item.classList.add("is-visible");
+          }
+        });
+      };
+
+      const nav = document.querySelector(".nav");
+      const navLinks = [...document.querySelectorAll(".nav__links a")];
+      const sections = [...document.querySelectorAll("main section[id]")];
+
+      const syncNav = () => {
+        nav.classList.toggle("is-scrolled", window.scrollY > 80);
+        revealInViewport();
+        const current = sections.reduce((active, section) => {
+          return window.scrollY >= section.offsetTop - 180 ? section.id : active;
+        }, "home");
+        navLinks.forEach((link) => {
+          link.classList.toggle("is-active", link.hash === `#${current}`);
+        });
+      };
+
+      window.addEventListener("scroll", syncNav, { passive: true });
+      syncNav();
+    </script>
+  </body>
+</html>
