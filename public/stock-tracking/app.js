@@ -148,8 +148,9 @@
     state.editField = null;
     state.saveError = "";
     state.readOverridesByScope.clear();
-    restoreWatchlist();
+    const watchlistChanged = restoreWatchlist();
     render();
+    refreshDailyWatchlistAfterAccountChange(watchlistChanged);
   }
 
   function syncAccountPreferences() {
@@ -157,8 +158,9 @@
     accountSyncPromise = accountStorage.sync(seedStockCodes)
       .then(() => {
         state.readOverridesByScope.clear();
-        restoreWatchlist();
+        const watchlistChanged = restoreWatchlist();
         render();
+        refreshDailyWatchlistAfterAccountChange(watchlistChanged);
       })
       .finally(() => {
         accountSyncPromise = null;
@@ -272,8 +274,24 @@
 
   function restoreWatchlist() {
     state.readOverridesByScope.clear();
+    const previousCodes = data.stocks.map(stock => stock.code);
     const codes = accountStorage.loadWatchlist(seedStockCodes);
     data.stocks = codes.map(stockRecord);
+    return previousCodes.length !== codes.length
+      || previousCodes.some((code, index) => code !== codes[index]);
+  }
+
+  function refreshDailyWatchlistAfterAccountChange(watchlistChanged) {
+    if (!watchlistChanged || state.viewMode !== "daily" || !liveDataProvider) return;
+    const codes = data.stocks.map(stock => stock.code);
+    if (!codes.length) return;
+    refreshAllInformation({
+      silent: true,
+      force: true,
+      quoteCodes: codes,
+      feedCodes: codes,
+      feedSections: ["announcements", "news", "events"]
+    });
   }
 
   function persistWatchlist() {
@@ -1272,7 +1290,7 @@
     const unread = isUnread(message, scopeId);
     const sourceUrl = specificSourceUrl(message.sourceUrl);
     const stockBadge = message.trackingStockId
-      ? `<button class="message-stock-link" type="button" data-action="select-stock" data-stock-id="${escapeHtml(message.trackingStockId)}" title="查看${escapeHtml(message.trackingStockName)}全部动态">${escapeHtml(message.trackingStockName)} <span>${escapeHtml(message.trackingStockCode)}</span></button>`
+      ? `<button class="message-stock-link" type="button" data-action="select-stock" data-stock-id="${escapeHtml(message.trackingStockId)}" title="查看${escapeHtml(message.trackingStockName)}全部动态"><b>${escapeHtml(message.trackingStockName)}</b><span>${escapeHtml(message.trackingStockCode)}</span></button>`
       : "";
     const eventBadge = message.eventLabel
       ? `<span class="message-tag event-kind-${escapeHtml(message.eventKind || "reminder")}">${escapeHtml(message.eventLabel)}</span>`
@@ -1296,9 +1314,9 @@
         <div class="message-body">
           <div class="message-main">
             <div class="message-heading">
+              ${stockBadge}
               <strong>${escapeHtml(message.title)}</strong>
               <span class="message-badges">
-                ${stockBadge}
                 ${eventBadge}
                 <span class="message-tag evidence-${message.evidence}">${message.evidence}</span>
                 <span class="message-tag sentiment-${message.sentiment}">${sentimentLabel(message.sentiment)}</span>

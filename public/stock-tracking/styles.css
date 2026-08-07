@@ -1059,20 +1059,21 @@ svg {
   white-space: nowrap;
 }
 .message-stock-link {
-  min-height: 25px;
+  min-height: 29px;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   border: 1px solid #334657;
   border-radius: 4px;
   background: #172431;
   color: #b9d2e5;
-  padding: 4px 7px;
-  font-size: 11px;
+  padding: 5px 8px;
+  font-size: 14px;
   font-weight: 700;
   line-height: 1;
 }
-.message-stock-link span { color: #71889b; font-family: var(--mono); font-weight: 500; }
+.message-stock-link b { color: #e4f1fb; font-size: 14px; font-weight: 800; }
+.message-stock-link span { color: #71889b; font-family: var(--mono); font-size: 10px; font-weight: 500; }
 .message-stock-link:hover { border-color: #54718a; background: #1b2d3d; color: #e1f0fb; }
 .evidence-事实 { border-color: #24394f; background: #172432; color: var(--blue); }
 .evidence-推断 { border-color: #463a24; background: #2b2417; color: var(--warning); }
