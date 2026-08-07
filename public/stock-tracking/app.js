@@ -42,6 +42,7 @@
     pulse: "<path d='M3 12h4l2-5 4 10 2-5h6'/>",
     news: "<path d='M5 4h12a2 2 0 012 2v14H7a2 2 0 01-2-2zM8 8h8M8 12h8M8 16h5'/>",
     digest: "<path d='M6 3.5h12v17H6zM9 8h6M9 12h6M9 16h3'/><path d='M4 7h2M4 12h2M4 17h2'/>",
+    calendar: "<rect x='4' y='5.5' width='16' height='14.5' rx='2'/><path d='M8 3.5v4M16 3.5v4M4 10h16M8 14h3M8 17h6'/>",
     edit: "<path d='M4 20h4l11-11-4-4L4 16zM13.5 6.5l4 4'/>",
     search: "<circle cx='10.5' cy='10.5' r='6.5'/><path d='M15.5 15.5L21 21'/>",
     refresh: "<path d='M20 7v5h-5M4 17v-5h5M18.5 9A7 7 0 006 7l-2 5M5.5 15A7 7 0 0018 17l2-5'/>",
@@ -67,7 +68,7 @@
     : legacyGroupMap[requestedCategory] || "all";
   const state = {
     selectedStockId: requestedStockId || data?.stocks?.[0]?.id || "",
-    viewMode: ["technical", "daily"].includes(requestedView) ? requestedView : "stock",
+    viewMode: ["technical", "daily", "calendar"].includes(requestedView) ? requestedView : "stock",
     activeGroup: requestedGroup,
     query: "",
     dailyStockQuery: "",
@@ -127,7 +128,7 @@
     refreshAllInformation({
       silent: true,
       force: true,
-      feedCodes: state.viewMode === "daily" ? data.stocks.map(stock => stock.code) : undefined
+      feedCodes: watchlistAggregateView() ? data.stocks.map(stock => stock.code) : undefined
     });
     startAutomaticRefresh();
   }
@@ -203,7 +204,7 @@
       quoteCodes: sections.includes("quote") ? [selectedStock().code] : [],
       feedSections,
       feedCodes: feedSections.length
-        ? state.viewMode === "daily" ? data.stocks.map(stock => stock.code) : [selectedStock().code]
+        ? watchlistAggregateView() ? data.stocks.map(stock => stock.code) : [selectedStock().code]
         : []
     };
     refreshAllInformation(options);
@@ -227,7 +228,7 @@
 
   function handleVisibilityRefresh() {
     if (document.visibilityState !== "visible") return;
-    const feedCodes = state.viewMode === "daily"
+    const feedCodes = watchlistAggregateView()
       ? data.stocks.map(stock => stock.code)
       : [selectedStock().code];
     refreshAllInformation({
@@ -285,7 +286,7 @@
   }
 
   function refreshDailyWatchlistAfterAccountChange(watchlistChanged) {
-    if (!watchlistChanged || state.viewMode !== "daily" || !liveDataProvider) return;
+    if (!watchlistChanged || !watchlistAggregateView() || !liveDataProvider) return;
     const codes = data.stocks.map(stock => stock.code);
     if (!codes.length) return;
     refreshAllInformation({
@@ -310,6 +311,10 @@
     if (basic) return { ...createBasicStockRecord(basic), tracked: false };
     const fallback = seedStocks[0] || createBasicStockRecord({ code: state.selectedStockId || "301026" });
     return { ...fallback, tracked: data.stocks.some(stock => stock.code === fallback.code) };
+  }
+
+  function watchlistAggregateView() {
+    return ["daily", "calendar"].includes(state.viewMode);
   }
 
   function allStocks() {
@@ -357,14 +362,6 @@
     return String(selectedStock().id || "unknown");
   }
 
-  function messageScopeId(message) {
-    return readStorageScope(message?.trackingStockId || "");
-  }
-
-  function messageIsUnread(message) {
-    return isUnread(message, messageScopeId(message));
-  }
-
   function readStateFor(scopeId = readStorageScope()) {
     if (!state.readStateByScope.has(scopeId)) {
       state.readStateByScope.set(scopeId, messageReadState.createState(accountStorage.load(scopeId)));
@@ -378,6 +375,14 @@
 
   function isUnread(message, scopeId = readStorageScope()) {
     return messageReadState.isUnread(message, readStateFor(scopeId));
+  }
+
+  function messageScopeId(message) {
+    return readStorageScope(message?.trackingStockId || "");
+  }
+
+  function messageIsUnread(message) {
+    return isUnread(message, messageScopeId(message));
   }
 
   function messageForScope(scopeId, messageId) {
@@ -483,9 +488,9 @@
     return data.market.macroNews.filter(messageMatchesFilters).sort(sortByNewest);
   }
 
-  function dailyDigestSections(applySentimentFilter = true) {
+  function trackedWatchlistMessages() {
     const allDynamicsGroup = stockGroups.find(group => group.id === "all") || stockGroups[0];
-    const trackedMessages = data.stocks
+    return data.stocks
       .flatMap(stock => messagesForGroup(stock, allDynamicsGroup)
         .map(message => ({
           ...message,
@@ -493,16 +498,12 @@
           trackingStockCode: stock.code,
           trackingStockName: stock.name
         })));
-    const sections = messageTaxonomy.partitionDailyDigestMessages(trackedMessages, {
-      isToday: message => messageDayRelation(message) === "today",
-      isPast: message => messageDayRelation(message) === "past",
-      isUnread: messageIsUnread,
-      isReminder: message => message.eventKind === "calendar",
-      isActiveReminder: message => message.eventKind === "calendar" && messageDayRelation(message) === "future"
-    });
+  }
+
+  function filterWatchlistMessages(messages, applySentimentFilter = true) {
     const selectedDailyStock = String(state.filters.stock || "all");
     const dailyStockQuery = state.dailyStockQuery;
-    const applyFilter = messages => messages
+    return messages
       .filter(message => !applySentimentFilter
         || state.filters.sentiment === "all"
         || message.sentiment === state.filters.sentiment)
@@ -515,8 +516,19 @@
           code: message.trackingStockCode,
           initials: ""
         }, dailyStockQuery);
-      })
-      .sort(sortByNewest);
+      });
+  }
+
+  function dailyDigestSections(applySentimentFilter = true) {
+    const trackedMessages = trackedWatchlistMessages();
+    const sections = messageTaxonomy.partitionDailyDigestMessages(trackedMessages, {
+      isToday: message => message.eventKind !== "calendar" && messageDayRelation(message) === "today",
+      isPast: message => messageDayRelation(message) === "past",
+      isUnread: messageIsUnread,
+      isReminder: message => message.eventKind === "calendar",
+      isActiveReminder: () => false
+    });
+    const applyFilter = messages => filterWatchlistMessages(messages, applySentimentFilter).sort(sortByNewest);
     return {
       today: applyFilter(sections.today),
       catchUp: applyFilter(sections.catchUp)
@@ -526,6 +538,17 @@
   function dailyDigestMessages(applySentimentFilter = true) {
     const sections = dailyDigestSections(applySentimentFilter);
     return [...sections.today, ...sections.catchUp].sort(sortByNewest);
+  }
+
+  function calendarReminderMessages() {
+    return filterWatchlistMessages(unexpiredCalendarReminders(), false).sort(sortBySoonest);
+  }
+
+  function unexpiredCalendarReminders() {
+    return trackedWatchlistMessages()
+      .filter(message => message.eventKind === "calendar"
+        && ["today", "future"].includes(messageDayRelation(message)))
+      .sort(sortBySoonest);
   }
 
   function dailyDigestCounts() {
@@ -548,6 +571,10 @@
 
   function sortByNewest(left, right) {
     return new Date(right.publishedAt) - new Date(left.publishedAt);
+  }
+
+  function sortBySoonest(left, right) {
+    return new Date(left.publishedAt) - new Date(right.publishedAt);
   }
 
   function formatNumber(value, digits = 2) {
@@ -825,13 +852,16 @@
       ? `${stock.name}技术分析 - A股个股跟踪`
       : state.viewMode === "daily"
         ? "今日必读 - A股个股跟踪"
-        : "A股个股跟踪";
+        : state.viewMode === "calendar"
+          ? "个股日历 - A股个股跟踪"
+          : "A股个股跟踪";
     root.innerHTML = `
       <div class="tracking-layout">
         ${renderSidebar(stock)}
         <main class="tracking-main ${state.viewMode === "technical" ? "technical-main" : ""}">
           ${state.viewMode === "stock" ? renderStockView(stock) : ""}
           ${state.viewMode === "daily" ? renderDailyDigestView() : ""}
+          ${state.viewMode === "calendar" ? renderCalendarView() : ""}
           ${state.viewMode === "macro" ? renderMacroView() : ""}
           ${state.viewMode === "market" ? renderMarketTechnicalView() : ""}
           ${state.viewMode === "technical" ? renderTechnicalView(stock) : ""}
@@ -874,7 +904,7 @@
           <div>
             <p>${account.signedIn ? "登录账号自选股" : "当前浏览器自选股"} · 上海时间今日</p>
             <h2>今日必读</h2>
-            <span>汇总 ${data.stocks.length} 只自选股今天发布的信息、未到期日历提醒，并补充此前未读动态</span>
+            <span>汇总 ${data.stocks.length} 只自选股今天发布的信息，并补充此前未读动态</span>
           </div>
           <div class="daily-digest-summary" aria-label="今日消息汇总">
             <span class="positive"><b>${counts["利好"]}</b>利好</span>
@@ -884,24 +914,52 @@
           </div>
         </header>
         ${renderMessageHeader("daily")}
-        ${renderDailyDigestFilters()}
-        ${renderDailyDigestSection("今日发布", "当天信息与尚未到期的个股日历提醒", visibleSections.today, "today")}
+        ${renderDailyDigestFilters(true, "今日必读")}
+        ${renderDailyDigestSection("今日发布", "当天发布的信息", visibleSections.today, "today")}
         ${allSections.catchUp.length ? renderDailyDigestSection("历史未读补看", "今天以前尚未阅读，不含未来事件", visibleSections.catchUp, "catch-up") : ""}
       </section>`;
   }
 
-  function renderDailyDigestSection(title, description, messages, tone) {
+  function renderCalendarView() {
+    const account = accountStorage.getAccount();
+    const allReminders = unexpiredCalendarReminders();
+    const visibleReminders = calendarReminderMessages();
+    const reminderStocks = new Set(allReminders.map(message => String(message.trackingStockId))).size;
+    const unread = allReminders.filter(messageIsUnread).length;
+    return `
+      <section class="global-view daily-digest-view calendar-view">
+        <header class="global-header daily-digest-header">
+          <div class="global-title-icon">${icon("calendar")}</div>
+          <div>
+            <p>${account.signedIn ? "登录账号自选股" : "当前浏览器自选股"} · 上海时间</p>
+            <h2>个股日历</h2>
+            <span>汇总 ${data.stocks.length} 只自选股尚未到期的公司事项，到期后自动移除</span>
+          </div>
+          <div class="daily-digest-summary" aria-label="个股日历汇总">
+            <span class="neutral"><b>${allReminders.length}</b>未到期</span>
+            <span class="neutral"><b>${reminderStocks}</b>只股票</span>
+            <span class="neutral"><b>${unread}</b>未读</span>
+            <small><b>${allReminders[0] ? `最近 ${formatDateTime(allReminders[0].publishedAt)}` : "暂无提醒"}</b><span>按到期日期排序</span></small>
+          </div>
+        </header>
+        ${renderMessageHeader("calendar")}
+        ${renderDailyDigestFilters(false, "个股日历")}
+        ${renderDailyDigestSection("未到期提醒", "含今日及未来日期，按到期日期由近到远", visibleReminders, "calendar", { groupOrder: "message" })}
+      </section>`;
+  }
+
+  function renderDailyDigestSection(title, description, messages, tone, options = {}) {
     return `
       <section class="daily-digest-section daily-digest-section-${tone}" aria-label="${title}">
         <header class="daily-digest-section-header">
           <div><strong>${title}</strong><span>${description}</span></div>
           <b>${messages.length} 条</b>
         </header>
-        ${renderDailyDigestStockGroups(messages)}
+        ${renderDailyDigestStockGroups(messages, options)}
       </section>`;
   }
 
-  function renderDailyDigestStockGroups(messages) {
+  function renderDailyDigestStockGroups(messages, options = {}) {
     if (!messages.length) return renderTimeline([]);
     const grouped = new Map();
     messages.forEach(message => {
@@ -910,8 +968,10 @@
       grouped.get(stockId).push(message);
     });
     const stockOrder = new Map(data.stocks.map((stock, index) => [String(stock.id), index]));
-    const groups = [...grouped.entries()].sort(([left], [right]) => (
-      (stockOrder.get(left) ?? Number.MAX_SAFE_INTEGER) - (stockOrder.get(right) ?? Number.MAX_SAFE_INTEGER)
+    const groups = [...grouped.entries()].sort(([left, leftMessages], [right, rightMessages]) => (
+      options.groupOrder === "message"
+        ? new Date(leftMessages[0]?.publishedAt) - new Date(rightMessages[0]?.publishedAt)
+        : (stockOrder.get(left) ?? Number.MAX_SAFE_INTEGER) - (stockOrder.get(right) ?? Number.MAX_SAFE_INTEGER)
     ));
     return `
       <div class="daily-stock-groups">
@@ -946,7 +1006,7 @@
 
   function syncUrl() {
     const url = new URL(window.location.href);
-    if (["technical", "daily"].includes(state.viewMode)) {
+    if (["technical", "daily", "calendar"].includes(state.viewMode)) {
       url.searchParams.set("view", state.viewMode);
       url.searchParams.set("stock", state.selectedStockId);
       url.searchParams.delete("category");
@@ -980,6 +1040,7 @@
               const digest = dailyDigestSections(false);
               return renderMarketTool("daily", "digest", "今日必读", `${data.stocks.length} 只自选 · 今日 ${digest.today.length} · 补看 ${digest.catchUp.length}`);
             })()}
+            ${renderMarketTool("calendar", "calendar", "个股日历", `${calendarReminderMessages().length} 条未到期提醒`)}
             ${renderMarketTool("macro", "news", "宏观大事件", "5 则市场要闻")}
             ${renderMarketTool("market", "pulse", "大盘技术走势", "指数与技术指标")}
           </nav>
@@ -1293,9 +1354,11 @@
       ? data.market.macroNews
       : mode === "daily"
         ? dailyDigestMessages()
-        : messagesForGroup(stock);
+        : mode === "calendar"
+          ? calendarReminderMessages()
+          : messagesForGroup(stock);
     const unread = messages.filter(messageIsUnread).length;
-    const title = mode === "macro" ? "宏观大事件" : mode === "daily" ? "今日自选动态" : group.title;
+    const title = mode === "macro" ? "宏观大事件" : mode === "daily" ? "今日自选动态" : mode === "calendar" ? "未到期日历提醒" : group.title;
     const checkedAt = mode === "stock" ? state.dynamicsCheckedByCode.get(stock.code) : null;
     return `
       <header class="message-header">
@@ -1333,10 +1396,10 @@
       </section>`;
   }
 
-  function renderDailyDigestFilters() {
+  function renderDailyDigestFilters(showSentiment = true, viewLabel = "今日必读") {
     const stockOptions = data.stocks.filter(stock => stockMatchesSearch(stock, state.dailyStockQuery));
     return `
-      <section class="message-filters daily-digest-filters" aria-label="今日必读消息筛选">
+      <section class="message-filters daily-digest-filters" aria-label="${viewLabel}消息筛选">
         <div class="daily-stock-filter-row">
           <label class="daily-stock-search" for="daily-stock-search">
             ${icon("search")}
@@ -1350,13 +1413,13 @@
               </button>`).join("")}
           </div>
         </div>
-        ${renderFilterGroup("消息类型", "sentiment", [
+        ${showSentiment ? renderFilterGroup("消息类型", "sentiment", [
           ["all", "全部"],
           ["利好", "利好"],
           ["利空", "利空"],
           ["中性", "中性"]
-        ])}
-        ${state.filters.sentiment !== "all" || state.filters.stock !== "all" || state.dailyStockQuery ? `<button class="clear-filters" type="button" data-action="clear-filters">清除筛选</button>` : ""}
+        ]) : ""}
+        ${(showSentiment && state.filters.sentiment !== "all") || state.filters.stock !== "all" || state.dailyStockQuery ? `<button class="clear-filters" type="button" data-action="clear-filters">清除筛选</button>` : ""}
       </section>`;
   }
 
@@ -1665,7 +1728,7 @@
     } else if (action === "select-view") {
       state.viewMode = target.dataset.view;
       resetForNavigation();
-      refreshDailyAfterRender = state.viewMode === "daily";
+      refreshDailyAfterRender = watchlistAggregateView();
     } else if (action === "select-stock") {
       state.selectedStockId = target.dataset.stockId;
       state.viewMode = state.viewMode === "technical" || target.dataset.stockView === "technical" ? "technical" : "stock";
@@ -1706,7 +1769,9 @@
         ? filteredMacroNews()
         : state.viewMode === "daily"
           ? dailyDigestMessages()
-          : filteredStockMessages(selectedStock());
+          : state.viewMode === "calendar"
+            ? calendarReminderMessages()
+            : filteredStockMessages(selectedStock());
       const messagesByScope = new Map();
       messages.forEach(message => {
         const scopeId = messageScopeId(message);
@@ -1754,7 +1819,7 @@
       state.filters.stock = target.dataset.stockId || "all";
       state.dailyStockQuery = "";
     } else if (action === "refresh-all") {
-      const dailyCodes = state.viewMode === "daily" ? data.stocks.map(stock => stock.code) : undefined;
+      const dailyCodes = watchlistAggregateView() ? data.stocks.map(stock => stock.code) : undefined;
       refreshAllInformation({ force: true, feedCodes: dailyCodes });
       return;
     } else if (state.viewMode === "technical" && technicalPage) {
