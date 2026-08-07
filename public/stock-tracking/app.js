@@ -70,12 +70,13 @@
     viewMode: ["technical", "daily"].includes(requestedView) ? requestedView : "stock",
     activeGroup: requestedGroup,
     query: "",
+    dailyStockQuery: "",
     readStateByScope: new Map(),
     editField: null,
     costDraft: "",
     thesisDraft: "",
     saveError: "",
-    filters: { sentiment: "all", date: "all" },
+    filters: { sentiment: "all", date: "all", stock: "all" },
     universe: [],
     universeMeta: null,
     refreshing: false,
@@ -499,10 +500,22 @@
       isReminder: message => message.eventKind === "calendar",
       isActiveReminder: message => message.eventKind === "calendar" && messageDayRelation(message) === "future"
     });
+    const selectedDailyStock = String(state.filters.stock || "all");
+    const dailyStockQuery = state.dailyStockQuery;
     const applyFilter = messages => messages
       .filter(message => !applySentimentFilter
         || state.filters.sentiment === "all"
         || message.sentiment === state.filters.sentiment)
+      .filter(message => selectedDailyStock === "all" || String(message.trackingStockId) === selectedDailyStock)
+      .filter(message => {
+        if (!dailyStockQuery) return true;
+        const stock = data.stocks.find(item => String(item.id) === String(message.trackingStockId));
+        return stockMatchesSearch(stock || {
+          name: message.trackingStockName,
+          code: message.trackingStockCode,
+          initials: ""
+        }, dailyStockQuery);
+      })
       .sort(sortByNewest);
     return {
       today: applyFilter(sections.today),
@@ -871,8 +884,51 @@
           <div><strong>${title}</strong><span>${description}</span></div>
           <b>${messages.length} 条</b>
         </header>
-        ${renderMessageResults(messages)}
+        ${renderDailyDigestStockGroups(messages)}
       </section>`;
+  }
+
+  function renderDailyDigestStockGroups(messages) {
+    if (!messages.length) return renderTimeline([]);
+    const grouped = new Map();
+    messages.forEach(message => {
+      const stockId = String(message.trackingStockId || message.trackingStockCode || "unknown");
+      if (!grouped.has(stockId)) grouped.set(stockId, []);
+      grouped.get(stockId).push(message);
+    });
+    const stockOrder = new Map(data.stocks.map((stock, index) => [String(stock.id), index]));
+    const groups = [...grouped.entries()].sort(([left], [right]) => (
+      (stockOrder.get(left) ?? Number.MAX_SAFE_INTEGER) - (stockOrder.get(right) ?? Number.MAX_SAFE_INTEGER)
+    ));
+    return `
+      <div class="daily-stock-groups">
+        ${groups.map(([stockId, stockMessages]) => {
+          const stock = data.stocks.find(item => String(item.id) === stockId);
+          const firstMessage = stockMessages[0];
+          const stockName = stock?.name || firstMessage.trackingStockName || stockId;
+          const stockCode = stock?.code || firstMessage.trackingStockCode || stockId;
+          const counts = stockMessages.reduce((result, message) => {
+            if (Object.hasOwn(result, message.sentiment)) result[message.sentiment] += 1;
+            return result;
+          }, { "利好": 0, "利空": 0, "中性": 0 });
+          return `
+            <section class="daily-stock-group" data-daily-stock-id="${escapeHtml(stockId)}" aria-label="${escapeHtml(stockName)}动态">
+              <header class="daily-stock-group-header">
+                <div class="daily-stock-group-title">
+                  <h4>${escapeHtml(stockName)}</h4>
+                  <span>${escapeHtml(stockCode)}</span>
+                </div>
+                <div class="daily-stock-group-counts" aria-label="${stockMessages.length}条动态">
+                  <b>${stockMessages.length} 条</b>
+                  ${counts["利好"] ? `<span class="positive">利好 ${counts["利好"]}</span>` : ""}
+                  ${counts["利空"] ? `<span class="negative">利空 ${counts["利空"]}</span>` : ""}
+                  ${counts["中性"] ? `<span class="neutral">中性 ${counts["中性"]}</span>` : ""}
+                </div>
+              </header>
+              ${renderTimeline(stockMessages, { showStockBadge: false })}
+            </section>`;
+        }).join("")}
+      </div>`;
   }
 
   function syncUrl() {
@@ -1265,15 +1321,29 @@
   }
 
   function renderDailyDigestFilters() {
+    const stockOptions = data.stocks.filter(stock => stockMatchesSearch(stock, state.dailyStockQuery));
     return `
       <section class="message-filters daily-digest-filters" aria-label="今日必读消息筛选">
+        <div class="daily-stock-filter-row">
+          <label class="daily-stock-search" for="daily-stock-search">
+            ${icon("search")}
+            <input id="daily-stock-search" type="search" value="${escapeHtml(state.dailyStockQuery)}" placeholder="搜索自选股名称或代码" autocomplete="off">
+          </label>
+          <div class="daily-stock-filter-chips" aria-label="按股票筛选">
+            <button type="button" class="daily-stock-filter ${state.filters.stock === "all" ? "selected" : ""}" data-action="set-daily-stock" data-stock-id="all" aria-pressed="${state.filters.stock === "all"}">全部</button>
+            ${stockOptions.map(stock => `
+              <button type="button" class="daily-stock-filter ${String(state.filters.stock) === String(stock.id) ? "selected" : ""}" data-action="set-daily-stock" data-stock-id="${escapeHtml(stock.id)}" aria-pressed="${String(state.filters.stock) === String(stock.id)}">
+                <b>${escapeHtml(stock.name)}</b><span>${escapeHtml(stock.code)}</span>
+              </button>`).join("")}
+          </div>
+        </div>
         ${renderFilterGroup("消息类型", "sentiment", [
           ["all", "全部"],
           ["利好", "利好"],
           ["利空", "利空"],
           ["中性", "中性"]
         ])}
-        ${state.filters.sentiment !== "all" ? `<button class="clear-filters" type="button" data-action="clear-filters">清除筛选</button>` : ""}
+        ${state.filters.sentiment !== "all" || state.filters.stock !== "all" || state.dailyStockQuery ? `<button class="clear-filters" type="button" data-action="clear-filters">清除筛选</button>` : ""}
       </section>`;
   }
 
@@ -1294,10 +1364,10 @@
     return Object.values(state.filters).some(value => value !== "all");
   }
 
-  function renderTimeline(messages) {
+  function renderTimeline(messages, options = {}) {
     return `
       <section class="message-timeline" aria-label="最新消息时间流">
-        ${messages.length ? messages.map(renderMessage).join("") : `
+        ${messages.length ? messages.map(message => renderMessage(message, options)).join("") : `
           <div class="timeline-empty"><strong>没有符合条件的信息</strong><span>请调整上方筛选项后再查看</span></div>`}
       </section>`;
   }
@@ -1329,11 +1399,11 @@
       </section>`;
   }
 
-  function renderMessage(message) {
+  function renderMessage(message, options = {}) {
     const scopeId = messageScopeId(message);
     const unread = isUnread(message, scopeId);
     const sourceUrl = specificSourceUrl(message.sourceUrl);
-    const stockBadge = message.trackingStockId
+    const stockBadge = message.trackingStockId && options.showStockBadge !== false
       ? `<button class="message-stock-link" type="button" data-action="select-stock" data-stock-id="${escapeHtml(message.trackingStockId)}" title="查看${escapeHtml(message.trackingStockName)}全部动态"><b>${escapeHtml(message.trackingStockName)}</b><span>${escapeHtml(message.trackingStockCode)}</span></button>`
       : "";
     const eventBadge = message.eventLabel
@@ -1460,7 +1530,8 @@
   function resetForNavigation() {
     state.editField = null;
     state.saveError = "";
-    state.filters = { sentiment: "all", date: "all" };
+    state.filters = { sentiment: "all", date: "all", stock: "all" };
+    state.dailyStockQuery = "";
   }
 
   function closeAuthModal() {
@@ -1662,9 +1733,13 @@
     } else if (action === "append-thesis") {
       appendThesis();
     } else if (action === "clear-filters") {
-      state.filters = { sentiment: "all", date: "all" };
+      state.filters = { sentiment: "all", date: "all", stock: "all" };
+      state.dailyStockQuery = "";
     } else if (action === "set-filter") {
       state.filters[target.dataset.filterKey] = target.dataset.filterValue;
+    } else if (action === "set-daily-stock") {
+      state.filters.stock = target.dataset.stockId || "all";
+      state.dailyStockQuery = "";
     } else if (action === "refresh-all") {
       const dailyCodes = state.viewMode === "daily" ? data.stocks.map(stock => stock.code) : undefined;
       refreshAllInformation({ force: true, feedCodes: dailyCodes });
@@ -1741,11 +1816,21 @@
   }
 
   function handleCompositionStart(event) {
-    if (event.target.id === "stock-search") state.searchComposing = true;
+    if (["stock-search", "daily-stock-search"].includes(event.target.id)) state.searchComposing = true;
     if (event.target.matches?.("[data-technical-search]")) state.technicalSearchComposing = true;
   }
 
   function handleCompositionEnd(event) {
+    if (event.target.id === "daily-stock-search") {
+      state.searchComposing = false;
+      state.dailyStockQuery = event.target.value;
+      state.filters.stock = "all";
+      render();
+      const input = document.getElementById("daily-stock-search");
+      input?.focus();
+      input?.setSelectionRange(input.value.length, input.value.length);
+      return;
+    }
     if (event.target.id === "stock-search") {
       state.searchComposing = false;
       state.query = event.target.value;
@@ -1793,6 +1878,17 @@
     }
     if (event.target.id === "thesis-editor" || event.target.id === "thesis-add-editor") {
       state.thesisDraft = event.target.value;
+      return;
+    }
+    if (event.target.id === "daily-stock-search") {
+      const cursor = event.target.selectionStart;
+      state.dailyStockQuery = event.target.value;
+      state.filters.stock = "all";
+      if (event.isComposing || state.searchComposing) return;
+      render();
+      const input = document.getElementById("daily-stock-search");
+      input?.focus();
+      input?.setSelectionRange(cursor, cursor);
       return;
     }
     if (event.target.id !== "stock-search") return;
