@@ -41,11 +41,24 @@
     return acceptedCategories.includes(normalizeCategory(messageCategory));
   }
 
+  function partitionDailyDigestMessages(messages, predicates = {}) {
+    const source = Array.isArray(messages) ? messages : [];
+    const isToday = typeof predicates.isToday === "function" ? predicates.isToday : () => false;
+    const isPast = typeof predicates.isPast === "function" ? predicates.isPast : () => false;
+    const isUnread = typeof predicates.isUnread === "function" ? predicates.isUnread : () => false;
+    return source.reduce((groups, message) => {
+      if (isToday(message)) groups.today.push(message);
+      else if (isPast(message) && isUnread(message)) groups.catchUp.push(message);
+      return groups;
+    }, { today: [], catchUp: [] });
+  }
+
   return Object.freeze({
     categories,
     feedCategories,
     normalizeCategory,
     isKnownCategory,
-    groupIncludes
+    groupIncludes,
+    partitionDailyDigestMessages
   });
 });

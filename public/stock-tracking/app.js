@@ -445,6 +445,14 @@
     };
   }
 
+  function messageDayRelation(message) {
+    const messageDate = shanghaiDateParts(message?.publishedAt);
+    const today = shanghaiDateParts();
+    if (!messageDate || !today) return "unknown";
+    if (messageDate.ordinal === today.ordinal) return "today";
+    return messageDate.ordinal < today.ordinal ? "past" : "future";
+  }
+
   function messageMatchesDateFilter(message, dateFilter) {
     if (!dateFilter || dateFilter === "all") return true;
     const messageDate = shanghaiDateParts(message.publishedAt);
@@ -470,21 +478,35 @@
     return data.market.macroNews.filter(messageMatchesFilters).sort(sortByNewest);
   }
 
-  function dailyDigestMessages(applySentimentFilter = true) {
+  function dailyDigestSections(applySentimentFilter = true) {
     const allDynamicsGroup = stockGroups.find(group => group.id === "all") || stockGroups[0];
-    return data.stocks
+    const trackedMessages = data.stocks
       .flatMap(stock => messagesForGroup(stock, allDynamicsGroup)
-        .filter(message => messageMatchesDateFilter(message, "today"))
         .map(message => ({
           ...message,
           trackingStockId: stock.id,
           trackingStockCode: stock.code,
           trackingStockName: stock.name
-        })))
+        })));
+    const sections = messageTaxonomy.partitionDailyDigestMessages(trackedMessages, {
+      isToday: message => messageDayRelation(message) === "today",
+      isPast: message => messageDayRelation(message) === "past",
+      isUnread: messageIsUnread
+    });
+    const applyFilter = messages => messages
       .filter(message => !applySentimentFilter
         || state.filters.sentiment === "all"
         || message.sentiment === state.filters.sentiment)
       .sort(sortByNewest);
+    return {
+      today: applyFilter(sections.today),
+      catchUp: applyFilter(sections.catchUp)
+    };
+  }
+
+  function dailyDigestMessages(applySentimentFilter = true) {
+    const sections = dailyDigestSections(applySentimentFilter);
+    return [...sections.today, ...sections.catchUp].sort(sortByNewest);
   }
 
   function dailyDigestCounts() {
@@ -811,7 +833,8 @@
     const account = accountStorage.getAccount();
     const counts = dailyDigestCounts();
     const checkState = dailyDigestCheckState();
-    const messages = dailyDigestMessages();
+    const allSections = dailyDigestSections(false);
+    const visibleSections = dailyDigestSections();
     return `
       <section class="global-view daily-digest-view">
         <header class="global-header daily-digest-header">
@@ -819,17 +842,29 @@
           <div>
             <p>${account.signedIn ? "登录账号自选股" : "当前浏览器自选股"} · 上海时间今日</p>
             <h2>今日必读</h2>
-            <span>汇总 ${data.stocks.length} 只自选股当天发布的公告、新闻与公司事件</span>
+            <span>汇总 ${data.stocks.length} 只自选股今天发布的信息，并补充此前未读动态</span>
           </div>
           <div class="daily-digest-summary" aria-label="今日消息汇总">
             <span class="positive"><b>${counts["利好"]}</b>利好</span>
             <span class="negative"><b>${counts["利空"]}</b>利空</span>
             <span class="neutral"><b>${counts["中性"]}</b>中性</span>
-            <small>已检查 ${checkState.checkedCount}/${data.stocks.length}${checkState.latestAt ? ` · ${formatDateTime(checkState.latestAt)}` : ""}</small>
+            <small><b>今日 ${allSections.today.length} · 补看 ${allSections.catchUp.length}</b><span>已检查 ${checkState.checkedCount}/${data.stocks.length}${checkState.latestAt ? ` · ${formatDateTime(checkState.latestAt)}` : ""}</span></small>
           </div>
         </header>
         ${renderMessageHeader("daily")}
         ${renderDailyDigestFilters()}
+        ${renderDailyDigestSection("今日发布", "按上海时间统计当天原始发布时间", visibleSections.today, "today")}
+        ${allSections.catchUp.length ? renderDailyDigestSection("历史未读补看", "今天以前尚未阅读，不含未来事件", visibleSections.catchUp, "catch-up") : ""}
+      </section>`;
+  }
+
+  function renderDailyDigestSection(title, description, messages, tone) {
+    return `
+      <section class="daily-digest-section daily-digest-section-${tone}" aria-label="${title}">
+        <header class="daily-digest-section-header">
+          <div><strong>${title}</strong><span>${description}</span></div>
+          <b>${messages.length} 条</b>
+        </header>
         ${renderMessageResults(messages)}
       </section>`;
   }
@@ -866,7 +901,10 @@
           </div>
           ${renderSharedAccount()}
           <nav class="market-tools" aria-label="全市场看板">
-            ${renderMarketTool("daily", "digest", "今日必读", `${data.stocks.length} 只自选 · 今日 ${dailyDigestMessages(false).length} 条`)}
+            ${(() => {
+              const digest = dailyDigestSections(false);
+              return renderMarketTool("daily", "digest", "今日必读", `${data.stocks.length} 只自选 · 今日 ${digest.today.length} · 补看 ${digest.catchUp.length}`);
+            })()}
             ${renderMarketTool("macro", "news", "宏观大事件", "5 则市场要闻")}
             ${renderMarketTool("market", "pulse", "大盘技术走势", "指数与技术指标")}
           </nav>
