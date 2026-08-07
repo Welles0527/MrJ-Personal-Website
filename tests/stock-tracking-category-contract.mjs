@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 await import("../public/stock-tracking/message-taxonomy.js");
 
 const taxonomy = globalThis.StockTrackingMessageTaxonomy;
@@ -38,5 +39,34 @@ const digest = taxonomy.partitionDailyDigestMessages(messages, {
 });
 assert.deepEqual(digest.today.map(message => message.id), ["today", "future-calendar"]);
 assert.deepEqual(digest.catchUp.map(message => message.id), ["past-unread"]);
+
+const retainedEvent = { id: "live-event-existing" };
+assert.deepEqual(
+  taxonomy.mergeFeedSection([retainedEvent], [], "事件接口被限流"),
+  [retainedEvent],
+  "a failed feed section must retain its last valid messages"
+);
+assert.deepEqual(
+  taxonomy.mergeFeedSection([retainedEvent], [], ""),
+  [],
+  "a successful empty response may clear a feed section"
+);
+assert.deepEqual(
+  taxonomy.mergeFeedSection(
+    [retainedEvent, { id: "expired-event" }],
+    [],
+    "",
+    message => message.id === retainedEvent.id
+  ),
+  [retainedEvent],
+  "an active calendar reminder must survive a successful response that temporarily omits it"
+);
+
+const appSource = fs.readFileSync(new URL("../public/stock-tracking/app.js", import.meta.url), "utf8");
+assert.match(
+  appSource,
+  /mergeFeedSection\([\s\S]{0,220}information\.errors\?\.events[\s\S]{0,180}message\.eventKind === "calendar" && messageDayRelation\(message\) === "future"/,
+  "the daily digest must retain unexpired calendar reminders on partial refreshes"
+);
 
 console.log("Stock-tracking category contract passed.");

@@ -700,13 +700,26 @@
       unread: existingById.has(message.id) ? existingById.get(message.id).unread : true
     }));
     const announcements = sections.includes("announcements")
-      ? preserveReadState(information.announcements || [])
+      ? messageTaxonomy.mergeFeedSection(
+        existingAnnouncements,
+        preserveReadState(information.announcements || []),
+        information.errors?.announcements
+      )
       : existingAnnouncements;
     const news = sections.includes("news")
-      ? preserveReadState(information.news || [])
+      ? messageTaxonomy.mergeFeedSection(
+        existingNews,
+        preserveReadState(information.news || []),
+        information.errors?.news
+      )
       : existingNews;
     const events = sections.includes("events")
-      ? preserveReadState(information.events || [])
+      ? messageTaxonomy.mergeFeedSection(
+        existingEvents,
+        preserveReadState(information.events || []),
+        information.errors?.events,
+        message => message.eventKind === "calendar" && messageDayRelation(message) === "future"
+      )
       : existingEvents;
     const latestMessages = [...announcements, ...news, ...events];
     record.messages = [...retainedMessages, ...latestMessages].sort(sortByNewest);

@@ -55,12 +55,24 @@
     }, { today: [], catchUp: [] });
   }
 
+  function mergeFeedSection(existingMessages, incomingMessages, error, retainExisting = () => false) {
+    const existing = Array.isArray(existingMessages) ? existingMessages : [];
+    if (error) return [...existing];
+    const incoming = Array.isArray(incomingMessages) ? incomingMessages : [];
+    const incomingIds = new Set(incoming.map(message => String(message?.id || "")));
+    const retained = existing.filter(message => (
+      retainExisting(message) && !incomingIds.has(String(message?.id || ""))
+    ));
+    return [...incoming, ...retained];
+  }
+
   return Object.freeze({
     categories,
     feedCategories,
     normalizeCategory,
     isKnownCategory,
     groupIncludes,
-    partitionDailyDigestMessages
+    partitionDailyDigestMessages,
+    mergeFeedSection
   });
 });
