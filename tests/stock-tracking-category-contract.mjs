@@ -22,4 +22,21 @@ for (const category of taxonomy.feedCategories) {
 assert.equal(taxonomy.groupIncludes([taxonomy.categories.INDUSTRY], "macro"), true);
 assert.equal(taxonomy.groupIncludes([taxonomy.categories.INDUSTRY], "company"), false);
 
+const messages = [
+  { id: "today", day: "today", unread: true },
+  { id: "past-unread", day: "past", unread: true },
+  { id: "future-normal", day: "future", unread: true },
+  { id: "future-calendar", day: "future", unread: false, calendar: true },
+  { id: "past-calendar", day: "past", unread: true, calendar: true }
+];
+const digest = taxonomy.partitionDailyDigestMessages(messages, {
+  isToday: message => message.day === "today",
+  isPast: message => message.day === "past",
+  isUnread: message => message.unread,
+  isReminder: message => Boolean(message.calendar),
+  isActiveReminder: message => message.calendar && message.day === "future"
+});
+assert.deepEqual(digest.today.map(message => message.id), ["today", "future-calendar"]);
+assert.deepEqual(digest.catchUp.map(message => message.id), ["past-unread"]);
+
 console.log("Stock-tracking category contract passed.");

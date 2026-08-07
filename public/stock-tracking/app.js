@@ -495,7 +495,9 @@
     const sections = messageTaxonomy.partitionDailyDigestMessages(trackedMessages, {
       isToday: message => messageDayRelation(message) === "today",
       isPast: message => messageDayRelation(message) === "past",
-      isUnread: messageIsUnread
+      isUnread: messageIsUnread,
+      isReminder: message => message.eventKind === "calendar",
+      isActiveReminder: message => message.eventKind === "calendar" && messageDayRelation(message) === "future"
     });
     const applyFilter = messages => messages
       .filter(message => !applySentimentFilter
@@ -846,7 +848,7 @@
           <div>
             <p>${account.signedIn ? "登录账号自选股" : "当前浏览器自选股"} · 上海时间今日</p>
             <h2>今日必读</h2>
-            <span>汇总 ${data.stocks.length} 只自选股今天发布的信息，并补充此前未读动态</span>
+            <span>汇总 ${data.stocks.length} 只自选股今天发布的信息、未到期日历提醒，并补充此前未读动态</span>
           </div>
           <div class="daily-digest-summary" aria-label="今日消息汇总">
             <span class="positive"><b>${counts["利好"]}</b>利好</span>
@@ -857,7 +859,7 @@
         </header>
         ${renderMessageHeader("daily")}
         ${renderDailyDigestFilters()}
-        ${renderDailyDigestSection("今日发布", "按上海时间统计当天原始发布时间", visibleSections.today, "today")}
+        ${renderDailyDigestSection("今日发布", "当天信息与尚未到期的个股日历提醒", visibleSections.today, "today")}
         ${allSections.catchUp.length ? renderDailyDigestSection("历史未读补看", "今天以前尚未阅读，不含未来事件", visibleSections.catchUp, "catch-up") : ""}
       </section>`;
   }

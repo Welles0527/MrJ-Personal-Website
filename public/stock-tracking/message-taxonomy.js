@@ -46,9 +46,11 @@
     const isToday = typeof predicates.isToday === "function" ? predicates.isToday : () => false;
     const isPast = typeof predicates.isPast === "function" ? predicates.isPast : () => false;
     const isUnread = typeof predicates.isUnread === "function" ? predicates.isUnread : () => false;
+    const isReminder = typeof predicates.isReminder === "function" ? predicates.isReminder : () => false;
+    const isActiveReminder = typeof predicates.isActiveReminder === "function" ? predicates.isActiveReminder : () => false;
     return source.reduce((groups, message) => {
-      if (isToday(message)) groups.today.push(message);
-      else if (isPast(message) && isUnread(message)) groups.catchUp.push(message);
+      if (isToday(message) || isActiveReminder(message)) groups.today.push(message);
+      else if (!isReminder(message) && isPast(message) && isUnread(message)) groups.catchUp.push(message);
       return groups;
     }, { today: [], catchUp: [] });
   }
