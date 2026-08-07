@@ -85,22 +85,30 @@ const otherAccount = createBrowser('other-user', cloud);
 
 await firstBrowser.storage.sync(['301026']);
 firstBrowser.storage.saveWatchlist(['301026', '688633']);
-firstBrowser.storage.save('301026', { cost: 18.5, readOverrides: ['announcement-1'] });
+firstBrowser.storage.save('301026', {
+  cost: 18.5,
+  readStateVersion: 2,
+  readThroughAt: '2026-08-08T10:00:00+08:00',
+  readIds: ['announcement-1'],
+  unreadIds: []
+});
 await firstBrowser.storage.flushCloudWrites();
 
 await secondBrowser.storage.sync(['300750']);
 assert.deepEqual(Array.from(secondBrowser.storage.loadWatchlist([])), ['301026', '688633']);
 assert.equal(secondBrowser.storage.load('301026').cost, 18.5);
-assert.deepEqual(Array.from(secondBrowser.storage.load('301026').readOverrides), ['announcement-1']);
+assert.equal(secondBrowser.storage.load('301026').readStateVersion, 2);
+assert.equal(secondBrowser.storage.load('301026').readThroughAt, '2026-08-08T10:00:00+08:00');
+assert.deepEqual(Array.from(secondBrowser.storage.load('301026').readIds), ['announcement-1']);
 
 await otherAccount.storage.sync(['300750']);
 assert.deepEqual(Array.from(otherAccount.storage.loadWatchlist([])), ['300750']);
 assert.equal(Object.keys(otherAccount.storage.load('301026')).length, 0);
 
-secondBrowser.storage.save('301026', { readOverrides: [] });
+secondBrowser.storage.save('301026', { readIds: [] });
 await secondBrowser.storage.flushCloudWrites();
 await firstBrowser.storage.sync([]);
-assert.deepEqual(Array.from(firstBrowser.storage.load('301026').readOverrides), []);
+assert.deepEqual(Array.from(firstBrowser.storage.load('301026').readIds), []);
 
 firstBrowser.switchAccount('other-user');
 await firstBrowser.storage.sync(['300750']);

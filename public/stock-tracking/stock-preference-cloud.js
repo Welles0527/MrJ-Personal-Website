@@ -40,6 +40,18 @@
     const cost = Number(source.cost);
     if (Number.isFinite(cost) && cost > 0) result.cost = Number(cost.toFixed(2));
     if (typeof source.thesis === "string") result.thesis = source.thesis.slice(0, 5000);
+    if (Number(source.readStateVersion) >= 2) {
+      result.readStateVersion = 2;
+      if (typeof source.readThroughAt === "string" && Number.isFinite(Date.parse(source.readThroughAt))) {
+        result.readThroughAt = source.readThroughAt;
+      }
+      result.readIds = [...new Set((Array.isArray(source.readIds) ? source.readIds : [])
+        .map(item => String(item || ""))
+        .filter(Boolean))].slice(-1000);
+      result.unreadIds = [...new Set((Array.isArray(source.unreadIds) ? source.unreadIds : [])
+        .map(item => String(item || ""))
+        .filter(Boolean))].slice(-1000);
+    }
     if (Array.isArray(source.readOverrides)) {
       result.readOverrides = [...new Set(source.readOverrides.map(item => String(item || "")).filter(Boolean))].slice(-1000);
     }

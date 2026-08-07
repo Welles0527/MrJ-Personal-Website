@@ -4,7 +4,9 @@
   const data = window.STOCK_TRACKING_MOCK_DATA;
   const accountStorage = window.StockTrackingAccountStorage;
   const messageTaxonomy = window.StockTrackingMessageTaxonomy;
+  const messageReadState = window.StockTrackingMessageReadState;
   if (!messageTaxonomy) throw new Error("消息分类模块未加载");
+  if (!messageReadState) throw new Error("消息已读状态模块未加载");
   const MESSAGE_CATEGORY = messageTaxonomy.categories;
   const seedStocks = (data?.stocks || []).map(stock => ({
     ...stock,
@@ -68,7 +70,7 @@
     viewMode: ["technical", "daily"].includes(requestedView) ? requestedView : "stock",
     activeGroup: requestedGroup,
     query: "",
-    readOverridesByScope: new Map(),
+    readStateByScope: new Map(),
     editField: null,
     costDraft: "",
     thesisDraft: "",
@@ -132,7 +134,7 @@
   function handleExternalStorageChange(event) {
     state.editField = null;
     state.saveError = "";
-    state.readOverridesByScope.clear();
+    state.readStateByScope.clear();
     restoreWatchlist();
     render();
     if (event?.type === "site-auth-change") void syncAccountPreferences();
@@ -147,7 +149,7 @@
   function handleCloudPreferencesChange() {
     state.editField = null;
     state.saveError = "";
-    state.readOverridesByScope.clear();
+    state.readStateByScope.clear();
     const watchlistChanged = restoreWatchlist();
     render();
     refreshDailyWatchlistAfterAccountChange(watchlistChanged);
@@ -157,7 +159,7 @@
     if (accountSyncPromise || typeof accountStorage.sync !== "function") return accountSyncPromise;
     accountSyncPromise = accountStorage.sync(seedStockCodes)
       .then(() => {
-        state.readOverridesByScope.clear();
+        state.readStateByScope.clear();
         const watchlistChanged = restoreWatchlist();
         render();
         refreshDailyWatchlistAfterAccountChange(watchlistChanged);
@@ -273,7 +275,7 @@
   }
 
   function restoreWatchlist() {
-    state.readOverridesByScope.clear();
+    state.readStateByScope.clear();
     const previousCodes = data.stocks.map(stock => stock.code);
     const codes = accountStorage.loadWatchlist(seedStockCodes);
     data.stocks = codes.map(stockRecord);
@@ -362,25 +364,27 @@
     return isUnread(message, messageScopeId(message));
   }
 
-  function readOverridesFor(scopeId = readStorageScope()) {
-    if (!state.readOverridesByScope.has(scopeId)) {
-      const saved = accountStorage.load(scopeId);
-      const values = Array.isArray(saved.readOverrides)
-        ? saved.readOverrides.map(value => String(value || "")).filter(Boolean)
-        : [];
-      state.readOverridesByScope.set(scopeId, new Set(values));
+  function readStateFor(scopeId = readStorageScope()) {
+    if (!state.readStateByScope.has(scopeId)) {
+      state.readStateByScope.set(scopeId, messageReadState.createState(accountStorage.load(scopeId)));
     }
-    return state.readOverridesByScope.get(scopeId);
+    return state.readStateByScope.get(scopeId);
   }
 
-  function persistReadOverrides(scopeId, overrides) {
-    accountStorage.save(scopeId, {
-      readOverrides: [...overrides].slice(-1000)
-    });
+  function persistReadState(scopeId, value) {
+    accountStorage.save(scopeId, messageReadState.serialize(value));
   }
 
   function isUnread(message, scopeId = readStorageScope()) {
-    return Boolean(message.unread) !== readOverridesFor(scopeId).has(message.id);
+    return messageReadState.isUnread(message, readStateFor(scopeId));
+  }
+
+  function messageForScope(scopeId, messageId) {
+    if (scopeId === "market-macro") {
+      return data.market.macroNews.find(message => message.id === messageId) || null;
+    }
+    const stock = data.stocks.find(item => String(item.id) === String(scopeId) || String(item.code) === String(scopeId));
+    return stock?.messages?.find(message => message.id === messageId) || null;
   }
 
   function groupIncludes(group, message) {
@@ -1605,10 +1609,12 @@
     } else if (action === "toggle-message-read") {
       const messageId = target.dataset.messageId;
       const scopeId = target.dataset.messageScope || readStorageScope();
-      const overrides = readOverridesFor(scopeId);
-      if (overrides.has(messageId)) overrides.delete(messageId);
-      else overrides.add(messageId);
-      persistReadOverrides(scopeId, overrides);
+      const message = messageForScope(scopeId, messageId);
+      if (message) {
+        const value = readStateFor(scopeId);
+        messageReadState.toggle(message, value);
+        persistReadState(scopeId, value);
+      }
     } else if (action === "mark-read") {
       const messages = state.viewMode === "macro"
         ? filteredMacroNews()
@@ -1621,13 +1627,18 @@
         if (!messagesByScope.has(scopeId)) messagesByScope.set(scopeId, []);
         messagesByScope.get(scopeId).push(message);
       });
-      messagesByScope.forEach((scopedMessages, scopeId) => {
-        const overrides = readOverridesFor(scopeId);
-        scopedMessages.filter(message => isUnread(message, scopeId)).forEach(message => {
-          if (overrides.has(message.id)) overrides.delete(message.id);
-          else overrides.add(message.id);
+      const advanceReadThrough = state.viewMode === "daily" && state.filters.sentiment === "all";
+      if (advanceReadThrough) {
+        data.stocks.forEach(stock => {
+          const scopeId = readStorageScope(stock.id);
+          if (!messagesByScope.has(scopeId)) messagesByScope.set(scopeId, []);
         });
-        persistReadOverrides(scopeId, overrides);
+      }
+      const readThroughAt = advanceReadThrough ? new Date().toISOString() : "";
+      messagesByScope.forEach((scopedMessages, scopeId) => {
+        const value = readStateFor(scopeId);
+        messageReadState.markAll(scopedMessages, value, readThroughAt);
+        persistReadState(scopeId, value);
       });
     } else if (action === "edit-position") {
       const position = positionValues(selectedStock());

@@ -76,11 +76,21 @@ let watchedSnapshot = null;
 const watcher = secondClient.watch(snapshot => { watchedSnapshot = snapshot; });
 
 await firstClient.saveWatchlist(['301026', '688633']);
-await firstClient.saveScope('301026', { cost: 18.5, readOverrides: ['message-1'] });
+await firstClient.saveScope('301026', {
+  cost: 18.5,
+  readStateVersion: 2,
+  readThroughAt: '2026-08-08T10:00:00+08:00',
+  readIds: ['message-1'],
+  unreadIds: ['message-2'],
+  readOverrides: []
+});
 const sameAccountSnapshot = await secondClient.load();
 assert.deepEqual(Array.from(sameAccountSnapshot.watchlist.codes), ['301026', '688633']);
 assert.equal(sameAccountSnapshot.scopes['301026'].cost, 18.5);
-assert.deepEqual(Array.from(sameAccountSnapshot.scopes['301026'].readOverrides), ['message-1']);
+assert.equal(sameAccountSnapshot.scopes['301026'].readStateVersion, 2);
+assert.equal(sameAccountSnapshot.scopes['301026'].readThroughAt, '2026-08-08T10:00:00+08:00');
+assert.deepEqual(Array.from(sameAccountSnapshot.scopes['301026'].readIds), ['message-1']);
+assert.deepEqual(Array.from(sameAccountSnapshot.scopes['301026'].unreadIds), ['message-2']);
 assert.equal(watchedSnapshot.scopes['301026'].cost, 18.5);
 
 const isolatedSnapshot = await otherAccount.load();
