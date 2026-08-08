@@ -5,10 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev --host 127.0.0.1",
-    "build": "astro build",
+    "build": "astro build && npm run test:alternative-knowledge",
     "preview": "astro preview",
     "lint": "astro check",
-    "test:todo-modal": "node tests/todo-modal-regression.mjs"
+    "test:todo-modal": "node tests/todo-modal-regression.mjs",
+    "test:alternative-knowledge": "node tests/alternative-knowledge-regression.mjs"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.4",
