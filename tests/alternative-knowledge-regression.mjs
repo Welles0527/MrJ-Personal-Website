@@ -22,7 +22,9 @@ const requiredContent = [
   '圣经献祭',
   '五种献祭，一表看懂差异',
   'age-rankings?view=lifespan',
-  'age-rankings?view=accession'
+  'age-rankings?view=accession',
+  'bible-text-statistics/',
+  '圣经文字'
 ];
 
 requiredContent.forEach((content) => {
@@ -32,4 +34,4 @@ requiredContent.forEach((content) => {
 assert.ok(!html.includes('ADDRESS RESERVED'), '另类圣经被占位页覆盖');
 assert.ok(!html.includes('等待内容接入'), '另类圣经仍显示等待内容接入');
 
-console.log('另类圣经构建回归检查通过：名山、五祭对比和人物排行榜入口均已保留。');
+console.log('另类圣经构建回归检查通过：名山、五祭对比、人物排行榜与圣经文字入口均已保留。');

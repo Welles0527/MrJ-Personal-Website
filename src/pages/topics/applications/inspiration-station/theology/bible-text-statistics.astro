@@ -1,0 +1,8 @@
+---
+import BaseLayout from '../../../../../layouts/BaseLayout.astro';
+import BibleTextStatistics from '../../../../../components/BibleTextStatistics/BibleTextStatistics';
+---
+
+<BaseLayout title="圣经文字｜微读圣经" activeTheme="applications" bare>
+  <BibleTextStatistics client:only="react" />
+</BaseLayout>
