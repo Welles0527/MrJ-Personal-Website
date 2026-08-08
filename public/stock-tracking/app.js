@@ -541,13 +541,21 @@
   }
 
   function calendarReminderMessages() {
-    return filterWatchlistMessages(unexpiredCalendarReminders(), false).sort(sortBySoonest);
+    return filterWatchlistMessages(currentMonthCalendarReminders(), false).sort(sortBySoonest);
   }
 
-  function unexpiredCalendarReminders() {
+  function currentMonthCalendarReminders() {
+    const today = shanghaiDateParts();
     return messageTaxonomy.keepLatestDuplicateMessages(trackedWatchlistMessages()
-      .filter(message => message.eventKind === "calendar"
-        && ["today", "future"].includes(messageDayRelation(message))))
+      .filter(message => {
+        const messageDate = shanghaiDateParts(message.publishedAt);
+        return message.eventKind === "calendar"
+          && messageDate
+          && today
+          && messageDate.year === today.year
+          && messageDate.month === today.month
+          && ["today", "future"].includes(messageDayRelation(message));
+      }))
       .sort(sortBySoonest);
   }
 
@@ -969,10 +977,12 @@
 
   function renderCalendarView() {
     const account = accountStorage.getAccount();
-    const allReminders = unexpiredCalendarReminders();
+    const allReminders = currentMonthCalendarReminders();
     const visibleReminders = calendarReminderMessages();
     const reminderStocks = new Set(allReminders.map(message => String(message.trackingStockId))).size;
     const unread = allReminders.filter(messageIsUnread).length;
+    const today = shanghaiDateParts();
+    const monthLabel = `${today.year}年${today.month}月`;
     return `
       <section class="global-view daily-digest-view calendar-view">
         <header class="global-header daily-digest-header">
@@ -980,19 +990,93 @@
           <div>
             <p>${account.signedIn ? "登录账号自选股" : "当前浏览器自选股"} · 上海时间</p>
             <h2>个股日历</h2>
-            <span>汇总 ${data.stocks.length} 只自选股尚未到期的公司事项，到期后自动移除</span>
+            <span>汇总 ${data.stocks.length} 只自选股在${monthLabel}尚未到期的公司事项</span>
           </div>
           <div class="daily-digest-summary" aria-label="个股日历汇总">
-            <span class="neutral"><b>${allReminders.length}</b>未到期</span>
+            <span class="neutral"><b>${allReminders.length}</b>本月提醒</span>
             <span class="neutral"><b>${reminderStocks}</b>只股票</span>
             <span class="neutral"><b>${unread}</b>未读</span>
-            <small><b>${allReminders[0] ? `最近 ${formatDateTime(allReminders[0].publishedAt)}` : "暂无提醒"}</b><span>按到期日期排序</span></small>
+            <small><b>${allReminders[0] ? `最近 ${formatDateTime(allReminders[0].publishedAt)}` : "本月暂无提醒"}</b><span>仅显示本月未到期事项</span></small>
           </div>
         </header>
         ${renderMessageHeader("calendar")}
         ${renderDailyDigestFilters(false, "个股日历")}
-        ${renderDailyDigestSection("未到期提醒", "含今日及未来日期，按到期日期由近到远", visibleReminders, "calendar", { groupOrder: "message", showFullDate: true })}
+        ${renderCalendarMonth(visibleReminders)}
       </section>`;
+  }
+
+  function renderCalendarMonth(messages) {
+    const today = shanghaiDateParts();
+    const daysInMonth = new Date(Date.UTC(today.year, today.month, 0)).getUTCDate();
+    const firstWeekday = new Date(Date.UTC(today.year, today.month - 1, 1)).getUTCDay();
+    const leadingEmptyDays = (firstWeekday + 6) % 7;
+    const messagesByDay = new Map();
+    messages.forEach(message => {
+      const date = shanghaiDateParts(message.publishedAt);
+      if (!date) return;
+      if (!messagesByDay.has(date.day)) messagesByDay.set(date.day, []);
+      messagesByDay.get(date.day).push(message);
+    });
+    const cells = Array.from({ length: leadingEmptyDays }, () => '<div class="calendar-day calendar-day-outside" aria-hidden="true"></div>');
+    const weekdayLabels = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      const date = new Date(Date.UTC(today.year, today.month - 1, day));
+      const ordinal = Math.floor(date.getTime() / 86400000);
+      const dayMessages = messagesByDay.get(day) || [];
+      const dateValue = `${today.year}-${String(today.month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      const classNames = [
+        "calendar-day",
+        ordinal === today.ordinal ? "today" : "",
+        ordinal < today.ordinal ? "past" : "",
+        dayMessages.length ? "has-events" : ""
+      ].filter(Boolean).join(" ");
+      cells.push(`
+        <section class="${classNames}" aria-label="${today.month}月${day}日${dayMessages.length ? `，${dayMessages.length}项提醒` : "，无提醒"}">
+          <header class="calendar-day-header">
+            <time datetime="${dateValue}"><b>${day}</b><span>${weekdayLabels[date.getUTCDay()]}</span></time>
+            ${ordinal === today.ordinal ? '<span class="calendar-today-label">今天</span>' : ""}
+          </header>
+          <div class="calendar-day-events">
+            ${dayMessages.length ? dayMessages.map(renderCalendarEvent).join("") : '<span class="calendar-day-empty-state">—</span>'}
+          </div>
+        </section>`);
+    }
+    while (cells.length % 7) cells.push('<div class="calendar-day calendar-day-outside" aria-hidden="true"></div>');
+    return `
+      <section class="calendar-month-board" aria-label="${today.year}年${today.month}月个股日历">
+        <header class="calendar-month-heading">
+          <div><span>本月日程</span><strong>${today.year}年${today.month}月</strong></div>
+          <div class="calendar-month-legend" aria-label="状态说明">
+            <span><i class="unread"></i>未读</span>
+            <span><i class="read"></i>已读</span>
+          </div>
+        </header>
+        <div class="calendar-weekdays" aria-hidden="true">
+          ${["一", "二", "三", "四", "五", "六", "日"].map(day => `<span>周${day}</span>`).join("")}
+        </div>
+        <div class="calendar-month-grid">${cells.join("")}</div>
+      </section>`;
+  }
+
+  function renderCalendarEvent(message) {
+    const scopeId = messageScopeId(message);
+    const unread = isUnread(message, scopeId);
+    const stockName = message.trackingStockName || message.trackingStockCode || "自选股";
+    const stockCode = message.trackingStockCode || "";
+    return `
+      <article class="calendar-event ${unread ? "unread" : "read"}">
+        <div class="calendar-event-meta">
+          <button class="calendar-event-stock" type="button" data-action="select-stock" data-stock-id="${escapeHtml(message.trackingStockId)}" title="查看${escapeHtml(stockName)}动态">
+            <i aria-hidden="true"></i><b>${escapeHtml(stockName)}</b><span>${escapeHtml(stockCode)}</span>
+          </button>
+          <button class="calendar-event-read ${unread ? "" : "checked"}" type="button"
+            data-action="toggle-message-read" data-message-id="${escapeHtml(message.id)}" data-message-scope="${escapeHtml(scopeId)}"
+            role="checkbox" aria-label="${unread ? "标记为已读" : "取消已读"}" aria-checked="${!unread}">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.2l2.8 2.8 6.2-6.2"/></svg>
+          </button>
+        </div>
+        <strong class="calendar-event-title">${escapeHtml(message.title)}</strong>
+      </article>`;
   }
 
   function renderDailyDigestSection(title, description, messages, tone, options = {}) {

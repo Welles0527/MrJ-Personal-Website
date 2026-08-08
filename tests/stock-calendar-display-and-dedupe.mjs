@@ -34,7 +34,7 @@ assert.deepEqual(
   taxonomy.keepLatestDuplicateMessages(messages).map(message => message.id),
   ["new", "other-stock"]
 );
-assert.match(appSource, /visibleReminders, "calendar", \{ groupOrder: "message", showFullDate: true \}\)/);
-assert.match(appSource, /options\.showFullDate \? formatDateTime\(message\.publishedAt\) : formatMessageTime\(message\.publishedAt\)/);
+assert.match(appSource, /renderCalendarMonth\(visibleReminders\)/);
+assert.match(appSource, /function renderCalendarEvent\(message\)/);
 
-console.log("stock calendar full-date and deduplication regression passed");
+console.log("stock calendar month-view and deduplication regression passed");
