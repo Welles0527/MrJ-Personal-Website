@@ -32,7 +32,7 @@ const chapters = [...chapterMap.values()];
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#101815" />
+    <meta name="theme-color" content="#07120d" />
     <meta name="robots" content="noindex" />
     <meta name="description" content={`牙买加生活相册，共${albumData.album.count}张照片，依照事件目录编排。`} />
     <title>牙买加 · 生活相册</title>
@@ -40,7 +40,7 @@ const chapters = [...chapterMap.values()];
       :root {
         color-scheme: dark;
         font-family: "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
-        background: #101815;
+        background: #07120d;
         color: #f4efe3;
       }
 
@@ -52,9 +52,14 @@ const chapters = [...chapterMap.values()];
         margin: 0;
         overflow-x: hidden;
         background:
-          radial-gradient(circle at 94% -4%, rgba(230, 174, 61, 0.19), transparent 32rem),
-          linear-gradient(180deg, rgba(8, 14, 12, 0.22), transparent 32rem),
-          #101815;
+          linear-gradient(33deg, transparent 48.25%, rgba(254, 209, 0, 0.075) 48.4%, rgba(254, 209, 0, 0.075) 49.05%, transparent 49.2%),
+          linear-gradient(-33deg, transparent 48.25%, rgba(254, 209, 0, 0.075) 48.4%, rgba(254, 209, 0, 0.075) 49.05%, transparent 49.2%),
+          radial-gradient(circle at 7% 18%, rgba(0, 155, 58, 0.18), transparent 34rem),
+          radial-gradient(circle at 92% 8%, rgba(0, 155, 58, 0.1), transparent 28rem),
+          linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(0, 20, 10, 0.06)),
+          #07120d;
+        background-attachment: fixed;
+        background-repeat: no-repeat;
       }
       button, a { font: inherit; }
       .shell { width: min(1440px, calc(100% - 52px)); margin: 0 auto; }
