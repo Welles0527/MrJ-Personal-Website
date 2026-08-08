@@ -545,9 +545,9 @@
   }
 
   function unexpiredCalendarReminders() {
-    return trackedWatchlistMessages()
+    return messageTaxonomy.keepLatestDuplicateMessages(trackedWatchlistMessages()
       .filter(message => message.eventKind === "calendar"
-        && ["today", "future"].includes(messageDayRelation(message)))
+        && ["today", "future"].includes(messageDayRelation(message))))
       .sort(sortBySoonest);
   }
 
@@ -991,7 +991,7 @@
         </header>
         ${renderMessageHeader("calendar")}
         ${renderDailyDigestFilters(false, "个股日历")}
-        ${renderDailyDigestSection("未到期提醒", "含今日及未来日期，按到期日期由近到远", visibleReminders, "calendar", { groupOrder: "message" })}
+        ${renderDailyDigestSection("未到期提醒", "含今日及未来日期，按到期日期由近到远", visibleReminders, "calendar", { groupOrder: "message", showFullDate: true })}
       </section>`;
   }
 
@@ -1045,7 +1045,7 @@
                   ${counts["中性"] ? `<span class="neutral">中性 ${counts["中性"]}</span>` : ""}
                 </div>
               </header>
-              ${renderTimeline(stockMessages, { showStockBadge: false })}
+              ${renderTimeline(stockMessages, { showStockBadge: false, showFullDate: Boolean(options.showFullDate) })}
             </section>`;
         }).join("")}
       </div>`;
@@ -1540,7 +1540,7 @@
     return `
       <article class="message-row ${unread ? "unread" : "read"}">
         <span class="message-time-cell">
-          <time datetime="${message.publishedAt}">${formatMessageTime(message.publishedAt)}</time>
+          <time datetime="${message.publishedAt}">${options.showFullDate ? formatDateTime(message.publishedAt) : formatMessageTime(message.publishedAt)}</time>
           <button class="message-read-check ${unread ? "" : "checked"}" type="button"
             data-action="toggle-message-read" data-message-id="${message.id}" data-message-scope="${escapeHtml(scopeId)}"
             role="checkbox" aria-label="${unread ? "标记为已读" : "取消已读"}" aria-checked="${!unread}">

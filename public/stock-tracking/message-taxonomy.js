@@ -66,6 +66,21 @@
     return [...incoming, ...retained];
   }
 
+  function keepLatestDuplicateMessages(messages) {
+    const latestByContent = new Map();
+    (Array.isArray(messages) ? messages : []).forEach(message => {
+      const stockId = String(message?.trackingStockId || message?.trackingStockCode || "");
+      const eventKind = String(message?.eventKind || "");
+      const title = String(message?.title || "").trim().replace(/\s+/g, " ");
+      const key = `${stockId}\u0000${eventKind}\u0000${title}`;
+      const existing = latestByContent.get(key);
+      if (!existing || new Date(message?.publishedAt || 0) > new Date(existing?.publishedAt || 0)) {
+        latestByContent.set(key, message);
+      }
+    });
+    return [...latestByContent.values()];
+  }
+
   return Object.freeze({
     categories,
     feedCategories,
@@ -73,6 +88,7 @@
     isKnownCategory,
     groupIncludes,
     partitionDailyDigestMessages,
-    mergeFeedSection
+    mergeFeedSection,
+    keepLatestDuplicateMessages
   });
 });
