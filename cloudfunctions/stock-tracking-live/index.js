@@ -61,8 +61,10 @@ function shanghaiIsoFromUnix(value) {
 function normalizeDate(value) {
   const text = String(value || "").trim();
   if (!text) return new Date().toISOString();
-  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(?::\d{2})?$/.test(text)) {
-    return `${text.replace(" ", "T")}${text.length === 16 ? ":00" : ""}+08:00`;
+  const localDate = text.match(/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}(?::\d{2})?)(?::\d{1,6})?$/);
+  if (localDate) {
+    const stableTime = localDate[1];
+    return `${stableTime.replace(" ", "T")}${stableTime.length === 16 ? ":00" : ""}+08:00`;
   }
   if (/^\d{4}-\d{2}-\d{2}T/.test(text)) return text;
   const parsed = new Date(text);
@@ -393,6 +395,14 @@ function validateCode(value) {
   return /^\d{6}$/.test(code) ? code : "";
 }
 
+function validateCodes(value) {
+  return [...new Set(String(value || "")
+    .split(",")
+    .map(validateCode)
+    .filter(Boolean))]
+    .slice(0, 30);
+}
+
 async function loadSections(code, sections, force) {
   const results = {};
   const errors = {};
@@ -430,6 +440,23 @@ async function loadSections(code, sections, force) {
   return { results, errors };
 }
 
+async function loadStockBatch(codes, sections, force) {
+  const stocks = new Array(codes.length);
+  let nextIndex = 0;
+  const workerCount = Math.min(2, codes.length);
+  const workers = Array.from({ length: workerCount }, async () => {
+    while (nextIndex < codes.length) {
+      const index = nextIndex;
+      nextIndex += 1;
+      const code = codes[index];
+      const { results, errors } = await loadSections(code, sections, force);
+      stocks[index] = { code, ...results, errors };
+    }
+  });
+  await Promise.all(workers);
+  return stocks;
+}
+
 async function handleRequest(method, url, origin = "") {
   if (method === "OPTIONS") {
     return { statusCode: 204, headers: corsHeaders(origin), body: "", isBase64Encoded: false };
@@ -439,15 +466,25 @@ async function handleRequest(method, url, origin = "") {
   }
   if (method !== "GET") return jsonResponse(origin, 405, { error: "Method Not Allowed" });
 
-  const code = validateCode(url.searchParams.get("code"));
-  if (!code) return jsonResponse(origin, 400, { error: "股票代码必须为6位数字" });
-
   const requested = String(url.searchParams.get("include") || "quote,announcements,news,events")
     .split(",")
     .map(value => value.trim())
     .filter(value => ["quote", "announcements", "news", "events"].includes(value));
   const sections = [...new Set(requested.length ? requested : ["quote"])];
   const force = url.searchParams.get("force") === "1";
+  const batchCodes = validateCodes(url.searchParams.get("codes"));
+  if (batchCodes.length) {
+    const stocks = await loadStockBatch(batchCodes, sections, force);
+    const succeeded = stocks.some(stock => sections.some(section => Object.hasOwn(stock, section)));
+    return jsonResponse(origin, succeeded ? 200 : 502, {
+      codes: batchCodes,
+      checkedAt: new Date().toISOString(),
+      stocks
+    }, succeeded ? "public, max-age=5, s-maxage=10" : "no-store");
+  }
+
+  const code = validateCode(url.searchParams.get("code"));
+  if (!code) return jsonResponse(origin, 400, { error: "股票代码必须为6位数字" });
   const { results, errors } = await loadSections(code, sections, force);
   const succeeded = Object.keys(results).length;
   const statusCode = succeeded ? 200 : 502;
@@ -480,6 +517,7 @@ async function main(event = {}) {
 
 module.exports = {
   validateCode,
+  validateCodes,
   importanceFromTitle,
   sentimentFromTitle,
   categoryFromNews,
@@ -490,6 +528,7 @@ module.exports = {
   mapCompanyEvent,
   companyEventKind,
   loadSections,
+  loadStockBatch,
   handleRequest,
   main
 };

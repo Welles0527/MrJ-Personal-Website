@@ -790,35 +790,77 @@
       render();
     }
 
-    const quoteRequests = quoteCodes.map(code =>
-      liveDataProvider.getRealtimeQuote(code, { force: options.force }).then(quote => {
-        applyLiveQuote(quote);
-        return quote;
+    const feedCodeSet = new Set(feedStocks.map(stock => stock.code));
+    const sameRefreshCodes = quoteCodes.length > 1
+      && quoteCodes.length === feedStocks.length
+      && quoteCodes.every(code => feedCodeSet.has(code));
+    const combinedSnapshotPromise = sameRefreshCodes
+      && typeof liveDataProvider.getWatchlistSnapshot === "function"
+      ? liveDataProvider.getWatchlistSnapshot(feedStocks, {
+        sections: ["quote", ...feedSections],
+        force: options.force
+      }).then(snapshots => {
+        snapshots.forEach(snapshot => {
+          if (snapshot.quote) applyLiveQuote(snapshot.quote);
+          applyLatestInformation(snapshot.code, snapshot, feedSections);
+        });
+        return snapshots;
       })
-    );
-    const informationRequests = feedSections.length
-      ? feedStocks.map(stock => liveDataProvider
-        .getLatestInformation(stock.code, {
-          sections: feedSections,
-          force: options.force,
-          name: stock.name
+      : null;
+    const quoteRequests = combinedSnapshotPromise
+      ? [combinedSnapshotPromise]
+      : quoteCodes.length > 1 && typeof liveDataProvider.getRealtimeQuotes === "function"
+      ? [liveDataProvider.getRealtimeQuotes(quoteCodes, { force: options.force }).then(quotes => {
+        quotes.forEach(applyLiveQuote);
+        return quotes;
+      })]
+      : quoteCodes.map(code =>
+        liveDataProvider.getRealtimeQuote(code, { force: options.force }).then(quote => {
+          applyLiveQuote(quote);
+          return quote;
         })
-        .then(information => {
-          applyLatestInformation(stock.code, information, feedSections);
-          return information;
-        }))
-      : [];
+      );
+    const informationRequests = combinedSnapshotPromise
+      ? [combinedSnapshotPromise]
+      : !feedSections.length
+      ? []
+      : feedStocks.length > 1 && typeof liveDataProvider.getLatestInformationBatch === "function"
+        ? [liveDataProvider.getLatestInformationBatch(feedStocks, {
+          sections: feedSections,
+          force: options.force
+        }).then(informationItems => {
+          informationItems.forEach(information => {
+            applyLatestInformation(information.code, information, feedSections);
+          });
+          return informationItems;
+        })]
+        : feedStocks.map(stock => liveDataProvider
+          .getLatestInformation(stock.code, {
+            sections: feedSections,
+            force: options.force,
+            name: stock.name
+          })
+          .then(information => {
+            applyLatestInformation(stock.code, information, feedSections);
+            return information;
+          }));
     const [quoteResults, informationResults] = await Promise.all([
       Promise.allSettled(quoteRequests),
       Promise.allSettled(informationRequests)
     ]);
 
-    const quoteSuccesses = quoteResults.filter(result => result.status === "fulfilled").length;
-    const informationSuccesses = informationResults.filter(result => result.status === "fulfilled").length;
-    const informationSucceeded = !feedSections.length || informationSuccesses > 0;
-    const informationErrors = informationResults
+    const fulfilledValues = results => results
       .filter(result => result.status === "fulfilled")
-      .flatMap(result => Object.values(result.value?.errors || {}));
+      .flatMap(result => Array.isArray(result.value) ? result.value : [result.value]);
+    const quoteValues = fulfilledValues(quoteResults);
+    const quoteSuccesses = quoteValues.length;
+    const informationValues = fulfilledValues(informationResults);
+    const informationSuccesses = informationValues.filter(information =>
+      feedSections.every(section => !information?.errors?.[section])
+    ).length;
+    const informationSucceeded = !feedSections.length || informationSuccesses > 0;
+    const informationErrors = informationValues
+      .flatMap(information => Object.values(information?.errors || {}));
     const errors = [
       ...quoteResults.filter(result => result.status === "rejected").map(result => result.reason?.message),
       ...informationResults.filter(result => result.status === "rejected").map(result => result.reason?.message),
@@ -837,6 +879,11 @@
         state.refreshNotice = `${marketTime} · 公告 ${announcementTime ? formatDateTime(announcementTime) : "待检查"} · 新闻 ${newsTime ? formatDateTime(newsTime) : "待检查"} · 事项 ${eventTime ? formatDateTime(eventTime) : "待检查"}`;
       }
       if (errors.length) state.refreshNotice += ` · ${errors.length} 项未成功`;
+      const staleStockCount = new Set([
+        ...quoteValues.filter(item => item?.stale).map(item => item.code),
+        ...informationValues.filter(item => item?.stale).map(item => item.code)
+      ]).size;
+      if (staleStockCount) state.refreshNotice += ` · ${staleStockCount} 只使用上次完整数据`;
     } else {
       state.refreshNotice = `刷新失败：${errors[0] || "公开数据源暂不可用"}`;
     }

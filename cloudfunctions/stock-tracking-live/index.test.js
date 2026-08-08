@@ -48,12 +48,26 @@ async function run() {
   assert.strictEqual(payload.code, "301026");
   assert.ok(payload.quote?.price > 0);
   assert.ok(Array.isArray(payload.announcements));
+  assert.ok(payload.announcements.every(item => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+08:00$/.test(item.publishedAt)));
   assert.ok(Array.isArray(payload.news));
   assert.ok(Array.isArray(payload.events));
+  const dynamicItems = [...payload.announcements, ...payload.news, ...payload.events];
+  assert.ok(dynamicItems.every(item => ["industry", "company"].includes(item.category)));
   assert.ok(payload.announcements.every(item => ["利好", "利空", "中性"].includes(item.sentiment)));
   assert.ok(payload.news.every(item => ["利好", "利空", "中性"].includes(item.sentiment)));
   assert.ok(payload.events.every(item => item.sentiment === "中性"));
   assert.strictEqual(response.headers["Access-Control-Allow-Origin"], "https://www.magicj.cn");
+
+  const batchResponse = await service.handleRequest(
+    "GET",
+    new URL("/api/stock-tracking-live?codes=301026,688633&include=events", "http://127.0.0.1"),
+    "https://www.magicj.cn"
+  );
+  assert.strictEqual(batchResponse.statusCode, 200);
+  const batchPayload = JSON.parse(batchResponse.body);
+  assert.deepStrictEqual(batchPayload.stocks.map(item => item.code), ["301026", "688633"]);
+  assert.ok(batchPayload.stocks.every(item => Array.isArray(item.events) && item.events.length > 0));
+  assert.ok(batchPayload.stocks.every(item => Object.keys(item.errors || {}).length === 0));
 
   console.log(JSON.stringify({
     quote: payload.quote,

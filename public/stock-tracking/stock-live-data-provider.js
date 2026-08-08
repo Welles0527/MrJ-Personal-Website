@@ -8,6 +8,7 @@
   const DEFAULT_PROXY_ENDPOINT = ["127.0.0.1", "localhost"].includes(global.location.hostname)
     ? "https://www.magicj.cn/api/stock-tracking-live"
     : "/api/stock-tracking-live";
+  const BATCH_CACHE_KEY = "a-share-stock-tracking.live-batch.v1";
 
   function marketIdFor(code) {
     return /^[569]/.test(String(code)) ? "1" : "0";
@@ -111,6 +112,40 @@
     return sentiment === "利多" ? "利好" : sentiment;
   }
 
+  function readBatchCache() {
+    try {
+      const parsed = JSON.parse(global.localStorage?.getItem(BATCH_CACHE_KEY) || "null");
+      return parsed && typeof parsed.stocks === "object" ? parsed : { stocks: {} };
+    } catch {
+      return { stocks: {} };
+    }
+  }
+
+  function writeBatchCache(items) {
+    if (!global.localStorage || !Array.isArray(items) || !items.length) return;
+    const cache = readBatchCache();
+    items.forEach(item => {
+      const code = String(item?.code || item?.quote?.code || "").padStart(6, "0");
+      if (!/^\d{6}$/.test(code)) return;
+      const previous = cache.stocks[code] || {};
+      cache.stocks[code] = {
+        ...previous,
+        ...(item.quote ? { quote: item.quote } : {}),
+        ...(Array.isArray(item.announcements) ? { announcements: item.announcements } : {}),
+        ...(Array.isArray(item.news) ? { news: item.news } : {}),
+        ...(Array.isArray(item.events) ? { events: item.events } : {}),
+        checkedAt: item.checkedAt || previous.checkedAt || new Date().toISOString()
+      };
+    });
+    const recentCodes = Object.keys(cache.stocks).slice(-30);
+    cache.stocks = Object.fromEntries(recentCodes.map(code => [code, cache.stocks[code]]));
+    try {
+      global.localStorage.setItem(BATCH_CACHE_KEY, JSON.stringify(cache));
+    } catch {
+      // Storage quota or privacy mode: live refresh still works without the fallback snapshot.
+    }
+  }
+
   function sentimentFromTitle(title) {
     if (/(减持|处罚|立案|诉讼|预亏|亏损|终止|风险提示|冻结|下修|退市)/.test(title)) return "利空";
     if (/(增持|回购|中标|预增|扭亏|分红|权益分派|签订.{0,8}合同)/.test(title)) return "利好";
@@ -178,6 +213,16 @@
       return endpoint;
     }
 
+    batchProxyUrl(stockCodes, sections, options = {}) {
+      const endpoint = new URL(this.proxyEndpoint, global.location.origin);
+      const codes = [...new Set(stockCodes.map(code => String(code).padStart(6, "0")))];
+      endpoint.searchParams.set("codes", codes.join(","));
+      endpoint.searchParams.set("include", sections.join(","));
+      if (options.force) endpoint.searchParams.set("force", "1");
+      endpoint.searchParams.set("_", Date.now());
+      return endpoint;
+    }
+
     async getRealtimeQuote(stockCode, options = {}) {
       const code = String(stockCode).padStart(6, "0");
       try {
@@ -188,6 +233,97 @@
         const quote = await this.getDirectRealtimeQuote(code);
         quote.fallbackReason = proxyError?.message || "实时行情中转暂不可用";
         return quote;
+      }
+    }
+
+    async getRealtimeQuotes(stockCodes, options = {}) {
+      const codes = [...new Set(stockCodes.map(code => String(code).padStart(6, "0")))];
+      if (!codes.length) return [];
+      if (codes.length === 1) return [await this.getRealtimeQuote(codes[0], options)];
+      try {
+        const payload = await this.requestJson(this.batchProxyUrl(codes, ["quote"], options));
+        const stocks = Array.isArray(payload?.stocks) ? payload.stocks : [];
+        const quotesByCode = new Map(stocks
+          .filter(item => item?.quote && String(item.quote.code) === String(item.code))
+          .map(item => [String(item.code), item.quote]));
+        if (codes.some(code => !quotesByCode.has(code))) throw new Error("批量行情返回不完整");
+        writeBatchCache(stocks);
+        return codes.map(code => quotesByCode.get(code));
+      } catch (error) {
+        const cache = readBatchCache();
+        if (codes.every(code => cache.stocks[code]?.quote)) {
+          return codes.map(code => ({
+            ...cache.stocks[code].quote,
+            stale: true,
+            staleReason: error?.message || "批量行情暂不可用"
+          }));
+        }
+        throw error;
+      }
+    }
+
+    async getWatchlistSnapshot(stocks, options = {}) {
+      const stockList = Array.isArray(stocks) ? stocks : [];
+      const stockByCode = new Map(stockList.map(stock => [
+        String(stock?.code || stock).padStart(6, "0"),
+        stock
+      ]));
+      const codes = [...stockByCode.keys()];
+      const sections = Array.isArray(options.sections) && options.sections.length
+        ? options.sections.filter(section => ["quote", "announcements", "news", "events"].includes(section))
+        : ["quote", "announcements", "news", "events"];
+      if (!codes.length || !sections.length) return [];
+
+      try {
+        const payload = await this.requestJson(this.batchProxyUrl(codes, sections, options));
+        const results = new Map((Array.isArray(payload?.stocks) ? payload.stocks : [])
+          .map(item => [String(item?.code || "").padStart(6, "0"), item]));
+        const snapshots = codes.map(code => {
+          const item = results.get(code) || {};
+          const errors = { ...(item.errors || {}) };
+          sections.forEach(section => {
+            const present = section === "quote" ? Boolean(item.quote) : Array.isArray(item[section]);
+            if (!present && !errors[section]) errors[section] = "批量响应缺少该数据";
+          });
+          return {
+            code,
+            ...(item.quote ? { quote: item.quote } : {}),
+            announcements: Array.isArray(item.announcements)
+              ? item.announcements.map(message => ({ ...message, sentiment: normalizeSentiment(message.sentiment) }))
+              : [],
+            news: Array.isArray(item.news)
+              ? item.news
+                .filter(message => isRelevantNewsItem(message, stockByCode.get(code)?.name))
+                .map(message => ({ ...message, sentiment: normalizeSentiment(message.sentiment) }))
+              : [],
+            events: Array.isArray(item.events)
+              ? item.events.map(message => ({ ...message, sentiment: normalizeSentiment(message.sentiment) }))
+              : [],
+            errors,
+            checkedAt: payload?.checkedAt || new Date().toISOString()
+          };
+        });
+        writeBatchCache(snapshots.filter(item => sections.every(section => !item.errors?.[section])));
+        return snapshots;
+      } catch (error) {
+        const cache = readBatchCache();
+        const hasSection = (item, section) => section === "quote"
+          ? Boolean(item?.quote)
+          : Array.isArray(item?.[section]);
+        if (codes.every(code => sections.every(section => hasSection(cache.stocks[code], section)))) {
+          return codes.map(code => ({
+            code,
+            ...(cache.stocks[code].quote ? { quote: cache.stocks[code].quote } : {}),
+            announcements: cache.stocks[code].announcements || [],
+            news: cache.stocks[code].news || [],
+            events: cache.stocks[code].events || [],
+            errors: {},
+            checkedAt: cache.stocks[code].checkedAt,
+            stale: true,
+            staleReason: error?.message || "批量数据暂不可用"
+          }));
+        }
+        throw error;
       }
     }
 
@@ -429,6 +565,74 @@
           },
           checkedAt: new Date().toISOString()
         };
+      }
+    }
+
+    async getLatestInformationBatch(stocks, options = {}) {
+      const stockList = Array.isArray(stocks) ? stocks : [];
+      const stockByCode = new Map(stockList.map(stock => [
+        String(stock?.code || stock).padStart(6, "0"),
+        stock
+      ]));
+      const codes = [...stockByCode.keys()];
+      const sections = Array.isArray(options.sections) && options.sections.length
+        ? options.sections.filter(section => ["announcements", "news", "events"].includes(section))
+        : ["announcements", "news", "events"];
+      if (!codes.length || !sections.length) return [];
+      if (codes.length === 1) {
+        return [{
+          code: codes[0],
+          ...await this.getLatestInformation(codes[0], {
+            ...options,
+            name: stockByCode.get(codes[0])?.name
+          })
+        }];
+      }
+
+      try {
+        const payload = await this.requestJson(this.batchProxyUrl(codes, sections, options));
+        const results = new Map((Array.isArray(payload?.stocks) ? payload.stocks : [])
+          .map(item => [String(item?.code || "").padStart(6, "0"), item]));
+        const information = codes.map(code => {
+          const item = results.get(code) || {};
+          const errors = { ...(item.errors || {}) };
+          sections.forEach(section => {
+            if (!Array.isArray(item[section]) && !errors[section]) errors[section] = "批量响应缺少该数据";
+          });
+          return {
+            code,
+            announcements: Array.isArray(item.announcements)
+              ? item.announcements.map(message => ({ ...message, sentiment: normalizeSentiment(message.sentiment) }))
+              : [],
+            news: Array.isArray(item.news)
+              ? item.news
+                .filter(message => isRelevantNewsItem(message, stockByCode.get(code)?.name))
+                .map(message => ({ ...message, sentiment: normalizeSentiment(message.sentiment) }))
+              : [],
+            events: Array.isArray(item.events)
+              ? item.events.map(message => ({ ...message, sentiment: normalizeSentiment(message.sentiment) }))
+              : [],
+            errors,
+            checkedAt: payload?.checkedAt || new Date().toISOString()
+          };
+        });
+        writeBatchCache(information.filter(item => sections.every(section => !item.errors?.[section])));
+        return information;
+      } catch (error) {
+        const cache = readBatchCache();
+        if (codes.every(code => sections.every(section => Array.isArray(cache.stocks[code]?.[section])))) {
+          return codes.map(code => ({
+            code,
+            announcements: cache.stocks[code].announcements || [],
+            news: cache.stocks[code].news || [],
+            events: cache.stocks[code].events || [],
+            errors: {},
+            checkedAt: cache.stocks[code].checkedAt,
+            stale: true,
+            staleReason: error?.message || "批量动态暂不可用"
+          }));
+        }
+        throw error;
       }
     }
   }
