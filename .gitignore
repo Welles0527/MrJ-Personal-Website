@@ -20,3 +20,8 @@ dist/
 build/
 coverage/
 *.log
+
+# Local prototypes and tool caches
+tmp/
+**/.npm-cache/
+**/.wrangler/

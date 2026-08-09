@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import net from 'node:net';
 import path from 'node:path';
@@ -12,7 +12,9 @@ const projectRoot = path.resolve(process.env.TODO_MODAL_PROJECT_ROOT || process.
 const routePath = '/officialwebsite/topics/space/planning/todo';
 const serverOutput = [];
 const projectRequire = createRequire(path.join(projectRoot, 'package.json'));
-const astroCli = path.join(path.dirname(projectRequire.resolve('astro/package.json')), 'astro.js');
+const astroPackagePath = projectRequire.resolve('astro/package.json');
+const astroPackage = JSON.parse(await readFile(astroPackagePath, 'utf8'));
+const astroCli = path.resolve(path.dirname(astroPackagePath), astroPackage.bin.astro);
 
 const findFreePort = () => new Promise((resolve, reject) => {
   const server = net.createServer();

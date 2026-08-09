@@ -9,14 +9,15 @@
     "preview": "astro preview",
     "lint": "astro check",
     "test:todo-modal": "node tests/todo-modal-regression.mjs",
-    "test:alternative-knowledge": "node tests/alternative-knowledge-regression.mjs"
+    "test:alternative-knowledge": "node tests/alternative-knowledge-regression.mjs",
+    "test:worship-cloud-store": "node tests/worship-cloud-store.mjs"
   },
   "dependencies": {
-    "@astrojs/check": "^0.9.4",
-    "@astrojs/react": "^6.0.1",
+    "@astrojs/check": "^0.9.10",
+    "@astrojs/react": "^6.0.2",
     "@cloudbase/js-sdk": "^3.5.2",
     "@xyflow/react": "^12.11.2",
-    "astro": "^5.1.0",
+    "astro": "^7.2.0",
     "gsap": "^3.15.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
