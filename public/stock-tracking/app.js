@@ -26,6 +26,7 @@
   const technicalProvider = window.StockTechnicalAnalysis
     ? new window.StockTechnicalAnalysis.MockTechnicalAnalysisProvider()
     : null;
+  const aiSelectionProvider = window.AIStockSelectionProvider || null;
   const stockGroups = [
     { id: "all", title: "全部动态", icon: "all", categories: [MESSAGE_CATEGORY.INDUSTRY, MESSAGE_CATEGORY.COMPANY], size: "primary" },
     { id: "industry", title: "行业大事件", icon: "globe", categories: [MESSAGE_CATEGORY.INDUSTRY], size: "secondary" },
@@ -43,6 +44,7 @@
     news: "<path d='M5 4h12a2 2 0 012 2v14H7a2 2 0 01-2-2zM8 8h8M8 12h8M8 16h5'/>",
     digest: "<path d='M6 3.5h12v17H6zM9 8h6M9 12h6M9 16h3'/><path d='M4 7h2M4 12h2M4 17h2'/>",
     calendar: "<rect x='4' y='5.5' width='16' height='14.5' rx='2'/><path d='M8 3.5v4M16 3.5v4M4 10h16M8 14h3M8 17h6'/>",
+    ai: "<path d='M12 3.5l1.45 4.05L17.5 9l-4.05 1.45L12 14.5l-1.45-4.05L6.5 9l4.05-1.45z'/><path d='M18.5 14.5l.78 2.22 2.22.78-2.22.78-.78 2.22-.78-2.22-2.22-.78 2.22-.78zM5.5 14l.58 1.67 1.67.58-1.67.58L5.5 18.5l-.58-1.67-1.67-.58 1.67-.58z'/>",
     edit: "<path d='M4 20h4l11-11-4-4L4 16zM13.5 6.5l4 4'/>",
     search: "<circle cx='10.5' cy='10.5' r='6.5'/><path d='M15.5 15.5L21 21'/>",
     refresh: "<path d='M20 7v5h-5M4 17v-5h5M18.5 9A7 7 0 006 7l-2 5M5.5 15A7 7 0 0018 17l2-5'/>",
@@ -68,7 +70,7 @@
     : legacyGroupMap[requestedCategory] || "all";
   const state = {
     selectedStockId: requestedStockId || data?.stocks?.[0]?.id || "",
-    viewMode: ["technical", "daily", "calendar"].includes(requestedView) ? requestedView : "stock",
+    viewMode: ["technical", "daily", "calendar", "ai-selection"].includes(requestedView) ? requestedView : "stock",
     activeGroup: requestedGroup,
     query: "",
     dailyStockQuery: "",
@@ -100,6 +102,7 @@
 
   let root;
   let technicalPage;
+  let aiSelectionPage;
   let completeEmailSignUp;
   let accountSyncPromise = null;
   const refreshTimers = [];
@@ -110,6 +113,9 @@
     restoreWatchlist();
     if (technicalProvider && window.StockTechnicalAnalysisPage) {
       technicalPage = window.StockTechnicalAnalysisPage.create(technicalProvider, render);
+    }
+    if (window.AIStockSelectionPage) {
+      aiSelectionPage = window.AIStockSelectionPage.create(aiSelectionProvider, render);
     }
     root.addEventListener("click", handleClick);
     root.addEventListener("input", handleInput);
@@ -909,9 +915,11 @@
         ? "今日必读 - A股个股跟踪"
         : state.viewMode === "calendar"
           ? "个股日历 - A股个股跟踪"
-          : "A股个股跟踪";
+          : state.viewMode === "ai-selection"
+            ? "AI选股 - A股个股跟踪"
+            : "A股个股跟踪";
     root.innerHTML = `
-      <div class="tracking-layout">
+      <div class="tracking-layout ${state.viewMode === "ai-selection" ? "ai-selection-layout" : ""}">
         ${renderWorkspaceNav(stock)}
         ${renderSidebar(stock)}
         <main class="tracking-main ${state.viewMode === "technical" ? "technical-main" : ""}">
@@ -920,12 +928,17 @@
           ${state.viewMode === "calendar" ? renderCalendarView() : ""}
           ${state.viewMode === "macro" ? renderMacroView() : ""}
           ${state.viewMode === "market" ? renderMarketTechnicalView() : ""}
+          ${state.viewMode === "ai-selection" ? renderAISelectionView() : ""}
           ${state.viewMode === "technical" ? renderTechnicalView(stock) : ""}
         </main>
       </div>
       ${renderAuthModal()}`;
     syncUrl();
     if (state.viewMode === "technical") technicalPage?.mount(root, stock);
+    if (state.viewMode === "ai-selection") {
+      aiSelectionPage?.mount(root);
+      root.querySelector(".workspace-tab.selected")?.scrollIntoView({ block: "nearest", inline: "center" });
+    }
   }
 
   function renderWorkspaceNav(stock) {
@@ -936,6 +949,7 @@
       ["calendar", "calendar", "个股日历"],
       ["macro", "news", "宏观事件"],
       ["market", "pulse", "大盘走势"],
+      ["ai-selection", "ai", "AI选股"],
       ["technical", "chart", "技术分析"]
     ];
     return `
@@ -979,6 +993,13 @@
       allStocks: allStocks(),
       trackedCodes: new Set(data.stocks.map(item => item.code))
     });
+  }
+
+  function renderAISelectionView() {
+    if (!aiSelectionPage) {
+      return `<section class="ai-selection-shell"><div class="ai-selection-state ai-selection-state-error" role="alert"><strong>AI选股模块未能加载</strong><p>页面脚本或数据服务暂不可用，请刷新页面后重试。</p></div></section>`;
+    }
+    return aiSelectionPage.render();
   }
 
   function renderDailyDigestView() {
@@ -1172,7 +1193,7 @@
 
   function syncUrl() {
     const url = new URL(window.location.href);
-    if (["technical", "daily", "calendar"].includes(state.viewMode)) {
+    if (["technical", "daily", "calendar", "ai-selection"].includes(state.viewMode)) {
       url.searchParams.set("view", state.viewMode);
       url.searchParams.set("stock", state.selectedStockId);
       url.searchParams.delete("category");
@@ -1209,6 +1230,7 @@
             ${renderMarketTool("calendar", "calendar", "个股日历", `${calendarReminderMessages().length} 条未到期提醒`)}
             ${renderMarketTool("macro", "news", "宏观大事件", "5 则市场要闻")}
             ${renderMarketTool("market", "pulse", "大盘技术走势", "指数与技术指标")}
+            ${renderMarketTool("ai-selection", "ai", "AI选股", "机构增仓与多机构共振")}
           </nav>
           <label class="stock-search">
             ${icon("search")}
@@ -1988,6 +2010,10 @@
       const dailyCodes = watchlistAggregateView() ? data.stocks.map(stock => stock.code) : undefined;
       refreshAllInformation({ force: true, feedCodes: dailyCodes });
       return;
+    } else if (state.viewMode === "ai-selection" && aiSelectionPage) {
+      const handled = aiSelectionPage.handleAction(target);
+      if (handled === "async") return;
+      if (!handled) return;
     } else if (state.viewMode === "technical" && technicalPage) {
       const handled = technicalPage.handleAction(target);
       if (handled === "async") return;

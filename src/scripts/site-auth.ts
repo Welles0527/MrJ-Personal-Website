@@ -96,6 +96,11 @@ const assertCloudResult = <T>(result: CloudResult<T>, fallback: string) => {
 
 export const getCloudDb = () => db;
 
+export const callCloudFunction = async (
+  name: string,
+  data: Record<string, unknown> = {}
+) => app.callFunction({ name, data });
+
 export const getRememberedSession = () => {
   const remembered = readRememberedSession();
   if (!remembered) return null;

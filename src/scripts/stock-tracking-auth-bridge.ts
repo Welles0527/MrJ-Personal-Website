@@ -1,4 +1,5 @@
 import {
+  callCloudFunction,
   cloudErrorMessage,
   describeSessionExpiry,
   getCloudDb,
@@ -10,6 +11,7 @@ import {
 } from './site-auth';
 
 type StockTrackingAuthBridge = {
+  callCloudFunction: typeof callCloudFunction;
   cloudErrorMessage: typeof cloudErrorMessage;
   describeSessionExpiry: typeof describeSessionExpiry;
   getCloudDb: typeof getCloudDb;
@@ -28,6 +30,7 @@ declare global {
 
 export const mountStockTrackingAuthBridge = () => {
   window.StockTrackingSharedAuth = {
+    callCloudFunction,
     cloudErrorMessage,
     describeSessionExpiry,
     getCloudDb,
