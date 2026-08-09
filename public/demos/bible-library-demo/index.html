@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="微读圣经收藏与笔记独立页面 Demo" />
+    <title>收藏与笔记 · 微读圣经 Demo</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#library-results">跳到筛选结果</a>
+
+    <div class="library-app">
+      <aside class="library-sidebar" aria-label="资料库导航" data-sidebar>
+        <div class="sidebar-topbar">
+          <a class="back-link" href="../../topics/applications/inspiration-station/theology/alternative-knowledge/" aria-label="返回微读圣经主页面">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6M9 12h10" /></svg>
+            <span>返回微读圣经</span>
+          </a>
+          <button class="sidebar-close" type="button" data-sidebar-close aria-label="关闭资料库导航">关闭</button>
+        </div>
+
+        <section class="sidebar-intro" aria-labelledby="page-title">
+          <p class="eyebrow">MY BIBLE LIBRARY · 我的经文资料库</p>
+          <h1 id="page-title">收藏与笔记</h1>
+          <p>把触动你的经文、阅读回应与属灵线索，按经卷和章节重新整理在一起。</p>
+          <dl class="library-stats" aria-label="资料库概览">
+            <div><dt data-total>0</dt><dd>段经文</dd></div>
+            <div><dt data-bookmarks>0</dt><dd>条收藏</dd></div>
+            <div><dt data-notes>0</dt><dd>篇笔记</dd></div>
+          </dl>
+        </section>
+
+        <nav class="view-tabs" aria-label="资料类型">
+          <button class="view-tab is-active" type="button" aria-pressed="true" data-type="all">
+            <span>全部资料</span><strong data-tab-count="all">0</strong>
+          </button>
+          <button class="view-tab" type="button" aria-pressed="false" data-type="bookmark">
+            <span>经文收藏</span><strong data-tab-count="bookmark">0</strong>
+          </button>
+          <button class="view-tab" type="button" aria-pressed="false" data-type="note">
+            <span>我的笔记</span><strong data-tab-count="note">0</strong>
+          </button>
+        </nav>
+
+        <div class="sidebar-filters">
+          <label class="search-field">
+            <span>搜索经文或笔记</span>
+            <span class="search-control">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4 4" /></svg>
+              <input type="search" placeholder="输入经文、关键词或笔记" autocomplete="off" data-search />
+            </span>
+          </label>
+
+          <div class="book-filter-heading">
+            <div><span>经卷筛选</span><strong data-book-heading>全部经卷</strong></div>
+            <button class="export-button" type="button" data-export>导出 Excel</button>
+          </div>
+          <div class="book-grid" data-book-list aria-label="按经卷筛选"></div>
+          <button class="reset-all-button" type="button" data-reset>重置全部筛选</button>
+        </div>
+      </aside>
+
+      <button class="sidebar-backdrop" type="button" data-sidebar-backdrop aria-label="关闭资料库导航"></button>
+
+      <main class="library-main">
+        <header class="main-header">
+          <button class="sidebar-open" type="button" data-sidebar-open aria-expanded="false">资料库导航</button>
+          <a class="brand" href="../../topics/applications/inspiration-station/theology/alternative-knowledge/">
+            <span class="brand-mark" aria-hidden="true">
+              <svg viewBox="0 0 32 32"><path d="M5 7.5h8.5c3 0 5 1.7 5 4.7V27c0-3-2-4.7-5-4.7H5zM27 7.5h-8.5c-3 0-5 1.7-5 4.7V27c0-3 2-4.7 5-4.7H27z" /></svg>
+            </span>
+            <span><strong>WEI READ</strong><small>微读圣经</small></span>
+          </a>
+          <span class="source-badge" data-source>正在读取资料库</span>
+        </header>
+
+        <section class="results-section" id="library-results" aria-labelledby="result-title">
+          <div class="results-heading">
+            <div>
+              <p class="eyebrow">CURATED VERSES</p>
+              <h2 id="result-title">经文收藏与笔记</h2>
+              <p class="result-description">选择左侧经卷，再按章和节快速定位对应内容。</p>
+            </div>
+            <p class="result-count" aria-live="polite" data-result-count>正在整理经文…</p>
+          </div>
+
+          <div class="location-filter" aria-label="按章和节筛选">
+            <label>
+              <span>章节</span>
+              <span class="select-control">
+                <select data-chapter aria-label="按章节筛选"><option value="all">全部章节</option></select>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4" /></svg>
+              </span>
+            </label>
+            <label>
+              <span>节</span>
+              <span class="select-control">
+                <select data-verse aria-label="按节筛选"><option value="all">全部节</option></select>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4" /></svg>
+              </span>
+            </label>
+            <button class="reset-location-button" type="button" data-reset-location>清除章、节</button>
+          </div>
+
+          <div class="record-list" data-record-list aria-live="polite"></div>
+        </section>
+      </main>
+    </div>
+
+    <div class="toast" role="status" aria-live="polite" data-toast hidden></div>
+    <script src="./app.js"></script>
+  </body>
+</html>
