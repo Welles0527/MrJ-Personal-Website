@@ -16,6 +16,10 @@ const builtPage = path.join(
 );
 
 const html = await readFile(builtPage, 'utf8');
+const statisticsSource = await readFile(
+  path.join(projectRoot, 'src', 'components', 'BibleTextStatistics', 'BibleTextStatistics.tsx'),
+  'utf8'
+);
 
 const requiredContent = [
   '圣经名山',
@@ -33,5 +37,7 @@ requiredContent.forEach((content) => {
 
 assert.ok(!html.includes('ADDRESS RESERVED'), '另类圣经被占位页覆盖');
 assert.ok(!html.includes('等待内容接入'), '另类圣经仍显示等待内容接入');
+assert.ok(statisticsSource.includes('全部66卷书'), '圣经文字分布未标明全部66卷书');
+assert.ok(!statisticsSource.includes('.slice(0, 20)'), '圣经文字分布仍限制为前20卷书');
 
-console.log('另类圣经构建回归检查通过：名山、五祭对比、人物排行榜与圣经文字入口均已保留。');
+console.log('另类圣经构建回归检查通过：名山、五祭对比、人物排行榜与全部66卷文字分布均已保留。');

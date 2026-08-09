@@ -165,7 +165,7 @@ export default function BibleTextStatistics() {
     if (!bookStats.length) return null;
     const oldBooks = bookStats.filter((book) => book.testament === 'old');
     const newBooks = bookStats.filter((book) => book.testament === 'new');
-    const topBooks = [...bookStats].sort((a, b) => b.characters - a.characters).slice(0, 20);
+    const rankedBooks = [...bookStats].sort((a, b) => b.characters - a.characters);
     const allChapters = bookStats.flatMap((book) => book.chapterStats.map((chapter) => ({ ...chapter, book })));
     const longestChapter = [...allChapters].sort((a, b) => b.characters - a.characters)[0];
     const shortestChapter = [...allChapters].sort((a, b) => a.characters - b.characters)[0];
@@ -176,7 +176,7 @@ export default function BibleTextStatistics() {
     return {
       oldBooks,
       newBooks,
-      topBooks,
+      rankedBooks,
       oneChapterBooks,
       longestChapter,
       shortestChapter,
@@ -203,7 +203,7 @@ export default function BibleTextStatistics() {
   }
 
   const selectedBook = bookStats.find((book) => book.slug === activeSlug) ?? bookStats[0];
-  const maximumCharacters = dashboard.topBooks[0]?.characters ?? 1;
+  const maximumCharacters = dashboard.rankedBooks[0]?.characters ?? 1;
   const mostChapters = [...bookStats].sort((a, b) => b.chapters - a.chapters)[0];
 
   const selectBook = (slug: string) => {
@@ -302,9 +302,9 @@ export default function BibleTextStatistics() {
               </section>
 
               <section className="bts-panel bts-bars-panel" aria-labelledby="bts-bars-title">
-                <header><h2 id="bts-bars-title">各书卷文字数分布</h2><p>按文字数由高到低排名的前20卷书</p></header>
-                <div className="bts-bars" role="list">
-                  {dashboard.topBooks.map((book) => (
+                <header><h2 id="bts-bars-title">各书卷文字数分布</h2><p>按文字数由高到低排列的全部66卷书</p></header>
+                <div className="bts-bars" role="list" aria-label="全部66卷书文字数排名" tabIndex={0}>
+                  {dashboard.rankedBooks.map((book) => (
                     <button key={book.slug} type="button" role="listitem" onClick={() => selectBook(book.slug)}>
                       <span>{book.name}</span>
                       <i><b style={barStyle(book.characters, maximumCharacters)} /></i>
