@@ -912,6 +912,7 @@
           : "A股个股跟踪";
     root.innerHTML = `
       <div class="tracking-layout">
+        ${renderWorkspaceNav(stock)}
         ${renderSidebar(stock)}
         <main class="tracking-main ${state.viewMode === "technical" ? "technical-main" : ""}">
           ${state.viewMode === "stock" ? renderStockView(stock) : ""}
@@ -925,6 +926,40 @@
       ${renderAuthModal()}`;
     syncUrl();
     if (state.viewMode === "technical") technicalPage?.mount(root, stock);
+  }
+
+  function renderWorkspaceNav(stock) {
+    const account = accountStorage.getAccount();
+    const views = [
+      ["stock", "all", "个股看板"],
+      ["daily", "digest", "今日必读"],
+      ["calendar", "calendar", "个股日历"],
+      ["macro", "news", "宏观事件"],
+      ["market", "pulse", "大盘走势"],
+      ["technical", "chart", "技术分析"]
+    ];
+    return `
+      <header class="workspace-nav" aria-label="个股投资主导航">
+        <button class="workspace-mark" type="button" data-action="select-view" data-view="stock" aria-label="返回个股看板">
+          ${icon("all")}
+        </button>
+        <nav class="workspace-tabs" aria-label="功能页面">
+          ${views.map(([view, iconName, label]) => `
+            <button class="workspace-tab ${state.viewMode === view ? "selected" : ""}" type="button"
+              data-action="select-view" data-view="${view}" aria-pressed="${state.viewMode === view}">
+              ${icon(iconName)}<span>${label}</span>
+            </button>`).join("")}
+        </nav>
+        <div class="workspace-actions">
+          <span class="workspace-account" title="${account.signedIn ? escapeHtml(account.label) : "尚未登录"}">
+            ${icon("user")}
+          </span>
+          <button class="workspace-refresh ${state.refreshing ? "refreshing" : ""}" type="button" data-action="refresh-all"
+            ${state.refreshing ? "disabled" : ""} aria-label="刷新行情与动态">
+            ${icon("refresh")}<span>${state.refreshing ? "刷新中" : "刷新数据"}</span>
+          </button>
+        </div>
+      </header>`;
   }
 
   function renderStockView(stock) {
