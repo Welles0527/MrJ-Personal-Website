@@ -28,6 +28,12 @@ async function run() {
   assert.ok(Number.isFinite(quote.price) && quote.price > 0);
   assert.match(quote.updatedAt, /^\d{4}-\d{2}-\d{2}T/);
 
+  const history = await service.fetchHistory("301026");
+  assert.strictEqual(history.code, "301026");
+  assert.ok(history.candles.length >= 250);
+  assert.strictEqual(history.lastCompletedDate, history.candles.at(-1).date);
+  assert.ok(history.candles.every(candle => [candle.open, candle.high, candle.low, candle.close, candle.volume].every(Number.isFinite)));
+
   const events = await service.fetchCompanyEvents("301026", 16);
   assert.ok(events.length > 0);
   assert.ok(events.every(item => item.category === "company" && item.sentiment === "中性"));
@@ -40,13 +46,14 @@ async function run() {
 
   const response = await service.handleRequest(
     "GET",
-    new URL("/api/stock-tracking-live?code=301026&include=quote,announcements,news,events", "http://127.0.0.1"),
+    new URL("/api/stock-tracking-live?code=301026&include=quote,history,announcements,news,events", "http://127.0.0.1"),
     "https://www.magicj.cn"
   );
   assert.strictEqual(response.statusCode, 200);
   const payload = JSON.parse(response.body);
   assert.strictEqual(payload.code, "301026");
   assert.ok(payload.quote?.price > 0);
+  assert.ok(Array.isArray(payload.history?.candles) && payload.history.candles.length >= 250);
   assert.ok(Array.isArray(payload.announcements));
   assert.ok(payload.announcements.every(item => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+08:00$/.test(item.publishedAt)));
   assert.ok(Array.isArray(payload.news));

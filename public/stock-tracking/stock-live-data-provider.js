@@ -418,6 +418,81 @@
       };
     }
 
+    async getDirectDailyHistory(stockCode, options = {}) {
+      const code = String(stockCode).padStart(6, "0");
+      const url = new URL(DAILY_KLINE_ENDPOINT);
+      url.searchParams.set("secid", `${marketIdFor(code)}.${code}`);
+      url.searchParams.set("klt", "101");
+      url.searchParams.set("fqt", "1");
+      url.searchParams.set("lmt", String(Math.max(260, Math.min(500, Number(options.limit) || 360))));
+      url.searchParams.set("end", "20500101");
+      url.searchParams.set("iscca", "1");
+      url.searchParams.set("fields1", "f1,f2,f3,f4,f5,f6");
+      url.searchParams.set("fields2", "f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61");
+      url.searchParams.set("_", Date.now());
+      const payload = await this.requestJson(url);
+      const item = payload?.data;
+      if (!item || String(item.code) !== code || !Array.isArray(item.klines)) throw new Error("日线行情暂不可用");
+      let candles = item.klines.map(line => {
+        const [date, open, close, high, low, volume, amount, amplitude, changePct, change, turnoverRate] = String(line).split(",");
+        return {
+          date,
+          open: scaled(open),
+          high: scaled(high),
+          low: scaled(low),
+          close: scaled(close),
+          volume: scaled(volume),
+          amount: scaled(amount),
+          turnoverRate: scaled(turnoverRate),
+          amplitude: scaled(amplitude),
+          changePct: scaled(changePct),
+          change: scaled(change)
+        };
+      }).filter(candle => candle.date && [candle.open, candle.high, candle.low, candle.close, candle.volume, candle.amount].every(Number.isFinite));
+      const clock = shanghaiClock();
+      if (candles.at(-1)?.date === clock.date && clock.minuteOfDay < 15 * 60 + 5) candles = candles.slice(0, -1);
+      if (!candles.length) throw new Error("未返回已完成交易日行情");
+      return {
+        code,
+        name: plainText(item.name),
+        period: "day",
+        adjustment: "forward",
+        candles,
+        lastCompletedDate: candles.at(-1).date,
+        updatedAt: `${candles.at(-1).date}T15:00:00+08:00`,
+        source: "东方财富公开前复权日线行情"
+      };
+    }
+
+    async getTechnicalSnapshot(stockCode, options = {}) {
+      const code = String(stockCode).padStart(6, "0");
+      try {
+        const payload = await this.requestJson(this.proxyUrl(code, ["quote", "history"], options));
+        if (!payload?.history || String(payload.history.code) !== code || !Array.isArray(payload.history.candles)) {
+          throw new Error("技术行情返回异常");
+        }
+        return {
+          quote: payload.quote || null,
+          history: payload.history,
+          errors: payload.errors || {},
+          checkedAt: payload.checkedAt || new Date().toISOString()
+        };
+      } catch (proxyError) {
+        const [quoteResult, historyResult] = await Promise.allSettled([
+          this.getDirectRealtimeQuote(code),
+          this.getDirectDailyHistory(code, { limit: 360 })
+        ]);
+        if (historyResult.status !== "fulfilled") throw historyResult.reason || proxyError;
+        return {
+          quote: quoteResult.status === "fulfilled" ? quoteResult.value : null,
+          history: historyResult.value,
+          errors: quoteResult.status === "rejected" ? { quote: quoteResult.reason?.message || "实时行情暂不可用" } : {},
+          checkedAt: new Date().toISOString(),
+          fallbackReason: proxyError?.message || "技术行情中转暂不可用"
+        };
+      }
+    }
+
     async getLatestAnnouncements(stockCode, options = {}) {
       const code = String(stockCode).padStart(6, "0");
       const callbackName = `stockTrackingAnnouncementCallback_${Date.now()}`;

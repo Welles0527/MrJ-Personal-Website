@@ -4,12 +4,14 @@ const https = require("https");
 
 const QUOTE_ENDPOINT = "https://push2.eastmoney.com/api/qt/stock/get";
 const QUOTE_FALLBACK_ENDPOINT = "https://push2delay.eastmoney.com/api/qt/stock/get";
+const DAILY_KLINE_ENDPOINT = "https://push2his.eastmoney.com/api/qt/stock/kline/get";
 const ANNOUNCEMENT_ENDPOINT = "https://np-anotice-stock.eastmoney.com/api/security/ann";
 const NEWS_ENDPOINT = "https://search-api-web.eastmoney.com/search/jsonp";
 const DATA_CENTER_ENDPOINT = "https://datacenter-web.eastmoney.com/api/data/v1/get";
 const CACHE = new Map();
 const CACHE_TTL = {
   quote: 10 * 1000,
+  history: 10 * 60 * 1000,
   announcements: 2 * 60 * 1000,
   news: 5 * 60 * 1000,
   events: 5 * 60 * 1000
@@ -17,6 +19,23 @@ const CACHE_TTL = {
 
 function marketIdFor(code) {
   return /^(5|6|9)/.test(code) ? "1" : "0";
+}
+
+function shanghaiClock() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23"
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return {
+    date: `${values.year}-${values.month}-${values.day}`,
+    minuteOfDay: Number(values.hour) * 60 + Number(values.minute)
+  };
 }
 
 function scaled(value, divisor = 1) {
@@ -258,6 +277,51 @@ async function fetchQuote(code) {
   };
 }
 
+async function fetchHistory(code, limit = 360) {
+  const url = new URL(DAILY_KLINE_ENDPOINT);
+  url.searchParams.set("secid", `${marketIdFor(code)}.${code}`);
+  url.searchParams.set("klt", "101");
+  url.searchParams.set("fqt", "1");
+  url.searchParams.set("lmt", String(Math.max(260, Math.min(500, Number(limit) || 360))));
+  url.searchParams.set("end", "20500101");
+  url.searchParams.set("iscca", "1");
+  url.searchParams.set("fields1", "f1,f2,f3,f4,f5,f6");
+  url.searchParams.set("fields2", "f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61");
+  url.searchParams.set("_", Date.now());
+  const payload = JSON.parse(await requestText(url, 10000));
+  const item = payload?.data;
+  if (!item || String(item.code) !== code || !Array.isArray(item.klines)) throw new Error("日线行情暂不可用");
+  let candles = item.klines.map(line => {
+    const [date, open, close, high, low, volume, amount, amplitude, changePct, change, turnoverRate] = String(line).split(",");
+    return {
+      date,
+      open: scaled(open),
+      high: scaled(high),
+      low: scaled(low),
+      close: scaled(close),
+      volume: scaled(volume),
+      amount: scaled(amount),
+      turnoverRate: scaled(turnoverRate),
+      amplitude: scaled(amplitude),
+      changePct: scaled(changePct),
+      change: scaled(change)
+    };
+  }).filter(candle => candle.date && [candle.open, candle.high, candle.low, candle.close, candle.volume, candle.amount].every(Number.isFinite));
+  const clock = shanghaiClock();
+  if (candles.at(-1)?.date === clock.date && clock.minuteOfDay < 15 * 60 + 5) candles = candles.slice(0, -1);
+  if (!candles.length) throw new Error("未返回已完成交易日行情");
+  return {
+    code,
+    name: plainText(item.name),
+    period: "day",
+    adjustment: "forward",
+    candles,
+    lastCompletedDate: candles.at(-1).date,
+    updatedAt: `${candles.at(-1).date}T15:00:00+08:00`,
+    source: "东方财富公开前复权日线行情"
+  };
+}
+
 async function fetchAnnouncements(code, limit) {
   const callbackName = `stockTrackingAnnouncement_${Date.now()}`;
   const url = new URL(ANNOUNCEMENT_ENDPOINT);
@@ -410,6 +474,8 @@ async function loadSections(code, sections, force) {
     try {
       if (section === "quote") {
         results.quote = await cachedLoad(`${code}:quote`, CACHE_TTL.quote, () => fetchQuote(code), force);
+      } else if (section === "history") {
+        results.history = await cachedLoad(`${code}:history`, CACHE_TTL.history, () => fetchHistory(code, 360), force);
       } else if (section === "announcements") {
         results.announcements = await cachedLoad(
           `${code}:announcements`,
@@ -469,7 +535,7 @@ async function handleRequest(method, url, origin = "") {
   const requested = String(url.searchParams.get("include") || "quote,announcements,news,events")
     .split(",")
     .map(value => value.trim())
-    .filter(value => ["quote", "announcements", "news", "events"].includes(value));
+    .filter(value => ["quote", "history", "announcements", "news", "events"].includes(value));
   const sections = [...new Set(requested.length ? requested : ["quote"])];
   const force = url.searchParams.get("force") === "1";
   const batchCodes = validateCodes(url.searchParams.get("codes"));
@@ -522,6 +588,7 @@ module.exports = {
   sentimentFromTitle,
   categoryFromNews,
   fetchQuote,
+  fetchHistory,
   fetchAnnouncements,
   fetchNews,
   fetchCompanyEvents,

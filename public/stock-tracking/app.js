@@ -24,7 +24,7 @@
     events: 5 * 60 * 1000
   };
   const technicalProvider = window.StockTechnicalAnalysis
-    ? new window.StockTechnicalAnalysis.MockTechnicalAnalysisProvider()
+    ? new window.StockTechnicalAnalysis.EastmoneyTechnicalAnalysisProvider()
     : null;
   const aiSelectionProvider = window.AIStockSelectionProvider || null;
   const stockGroups = [
@@ -937,8 +937,8 @@
     if (state.viewMode === "technical") technicalPage?.mount(root, stock);
     if (state.viewMode === "ai-selection") {
       aiSelectionPage?.mount(root);
-      root.querySelector(".workspace-tab.selected")?.scrollIntoView({ block: "nearest", inline: "center" });
     }
+    root.querySelector(".workspace-tab.selected")?.scrollIntoView({ block: "nearest", inline: "center" });
   }
 
   function renderWorkspaceNav(stock) {

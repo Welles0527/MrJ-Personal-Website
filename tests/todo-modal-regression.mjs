@@ -1,20 +1,14 @@
 import assert from 'node:assert/strict';
-import { spawn, spawnSync } from 'node:child_process';
-import { mkdir, readFile } from 'node:fs/promises';
-import { createRequire } from 'node:module';
+import { mkdir } from 'node:fs/promises';
 import net from 'node:net';
 import path from 'node:path';
 import process from 'node:process';
 import { setTimeout as delay } from 'node:timers/promises';
+import { dev } from 'astro';
 import { chromium } from 'playwright';
 
 const projectRoot = path.resolve(process.env.TODO_MODAL_PROJECT_ROOT || process.cwd());
 const routePath = '/officialwebsite/topics/space/planning/todo';
-const serverOutput = [];
-const projectRequire = createRequire(path.join(projectRoot, 'package.json'));
-const astroPackagePath = projectRequire.resolve('astro/package.json');
-const astroPackage = JSON.parse(await readFile(astroPackagePath, 'utf8'));
-const astroCli = path.resolve(path.dirname(astroPackagePath), astroPackage.bin.astro);
 
 const findFreePort = () => new Promise((resolve, reject) => {
   const server = net.createServer();
@@ -26,21 +20,9 @@ const findFreePort = () => new Promise((resolve, reject) => {
   });
 });
 
-const stopProcessTree = (child) => {
-  if (!child || child.exitCode !== null) return;
-  if (process.platform === 'win32') {
-    spawnSync('taskkill.exe', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore' });
-    return;
-  }
-  child.kill('SIGTERM');
-};
-
-const waitForServer = async (url, child) => {
+const waitForServer = async (url) => {
   const deadline = Date.now() + 60_000;
   while (Date.now() < deadline) {
-    if (child.exitCode !== null) {
-      throw new Error(`Astro dev server exited early.\n${serverOutput.join('')}`);
-    }
     try {
       const response = await fetch(url, { cache: 'no-store' });
       if (response.ok) return;
@@ -49,7 +31,7 @@ const waitForServer = async (url, child) => {
     }
     await delay(250);
   }
-  throw new Error(`Timed out waiting for ${url}.\n${serverOutput.join('')}`);
+  throw new Error(`Timed out waiting for ${url}.`);
 };
 
 const cloudStub = `
@@ -104,17 +86,15 @@ const submitTask = async (page, title) => {
 
 const port = await findFreePort();
 const pageUrl = `http://127.0.0.1:${port}${routePath}?todo-modal-regression=1`;
-const server = spawn(process.execPath, [astroCli, 'dev', '--host', '127.0.0.1', '--port', String(port), '--strictPort', '--force'], {
-  cwd: projectRoot,
-  env: { ...process.env, BROWSER: 'none' },
-  stdio: ['ignore', 'pipe', 'pipe']
+const server = await dev({
+  root: projectRoot,
+  server: { host: '127.0.0.1', port },
+  logLevel: 'silent'
 });
-server.stdout.on('data', (chunk) => serverOutput.push(chunk.toString()));
-server.stderr.on('data', (chunk) => serverOutput.push(chunk.toString()));
 
 let browser;
 try {
-  await waitForServer(pageUrl, server);
+  await waitForServer(pageUrl);
   browser = await chromium.launch({
     channel: process.env.PLAYWRIGHT_CHANNEL || 'chrome',
     headless: true
@@ -142,8 +122,7 @@ try {
     throw new Error([
       error.message,
       `Page text: ${pageText}`,
-      `Browser diagnostics: ${browserDiagnostics.join(' | ') || 'none'}`,
-      `Server output: ${serverOutput.join('').slice(-2000)}`
+      `Browser diagnostics: ${browserDiagnostics.join(' | ') || 'none'}`
     ].join('\n'));
   }
 
@@ -234,5 +213,5 @@ try {
   console.log('Todo modal, search, and date-location regression test passed.');
 } finally {
   await browser?.close();
-  stopProcessTree(server);
+  await server.stop();
 }
