@@ -1,6 +1,7 @@
 "use strict";
 
 (function createTechnicalAnalysisPage(global) {
+  const timeframes = global.StockTechnicalTimeframes;
   const dimensionMeta = {
     trend: { label: "趋势", tone: "blue", description: "均线、MACD 与 ADX 共同判断方向" },
     structure: { label: "结构", tone: "mint", description: "枢轴、平台与通道共同判断健康度" },
@@ -259,7 +260,7 @@
       <div class="ta-identity">
         <button type="button" class="ta-back" data-action="return-stock-view" aria-label="返回个股跟踪">${icon("back")}</button>
         <span class="ta-brand-mark">${icon("trend")}</span>
-        <div><h1>${escapeHtml(stock.name)}技术总览</h1><p>${stock.code} · 日线前复权 · 评分截至 ${escapeHtml(stock.scoreDate)} 收盘</p></div>
+        <div><h1>${escapeHtml(stock.name)}技术总览</h1><p>${stock.code} · ${escapeHtml(stock.periodLabel)}前复权 · 评分截至 ${escapeHtml(stock.scoreDate)} 收盘</p></div>
       </div>
       ${StockSearchBar(context, state)}
       <div class="ta-live-quote ${rising ? "rise" : "fall"}">
@@ -352,7 +353,14 @@
       : "--";
   }
 
-  function StockScoreSummary(summary, status, currentCode) {
+  function TimeframeSelector(period) {
+    return `<div class="ta-timeframe-switch" role="group" aria-label="技术分析周期">
+      ${Object.values(timeframes.PROFILES).map(profile => `<button type="button" data-action="set-technical-period" data-period="${profile.id}" aria-pressed="${profile.id === period}">${profile.label}</button>`).join("")}
+    </div>`;
+  }
+
+  function StockScoreSummary(summary, status, currentCode, period) {
+    const profile = timeframes.getProfile(period);
     const items = Array.isArray(summary?.items) ? summary.items : [];
     const errors = Array.isArray(summary?.errors) ? summary.errors : [];
     const latestDate = items.map(item => item.scoreDate).filter(Boolean).sort().at(-1) || "--";
@@ -360,7 +368,7 @@
       ? `<div class="ta-summary-state"><span class="ta-summary-loader" aria-hidden="true"></span><strong>正在计算全部自选股评分</strong><small>逐只读取最新完成交易日的真实行情</small></div>`
       : items.length || errors.length
         ? `<div class="ta-summary-scroll"><table>
-            <thead><tr><th scope="col">排名</th><th scope="col">股票</th><th scope="col">当日综合分数</th><th scope="col">买点</th><th scope="col">止损位</th><th scope="col">技术结论</th><th scope="col">当日涨跌</th><th scope="col">评分交易日</th></tr></thead>
+            <thead><tr><th scope="col">排名</th><th scope="col">股票</th><th scope="col">${profile.lineLabel}综合分数</th><th scope="col">买点</th><th scope="col">止损位</th><th scope="col">技术结论</th><th scope="col">本${profile.label}涨跌</th><th scope="col">评分截止日</th></tr></thead>
             <tbody>${items.map((item, index) => {
               const rising = Number(item.changePct) >= 0;
               const active = String(item.code) === String(currentCode);
@@ -391,26 +399,29 @@
         : `<div class="ta-summary-state"><strong>暂时无法生成自选股评分汇总</strong><small>${errors.length ? `有 ${errors.length} 只股票行情读取失败，请稍后刷新` : "请先添加自选股"}</small></div>`;
     return `<section class="ta-score-summary" aria-labelledby="ta-score-summary-title">
       <div class="ta-panel-title ta-summary-heading">
-        <div><h2 id="ta-score-summary-title">全部自选股 · 当日综合评分</h2><p>${latestDate} 收盘 · 按综合分数从高到低排列</p></div>
-        <span>${items.length} / ${items.length + errors.length || 0} 只已完成${status === "loading" ? " · 更新中" : ""}</span>
+        <div><h2 id="ta-score-summary-title">全部自选股 · ${profile.lineLabel}综合评分</h2><p>${latestDate} 收盘 · 每一级均按对应周期真实行情独立计算</p></div>
+        <div class="ta-summary-controls">${TimeframeSelector(profile.id)}<span>${items.length} / ${items.length + errors.length || 0} 只已完成${status === "loading" ? " · 更新中" : ""}</span></div>
       </div>
       ${body}
     </section>`;
   }
 
   function ScoreTrend(result) {
+    const profile = timeframes.getProfile(result.query?.period || result.dataMeta?.period);
+    const count = result.scoreHistory.length;
+    const rangeLabel = profile.id === "day" ? `近${count}个交易日` : `近${count}个${profile.barLabel}`;
     const performance = result.scorePerformance || global.StockTechnicalScores.calculateScorePerformance(result.scoreHistory);
     const hitRate = Number.isFinite(Number(performance.hitRate)) ? `${performance.hitRate}%` : "--";
     return `<section class="ta-score-trend" aria-labelledby="ta-score-trend-title">
       <div class="ta-panel-title ta-score-heading">
-        <div><h2 id="ta-score-trend-title">评分与涨跌对照（近30个交易日）</h2><p>上层为每日收盘技术评分，下层为当日涨跌幅；两组柱状图共享同一交易日轴</p></div>
+        <div><h2 id="ta-score-trend-title">评分与涨跌对照（${rangeLabel}）</h2><p>上层为每${profile.barLabel}收盘技术评分，下层为本${profile.label}涨跌幅；两组柱状图共享同一周期轴</p></div>
         <div class="ta-score-legend" aria-label="图例"><span class="score-bullish">≥65 偏多</span><span class="score-neutral">45～64 中性</span><span class="score-bearish">＜45 偏空</span><span class="rise">上涨</span><span class="fall">下跌</span><strong>最新 ${formatNumber(result.scores.total, 0)}</strong></div>
       </div>
-      <div id="technical-score-trend-chart" class="ta-score-trend-chart" role="img" aria-label="近30个交易日综合技术评分与每日涨跌幅柱状对比"></div>
+      <div id="technical-score-trend-chart" class="ta-score-trend-chart" role="img" aria-label="${rangeLabel}综合技术评分与周期涨跌幅柱状对比"></div>
       <aside class="ta-score-validation" aria-label="技术评分次日方向验证">
-        <div class="ta-validation-primary"><span>近3个月次日方向命中率</span><strong>${hitRate}</strong></div>
+        <div class="ta-validation-primary"><span>${escapeHtml(performance.period?.label || profile.validationLabel)}下一${profile.barLabel}方向命中率</span><strong>${hitRate}</strong></div>
         <dl><div><dt>有效样本</dt><dd>${performance.evaluatedCount}</dd></div><div><dt>方向命中</dt><dd>${performance.hitCount}</dd></div><div><dt>未计样本</dt><dd>${performance.ignoredCount}</dd></div></dl>
-        <p>统计最近3个月：以前一交易日评分判断下一交易日方向，评分 ≥65 偏多、＜45 偏空；45～64分和平盘不计。</p>
+        <p>统计${escapeHtml(performance.period?.label || profile.validationLabel)}：以前一${profile.barLabel}评分判断下一${profile.barLabel}方向，评分 ≥65 偏多、＜45 偏空；45～64分和平盘不计。</p>
       </aside>
     </section>`;
   }
@@ -446,13 +457,18 @@
         summaryError: "",
         error: "",
         searchQuery: "",
-        query: { period: "day", adjustment: "forward" }
+        query: {
+          period: timeframes.normalizePeriod(new URLSearchParams(global.location.search).get("period")),
+          adjustment: "forward"
+        }
       };
     }
 
     async load(stockCode, options = {}) {
       if (!stockCode) return;
-      if (!options.forceRefresh && this.currentStockCode === stockCode && ["loading", "ready"].includes(this.state.status)) return;
+      const requestKey = `${stockCode}:${this.state.query.period}`;
+      if (!options.forceRefresh && this.currentRequestKey === requestKey && ["loading", "ready"].includes(this.state.status)) return;
+      this.currentRequestKey = requestKey;
       this.currentStockCode = stockCode;
       this.state.status = "loading";
       this.state.summaryStatus = "loading";
@@ -462,19 +478,21 @@
       this.onChange();
       try {
         const result = await this.provider.getTechnicalAnalysis(stockCode, this.state.query, options);
-        if (this.currentStockCode !== stockCode) return;
+        if (this.currentRequestKey !== requestKey) return;
         this.state.result = result;
         this.state.status = "ready";
         this.onChange();
         try {
-          this.state.summary = await this.provider.getTechnicalSummary(this.trackedStocks, this.state.query, options);
+          const summary = await this.provider.getTechnicalSummary(this.trackedStocks, this.state.query, options);
+          if (this.currentRequestKey !== requestKey) return;
+          this.state.summary = summary;
           this.state.summaryStatus = "ready";
         } catch (summaryError) {
           this.state.summaryStatus = "error";
           this.state.summaryError = summaryError?.message || "自选股评分汇总失败";
         }
       } catch (error) {
-        if (this.currentStockCode !== stockCode) return;
+        if (this.currentRequestKey !== requestKey) return;
         this.state.status = "error";
         this.state.error = error?.message || "未知错误";
       }
@@ -488,13 +506,13 @@
       if (this.state.status === "error" || !this.state.result) return ErrorState(this.state, context);
       this.state.result.overview.name = stock.name || this.state.result.overview.name;
       return `<div class="technical-analysis-page">
-        ${StockScoreSummary(this.state.summary, this.state.summaryStatus, stock.code)}
+        ${StockScoreSummary(this.state.summary, this.state.summaryStatus, stock.code, this.state.query.period)}
         ${DashboardHeader(this.state.result, context, this.state)}
         <div class="ta-analysis-workspace">
           <div class="ta-dashboard-grid">${RadarOverview(this.state.result)}${TradePositionPanel(this.state.result)}</div>
           ${ScoreTrend(this.state.result)}
         </div>
-        <footer class="ta-data-foot">${escapeHtml(this.state.result.dataMeta.source)} · ${this.state.result.dataMeta.rawCount} 个已完成交易日 · 前复权 · 技术评分描述当前状态，不代表上涨概率</footer>
+        <footer class="ta-data-foot">${escapeHtml(this.state.result.dataMeta.source)} · ${this.state.result.dataMeta.rawCount} 个有效${escapeHtml(this.state.result.dataMeta.barLabel)} · 前复权 · 技术评分描述当前状态，不代表上涨概率</footer>
       </div>`;
     }
 
@@ -522,6 +540,17 @@
       }
       if (action === "refresh-technical") {
         this.load(this.currentStockCode, { forceRefresh: true });
+        return "async";
+      }
+      if (action === "set-technical-period") {
+        const period = timeframes.normalizePeriod(target.dataset.period);
+        if (period === this.state.query.period) return false;
+        this.state.query = { ...this.state.query, period };
+        const url = new URL(global.location.href);
+        url.searchParams.set("period", period);
+        global.history.replaceState({}, "", url);
+        this.state.summary = null;
+        this.load(this.currentStockCode);
         return "async";
       }
       return false;

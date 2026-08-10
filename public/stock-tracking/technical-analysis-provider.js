@@ -3,6 +3,9 @@
 (function createTechnicalAnalysisProvider(global) {
   const scores = global.StockTechnicalScores;
   const tradeLevels = global.StockTechnicalTradeLevels;
+  const timeframes = typeof module === "object" && module.exports
+    ? require("./technical-timeframes.js")
+    : global.StockTechnicalTimeframes;
 
   function shanghaiTradingStatus() {
     const parts = new Intl.DateTimeFormat("en-US", {
@@ -20,10 +23,10 @@
     return inSession ? "交易中" : "已收盘";
   }
 
-  function buildOverview(code, snapshot) {
+  function buildOverview(code, snapshot, candles, profile) {
     const history = snapshot.history;
-    const last = history.candles.at(-1);
-    const previous = history.candles.at(-2);
+    const last = candles.at(-1);
+    const previous = candles.at(-2);
     const quote = snapshot.quote;
     const historyChange = previous?.close ? last.close - previous.close : last.change;
     const historyChangePct = previous?.close ? historyChange / previous.close * 100 : last.changePct;
@@ -33,9 +36,13 @@
       price: Number.isFinite(Number(quote?.price)) ? Number(quote.price) : last.close,
       change: Number.isFinite(Number(quote?.change)) ? Number(quote.change) : historyChange,
       changePct: Number.isFinite(Number(quote?.changePct)) ? Number(quote.changePct) : historyChangePct,
+      periodChange: historyChange,
+      periodChangePct: historyChangePct,
       updatedAt: quote?.updatedAt || history.updatedAt,
       tradingStatus: shanghaiTradingStatus(),
-      scoreDate: history.lastCompletedDate,
+      scoreDate: last.date,
+      period: profile.id,
+      periodLabel: profile.lineLabel,
       quoteSource: quote?.source || history.source,
       historySource: history.source
     };
@@ -73,27 +80,36 @@
     return targetMonth.toISOString().slice(0, 10);
   }
 
-  function buildScorePerformance(candles) {
+  function buildScorePerformance(candles, profile) {
     const endDate = candles.at(-1)?.date || "";
-    const startDate = dateMonthsAgo(endDate, 3);
+    const startDate = dateMonthsAgo(endDate, profile.validationMonths);
     const firstPeriodIndex = Math.max(0, candles.findIndex(candle => candle.date >= startDate));
     const historyStartIndex = Math.max(0, firstPeriodIndex - 1);
-    const performanceHistory = scores.calculateScoreHistory(candles, candles.length - historyStartIndex, 120);
+    const performanceHistory = scores.calculateScoreHistory(
+      candles,
+      candles.length - historyStartIndex,
+      profile.historyMinimum,
+      { profile }
+    );
     return {
       ...scores.calculateScorePerformance(performanceHistory, { fromDate: startDate }),
-      period: { months: 3, startDate, endDate }
+      period: { months: profile.validationMonths, startDate, endDate, label: profile.validationLabel }
     };
   }
 
-  function analyzeSnapshot(code, snapshot) {
-    const candles = snapshot.history?.candles || [];
-    if (candles.length < 250) throw new Error(`前复权日线仅有 ${candles.length} 个交易日，少于正式评分所需的 250 日`);
-    const scoreResult = scores.calculateTechnicalScore(candles);
+  function analyzeSnapshot(code, snapshot, query = {}) {
+    const profile = timeframes.getProfile(query.period);
+    const sourceCandles = snapshot.history?.candles || [];
+    const candles = timeframes.aggregateCandles(sourceCandles, profile.id);
+    if (candles.length < profile.minimumBars) {
+      throw new Error(`${profile.lineLabel}仅有 ${candles.length} 个有效周期，少于正式评分所需的 ${profile.minimumBars} 个周期`);
+    }
+    const scoreResult = scores.calculateTechnicalScore(candles, { profile });
     const levels = tradeLevels.calculateTradeLevels(scoreResult);
-    const scoreHistory = scores.calculateScoreHistory(candles, 30, 120);
-    const scorePerformance = buildScorePerformance(candles);
+    const scoreHistory = scores.calculateScoreHistory(candles, profile.historyCount, profile.historyMinimum, { profile });
+    const scorePerformance = buildScorePerformance(candles, profile);
     return {
-      overview: buildOverview(code, snapshot),
+      overview: buildOverview(code, snapshot, candles, profile),
       candles,
       scores: scoreResult,
       tradeLevels: levels,
@@ -103,7 +119,10 @@
       dataMeta: {
         source: snapshot.history.source,
         adjustment: snapshot.history.adjustment,
-        period: snapshot.history.period,
+        period: profile.id,
+        periodLabel: profile.lineLabel,
+        barLabel: profile.barLabel,
+        sourcePeriod: snapshot.history.period,
         rawCount: candles.length,
         completedThrough: snapshot.history.lastCompletedDate,
         checkedAt: snapshot.checkedAt,
@@ -126,12 +145,18 @@
     async getTechnicalAnalysis(stockCode, query, options = {}) {
       const code = String(stockCode || "").padStart(6, "0");
       if (!/^\d{6}$/.test(code)) throw new Error("股票代码必须为6位数字");
-      const cached = this.cache.get(code);
+      const profile = timeframes.getProfile(query?.period);
+      const cacheKey = `${code}:${profile.id}`;
+      const cached = this.cache.get(cacheKey);
       if (!options.forceRefresh && cached && Date.now() - cached.createdAt < this.cacheTtl) return cached.value;
-      const snapshot = await this.liveProvider.getTechnicalSnapshot(code, { force: Boolean(options.forceRefresh) });
-      const value = analyzeSnapshot(code, snapshot);
-      value.query = { ...query, period: "day", adjustment: "forward" };
-      this.cache.set(code, { createdAt: Date.now(), value });
+      const snapshot = await this.liveProvider.getTechnicalSnapshot(code, {
+        force: Boolean(options.forceRefresh),
+        period: profile.sourcePeriod,
+        limit: profile.sourceLimit
+      });
+      const value = analyzeSnapshot(code, snapshot, { ...query, period: profile.id });
+      value.query = { ...query, period: profile.id, adjustment: "forward" };
+      this.cache.set(cacheKey, { createdAt: Date.now(), value });
       return value;
     }
 
@@ -162,7 +187,7 @@
               label: result.scores.label,
               scoreDate: result.overview.scoreDate,
               price: result.overview.price,
-              changePct: result.overview.changePct,
+              changePct: result.overview.periodChangePct,
               buyZone: result.tradeLevels.buyZone ? {
                 lower: result.tradeLevels.buyZone.lower,
                 upper: result.tradeLevels.buyZone.upper

@@ -280,12 +280,20 @@ async function fetchQuote(code) {
   };
 }
 
-async function fetchEastmoneyHistory(code, limit = 360) {
+function normalizeHistoryPeriod(value) {
+  return ["day", "week", "month"].includes(String(value)) ? String(value) : "day";
+}
+
+async function fetchEastmoneyHistory(code, limit = 360, period = "day") {
+  const normalizedPeriod = normalizeHistoryPeriod(period);
+  const klt = { day: "101", week: "102", month: "103" }[normalizedPeriod];
+  const periodLabel = { day: "日线", week: "周线", month: "月线" }[normalizedPeriod];
+  const minimumLimit = normalizedPeriod === "day" ? 260 : normalizedPeriod === "week" ? 120 : 60;
   const url = new URL(DAILY_KLINE_ENDPOINT);
   url.searchParams.set("secid", `${marketIdFor(code)}.${code}`);
-  url.searchParams.set("klt", "101");
+  url.searchParams.set("klt", klt);
   url.searchParams.set("fqt", "1");
-  url.searchParams.set("lmt", String(Math.max(260, Math.min(500, Number(limit) || 360))));
+  url.searchParams.set("lmt", String(Math.max(minimumLimit, Math.min(500, Number(limit) || 360))));
   url.searchParams.set("end", "20500101");
   url.searchParams.set("iscca", "1");
   url.searchParams.set("fields1", "f1,f2,f3,f4,f5,f6");
@@ -293,7 +301,7 @@ async function fetchEastmoneyHistory(code, limit = 360) {
   url.searchParams.set("_", Date.now());
   const payload = JSON.parse(await requestTextOnce(url, 5000));
   const item = payload?.data;
-  if (!item || String(item.code) !== code || !Array.isArray(item.klines)) throw new Error("日线行情暂不可用");
+  if (!item || String(item.code) !== code || !Array.isArray(item.klines)) throw new Error(`${periodLabel}行情暂不可用`);
   let candles = item.klines.map(line => {
     const [date, open, close, high, low, volume, amount, amplitude, changePct, change, turnoverRate] = String(line).split(",");
     return {
@@ -311,30 +319,33 @@ async function fetchEastmoneyHistory(code, limit = 360) {
     };
   }).filter(candle => candle.date && [candle.open, candle.high, candle.low, candle.close, candle.volume, candle.amount].every(Number.isFinite));
   const clock = shanghaiClock();
-  if (candles.at(-1)?.date === clock.date && clock.minuteOfDay < 15 * 60 + 5) candles = candles.slice(0, -1);
-  if (!candles.length) throw new Error("未返回已完成交易日行情");
+  if (normalizedPeriod === "day" && candles.at(-1)?.date === clock.date && clock.minuteOfDay < 15 * 60 + 5) candles = candles.slice(0, -1);
+  if (!candles.length) throw new Error(`未返回已完成${periodLabel}行情`);
   return {
     code,
     name: plainText(item.name),
-    period: "day",
+    period: normalizedPeriod,
     adjustment: "forward",
     candles,
     lastCompletedDate: candles.at(-1).date,
     updatedAt: `${candles.at(-1).date}T15:00:00+08:00`,
-    source: "东方财富公开前复权日线行情"
+    source: `东方财富公开前复权${periodLabel}行情`
   };
 }
 
-async function fetchTencentHistory(code, limit = 360) {
+async function fetchTencentHistory(code, limit = 360, period = "day") {
+  const normalizedPeriod = normalizeHistoryPeriod(period);
+  const periodLabel = { day: "日线", week: "周线", month: "月线" }[normalizedPeriod];
   const symbol = `${/^(5|6|9)/.test(code) ? "sh" : "sz"}${code}`;
-  const candleLimit = Math.max(260, Math.min(500, Number(limit) || 360));
+  const minimumLimit = normalizedPeriod === "day" ? 260 : normalizedPeriod === "week" ? 120 : 60;
+  const candleLimit = Math.max(minimumLimit, Math.min(500, Number(limit) || 360));
   const url = new URL(TENCENT_KLINE_ENDPOINT);
-  url.searchParams.set("param", `${symbol},day,,,${candleLimit},qfq`);
+  url.searchParams.set("param", `${symbol},${normalizedPeriod},,,${candleLimit},qfq`);
   url.searchParams.set("_", Date.now());
   const payload = JSON.parse(await requestTextOnce(url, 5000));
   const item = payload?.data?.[symbol];
-  const rows = item?.qfqday || item?.day;
-  if (!Array.isArray(rows)) throw new Error("腾讯日线行情暂不可用");
+  const rows = item?.[`qfq${normalizedPeriod}`] || item?.[normalizedPeriod];
+  if (!Array.isArray(rows)) throw new Error(`腾讯${periodLabel}行情暂不可用`);
   let previousClose = null;
   let candles = rows.map(row => {
     const [date, open, close, high, low, volumeLots] = Array.isArray(row) ? row : [];
@@ -363,26 +374,26 @@ async function fetchTencentHistory(code, limit = 360) {
     };
   }).filter(candle => candle.date && [candle.open, candle.high, candle.low, candle.close, candle.volume].every(Number.isFinite));
   const clock = shanghaiClock();
-  if (candles.at(-1)?.date === clock.date && clock.minuteOfDay < 15 * 60 + 5) candles = candles.slice(0, -1);
-  if (!candles.length) throw new Error("未返回已完成交易日行情");
+  if (normalizedPeriod === "day" && candles.at(-1)?.date === clock.date && clock.minuteOfDay < 15 * 60 + 5) candles = candles.slice(0, -1);
+  if (!candles.length) throw new Error(`未返回已完成${periodLabel}行情`);
   return {
     code,
     name: "",
-    period: "day",
+    period: normalizedPeriod,
     adjustment: "forward",
     candles,
     lastCompletedDate: candles.at(-1).date,
     updatedAt: `${candles.at(-1).date}T15:00:00+08:00`,
-    source: "腾讯证券公开前复权日线行情"
+    source: `腾讯证券公开前复权${periodLabel}行情`
   };
 }
 
-async function fetchHistory(code, limit = 360) {
+async function fetchHistory(code, limit = 360, period = "day") {
   try {
-    return await fetchEastmoneyHistory(code, limit);
+    return await fetchEastmoneyHistory(code, limit, period);
   } catch (error) {
-    const history = await fetchTencentHistory(code, limit);
-    history.fallbackReason = error?.message || "东方财富日线行情暂不可用";
+    const history = await fetchTencentHistory(code, limit, period);
+    history.fallbackReason = error?.message || "东方财富周期行情暂不可用";
     return history;
   }
 }
@@ -532,7 +543,7 @@ function validateCodes(value) {
     .slice(0, 30);
 }
 
-async function loadSections(code, sections, force) {
+async function loadSections(code, sections, force, historyOptions = {}) {
   const results = {};
   const errors = {};
   await Promise.all(sections.map(async section => {
@@ -540,7 +551,9 @@ async function loadSections(code, sections, force) {
       if (section === "quote") {
         results.quote = await cachedLoad(`${code}:quote`, CACHE_TTL.quote, () => fetchQuote(code), force);
       } else if (section === "history") {
-        results.history = await cachedLoad(`${code}:history`, CACHE_TTL.history, () => fetchHistory(code, 360), force);
+        const period = normalizeHistoryPeriod(historyOptions.period);
+        const limit = Math.max(1, Math.min(500, Number(historyOptions.limit) || 360));
+        results.history = await cachedLoad(`${code}:history:${period}:${limit}`, CACHE_TTL.history, () => fetchHistory(code, limit, period), force);
       } else if (section === "announcements") {
         results.announcements = await cachedLoad(
           `${code}:announcements`,
@@ -571,7 +584,7 @@ async function loadSections(code, sections, force) {
   return { results, errors };
 }
 
-async function loadStockBatch(codes, sections, force) {
+async function loadStockBatch(codes, sections, force, historyOptions = {}) {
   const stocks = new Array(codes.length);
   let nextIndex = 0;
   const workerCount = Math.min(2, codes.length);
@@ -580,7 +593,7 @@ async function loadStockBatch(codes, sections, force) {
       const index = nextIndex;
       nextIndex += 1;
       const code = codes[index];
-      const { results, errors } = await loadSections(code, sections, force);
+      const { results, errors } = await loadSections(code, sections, force, historyOptions);
       stocks[index] = { code, ...results, errors };
     }
   });
@@ -603,9 +616,13 @@ async function handleRequest(method, url, origin = "") {
     .filter(value => ["quote", "history", "announcements", "news", "events"].includes(value));
   const sections = [...new Set(requested.length ? requested : ["quote"])];
   const force = url.searchParams.get("force") === "1";
+  const historyOptions = {
+    period: normalizeHistoryPeriod(url.searchParams.get("period")),
+    limit: Math.max(1, Math.min(500, Number(url.searchParams.get("limit")) || 360))
+  };
   const batchCodes = validateCodes(url.searchParams.get("codes"));
   if (batchCodes.length) {
-    const stocks = await loadStockBatch(batchCodes, sections, force);
+    const stocks = await loadStockBatch(batchCodes, sections, force, historyOptions);
     const succeeded = stocks.some(stock => sections.some(section => Object.hasOwn(stock, section)));
     return jsonResponse(origin, succeeded ? 200 : 502, {
       codes: batchCodes,
@@ -616,7 +633,7 @@ async function handleRequest(method, url, origin = "") {
 
   const code = validateCode(url.searchParams.get("code"));
   if (!code) return jsonResponse(origin, 400, { error: "股票代码必须为6位数字" });
-  const { results, errors } = await loadSections(code, sections, force);
+  const { results, errors } = await loadSections(code, sections, force, historyOptions);
   const succeeded = Object.keys(results).length;
   const statusCode = succeeded ? 200 : 502;
   return jsonResponse(origin, statusCode, {
@@ -649,6 +666,7 @@ async function main(event = {}) {
 module.exports = {
   validateCode,
   validateCodes,
+  normalizeHistoryPeriod,
   importanceFromTitle,
   sentimentFromTitle,
   categoryFromNews,

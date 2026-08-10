@@ -208,6 +208,8 @@
       const endpoint = new URL(this.proxyEndpoint, global.location.origin);
       endpoint.searchParams.set("code", String(stockCode).padStart(6, "0"));
       endpoint.searchParams.set("include", sections.join(","));
+      if (["day", "week", "month"].includes(options.period)) endpoint.searchParams.set("period", options.period);
+      if (Number.isFinite(Number(options.limit))) endpoint.searchParams.set("limit", String(Number(options.limit)));
       if (options.force) endpoint.searchParams.set("force", "1");
       endpoint.searchParams.set("_", Date.now());
       return endpoint;
@@ -218,6 +220,8 @@
       const codes = [...new Set(stockCodes.map(code => String(code).padStart(6, "0")))];
       endpoint.searchParams.set("codes", codes.join(","));
       endpoint.searchParams.set("include", sections.join(","));
+      if (["day", "week", "month"].includes(options.period)) endpoint.searchParams.set("period", options.period);
+      if (Number.isFinite(Number(options.limit))) endpoint.searchParams.set("limit", String(Number(options.limit)));
       if (options.force) endpoint.searchParams.set("force", "1");
       endpoint.searchParams.set("_", Date.now());
       return endpoint;
@@ -418,13 +422,17 @@
       };
     }
 
-    async getDirectDailyHistory(stockCode, options = {}) {
+    async getDirectHistory(stockCode, options = {}) {
       const code = String(stockCode).padStart(6, "0");
+      const period = ["day", "week", "month"].includes(options.period) ? options.period : "day";
+      const klt = { day: "101", week: "102", month: "103" }[period];
+      const periodLabel = { day: "日线", week: "周线", month: "月线" }[period];
+      const minimumLimit = period === "day" ? 260 : period === "week" ? 120 : 60;
       const url = new URL(DAILY_KLINE_ENDPOINT);
       url.searchParams.set("secid", `${marketIdFor(code)}.${code}`);
-      url.searchParams.set("klt", "101");
+      url.searchParams.set("klt", klt);
       url.searchParams.set("fqt", "1");
-      url.searchParams.set("lmt", String(Math.max(260, Math.min(500, Number(options.limit) || 360))));
+      url.searchParams.set("lmt", String(Math.max(minimumLimit, Math.min(500, Number(options.limit) || 360))));
       url.searchParams.set("end", "20500101");
       url.searchParams.set("iscca", "1");
       url.searchParams.set("fields1", "f1,f2,f3,f4,f5,f6");
@@ -432,7 +440,7 @@
       url.searchParams.set("_", Date.now());
       const payload = await this.requestJson(url);
       const item = payload?.data;
-      if (!item || String(item.code) !== code || !Array.isArray(item.klines)) throw new Error("日线行情暂不可用");
+      if (!item || String(item.code) !== code || !Array.isArray(item.klines)) throw new Error(`${periodLabel}行情暂不可用`);
       let candles = item.klines.map(line => {
         const [date, open, close, high, low, volume, amount, amplitude, changePct, change, turnoverRate] = String(line).split(",");
         return {
@@ -450,18 +458,22 @@
         };
       }).filter(candle => candle.date && [candle.open, candle.high, candle.low, candle.close, candle.volume, candle.amount].every(Number.isFinite));
       const clock = shanghaiClock();
-      if (candles.at(-1)?.date === clock.date && clock.minuteOfDay < 15 * 60 + 5) candles = candles.slice(0, -1);
-      if (!candles.length) throw new Error("未返回已完成交易日行情");
+      if (period === "day" && candles.at(-1)?.date === clock.date && clock.minuteOfDay < 15 * 60 + 5) candles = candles.slice(0, -1);
+      if (!candles.length) throw new Error(`未返回已完成${periodLabel}行情`);
       return {
         code,
         name: plainText(item.name),
-        period: "day",
+        period,
         adjustment: "forward",
         candles,
         lastCompletedDate: candles.at(-1).date,
         updatedAt: `${candles.at(-1).date}T15:00:00+08:00`,
-        source: "东方财富公开前复权日线行情"
+        source: `东方财富公开前复权${periodLabel}行情`
       };
+    }
+
+    async getDirectDailyHistory(stockCode, options = {}) {
+      return this.getDirectHistory(stockCode, { ...options, period: "day" });
     }
 
     async getTechnicalSnapshot(stockCode, options = {}) {
@@ -483,7 +495,7 @@
       } catch (proxyError) {
         const [quoteResult, historyResult] = await Promise.allSettled([
           this.getDirectRealtimeQuote(code),
-          this.getDirectDailyHistory(code, { limit: 360 })
+          this.getDirectHistory(code, { period: options.period, limit: options.limit })
         ]);
         if (historyResult.status !== "fulfilled") throw historyResult.reason || proxyError;
         return {

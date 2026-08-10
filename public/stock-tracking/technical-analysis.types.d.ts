@@ -1,4 +1,5 @@
 type TechnicalDimensionId = "trend" | "structure" | "momentum" | "volumePrice" | "volatility";
+type TechnicalPeriod = "day" | "week" | "month" | "quarter" | "year";
 
 interface DailyCandle {
   date: string;
@@ -51,6 +52,10 @@ interface TechnicalAnalysisResult {
     updatedAt: string;
     tradingStatus: string;
     scoreDate: string;
+    period: TechnicalPeriod;
+    periodLabel: string;
+    periodChange: number | null;
+    periodChangePct: number | null;
   };
   candles: DailyCandle[];
   scores: TechnicalScoresResult;
@@ -63,7 +68,7 @@ interface TechnicalAnalysisResult {
     ignoredCount: number;
     hitRate: number | null;
     methodology: string;
-    period: { months: 3; startDate: string; endDate: string };
+    period: { months: number; startDate: string; endDate: string; label: string };
   };
   sparklines: {
     trend: number[];
@@ -77,7 +82,10 @@ interface TechnicalAnalysisResult {
   dataMeta: {
     source: string;
     adjustment: "forward";
-    period: "day";
+    period: TechnicalPeriod;
+    periodLabel: string;
+    barLabel: string;
+    sourcePeriod: "day" | "week" | "month";
     rawCount: number;
     completedThrough: string;
     checkedAt: string;

@@ -9,7 +9,7 @@
   if (root) root.StockTechnicalTradeLevels = api;
 })(typeof window !== "undefined" ? window : globalThis, function createTechnicalTradeLevels(indicators) {
   const { clamp } = indicators;
-  const finite = value => Number.isFinite(Number(value));
+  const finite = value => value !== null && value !== "" && Number.isFinite(Number(value));
 
   function uniqueCandidates(candidates) {
     const seen = new Set();
@@ -46,6 +46,12 @@
   function calculateTradeLevels(scoreResult) {
     const set = scoreResult.indicators;
     const structure = scoreResult.structure;
+    const profile = set.profile || {};
+    const unit = profile.barLabel || "交易日";
+    const maPeriods = profile.maPeriods || [5, 10, 20, 60];
+    const structureLookback = Math.max(3, Number(profile.structureLookback) || 20);
+    const longLookback = Math.max(structureLookback, maPeriods[3] || 60);
+    const majorLookback = Math.max(longLookback, Number(profile.percentileLookback) || 120);
     const index = set.candles.length - 1;
     const current = set.candles[index];
     const atr = set.atr[index];
@@ -57,22 +63,22 @@
     const lastSwingHigh = structure.pivots.highs.at(-1)?.value;
     const priorResistance = structure.platform?.resistance;
     const recentBreakoutLevel = structure.platform?.recentBreakout?.level;
-    const high20 = Math.max(...set.candles.slice(Math.max(0, index - 20), index).map(candle => candle.high));
-    const high60 = Math.max(...set.candles.slice(Math.max(0, index - 60), index).map(candle => candle.high));
-    const historicalHigh = Math.max(...set.candles.slice(Math.max(0, index - 120), index).map(candle => candle.high));
+    const high20 = Math.max(...set.candles.slice(Math.max(0, index - structureLookback), index).map(candle => candle.high));
+    const high60 = Math.max(...set.candles.slice(Math.max(0, index - longLookback), index).map(candle => candle.high));
+    const historicalHigh = Math.max(...set.candles.slice(Math.max(0, index - majorLookback), index).map(candle => candle.high));
     const supports = uniqueCandidates([
-      { source: "MA20", value: set.ma[20][index] },
-      { source: "MA60", value: set.ma[60][index] },
+      { source: `MA${maPeriods[2]}`, value: set.ma[20][index] },
+      { source: `MA${maPeriods[3]}`, value: set.ma[60][index] },
       { source: "最近 Swing Low", value: lastSwingLow },
       { source: "突破平台顶部", value: recentBreakoutLevel }
     ]).filter(candidate => candidate.value <= current.close + atr * 0.25);
     const resistances = uniqueCandidates([
       { source: "最近 Swing High", value: lastSwingHigh },
-      { source: "20日高点", value: high20 },
-      { source: "60日高点", value: high60 },
+      { source: `${structureLookback}${unit}高点`, value: high20 },
+      { source: `${longLookback}${unit}高点`, value: high60 },
       { source: "平台顶部", value: priorResistance },
       { source: "BOLL 上轨", value: set.boll.upper[index] },
-      { source: "120日重要高点", value: historicalHigh }
+      { source: `${majorLookback}${unit}重要高点`, value: historicalHigh }
     ]);
     const supportClusters = clusterCandidates(supports, atr)
       .filter(cluster => cluster.center <= current.close + atr * 0.25)
@@ -125,7 +131,7 @@
           label: "接近压力区且动量衰减",
           evidence: [
             `距离压力共振区 ${Math.abs(pressure.center - current.close).toFixed(2)}，小于 0.5 ATR`,
-            rsi > 75 ? `RSI ${rsi.toFixed(1)} 偏热` : scoreResult.dimensions.momentum.divergence ? "价格与动量出现顶背离" : "MACD 动量连续3日下降"
+            rsi > 75 ? `RSI ${rsi.toFixed(1)} 偏热` : scoreResult.dimensions.momentum.divergence ? "价格与动量出现顶背离" : `MACD 动量连续3${unit}下降`
           ]
         }
       : { active: false, label: "暂未出现减仓共振", evidence: ["需同时接近强压力区并出现动量衰减"] };

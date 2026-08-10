@@ -12,7 +12,7 @@
   if (root) root.StockTechnicalScores = api;
 })(typeof window !== "undefined" ? window : globalThis, function createTechnicalScores(indicators, structure) {
   const { clamp, slopePercent, linearRegression } = indicators;
-  const finite = value => Number.isFinite(Number(value));
+  const finite = value => value !== null && value !== "" && Number.isFinite(Number(value));
   const DIMENSION_WEIGHTS = { trend: 30, structure: 25, momentum: 20, volumePrice: 15, volatility: 10 };
 
   function normalizedDetails(details) {
@@ -29,6 +29,10 @@
   }
 
   function calculateTrendScore(set) {
+    const profile = set.profile || {};
+    const maPeriods = profile.maPeriods || [5, 10, 20, 60];
+    const slopeLookbacks = profile.slopeLookbacks || [5, 10];
+    const slopeThresholds = profile.slopeThresholds || [4, 5];
     const index = set.candles.length - 1;
     const close = set.close[index];
     const ma5 = set.ma[5][index];
@@ -39,11 +43,11 @@
     const arrangementPoints = [close, ma5, ma10, ma20, ma60].every(finite)
       ? arrangementConditions.filter(Boolean).length / arrangementConditions.length * 30
       : null;
-    const ma20Slope = slopePercent(set.ma[20].slice(0, index + 1), 5);
-    const ma60Slope = slopePercent(set.ma[60].slice(0, index + 1), 10);
+    const ma20Slope = slopePercent(set.ma[20].slice(0, index + 1), slopeLookbacks[0]);
+    const ma60Slope = slopePercent(set.ma[60].slice(0, index + 1), slopeLookbacks[1]);
     const slopeParts = [
-      { value: finite(ma20Slope) ? signedScore(ma20Slope, -4, 4) : null, weight: 0.6 },
-      { value: finite(ma60Slope) ? signedScore(ma60Slope, -5, 5) : null, weight: 0.4 }
+      { value: finite(ma20Slope) ? signedScore(ma20Slope, -slopeThresholds[0], slopeThresholds[0]) : null, weight: 0.6 },
+      { value: finite(ma60Slope) ? signedScore(ma60Slope, -slopeThresholds[1], slopeThresholds[1]) : null, weight: 0.4 }
     ].filter(part => finite(part.value));
     const slopeWeight = slopeParts.reduce((sum, part) => sum + part.weight, 0);
     const slopePoints = slopeParts.length
@@ -67,7 +71,7 @@
     }
     const details = [
       { id: "arrangement", label: "均线排列", points: arrangementPoints, max: 30, evidence: finite(arrangementPoints) ? `${arrangementConditions.filter(Boolean).length}/4 个多头条件成立` : "均线数据不足" },
-      { id: "slope", label: "均线斜率", points: slopePoints, max: 25, evidence: finite(ma20Slope) && finite(ma60Slope) ? `MA20 ${ma20Slope.toFixed(2)}%，MA60 ${ma60Slope.toFixed(2)}%` : "斜率数据不足" },
+      { id: "slope", label: "均线斜率", points: slopePoints, max: 25, evidence: finite(ma20Slope) && finite(ma60Slope) ? `MA${maPeriods[2]} ${ma20Slope.toFixed(2)}%，MA${maPeriods[3]} ${ma60Slope.toFixed(2)}%` : "斜率数据不足" },
       { id: "macd", label: "MACD 趋势", points: macdPoints, max: 25, evidence: finite(macdPoints) ? `${macdConditions.filter(Boolean).length}/5 个趋势条件成立` : "MACD 数据不足" },
       { id: "adx", label: "ADX", points: adxPoints, max: 20, evidence: finite(adx) ? `ADX ${adx.toFixed(1)}，${plusDI > minusDI ? "+DI 占优" : "-DI 占优"}` : "ADX 数据不足" }
     ];
@@ -86,22 +90,26 @@
 
   function detectBearishDivergence(set) {
     const index = set.candles.length - 1;
-    if (index < 40) return false;
-    const recentPrice = Math.max(...set.close.slice(index - 19, index + 1));
-    const priorPrice = Math.max(...set.close.slice(index - 39, index - 19));
-    const recentRsi = Math.max(...set.rsi.slice(index - 19, index + 1).filter(finite));
-    const priorRsi = Math.max(...set.rsi.slice(index - 39, index - 19).filter(finite));
-    const recentMacd = Math.max(...set.macd.histogram.slice(index - 19, index + 1).filter(finite));
-    const priorMacd = Math.max(...set.macd.histogram.slice(index - 39, index - 19).filter(finite));
+    const lookback = Math.max(2, Number(set.profile?.divergenceLookback) || 20);
+    if (index < lookback * 2) return false;
+    const recentPrice = Math.max(...set.close.slice(index - lookback + 1, index + 1));
+    const priorPrice = Math.max(...set.close.slice(index - lookback * 2 + 1, index - lookback + 1));
+    const recentRsi = Math.max(...set.rsi.slice(index - lookback + 1, index + 1).filter(finite));
+    const priorRsi = Math.max(...set.rsi.slice(index - lookback * 2 + 1, index - lookback + 1).filter(finite));
+    const recentMacd = Math.max(...set.macd.histogram.slice(index - lookback + 1, index + 1).filter(finite));
+    const priorMacd = Math.max(...set.macd.histogram.slice(index - lookback * 2 + 1, index - lookback + 1).filter(finite));
     return recentPrice > priorPrice && (recentRsi < priorRsi || recentMacd < priorMacd);
   }
 
   function calculateMomentumScore(set) {
+    const profile = set.profile || {};
+    const unit = profile.barLabel || "交易日";
+    const momentumLookback = Math.min(3, Math.max(1, Number(profile.slopeLookbacks?.[0]) || 3));
     const index = set.candles.length - 1;
     const rsi = set.rsi[index];
     const rsiPoints = finite(rsi) ? rsiHealthScore(rsi) * 0.3 : null;
     const histogram = set.macd.histogram[index];
-    const hist3Ago = set.macd.histogram[index - 3];
+    const hist3Ago = set.macd.histogram[index - momentumLookback];
     const dif = set.macd.dif[index];
     const previousDif = set.macd.dif[index - 1];
     const dea = set.macd.dea[index];
@@ -139,10 +147,10 @@
     }
     const rocPoints = finite(rocHealth) ? rocHealth * 0.15 : null;
     const details = [
-      { id: "rsi", label: "RSI", points: rsiPoints, max: 30, evidence: finite(rsi) ? `RSI14 ${rsi.toFixed(1)}` : "RSI 数据不足" },
-      { id: "macdMomentum", label: "MACD 动能", points: macdPoints, max: 35, evidence: finite(histogram) ? `柱体 ${histogram >= 0 ? "为正" : "为负"}且${histogram > hist3Ago ? "近3日增强" : "近3日减弱"}` : "MACD 数据不足" },
+      { id: "rsi", label: "RSI", points: rsiPoints, max: 30, evidence: finite(rsi) ? `RSI${profile.rsiPeriod || 14} ${rsi.toFixed(1)}` : "RSI 数据不足" },
+      { id: "macdMomentum", label: "MACD 动能", points: macdPoints, max: 35, evidence: finite(histogram) ? `柱体 ${histogram >= 0 ? "为正" : "为负"}且近${momentumLookback}${unit}${histogram > hist3Ago ? "增强" : "减弱"}` : "MACD 数据不足" },
       { id: "kdj", label: "KDJ", points: kdjPoints, max: 20, evidence: finite(k) ? `K ${k.toFixed(1)} / D ${d.toFixed(1)} / J ${j.toFixed(1)}` : "KDJ 数据不足" },
-      { id: "roc", label: "ROC", points: rocPoints, max: 15, evidence: finite(roc) ? `10日 ROC ${roc.toFixed(2)}%` : "ROC 数据不足" }
+      { id: "roc", label: "ROC", points: rocPoints, max: 15, evidence: finite(roc) ? `${profile.rocPeriod || 10}${unit} ROC ${roc.toFixed(2)}%` : "ROC 数据不足" }
     ];
     const divergence = detectBearishDivergence(set);
     const rawScore = normalizedDetails(details);
@@ -150,11 +158,14 @@
   }
 
   function calculateVolumePriceScore(set, structureResult) {
+    const profile = set.profile || {};
+    const unit = profile.barLabel || "交易日";
+    const volumePeriods = profile.volumePeriods || [5, 20];
     const index = set.candles.length - 1;
     const avg5 = set.volumeAverage[5][index];
     const avg20 = set.volumeAverage[20][index];
     const ratio = finite(avg5) && finite(avg20) && avg20 ? avg5 / avg20 : null;
-    const priceSlope = index >= 5 ? 100 * (set.close[index] / set.close[index - 5] - 1) : null;
+    const priceSlope = index >= volumePeriods[0] ? 100 * (set.close[index] / set.close[index - volumePeriods[0]] - 1) : null;
     let ratioHealth = null;
     if (finite(ratio)) {
       if (ratio < 0.6) ratioHealth = 25;
@@ -166,9 +177,10 @@
     }
     const ratioPoints = finite(ratioHealth) ? clamp(ratioHealth, 0, 100) * 0.3 : null;
 
-    const obvWindow = set.obv.slice(-11);
-    const obvRegression = obvWindow.length === 11 ? linearRegression(obvWindow) : { normalizedSlope: null };
-    const obvNewHigh = set.obv[index] >= Math.max(...set.obv.slice(Math.max(0, index - 19), index + 1));
+    const obvLookback = Math.max(3, volumePeriods[1]);
+    const obvWindow = set.obv.slice(-(obvLookback + 1));
+    const obvRegression = obvWindow.length === obvLookback + 1 ? linearRegression(obvWindow) : { normalizedSlope: null };
+    const obvNewHigh = set.obv[index] >= Math.max(...set.obv.slice(Math.max(0, index - obvLookback + 1), index + 1));
     let obvHealth = finite(obvRegression.normalizedSlope) ? signedScore(obvRegression.normalizedSlope, -4, 4) : null;
     if (finite(obvHealth) && obvNewHigh) obvHealth = clamp(obvHealth + 15, 0, 100);
     if (finite(obvHealth) && finite(priceSlope) && priceSlope > 0 && obvRegression.normalizedSlope < 0) obvHealth = clamp(obvHealth - 30, 0, 100);
@@ -189,9 +201,9 @@
     }
     const confirmationPoints = confirmationHealth * 0.2;
     const details = [
-      { id: "volumeRatio", label: "Volume Ratio", points: ratioPoints, max: 30, evidence: finite(ratio) ? `5日/20日均量 ${ratio.toFixed(2)}` : "成交量数据不足" },
-      { id: "obv", label: "OBV", points: obvPoints, max: 25, evidence: finite(obvRegression.normalizedSlope) ? `OBV 10日斜率 ${obvRegression.normalizedSlope.toFixed(2)}%/日` : "OBV 数据不足" },
-      { id: "cmf", label: "CMF", points: cmfPoints, max: 25, evidence: finite(cmf) ? `CMF20 ${cmf.toFixed(3)}` : "CMF 数据不足" },
+      { id: "volumeRatio", label: "Volume Ratio", points: ratioPoints, max: 30, evidence: finite(ratio) ? `${volumePeriods[0]}${unit}/${volumePeriods[1]}${unit}均量 ${ratio.toFixed(2)}` : "成交量数据不足" },
+      { id: "obv", label: "OBV", points: obvPoints, max: 25, evidence: finite(obvRegression.normalizedSlope) ? `OBV ${obvLookback}${unit}斜率 ${obvRegression.normalizedSlope.toFixed(2)}%/${unit}` : "OBV 数据不足" },
+      { id: "cmf", label: "CMF", points: cmfPoints, max: 25, evidence: finite(cmf) ? `CMF${profile.cmfPeriod || 20} ${cmf.toFixed(3)}` : "CMF 数据不足" },
       { id: "breakoutVolume", label: "突破量能", points: confirmationPoints, max: 20, evidence: confirmationEvidence }
     ];
     return { score: normalizedDetails(details), details, values: { ratio, cmf, obvSlope: obvRegression.normalizedSlope, priceSlope }, confirmedBreakout: Boolean(breakout && finite(ratio) && ratio >= 1.3) };
@@ -206,10 +218,14 @@
   }
 
   function calculateVolatilityScore(set) {
+    const profile = set.profile || {};
+    const unit = profile.barLabel || "交易日";
+    const volatilityPeriods = profile.volatilityPeriods || [5, 20];
+    const percentileLookback = profile.percentileLookback || 120;
     const index = set.candles.length - 1;
     const bandwidth = set.boll.bandwidth[index];
     const bandwidthPercentile = set.boll.percentile[index];
-    const previousBandwidth = set.boll.bandwidth[index - 5];
+    const previousBandwidth = set.boll.bandwidth[index - volatilityPeriods[0]];
     const compressionThenExpansion = finite(bandwidth) && finite(previousBandwidth) && bandwidth > previousBandwidth && bandwidthPercentile < 80;
     let bollHealth = bellPercentileScore(bandwidthPercentile);
     if (finite(bollHealth) && compressionThenExpansion) bollHealth = clamp(bollHealth + 15, 0, 100);
@@ -229,8 +245,8 @@
       else rvHealth = clamp(45 - (rvRatio - 2) * 25, 5, 45);
     }
     const rvPoints = finite(rvHealth) ? rvHealth * 0.2 : null;
-    const recentExtremeRatios = set.trueRange.slice(-5).map((range, offset) => {
-      const candleIndex = index - 4 + offset;
+    const recentExtremeRatios = set.trueRange.slice(-volatilityPeriods[0]).map((range, offset) => {
+      const candleIndex = index - volatilityPeriods[0] + 1 + offset;
       const atr = set.atr[candleIndex - 1] ?? set.atr[candleIndex];
       return finite(atr) && atr > 0 ? range / atr : null;
     }).filter(finite);
@@ -238,10 +254,10 @@
     const extremeHealth = finite(extremeRatio) ? (extremeRatio > 3 ? 0 : extremeRatio > 2.2 ? 40 : 100) : null;
     const extremePoints = finite(extremeHealth) ? extremeHealth * 0.2 : null;
     const details = [
-      { id: "boll", label: "BOLL 带宽", points: bollPoints, max: 35, evidence: finite(bandwidthPercentile) ? `120日分位 ${bandwidthPercentile.toFixed(0)}%，${compressionThenExpansion ? "压缩后扩张" : "未形成压缩后扩张"}` : "BOLL 数据不足" },
-      { id: "atr", label: "ATR%", points: atrPoints, max: 25, evidence: finite(atrPercentile) ? `ATR% 120日分位 ${atrPercentile.toFixed(0)}%` : "ATR 数据不足" },
-      { id: "realizedVol", label: "实现波动率", points: rvPoints, max: 20, evidence: finite(rvRatio) ? `5日/20日实现波动率 ${rvRatio.toFixed(2)}` : "波动率数据不足" },
-      { id: "extremeRisk", label: "极端波动风险", points: extremePoints, max: 20, evidence: finite(extremeRatio) ? `近5日最大 TR/ATR ${extremeRatio.toFixed(2)}` : "极端风险数据不足" }
+      { id: "boll", label: "BOLL 带宽", points: bollPoints, max: 35, evidence: finite(bandwidthPercentile) ? `${percentileLookback}${unit}分位 ${bandwidthPercentile.toFixed(0)}%，${compressionThenExpansion ? "压缩后扩张" : "未形成压缩后扩张"}` : "BOLL 数据不足" },
+      { id: "atr", label: "ATR%", points: atrPoints, max: 25, evidence: finite(atrPercentile) ? `ATR% ${percentileLookback}${unit}分位 ${atrPercentile.toFixed(0)}%` : "ATR 数据不足" },
+      { id: "realizedVol", label: "实现波动率", points: rvPoints, max: 20, evidence: finite(rvRatio) ? `${volatilityPeriods[0]}${unit}/${volatilityPeriods[1]}${unit}实现波动率 ${rvRatio.toFixed(2)}` : "波动率数据不足" },
+      { id: "extremeRisk", label: "极端波动风险", points: extremePoints, max: 20, evidence: finite(extremeRatio) ? `近${volatilityPeriods[0]}${unit}最大 TR/ATR ${extremeRatio.toFixed(2)}` : "极端风险数据不足" }
     ];
     return { score: normalizedDetails(details), details, values: { bandwidth, bandwidthPercentile, atrPercentile, rvRatio, extremeRatio }, compressionThenExpansion };
   }
@@ -267,9 +283,10 @@
     return label;
   }
 
-  function calculateTechnicalScore(candlesInput) {
-    const indicatorSet = indicators.calculate(candlesInput);
-    if (indicatorSet.candles.length < 60) {
+  function calculateTechnicalScore(candlesInput, options = {}) {
+    const indicatorSet = indicators.calculate(candlesInput, options);
+    const minimumBars = Number(indicatorSet.profile?.minimumBars) || 60;
+    if (indicatorSet.candles.length < minimumBars) {
       return { total: null, label: "行情数据不足", dimensions: {}, indicators: indicatorSet, structure: null, chips: [] };
     }
     const structureResult = structure.scoreStructure(indicatorSet);
@@ -290,12 +307,12 @@
     return { total, label: scoreLabel(total, dimensions), dimensions, indicators: indicatorSet, structure: structureResult, chips };
   }
 
-  function calculateScoreHistory(candles, count = 30, minimumHistory = 120) {
+  function calculateScoreHistory(candles, count = 30, minimumHistory = 120, options = {}) {
     const normalized = indicators.normalizeCandles(candles);
     const start = Math.max(minimumHistory - 1, normalized.length - count);
     const history = [];
     for (let index = start; index < normalized.length; index += 1) {
-      const result = calculateTechnicalScore(normalized.slice(0, index + 1));
+      const result = calculateTechnicalScore(normalized.slice(0, index + 1), options);
       const previousClose = normalized[index - 1]?.close;
       const changePct = Number.isFinite(previousClose) && previousClose !== 0
         ? (normalized[index].close / previousClose - 1) * 100

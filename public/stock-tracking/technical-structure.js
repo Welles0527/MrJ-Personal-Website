@@ -9,7 +9,7 @@
   if (root) root.StockTechnicalStructure = api;
 })(typeof window !== "undefined" ? window : globalThis, function createTechnicalStructure(indicators) {
   const { clamp, linearRegression } = indicators;
-  const finite = value => Number.isFinite(Number(value));
+  const finite = value => value !== null && value !== "" && Number.isFinite(Number(value));
 
   function findConfirmedPivots(candles, radius = 5) {
     const highs = [];
@@ -37,10 +37,16 @@
 
   function scoreStructure(indicatorSet) {
     const { candles, close, ma, atr } = indicatorSet;
+    const profile = indicatorSet.profile || {};
+    const lookback = Math.max(3, Number(profile.structureLookback) || 20);
+    const pivotRadius = Math.max(1, Number(profile.pivotRadius) || 5);
+    const minimumBars = Math.max(3, Number(profile.minimumBars) || 60);
+    const unit = profile.barLabel || "交易日";
+    const maPeriods = profile.maPeriods || [5, 10, 20, 60];
     const index = candles.length - 1;
-    if (index < 60) return { score: null, details: [], pivots: { highs: [], lows: [] }, platform: null, channel: null };
+    if (index < minimumBars - 1) return { score: null, details: [], pivots: { highs: [], lows: [] }, platform: null, channel: null };
     const current = candles[index];
-    const pivots = findConfirmedPivots(candles, 5);
+    const pivots = findConfirmedPivots(candles, pivotRadius);
     const recentHighs = pivots.highs.slice(-2);
     const recentLows = pivots.lows.slice(-2);
     const hasHH = recentHighs.length === 2 ? recentHighs[1].value > recentHighs[0].value : null;
@@ -64,28 +70,28 @@
       swingLabel = hasLH ? "高点下移" : "低点下移";
     }
 
-    const resistance = latestPriorResistance(candles, 20);
+    const resistance = latestPriorResistance(candles, lookback);
     const atrValue = atr[index];
     const breakoutNow = finite(resistance) && current.close > resistance;
     let recentBreakout = null;
-    for (let cursor = Math.max(20, index - 5); cursor <= index; cursor += 1) {
-      const prior = Math.max(...candles.slice(cursor - 20, cursor).map(candle => candle.high));
+    for (let cursor = Math.max(lookback, index - Math.min(5, lookback)); cursor <= index; cursor += 1) {
+      const prior = Math.max(...candles.slice(cursor - lookback, cursor).map(candle => candle.high));
       if (candles[cursor].close > prior) recentBreakout = { index: cursor, date: candles[cursor].date, level: prior };
     }
     let platformPoints = 6;
-    let platformLabel = "仍在近20日平台内部";
+    let platformLabel = `仍在近${lookback}${unit}平台内部`;
     if (breakoutNow) {
       platformPoints = 25;
-      platformLabel = "收盘价突破前20日压力";
+      platformLabel = `收盘价突破前${lookback}${unit}压力`;
     } else if (recentBreakout && current.close >= recentBreakout.level - (finite(atrValue) ? atrValue * 0.35 : 0)) {
       platformPoints = 20;
       platformLabel = "近期突破后仍守住平台顶部";
     } else if (finite(resistance) && finite(atrValue) && resistance - current.close <= atrValue) {
       platformPoints = 12;
-      platformLabel = "接近近20日平台压力";
+      platformLabel = `接近近${lookback}${unit}平台压力`;
     }
 
-    const channelWindow = close.slice(-20);
+    const channelWindow = close.slice(-lookback);
     const channel = linearRegression(channelWindow);
     let channelPoints = null;
     let channelLabel = "通道数据不足";
@@ -93,10 +99,10 @@
       if (channel.normalizedSlope > 0) {
         const slopeQuality = clamp(channel.normalizedSlope / 0.45, 0, 1);
         channelPoints = clamp(4 + channel.r2 * 10 + slopeQuality * 6, 0, 20);
-        channelLabel = `20日通道向上，拟合度 R² ${channel.r2.toFixed(2)}`;
+        channelLabel = `${lookback}${unit}通道向上，拟合度 R² ${channel.r2.toFixed(2)}`;
       } else {
         channelPoints = clamp(5 + channel.normalizedSlope * 8, 0, 5);
-        channelLabel = `20日通道斜率为 ${channel.normalizedSlope.toFixed(2)}%/日`;
+        channelLabel = `${lookback}${unit}通道斜率为 ${channel.normalizedSlope.toFixed(2)}%/${unit}`;
       }
     }
 
@@ -110,7 +116,7 @@
       supportLabel = distance >= -0.2 ? "收盘仍位于关键支撑上方" : "收盘跌破关键支撑";
     }
 
-    const recentHigh = Math.max(...candles.slice(-20).map(candle => candle.high));
+    const recentHigh = Math.max(...candles.slice(-lookback).map(candle => candle.high));
     const drawdownInAtr = finite(atrValue) && atrValue > 0 ? (recentHigh - current.close) / atrValue : null;
     let pullbackPoints = null;
     let pullbackLabel = "回撤数据不足";
@@ -145,6 +151,7 @@
       platform: { resistance, breakoutNow, recentBreakout },
       channel,
       nearestSupport,
+      maPeriods,
       flags: { hasHH, hasHL, hasLH, hasLL }
     };
   }

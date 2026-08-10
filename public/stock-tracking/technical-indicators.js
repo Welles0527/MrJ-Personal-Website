@@ -1,11 +1,14 @@
 "use strict";
 
 (function exposeTechnicalIndicators(root, factory) {
-  const api = factory();
+  const timeframes = typeof module === "object" && module.exports
+    ? require("./technical-timeframes.js")
+    : root.StockTechnicalTimeframes;
+  const api = factory(timeframes);
   if (typeof module === "object" && module.exports) module.exports = api;
   if (root) root.StockTechnicalIndicators = api;
-})(typeof window !== "undefined" ? window : globalThis, function createTechnicalIndicators() {
-  const finite = value => Number.isFinite(Number(value));
+})(typeof window !== "undefined" ? window : globalThis, function createTechnicalIndicators(timeframes) {
+  const finite = value => value !== null && value !== "" && Number.isFinite(Number(value));
   const clamp = (value, minimum, maximum) => Math.min(maximum, Math.max(minimum, value));
 
   function normalizeCandles(candles) {
@@ -59,11 +62,11 @@
     return result;
   }
 
-  function macd(values) {
-    const fast = ema(values, 12);
-    const slow = ema(values, 26);
+  function macd(values, fastPeriod = 12, slowPeriod = 26, signalPeriod = 9) {
+    const fast = ema(values, fastPeriod);
+    const slow = ema(values, slowPeriod);
     const dif = values.map((_, index) => finite(fast[index]) && finite(slow[index]) ? fast[index] - slow[index] : null);
-    const dea = ema(dif, 9);
+    const dea = ema(dif, signalPeriod);
     const histogram = dif.map((value, index) => finite(value) && finite(dea[index]) ? (value - dea[index]) * 2 : null);
     return { dif, dea, histogram };
   }
@@ -214,7 +217,7 @@
     });
   }
 
-  function realizedVolatility(values, period) {
+  function realizedVolatility(values, period, periodsPerYear = 252) {
     const returns = values.map((value, index) => index
       ? Math.log(Number(value) / Number(values[index - 1]))
       : null);
@@ -224,7 +227,7 @@
       if (sample.length !== period) continue;
       const mean = sample.reduce((sum, value) => sum + value, 0) / sample.length;
       const variance = sample.reduce((sum, value) => sum + ((value - mean) ** 2), 0) / sample.length;
-      result[index] = Math.sqrt(variance) * Math.sqrt(252);
+      result[index] = Math.sqrt(variance) * Math.sqrt(periodsPerYear);
     }
     return result;
   }
@@ -272,22 +275,32 @@
     return { slope, normalizedSlope: meanY ? 100 * slope / meanY : null, r2 };
   }
 
-  function calculate(candlesInput) {
+  function calculate(candlesInput, options = {}) {
     const candles = normalizeCandles(candlesInput);
     const close = candles.map(candle => candle.close);
     const volume = candles.map(candle => candle.volume);
-    const ma = { 5: sma(close, 5), 10: sma(close, 10), 20: sma(close, 20), 60: sma(close, 60) };
-    const macdValues = macd(close);
-    const rsiValues = rsi(close, 14);
-    const atrValues = atr(candles, 14);
-    const adxValues = adx(candles, 14);
-    const kdjValues = kdj(candles, 9);
-    const boll = bollinger(close, 20, 2);
+    const profile = options.profile || timeframes?.getProfile(options.period) || timeframes?.getProfile("day") || {};
+    const maPeriods = profile.maPeriods || [5, 10, 20, 60];
+    const macdPeriods = profile.macdPeriods || [12, 26, 9];
+    const volumePeriods = profile.volumePeriods || [5, 20];
+    const volatilityPeriods = profile.volatilityPeriods || [5, 20];
+    const ma = {
+      5: sma(close, maPeriods[0]),
+      10: sma(close, maPeriods[1]),
+      20: sma(close, maPeriods[2]),
+      60: sma(close, maPeriods[3])
+    };
+    const macdValues = macd(close, ...macdPeriods);
+    const rsiValues = rsi(close, profile.rsiPeriod || 14);
+    const atrValues = atr(candles, profile.atrPeriod || 14);
+    const adxValues = adx(candles, profile.adxPeriod || 14);
+    const kdjValues = kdj(candles, profile.kdjPeriod || 9);
+    const boll = bollinger(close, profile.bollPeriod || 20, 2);
     const obvValues = obv(candles);
-    const cmfValues = cmf(candles, 20);
-    const rocValues = roc(close, 10);
-    const rv5 = realizedVolatility(close, 5);
-    const rv20 = realizedVolatility(close, 20);
+    const cmfValues = cmf(candles, profile.cmfPeriod || 20);
+    const rocValues = roc(close, profile.rocPeriod || 10);
+    const rv5 = realizedVolatility(close, volatilityPeriods[0], profile.periodsPerYear || 252);
+    const rv20 = realizedVolatility(close, volatilityPeriods[1], profile.periodsPerYear || 252);
     return {
       candles,
       close,
@@ -298,14 +311,15 @@
       atr: atrValues,
       adx: adxValues,
       kdj: kdjValues,
-      boll: { ...boll, percentile: percentileSeries(boll.bandwidth, 120) },
+      profile,
+      boll: { ...boll, percentile: percentileSeries(boll.bandwidth, profile.percentileLookback || 120) },
       obv: obvValues,
       cmf: cmfValues,
       roc: rocValues,
       realizedVolatility: { 5: rv5, 20: rv20 },
-      atrPercentile: percentileSeries(atrValues.map((value, index) => finite(value) && close[index] ? value / close[index] : null), 120),
+      atrPercentile: percentileSeries(atrValues.map((value, index) => finite(value) && close[index] ? value / close[index] : null), profile.percentileLookback || 120),
       trueRange: trueRanges(candles),
-      volumeAverage: { 5: sma(volume, 5), 20: sma(volume, 20) }
+      volumeAverage: { 5: sma(volume, volumePeriods[0]), 20: sma(volume, volumePeriods[1]) }
     };
   }
 

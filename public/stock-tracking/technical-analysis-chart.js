@@ -103,6 +103,7 @@
   function renderTrend(element, result) {
     const chart = getChart(element);
     if (!chart || !result) return;
+    const profile = global.StockTechnicalTimeframes?.getProfile(result.query?.period || result.dataMeta?.period) || { label: "日", barLabel: "交易日" };
     const data = result.scoreHistory.filter(item => Number.isFinite(Number(item.score)));
     const comparisons = result.scorePerformance?.comparisons || [];
     const comparisonByDate = new Map(comparisons.map(item => [item.date, item]));
@@ -136,7 +137,7 @@
           const changePct = Number(item?.changePct);
           const changeLabel = Number.isFinite(changePct) ? `${changePct >= 0 ? "+" : ""}${changePct.toFixed(2)}%` : "--";
           const verdict = comparison?.hit === true ? "命中" : comparison?.hit === false ? "未命中" : "不计入样本";
-          return `<div class="ta-echart-tooltip ta-comparison-tooltip"><strong>${date}</strong><span>综合技术评分<b>${item?.score ?? "--"}</b></span><span>当日涨跌幅<b>${changeLabel}</b></span><span>前日评分信号<b>${comparison?.signalLabel || "--"}${Number.isFinite(comparison?.priorScore) ? ` ${comparison.priorScore}` : ""}</b></span><span>方向验证<b>${verdict}</b></span></div>`;
+          return `<div class="ta-echart-tooltip ta-comparison-tooltip"><strong>${date}</strong><span>综合技术评分<b>${item?.score ?? "--"}</b></span><span>本${profile.label}涨跌幅<b>${changeLabel}</b></span><span>前一${profile.barLabel}评分信号<b>${comparison?.signalLabel || "--"}${Number.isFinite(comparison?.priorScore) ? ` ${comparison.priorScore}` : ""}</b></span><span>方向验证<b>${verdict}</b></span></div>`;
         }
       },
       axisPointer: { link: [{ xAxisIndex: [0, 1] }] },
@@ -227,7 +228,7 @@
           }
         },
         {
-          name: "当日涨跌幅",
+          name: `本${profile.label}涨跌幅`,
           type: "bar",
           xAxisIndex: 1,
           yAxisIndex: 1,
