@@ -467,7 +467,10 @@
     async getTechnicalSnapshot(stockCode, options = {}) {
       const code = String(stockCode).padStart(6, "0");
       try {
-        const payload = await this.requestJson(this.proxyUrl(code, ["quote", "history"], options));
+        let payload = await this.requestJson(this.proxyUrl(code, ["quote", "history"], options));
+        if (!payload?.history && payload?.errors?.history) {
+          payload = await this.requestJson(this.proxyUrl(code, ["quote", "history"], { ...options, force: true }));
+        }
         if (!payload?.history || String(payload.history.code) !== code || !Array.isArray(payload.history.candles)) {
           throw new Error("技术行情返回异常");
         }

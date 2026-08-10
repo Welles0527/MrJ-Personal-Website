@@ -34,6 +34,12 @@ async function run() {
   assert.strictEqual(history.lastCompletedDate, history.candles.at(-1).date);
   assert.ok(history.candles.every(candle => [candle.open, candle.high, candle.low, candle.close, candle.volume].every(Number.isFinite)));
 
+  const tencentHistory = await service.fetchTencentHistory("301026");
+  assert.strictEqual(tencentHistory.code, "301026");
+  assert.ok(tencentHistory.candles.length >= 250);
+  assert.match(tencentHistory.source, /腾讯证券/);
+  assert.ok(tencentHistory.candles.every(candle => [candle.open, candle.high, candle.low, candle.close, candle.volume].every(Number.isFinite)));
+
   const events = await service.fetchCompanyEvents("301026", 16);
   assert.ok(events.length > 0);
   assert.ok(events.every(item => item.category === "company" && item.sentiment === "中性"));

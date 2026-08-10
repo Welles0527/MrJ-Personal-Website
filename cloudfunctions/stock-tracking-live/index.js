@@ -5,6 +5,7 @@ const https = require("https");
 const QUOTE_ENDPOINT = "https://push2.eastmoney.com/api/qt/stock/get";
 const QUOTE_FALLBACK_ENDPOINT = "https://push2delay.eastmoney.com/api/qt/stock/get";
 const DAILY_KLINE_ENDPOINT = "https://push2his.eastmoney.com/api/qt/stock/kline/get";
+const TENCENT_KLINE_ENDPOINT = "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get";
 const ANNOUNCEMENT_ENDPOINT = "https://np-anotice-stock.eastmoney.com/api/security/ann";
 const NEWS_ENDPOINT = "https://search-api-web.eastmoney.com/search/jsonp";
 const DATA_CENTER_ENDPOINT = "https://datacenter-web.eastmoney.com/api/data/v1/get";
@@ -177,7 +178,9 @@ async function requestText(url, timeoutMs = 8000) {
   try {
     return await requestTextOnce(url, timeoutMs);
   } catch (error) {
-    if (!["ECONNRESET", "ETIMEDOUT", "EAI_AGAIN"].includes(error?.code)) throw error;
+    const isTransient = ["ECONNRESET", "ETIMEDOUT", "EAI_AGAIN"].includes(error?.code)
+      || /socket hang up|timed out/i.test(String(error?.message || ""));
+    if (!isTransient) throw error;
     return requestTextOnce(url, timeoutMs);
   }
 }
@@ -277,7 +280,7 @@ async function fetchQuote(code) {
   };
 }
 
-async function fetchHistory(code, limit = 360) {
+async function fetchEastmoneyHistory(code, limit = 360) {
   const url = new URL(DAILY_KLINE_ENDPOINT);
   url.searchParams.set("secid", `${marketIdFor(code)}.${code}`);
   url.searchParams.set("klt", "101");
@@ -288,7 +291,7 @@ async function fetchHistory(code, limit = 360) {
   url.searchParams.set("fields1", "f1,f2,f3,f4,f5,f6");
   url.searchParams.set("fields2", "f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61");
   url.searchParams.set("_", Date.now());
-  const payload = JSON.parse(await requestText(url, 10000));
+  const payload = JSON.parse(await requestTextOnce(url, 5000));
   const item = payload?.data;
   if (!item || String(item.code) !== code || !Array.isArray(item.klines)) throw new Error("日线行情暂不可用");
   let candles = item.klines.map(line => {
@@ -320,6 +323,68 @@ async function fetchHistory(code, limit = 360) {
     updatedAt: `${candles.at(-1).date}T15:00:00+08:00`,
     source: "东方财富公开前复权日线行情"
   };
+}
+
+async function fetchTencentHistory(code, limit = 360) {
+  const symbol = `${/^(5|6|9)/.test(code) ? "sh" : "sz"}${code}`;
+  const candleLimit = Math.max(260, Math.min(500, Number(limit) || 360));
+  const url = new URL(TENCENT_KLINE_ENDPOINT);
+  url.searchParams.set("param", `${symbol},day,,,${candleLimit},qfq`);
+  url.searchParams.set("_", Date.now());
+  const payload = JSON.parse(await requestTextOnce(url, 5000));
+  const item = payload?.data?.[symbol];
+  const rows = item?.qfqday || item?.day;
+  if (!Array.isArray(rows)) throw new Error("腾讯日线行情暂不可用");
+  let previousClose = null;
+  let candles = rows.map(row => {
+    const [date, open, close, high, low, volumeLots] = Array.isArray(row) ? row : [];
+    const closeValue = scaled(close);
+    const highValue = scaled(high);
+    const lowValue = scaled(low);
+    const volume = Number.isFinite(Number(volumeLots)) ? Number(volumeLots) * 100 : null;
+    const change = Number.isFinite(previousClose) && Number.isFinite(closeValue) ? closeValue - previousClose : null;
+    const changePct = Number.isFinite(change) && previousClose !== 0 ? change / previousClose * 100 : null;
+    const amplitude = Number.isFinite(previousClose) && previousClose !== 0 && Number.isFinite(highValue) && Number.isFinite(lowValue)
+      ? (highValue - lowValue) / previousClose * 100
+      : null;
+    if (Number.isFinite(closeValue)) previousClose = closeValue;
+    return {
+      date,
+      open: scaled(open),
+      high: highValue,
+      low: lowValue,
+      close: closeValue,
+      volume,
+      amount: null,
+      turnoverRate: null,
+      amplitude,
+      changePct,
+      change
+    };
+  }).filter(candle => candle.date && [candle.open, candle.high, candle.low, candle.close, candle.volume].every(Number.isFinite));
+  const clock = shanghaiClock();
+  if (candles.at(-1)?.date === clock.date && clock.minuteOfDay < 15 * 60 + 5) candles = candles.slice(0, -1);
+  if (!candles.length) throw new Error("未返回已完成交易日行情");
+  return {
+    code,
+    name: "",
+    period: "day",
+    adjustment: "forward",
+    candles,
+    lastCompletedDate: candles.at(-1).date,
+    updatedAt: `${candles.at(-1).date}T15:00:00+08:00`,
+    source: "腾讯证券公开前复权日线行情"
+  };
+}
+
+async function fetchHistory(code, limit = 360) {
+  try {
+    return await fetchEastmoneyHistory(code, limit);
+  } catch (error) {
+    const history = await fetchTencentHistory(code, limit);
+    history.fallbackReason = error?.message || "东方财富日线行情暂不可用";
+    return history;
+  }
 }
 
 async function fetchAnnouncements(code, limit) {
@@ -589,6 +654,7 @@ module.exports = {
   categoryFromNews,
   fetchQuote,
   fetchHistory,
+  fetchTencentHistory,
   fetchAnnouncements,
   fetchNews,
   fetchCompanyEvents,
