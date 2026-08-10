@@ -30,6 +30,7 @@
     code: asText(doctor.hosDoctCode || doctor.doctorCode),
     name: asText(doctor.doctName || doctor.doctorName),
     title: asText(doctor.doctTile || doctor.doctorTitle),
+    info: asText(doctor.doctInfo || doctor.doctorInfo),
     status: doctor.status ?? null,
     remaining: asNumber(doctor.reserveOrderNum),
     timeRange: doctor.timeRange ?? null,

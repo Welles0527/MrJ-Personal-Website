@@ -11,10 +11,12 @@
   };
 
   const getState = async () => {
-    const state = await chrome.storage.local.get(["magicjAppointmentSnapshots", "magicjAppointmentReminders"]);
+    const state = await chrome.storage.local.get(["magicjAppointmentSnapshots", "magicjAppointmentReminders", "magicjAppointmentNotifications"]);
     return {
+      version: chrome.runtime.getManifest().version,
       snapshots: state.magicjAppointmentSnapshots || {},
-      reminders: state.magicjAppointmentReminders || []
+      reminders: state.magicjAppointmentReminders || [],
+      notifications: state.magicjAppointmentNotifications || []
     };
   };
 
@@ -44,7 +46,7 @@
 
   chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName !== "local") return;
-    if (changes.magicjAppointmentSnapshots || changes.magicjAppointmentReminders) void publishState();
+    if (changes.magicjAppointmentSnapshots || changes.magicjAppointmentReminders || changes.magicjAppointmentNotifications) void publishState();
   });
 
   post("MAGICJ_EXTENSION_READY");

@@ -3,355 +3,400 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#171a1f" />
-    <meta name="description" content="华山医院、瑞金医院消化内科与神经内科专家号源总览及放号提醒。" />
+    <meta name="theme-color" content="#f4f1e9" />
+    <meta name="description" content="集中查看华山医院、瑞金医院专家门诊真实号源，并设置本机放号提醒。" />
     <link rel="icon" type="image/png" href="/officialwebsite/favicon.png" />
-    <title>挂号｜专家号源总览</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;family=Noto+Sans+SC:wght@400;500;600;700;800&amp;display=swap"
-      rel="stylesheet"
-    />
-    <style>
+    <title>号候 · 专家号源看板</title>
+    <style is:global>
       :root {
-        color-scheme: dark;
-        --shell: #171a1f;
-        --shell-soft: #1e2229;
-        --paper: #f4f3ee;
-        --paper-strong: #ffffff;
-        --ink: #171a1f;
-        --ink-soft: #60646b;
-        --line: #deddd7;
-        --line-dark: rgba(255, 255, 255, 0.11);
-        --available: #0d8f6c;
-        --available-bg: #dff5ec;
-        --waiting: #0d7d96;
-        --waiting-bg: #dceff4;
-        --full: #85878b;
-        --full-bg: #e9e9e6;
-        --accent: #ff5b72;
-        --blue: #8297ff;
-        --font: "Manrope", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+        --paper: #f4f1e9;
+        --surface: #fffdf8;
+        --surface-strong: #ffffff;
+        --ink: #18201e;
+        --muted: #68716d;
+        --faint: #929a96;
+        --line: #d9d8d0;
+        --line-strong: #bfc3bd;
+        --teal: #087b75;
+        --teal-dark: #075f5b;
+        --teal-soft: #d9efec;
+        --cyan: #00a9c2;
+        --cyan-soft: #daf4f7;
+        --coral: #d8573f;
+        --coral-soft: #f7e3dd;
+        --charcoal-soft: #eceeeb;
+        --shadow: 0 18px 50px rgba(31, 40, 37, 0.09);
+        --sans: "Aptos", "Microsoft YaHei UI", "PingFang SC", sans-serif;
+        --mono: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
       }
 
       * { box-sizing: border-box; }
-      html { min-width: 320px; min-height: 100%; background: var(--shell); }
-      body { min-width: 320px; min-height: 100svh; margin: 0; background: var(--shell); color: #f4f5f7; font-family: var(--font); text-rendering: optimizeLegibility; }
+      html { scroll-behavior: smooth; }
+      body { margin: 0; min-width: 320px; color: var(--ink); background: var(--paper); font-family: var(--sans); line-height: 1.5; }
       button, input, select { font: inherit; }
-      button, a { -webkit-tap-highlight-color: transparent; }
-      a { color: inherit; text-decoration: none; }
+      button, select { cursor: pointer; }
+      button { color: inherit; }
+      button:disabled { cursor: not-allowed; opacity: 0.48; }
+      a { color: inherit; }
       [hidden] { display: none !important; }
 
-      .topbar {
-        display: flex;
-        width: min(1440px, calc(100% - 44px));
-        align-items: center;
-        justify-content: space-between;
-        margin: 0 auto;
-        padding: 18px 0;
-      }
-      .brand, .back-link { display: inline-flex; align-items: center; gap: 10px; }
-      .brand { font-size: 14px; font-weight: 700; }
-      .brand svg { width: 31px; height: 31px; }
-      .back-link { color: #a9adb5; font-size: 12px; font-weight: 600; }
-      .back-link:hover { color: #fff; }
+      .topbar { position: sticky; z-index: 30; top: 0; display: flex; align-items: center; justify-content: space-between; min-height: 68px; padding: 0 max(24px, calc((100vw - 1440px) / 2)); border-bottom: 1px solid rgba(24, 32, 30, 0.12); background: rgba(244, 241, 233, 0.96); backdrop-filter: blur(14px); }
+      .brand { display: inline-flex; align-items: center; gap: 11px; color: inherit; text-decoration: none; }
+      .brand > span:last-child { display: grid; line-height: 1.05; }
+      .brand strong { font-size: 20px; letter-spacing: 0.12em; }
+      .brand small { margin-top: 5px; color: var(--muted); font-family: var(--mono); font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; }
+      .brand-mark { display: grid; grid-template-columns: repeat(3, 5px); align-items: end; gap: 3px; width: 22px; height: 24px; }
+      .brand-mark i { display: block; width: 5px; background: var(--teal); }
+      .brand-mark i:nth-child(1) { height: 10px; }
+      .brand-mark i:nth-child(2) { height: 23px; background: var(--coral); }
+      .brand-mark i:nth-child(3) { height: 16px; }
+      .topbar-meta { display: flex; align-items: center; gap: 15px; }
+      .privacy-note { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: 12px; }
+      .privacy-note i { width: 7px; height: 7px; border-radius: 50%; background: #858d89; box-shadow: 0 0 0 4px var(--charcoal-soft); }
+      .privacy-note.is-connected i { background: var(--teal); box-shadow: 0 0 0 4px var(--teal-soft); }
+      .notification-button { position: relative; display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid var(--line-strong); border-radius: 50%; background: transparent; font-size: 20px; }
+      .notification-button:hover { background: var(--surface); }
+      .notification-button b { position: absolute; top: -4px; right: -3px; min-width: 18px; padding: 2px 5px; border-radius: 10px; color: white; background: var(--coral); font-size: 10px; }
 
-      .hero {
-        display: grid;
-        width: min(1440px, calc(100% - 44px));
-        grid-template-columns: 1fr auto;
-        align-items: end;
-        gap: 32px;
-        margin: 0 auto;
-        padding: clamp(54px, 8vw, 106px) 0 34px;
-      }
-      .eyebrow { margin: 0 0 13px; color: #8ea0ff; font-size: 11px; font-weight: 800; letter-spacing: 0.16em; }
-      h1 { margin: 0; font-size: clamp(46px, 7vw, 82px); letter-spacing: -0.065em; line-height: 0.94; }
-      .hero p:last-child { max-width: 680px; margin: 18px 0 0; color: #aeb2ba; font-size: 14px; line-height: 1.75; }
-      .connection {
-        display: flex;
-        align-items: center;
-        gap: 9px;
-        border: 1px solid var(--line-dark);
-        border-radius: 999px;
-        padding: 9px 13px;
-        color: #b8bcc3;
-        font-size: 11px;
-        font-weight: 700;
-      }
-      .connection-dot { width: 7px; height: 7px; border-radius: 50%; background: #6c7077; box-shadow: 0 0 0 4px rgba(108, 112, 119, 0.12); }
-      .connection.is-connected .connection-dot { background: #32c998; box-shadow: 0 0 0 4px rgba(50, 201, 152, 0.13); }
+      main { padding: 34px max(24px, calc((100vw - 1440px) / 2)) 80px; }
+      .dashboard-shell, .reminder-section, .safety-strip, .footer { min-width: 0; max-width: 1440px; margin-inline: auto; }
+      .page-heading { display: flex; align-items: end; justify-content: space-between; gap: 30px; margin-bottom: 26px; }
+      .page-heading h1 { max-width: 870px; margin: 8px 0 9px; overflow-wrap: anywhere; font-size: clamp(30px, 3vw, 48px); font-weight: 680; line-height: 1.14; letter-spacing: -0.045em; }
+      .page-heading > div > p:last-child { max-width: 800px; margin: 0; color: var(--muted); font-size: 15px; }
+      .kicker { margin: 0; color: var(--muted); font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; }
+      .kicker span { margin-right: 10px; color: var(--coral); font-weight: 700; }
+      .primary-button, .secondary-button, .quiet-button, .refresh-button { min-height: 44px; border: 0; border-radius: 3px; font-weight: 700; transition: transform 150ms ease, background 150ms ease, border-color 150ms ease; }
+      .primary-button { padding: 0 19px; color: white; background: var(--ink); box-shadow: 4px 4px 0 var(--teal-soft); }
+      .primary-button:hover:not(:disabled) { transform: translate(-1px, -1px); background: var(--teal-dark); }
+      .primary-button span { margin-right: 6px; color: #8fe0d8; }
+      .secondary-button { padding: 0 17px; border: 1px solid var(--line-strong); background: var(--surface); }
+      .secondary-button:hover:not(:disabled), .quiet-button:hover:not(:disabled) { border-color: var(--teal); color: var(--teal-dark); }
+      .quiet-button { padding: 0 16px; border: 1px solid var(--line); background: transparent; }
 
-      .workspace { background: var(--paper); color: var(--ink); }
-      .workspace-inner { width: min(1440px, calc(100% - 44px)); margin: 0 auto; padding: 30px 0 72px; }
-      .setup-panel {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        align-items: center;
-        gap: 28px;
-        margin-bottom: 22px;
-        border: 1px solid #d7d5ce;
-        border-radius: 17px;
-        padding: 20px 22px;
-        background: #ebeae5;
-      }
-      .setup-panel h2 { margin: 0 0 7px; font-size: 16px; letter-spacing: -0.02em; }
-      .setup-panel p { margin: 0; color: var(--ink-soft); font-size: 12px; line-height: 1.7; }
-      .installation-help { margin-top: 10px; color: #555a61; font-size: 10px; }
-      .installation-help summary { width: fit-content; cursor: pointer; font-weight: 700; }
-      .installation-help ol { margin: 9px 0 0; padding-left: 18px; line-height: 1.8; }
-      .setup-actions { display: flex; align-items: center; gap: 9px; }
-      .button {
-        display: inline-flex;
-        min-height: 40px;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        border: 1px solid transparent;
-        border-radius: 10px;
-        padding: 0 14px;
-        cursor: pointer;
-        font-size: 12px;
-        font-weight: 700;
-      }
-      .button--dark { background: #1f2329; color: #fff; }
-      .button--outline { border-color: #c8c7c0; background: transparent; color: #2c3036; }
-      .button--accent { background: var(--accent); color: #fff; }
-      .button:focus-visible, .segmented button:focus-visible, .slot:focus-visible { outline: 3px solid rgba(96, 122, 255, 0.25); outline-offset: 2px; }
+      .control-bar { display: grid; grid-template-columns: 190px 170px minmax(280px, 1fr) auto auto; align-items: end; gap: 1px; padding: 1px; border: 1px solid var(--line-strong); background: var(--line); box-shadow: var(--shadow); }
+      .control-bar > *, .summary-row > * { min-width: 0; }
+      .control-field, .date-control, .availability-toggle, .refresh-button { min-height: 69px; background: var(--surface-strong); }
+      .control-field { display: grid; gap: 5px; padding: 10px 14px; }
+      .control-field > span, .date-control > span { color: var(--muted); font-size: 11px; }
+      .control-field select { width: 100%; border: 0; outline: 0; color: var(--ink); background: transparent; font-size: 15px; font-weight: 700; }
+      .date-control { padding: 10px 14px; }
+      .date-control > div { display: grid; grid-template-columns: 32px 1fr 32px; align-items: center; gap: 10px; margin-top: 3px; }
+      .date-control button { width: 30px; height: 28px; border: 1px solid var(--line); background: var(--surface); }
+      .date-control strong { text-align: center; font-family: var(--mono); font-size: 13px; }
+      .availability-toggle { position: relative; display: flex; align-items: center; gap: 10px; padding: 0 15px; white-space: nowrap; font-size: 13px; font-weight: 700; }
+      .availability-toggle input { position: absolute; z-index: 2; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+      .availability-toggle > span { position: relative; width: 39px; height: 22px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--charcoal-soft); }
+      .availability-toggle i { position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: white; box-shadow: 0 1px 3px rgba(0,0,0,.22); transition: transform 150ms ease; }
+      .availability-toggle input:checked + span { border-color: var(--teal); background: var(--teal); }
+      .availability-toggle input:checked + span i { transform: translateX(17px); }
+      .availability-toggle input:focus-visible + span { outline: 3px solid var(--teal-soft); outline-offset: 2px; }
+      .refresh-button { padding: 0 17px; color: var(--teal-dark); }
+      .refresh-button:hover span { display: inline-block; transform: rotate(25deg); }
 
-      .control-deck {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 18px;
-        margin-bottom: 16px;
-      }
-      .filter-stack { display: flex; min-width: 0; align-items: center; gap: 10px; }
-      .segmented { display: inline-flex; padding: 3px; border: 1px solid #d6d5cf; border-radius: 11px; background: #ebeae5; }
-      .segmented button { min-height: 34px; border: 0; border-radius: 8px; padding: 0 13px; background: transparent; color: #696d73; cursor: pointer; font-size: 11px; font-weight: 700; white-space: nowrap; }
-      .segmented button[aria-pressed="true"] { background: #fff; box-shadow: 0 1px 6px rgba(30, 33, 38, 0.08); color: #171a1f; }
-      .control-actions { display: flex; align-items: center; gap: 10px; }
-      .only-available { display: inline-flex; align-items: center; gap: 8px; color: #666a70; font-size: 11px; font-weight: 600; white-space: nowrap; }
-      .only-available input { width: 17px; height: 17px; accent-color: var(--available); }
+      .source-banner { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 14px; min-height: 48px; margin-top: 13px; padding: 8px 13px; border-left: 3px solid var(--faint); background: var(--charcoal-soft); font-size: 12px; }
+      .source-banner.live { border-color: var(--teal); background: var(--teal-soft); }
+      .source-banner.update { border-color: var(--coral); background: var(--coral-soft); }
+      .source-badge { padding: 4px 8px; color: white; background: #747d79; font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: .06em; }
+      .source-banner.live .source-badge { background: var(--teal); }
+      .source-banner.update .source-badge { background: var(--coral); }
+      .source-banner p { margin: 0; }
+      .source-banner time { color: var(--muted); font-family: var(--mono); }
+      .source-actions { display: flex; align-items: center; gap: 13px; white-space: nowrap; }
+      .source-actions a { color: var(--teal-dark); font-weight: 700; text-decoration: none; }
+      .source-actions a.download-link { color: var(--coral); }
 
-      .board { overflow: hidden; border: 1px solid #d7d6d0; border-radius: 18px; background: var(--paper-strong); box-shadow: 0 18px 50px rgba(30, 34, 42, 0.08); }
-      .board-head { display: flex; align-items: center; justify-content: space-between; gap: 20px; border-bottom: 1px solid var(--line); padding: 17px 20px; }
-      .board-title h2 { margin: 0 0 4px; font-size: 17px; letter-spacing: -0.025em; }
-      .board-title p { margin: 0; color: #7e8187; font-size: 10px; }
-      .legend { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 13px; color: #6b6e73; font-size: 10px; font-weight: 600; }
-      .legend span { display: inline-flex; align-items: center; gap: 6px; }
-      .legend i { width: 8px; height: 8px; border-radius: 3px; }
-      .legend .available { background: var(--available); }
-      .legend .waiting { background: var(--waiting); }
-      .legend .full { background: #a7a8a7; }
-      .legend .none { border: 1px solid #c9c9c4; background: transparent; }
+      .summary-row { display: grid; grid-template-columns: minmax(230px, 1fr) repeat(3, 150px) minmax(300px, auto); align-items: stretch; margin-top: 22px; border: 1px solid var(--line); background: var(--surface); }
+      .summary-total, .summary-stat, .legend { min-height: 78px; border-right: 1px solid var(--line); }
+      .summary-total { display: grid; grid-template-columns: auto auto 1fr; align-items: baseline; gap: 8px; padding: 13px 18px; }
+      .summary-total small { grid-column: 1 / -1; color: var(--muted); font-size: 11px; }
+      .summary-total strong, .summary-stat strong { font-family: var(--mono); font-size: 27px; line-height: 1; }
+      .summary-total span { color: var(--muted); font-size: 13px; }
+      .summary-stat { display: grid; grid-template-columns: 8px 1fr; align-content: center; column-gap: 10px; padding: 11px 16px; }
+      .summary-stat i { grid-row: 1 / 3; width: 8px; height: 32px; background: var(--teal); }
+      .summary-stat span { color: var(--muted); font-size: 11px; }
+      .summary-stat.waitlist i { background: var(--cyan); }
+      .summary-stat.full i { background: #a6aca9; }
+      .legend { display: flex; align-items: center; justify-content: center; gap: 17px; padding: 12px 16px; border-right: 0; font-size: 11px; }
+      .legend span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+      .legend i { width: 9px; height: 9px; border-radius: 50%; }
+      .legend-available { background: var(--teal); }
+      .legend-waitlist { background: var(--cyan); }
+      .legend-full { background: #a6aca9; }
+      .legend-none { border: 1px solid var(--line-strong); background: transparent; }
 
-      .empty-state { display: grid; min-height: 390px; place-items: center; padding: 54px 24px; text-align: center; }
-      .empty-mark { display: grid; width: 62px; height: 62px; place-items: center; margin: 0 auto 18px; border: 1px solid #d9d8d2; border-radius: 18px; background: #f4f3ef; }
-      .empty-mark svg { width: 30px; fill: none; stroke: #5b6068; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.7; }
-      .empty-state h3 { margin: 0 0 9px; font-size: 20px; letter-spacing: -0.035em; }
-      .empty-state p { max-width: 520px; margin: 0 auto 20px; color: #777b82; font-size: 12px; line-height: 1.7; }
+      .matrix-panel { margin-top: 15px; border: 1px solid var(--line-strong); background: var(--surface-strong); box-shadow: var(--shadow); }
+      .matrix-titlebar { display: flex; align-items: end; justify-content: space-between; gap: 20px; padding: 17px 19px; border-bottom: 1px solid var(--line); }
+      .matrix-titlebar span { color: var(--teal); font-family: var(--mono); font-size: 10px; letter-spacing: .1em; }
+      .matrix-titlebar h2 { margin: 3px 0 0; font-size: 18px; }
+      .matrix-titlebar p { margin: 0; color: var(--muted); font-size: 11px; }
+      .matrix-scroll { position: relative; overflow: auto; max-height: 620px; scrollbar-color: var(--line-strong) var(--paper); }
+      .availability-matrix { width: max-content; min-width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
+      .availability-matrix th, .availability-matrix td { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+      .availability-matrix thead th { position: sticky; z-index: 7; top: 0; height: 72px; padding: 0; background: #f7f6f1; }
+      .availability-matrix .doctor-column { position: sticky; z-index: 9; left: 0; width: 300px; min-width: 300px; padding: 0 18px; background: #f7f6f1; text-align: left; }
+      .doctor-column .column-label { display: block; color: var(--muted); font-family: var(--mono); font-size: 10px; letter-spacing: .08em; }
+      .doctor-column .column-title { display: block; margin-top: 4px; font-size: 15px; }
+      .date-header { width: 118px; min-width: 118px; text-align: center; }
+      .date-header strong { display: block; font-family: var(--mono); font-size: 14px; }
+      .date-header span { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; font-weight: 400; }
+      .date-header.today::after { content: "今天"; display: block; width: max-content; margin: 4px auto 0; padding: 1px 6px; color: white; background: var(--coral); font-size: 9px; }
+      .availability-matrix tbody tr:last-child td { border-bottom: 0; }
+      .availability-matrix tbody td { height: 128px; background: white; }
+      .availability-matrix tbody .doctor-column { z-index: 6; background: var(--surface); }
+      .doctor-card { display: grid; grid-template-columns: 46px 1fr auto; align-items: center; gap: 11px; min-height: 127px; }
+      .doctor-avatar { display: grid; width: 46px; height: 52px; place-items: center; border: 1px solid #afc7c2; border-radius: 23px 23px 15px 15px; color: var(--teal-dark); background: var(--teal-soft); font-family: var(--mono); font-size: 18px; font-weight: 700; }
+      .doctor-info { min-width: 0; }
+      .doctor-info h3 { margin: 0; font-size: 17px; }
+      .doctor-info h3 span { margin-left: 7px; color: var(--muted); font-size: 11px; font-weight: 500; }
+      .doctor-info p { display: -webkit-box; overflow: hidden; margin: 6px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+      .doctor-reminder { width: 30px; height: 30px; border: 1px solid var(--line); border-radius: 50%; background: transparent; }
+      .doctor-reminder:hover { border-color: var(--teal); color: var(--teal); }
+      .slot-cell { width: 118px; min-width: 118px; padding: 9px; }
+      .slot-stack { display: grid; gap: 7px; }
+      .slot-row { display: grid; grid-template-columns: 18px 1fr; align-items: center; gap: 5px; min-height: 48px; }
+      .slot-row > small { color: var(--faint); font-size: 10px; }
+      .slot-button { display: grid; min-height: 43px; padding: 4px 5px; place-items: center; border: 1px solid transparent; border-radius: 3px; background: var(--charcoal-soft); line-height: 1.15; }
+      .slot-button strong { font-size: 12px; }
+      .slot-button small { margin-top: 2px; font-family: var(--mono); font-size: 9px; }
+      .slot-button.available { border-color: #8fc9c2; color: var(--teal-dark); background: var(--teal-soft); }
+      .slot-button.available:hover { color: white; background: var(--teal); }
+      .slot-button.waitlist { border-color: #80cfda; color: #087f92; background: var(--cyan-soft); }
+      .slot-button.waitlist:hover { color: white; background: var(--cyan); }
+      .slot-button.full { border-color: #d1d4d2; color: #858d89; background: white; }
+      .slot-button.full:hover { border-color: #858d89; color: #515855; }
+      .slot-none { display: grid; min-height: 43px; place-items: center; color: #c2c6c3; font-family: var(--mono); }
+      .matrix-empty { min-height: 360px; padding: 75px 24px; text-align: center; }
+      .matrix-empty > span { color: var(--coral); font-family: var(--mono); font-size: 10px; letter-spacing: .12em; }
+      .matrix-empty h3 { margin: 9px 0 7px; font-size: 25px; }
+      .matrix-empty p { max-width: 580px; margin: 0 auto 22px; color: var(--muted); font-size: 13px; }
+      .scroll-hint { display: none; margin: 8px 10px 12px; color: var(--muted); font-size: 10px; text-align: right; }
 
-      .matrix-scroll { overflow: auto; overscroll-behavior-inline: contain; }
-      .matrix { width: max-content; min-width: 100%; border-collapse: separate; border-spacing: 0; font-size: 11px; }
-      .matrix th, .matrix td { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-      .matrix th:last-child, .matrix td:last-child { border-right: 0; }
-      .matrix tbody tr:last-child td, .matrix tbody tr:last-child th { border-bottom: 0; }
-      .matrix thead th { position: sticky; z-index: 3; top: 0; min-width: 104px; padding: 12px 8px; background: #f4f3ef; color: #4f535a; text-align: center; }
-      .matrix thead th:first-child { z-index: 5; left: 0; min-width: 224px; text-align: left; }
-      .matrix-date { display: block; margin-top: 3px; color: #8c8f94; font-size: 9px; font-weight: 600; }
-      .doctor-cell { position: sticky; z-index: 2; left: 0; width: 224px; min-width: 224px; padding: 14px 15px; background: #fff; text-align: left; }
-      .doctor-name { display: block; margin-bottom: 4px; font-size: 13px; }
-      .doctor-title { display: block; overflow: hidden; max-width: 190px; color: #8a8d92; font-size: 9px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
-      .slot-cell { min-width: 104px; padding: 6px; vertical-align: top; }
-      .slot-stack { display: grid; gap: 5px; }
-      .slot {
-        display: grid;
-        min-height: 34px;
-        grid-template-columns: 22px 1fr;
-        align-items: center;
-        border: 0;
-        border-radius: 8px;
-        padding: 4px 7px;
-        cursor: default;
-        text-align: left;
-      }
-      .slot small { opacity: 0.72; font-size: 8px; font-weight: 700; }
-      .slot strong { overflow: hidden; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
-      .slot--available { background: var(--available-bg); color: #087255; }
-      .slot--waiting { background: var(--waiting-bg); color: #08687c; }
-      .slot--full { background: var(--full-bg); color: #77797d; }
-      .slot--none { border: 1px dashed #deded9; background: transparent; color: #b2b2ae; }
-      .matrix-note { padding: 12px 18px; border-top: 1px solid var(--line); background: #faf9f6; color: #777b81; font-size: 10px; line-height: 1.65; }
-
-      .reminders { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 36px; padding: 48px 0 0; }
-      .section-label p { margin: 0 0 9px; color: #878a90; font-size: 10px; font-weight: 800; letter-spacing: 0.14em; }
-      .section-label h2 { margin: 0; font-size: 22px; letter-spacing: -0.04em; }
-      .reminder-panel { border-top: 1px solid #d5d4ce; }
-      .reminder-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 18px 0; }
-      .reminder-toolbar p { margin: 0; color: #74777d; font-size: 11px; line-height: 1.6; }
+      .reminder-section { margin-top: 60px; }
+      .reminder-section > header { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 18px; }
+      .reminder-section h2 { margin: 7px 0 0; font-size: 27px; letter-spacing: -.03em; }
       .reminder-list { display: grid; gap: 9px; }
-      .reminder-card { display: grid; grid-template-columns: 1fr auto; gap: 16px; border: 1px solid #d8d7d1; border-radius: 13px; padding: 14px 16px; background: #fff; }
-      .reminder-card strong { display: block; margin-bottom: 4px; font-size: 12px; }
-      .reminder-card span { color: #777b81; font-size: 10px; }
-      .reminder-card button { border: 0; background: transparent; color: #8b8e94; cursor: pointer; font-size: 11px; }
-      .reminder-empty { border: 1px dashed #d4d3cd; border-radius: 13px; padding: 18px; color: #85888e; font-size: 11px; }
+      .reminder-card { display: grid; grid-template-columns: 6px minmax(0, 1.3fr) minmax(240px, .7fr) auto; align-items: center; min-height: 88px; border: 1px solid var(--line); background: var(--surface); }
+      .reminder-card::before { content: ""; align-self: stretch; background: var(--teal); }
+      .reminder-target { padding: 13px 17px; }
+      .reminder-target h3 { margin: 0; font-size: 16px; }
+      .reminder-target p, .reminder-next p { margin: 5px 0 0; color: var(--muted); font-size: 11px; }
+      .reminder-next { padding: 13px 17px; border-left: 1px solid var(--line); }
+      .reminder-next small { display: block; color: var(--muted); font-size: 10px; }
+      .reminder-next strong { font-family: var(--mono); font-size: 13px; }
+      .reminder-actions { display: flex; align-items: center; gap: 10px; padding: 13px 16px; }
+      .rule-tag { padding: 3px 7px; color: var(--teal-dark); background: var(--teal-soft); font-size: 9px; font-weight: 700; }
+      .delete-button { border: 0; color: var(--muted); background: transparent; font-size: 11px; }
+      .delete-button:hover { color: var(--coral); }
+      .empty-reminders { padding: 28px; border: 1px dashed var(--line-strong); background: rgba(255,255,255,.35); text-align: center; }
+      .empty-reminders strong { font-size: 17px; }
+      .empty-reminders p { margin: 5px 0 16px; color: var(--muted); font-size: 12px; }
 
-      dialog { width: min(520px, calc(100% - 28px)); border: 1px solid rgba(255, 255, 255, 0.13); border-radius: 20px; padding: 0; background: #23272e; color: #f5f5f4; box-shadow: 0 32px 100px rgba(0, 0, 0, 0.45); }
-      dialog::backdrop { background: rgba(9, 11, 14, 0.68); backdrop-filter: blur(6px); }
-      .dialog-head { display: flex; align-items: start; justify-content: space-between; gap: 18px; padding: 22px 22px 16px; border-bottom: 1px solid var(--line-dark); }
-      .dialog-head h2 { margin: 0 0 5px; font-size: 19px; }
-      .dialog-head p { margin: 0; color: #9da2aa; font-size: 10px; line-height: 1.6; }
-      .dialog-close { border: 0; background: transparent; color: #aeb2b8; cursor: pointer; font-size: 20px; }
-      .reminder-form { display: grid; gap: 15px; padding: 20px 22px 22px; }
-      .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-      label { display: grid; gap: 7px; color: #b6bac1; font-size: 10px; font-weight: 700; }
-      input, select { min-height: 42px; border: 1px solid rgba(255, 255, 255, 0.13); border-radius: 10px; padding: 0 11px; background: #191c21; color: #fff; }
-      .dialog-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 3px; }
-      dialog .button--outline { border-color: rgba(255, 255, 255, 0.58); color: #f3f4f5; }
+      .safety-strip { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 25px; margin-top: 54px; padding: 18px 20px; border-top: 1px solid var(--line-strong); border-bottom: 1px solid var(--line-strong); color: var(--muted); font-size: 11px; }
+      .safety-strip strong { margin-right: auto; color: var(--ink); font-size: 14px; }
+      .safety-strip span::before { content: "✓"; margin-right: 6px; color: var(--teal); font-weight: 700; }
+      .footer { display: flex; justify-content: space-between; padding: 22px 24px 36px; color: var(--muted); font-family: var(--mono); font-size: 10px; }
 
-      .source-footer { width: min(1440px, calc(100% - 44px)); margin: 0 auto; padding: 24px 0 34px; color: #8d9199; font-size: 10px; line-height: 1.7; }
-      .source-footer a { color: #c5c8ce; text-decoration: underline; text-underline-offset: 3px; }
+      dialog { color: var(--ink); }
+      dialog::backdrop { background: rgba(18, 24, 22, 0.62); backdrop-filter: blur(4px); }
+      .reminder-dialog { width: min(690px, calc(100vw - 32px)); max-height: calc(100vh - 34px); padding: 0; overflow: auto; border: 1px solid var(--line-strong); border-radius: 4px; background: var(--surface); box-shadow: 0 30px 90px rgba(0,0,0,.24); }
+      .reminder-dialog form { padding: 25px; }
+      .dialog-head, .notification-drawer > header { display: flex; align-items: start; justify-content: space-between; gap: 20px; }
+      .dialog-head h2, .notification-drawer h2 { margin: 6px 0 0; font-size: 25px; }
+      .close-button { width: 36px; height: 36px; border: 1px solid var(--line); border-radius: 50%; background: transparent; font-size: 23px; line-height: 1; }
+      .close-button:hover { border-color: var(--coral); color: var(--coral); }
+      .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 22px; }
+      .field { display: grid; gap: 6px; }
+      .field.span-2 { grid-column: 1 / -1; }
+      .field > span { font-size: 11px; font-weight: 700; }
+      .field small { color: var(--muted); font-weight: 400; }
+      .field input, .field select { width: 100%; height: 43px; padding: 0 11px; border: 1px solid var(--line-strong); border-radius: 2px; outline: none; background: white; }
+      .field input:focus, .field select:focus { border-color: var(--teal); box-shadow: 0 0 0 3px var(--teal-soft); }
+      .notification-choice { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; margin-top: 18px; padding: 12px; border: 1px solid var(--line); background: #f6f5ef; font-size: 11px; }
+      .notification-choice span { color: var(--muted); }
+      .notification-choice button { border: 0; color: var(--teal); background: transparent; font-weight: 700; }
+      .rule-preview { display: grid; grid-template-columns: 90px 1fr; gap: 12px; margin-top: 12px; padding: 12px; border-left: 3px solid var(--coral); background: var(--coral-soft); font-size: 11px; }
+      .rule-preview span { font-weight: 700; }
+      .rule-preview p { margin: 0; color: #704c43; }
+      .dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+      .notification-drawer { position: fixed; inset: 0 0 0 auto; width: min(440px, calc(100vw - 22px)); max-width: none; height: 100vh; max-height: none; margin: 0; padding: 24px; border: 0; border-left: 1px solid var(--line-strong); background: var(--surface); }
+      .notification-list { display: grid; gap: 9px; margin-top: 24px; max-height: calc(100vh - 150px); overflow: auto; }
+      .notification-item { padding: 13px; border: 1px solid var(--line); background: white; }
+      .notification-item.unread { border-left: 4px solid var(--coral); }
+      .notification-item strong { font-size: 13px; }
+      .notification-item p { white-space: pre-line; margin: 6px 0; color: var(--muted); font-size: 11px; }
+      .notification-item time { color: var(--faint); font-family: var(--mono); font-size: 9px; }
+      .notification-empty { color: var(--muted); font-size: 12px; }
+      .read-all { margin-top: 12px; }
+      .toast { position: fixed; z-index: 60; right: 24px; bottom: 24px; max-width: 380px; padding: 13px 16px; transform: translateY(25px); opacity: 0; pointer-events: none; color: white; background: var(--ink); box-shadow: var(--shadow); font-size: 12px; transition: opacity 180ms ease, transform 180ms ease; }
+      .toast.show { transform: translateY(0); opacity: 1; }
+      .toast.error { background: #9f3f32; }
 
-      @media (max-width: 820px) {
-        .topbar, .hero, .workspace-inner, .source-footer { width: min(100% - 28px, 680px); }
-        .hero { grid-template-columns: 1fr; padding-top: 46px; }
-        .connection { width: fit-content; }
-        .setup-panel { grid-template-columns: 1fr; gap: 15px; }
-        .setup-actions { flex-wrap: wrap; }
-        .control-deck { align-items: stretch; flex-direction: column; }
-        .filter-stack { overflow-x: auto; padding-bottom: 2px; }
-        .control-actions { justify-content: space-between; }
-        .board-head { align-items: flex-start; flex-direction: column; }
-        .legend { justify-content: flex-start; }
-        .reminders { grid-template-columns: 1fr; gap: 18px; }
-        .form-grid { grid-template-columns: 1fr; }
+      @media (max-width: 1120px) {
+        .control-bar { grid-template-columns: 1fr 1fr 1.4fr; }
+        .availability-toggle, .refresh-button { min-height: 52px; }
+        .summary-row { grid-template-columns: 1.3fr repeat(3, 1fr); }
+        .legend { grid-column: 1 / -1; min-height: 48px; border-top: 1px solid var(--line); }
+        .summary-stat.full { border-right: 0; }
       }
 
-      @media (max-width: 480px) {
-        .brand span { display: none; }
-        .hero { padding-bottom: 25px; }
-        .workspace-inner { padding-top: 18px; }
-        .setup-actions .button { flex: 1; }
-        .segmented button { padding: 0 10px; }
-        .control-actions { align-items: stretch; flex-direction: column; }
-        .button { width: 100%; }
-        .matrix thead th:first-child, .doctor-cell { width: 162px; min-width: 162px; }
-        .doctor-title { max-width: 132px; }
-        .reminder-toolbar { align-items: stretch; flex-direction: column; }
+      @media (max-width: 720px) {
+        .topbar { min-height: 60px; padding-inline: 16px; }
+        .privacy-note { max-width: 210px; font-size: 10px; }
+        main { padding: 25px 14px 55px; }
+        .page-heading { align-items: stretch; flex-direction: column; gap: 18px; }
+        .page-heading h1 { font-size: 32px; }
+        .page-heading .primary-button { width: 100%; }
+        .control-bar { grid-template-columns: 1fr 1fr; }
+        .date-control { grid-column: 1 / -1; }
+        .availability-toggle { padding-inline: 11px; white-space: normal; font-size: 11px; }
+        .refresh-button { overflow: hidden; padding-inline: 8px; white-space: nowrap; font-size: 11px; }
+        .source-banner { grid-template-columns: auto 1fr; gap: 7px 10px; }
+        .source-banner time, .source-actions { grid-column: 2; }
+        .source-actions { flex-wrap: wrap; white-space: normal; }
+        .summary-row { grid-template-columns: repeat(3, 1fr); }
+        .summary-total { grid-column: 1 / -1; min-height: 62px; border-right: 0; border-bottom: 1px solid var(--line); }
+        .summary-stat { min-height: 66px; padding-inline: 10px; }
+        .summary-stat strong { font-size: 22px; }
+        .summary-stat span { font-size: 9px; }
+        .summary-stat.available, .summary-stat.waitlist { border-right: 1px solid var(--line); }
+        .legend { overflow-x: auto; justify-content: start; }
+        .matrix-titlebar { align-items: start; flex-direction: column; gap: 7px; }
+        .matrix-titlebar p { max-width: 280px; }
+        .matrix-scroll { max-height: 580px; }
+        .availability-matrix .doctor-column { width: 158px; min-width: 158px; padding: 0 10px; }
+        .doctor-card { grid-template-columns: 34px 1fr; gap: 7px; min-height: 119px; }
+        .doctor-avatar { width: 34px; height: 40px; border-radius: 17px 17px 11px 11px; font-size: 14px; }
+        .doctor-info h3 { font-size: 14px; }
+        .doctor-info h3 span { display: block; margin: 2px 0 0; font-size: 9px; }
+        .doctor-info p, .doctor-reminder { display: none; }
+        .availability-matrix tbody td { height: 120px; }
+        .date-header, .slot-cell { width: 110px; min-width: 110px; }
+        .scroll-hint { display: block; }
+        .reminder-section { margin-top: 44px; }
+        .reminder-section > header { align-items: stretch; flex-direction: column; }
+        .reminder-section h2 { font-size: 23px; }
+        .reminder-card { grid-template-columns: 5px 1fr auto; }
+        .reminder-next { grid-column: 2 / -1; border-top: 1px solid var(--line); border-left: 0; }
+        .reminder-actions { grid-column: 3; grid-row: 1; }
+        .rule-tag { display: none; }
+        .safety-strip { align-items: start; flex-direction: column; gap: 8px; }
+        .footer { flex-direction: column; gap: 4px; padding-inline: 14px; }
+        .form-grid { grid-template-columns: 1fr; }
+        .field.span-2 { grid-column: auto; }
+        .notification-choice { grid-template-columns: 1fr auto; }
+        .notification-choice span { grid-column: 1 / -1; }
+        .rule-preview { grid-template-columns: 1fr; gap: 4px; }
+        .dialog-actions { justify-content: space-between; }
+        .toast { right: 14px; bottom: 14px; left: 14px; max-width: none; }
       }
 
       @media (prefers-reduced-motion: reduce) {
-        *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+        *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
       }
     </style>
   </head>
   <body>
-    <nav class="topbar" aria-label="页面导航">
-      <a class="brand" href="/officialwebsite/">
-        <svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="brand-gradient" x1="0.12" y1="0.98" x2="0.85" y2="0.08"><stop offset="0" stop-color="#6887ff"/><stop offset="0.34" stop-color="#a961ff"/><stop offset="0.61" stop-color="#ff3868"/><stop offset="1" stop-color="#ff7200"/></linearGradient></defs><path fill="url(#brand-gradient)" d="M0 64V22C0 9.85 9.85 0 22 0s22 9.85 22 22v3h2c9.94 0 18 8.06 18 18s-8.06 18-18 18H21.5C13.9 61 6.56 62.04 0 64Z"/></svg>
-        <span>J先生的个人空间</span>
+    <header class="topbar">
+      <a class="brand" href="/officialwebsite/tools/" aria-label="返回实用工具">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span><strong>号候</strong><small>门诊号源看板</small></span>
       </a>
-      <a class="back-link" href="/officialwebsite/tools/"><span aria-hidden="true">←</span> 实用工具</a>
-    </nav>
-
-    <header class="hero">
-      <div>
-        <p class="eyebrow">APPOINTMENT BOARD · 真实号源</p>
-        <h1>挂号</h1>
-        <p>把华山医院、瑞金医院消化内科与神经内科的专家排班摊开来看。每位医生、每个日期、上午与下午，不再逐个点进详情页。</p>
+      <div class="topbar-meta">
+        <span class="privacy-note" data-extension-status><i></i><span data-extension-label>正在检测真实号源扩展</span></span>
+        <button class="notification-button" data-notification-button type="button" aria-label="查看提醒记录">
+          <span aria-hidden="true">◷</span><b data-notification-count hidden>0</b>
+        </button>
       </div>
-      <div class="connection" data-extension-status><span class="connection-dot"></span><span data-extension-label>扩展未连接</span></div>
     </header>
 
-    <main class="workspace">
-      <div class="workspace-inner">
-        <section class="setup-panel" data-setup-panel aria-labelledby="setup-title">
+    <main id="top">
+      <section class="dashboard-shell" aria-labelledby="page-title">
+        <header class="page-heading">
           <div>
-            <h2 id="setup-title">真实号源由官方页面安全同步</h2>
-            <p>安装配套扩展后，在申康官方网页端登录并打开目标科室。扩展只保存医生、日期、时段与余号状态；手机号、验证码和就诊人信息始终留在官方页面。</p>
-            <details class="installation-help"><summary>第一次安装怎么做？</summary><ol><li>下载并解压扩展包。</li><li>打开 chrome://extensions，开启“开发者模式”。</li><li>点击“加载已解压的扩展程序”，选择解压后的文件夹。</li><li>回到本页，看到“扩展已连接”后开始同步。</li></ol></details>
+            <p class="kicker"><span>LIVE BOARD</span> 科室专家真实号源</p>
+            <h1 id="page-title">一张表，看清谁、哪天、哪个时段有号</h1>
+            <p>把专家门诊的可约、候补与约满状态放进同一张时间表；从任一医生或时段可直接设置放号提醒。</p>
           </div>
-          <div class="setup-actions">
-            <a class="button button--dark" href="/officialwebsite/downloads/magicj-appointment-companion.zip" download>下载 Chrome 扩展</a>
-            <a class="button button--outline" href="https://internethospital.shdc.org.cn/yilian-cloud-v2.0-web/src/login/login.html" target="_blank" rel="noopener noreferrer">打开官方登录页 ↗</a>
-          </div>
-        </section>
+          <button class="primary-button" data-create-reminder type="button"><span>＋</span> 新建放号提醒</button>
+        </header>
 
-        <div class="control-deck">
-          <div class="filter-stack">
-            <div class="segmented" aria-label="选择医院" data-hospital-filter>
-              <button type="button" aria-pressed="true" data-hospital="42500653900">华山医院</button>
-              <button type="button" aria-pressed="false" data-hospital="42502656400">瑞金医院</button>
-            </div>
-            <div class="segmented" aria-label="选择科室" data-department-filter>
-              <button type="button" aria-pressed="true" data-department="digestive">消化内科</button>
-              <button type="button" aria-pressed="false" data-department="neurology">神经内科</button>
-            </div>
+        <div class="control-bar" aria-label="号源筛选">
+          <label class="control-field"><span>医院</span><select data-board-hospital aria-label="选择医院"><option value="42500653900">华山医院</option><option value="42502656400">瑞金医院</option></select></label>
+          <label class="control-field"><span>科室</span><select data-board-department aria-label="选择科室"><option value="digestive">消化内科</option><option value="neurology">神经内科</option></select></label>
+          <div class="date-control">
+            <span>日期范围</span>
+            <div><button data-previous-dates type="button" aria-label="查看前七天">←</button><strong data-date-range>--</strong><button data-next-dates type="button" aria-label="查看后七天">→</button></div>
           </div>
-          <div class="control-actions">
-            <label class="only-available"><input type="checkbox" data-only-available /> 仅看有号/候补</label>
-            <button class="button button--dark" type="button" data-sync-department>同步当前科室 ↗</button>
-          </div>
+          <label class="availability-toggle"><input data-only-available type="checkbox" /><span aria-hidden="true"><i></i></span>仅看有可约号的专家</label>
+          <button class="refresh-button" data-sync-department type="button"><span aria-hidden="true">↻</span> 同步官方号源</button>
         </div>
 
-        <section class="board" aria-labelledby="board-title">
-          <header class="board-head">
-            <div class="board-title"><h2 id="board-title" data-board-title>华山医院 · 消化内科</h2><p data-snapshot-time>等待首次同步</p></div>
-            <div class="legend" aria-label="号源状态图例">
-              <span><i class="available"></i>可预约</span><span><i class="waiting"></i>可候补</span><span><i class="full"></i>约满</span><span><i class="none"></i>未排班</span>
-            </div>
-          </header>
-          <div class="empty-state" data-empty-state>
-            <div>
-              <div class="empty-mark"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="5" y="7" width="22" height="20" rx="4"/><path d="M10 4v6M22 4v6M5 13h22M11 20h10M16 15v10"/></svg></div>
-              <h3>还没有这组真实号源</h3>
-              <p>连接扩展后点击“同步当前科室”，在申康官方页面完成登录。号源出现时，这里会自动按医生与上午/下午排成一张表。</p>
-              <button class="button button--accent" type="button" data-sync-empty>去官方页面同步</button>
-            </div>
-          </div>
-          <div class="matrix-scroll" data-matrix-wrap hidden>
-            <table class="matrix" data-matrix>
-              <thead data-matrix-head></thead>
-              <tbody data-matrix-body></tbody>
-            </table>
-            <div class="matrix-note">号源会随官方平台变化，以提交预约时的官方结果为准。“候补”仅在官方返回明确候补字段时显示，不做推测。</div>
-          </div>
-        </section>
+        <div class="source-banner" data-source-banner role="status">
+          <span class="source-badge" data-source-badge>扩展检查中</span>
+          <p data-source-message>正在确认真实号源扩展和当前科室的数据状态。</p>
+          <time data-source-time></time>
+          <span class="source-actions">
+            <a class="download-link" data-extension-download href="/officialwebsite/downloads/magicj-appointment-companion.zip" download>下载新版扩展</a>
+            <a data-official-entry href="#" target="_blank" rel="noopener noreferrer">打开官方入口 ↗</a>
+          </span>
+        </div>
 
-        <section class="reminders" aria-labelledby="reminder-title">
-          <div class="section-label"><p>RELEASE REMINDERS</p><h2 id="reminder-title">放号提醒</h2></div>
-          <div class="reminder-panel">
-            <div class="reminder-toolbar">
-              <p>提醒时间由你设置；安装扩展后，即使关闭本页，Chrome 也会在指定时间通知。</p>
-              <button class="button button--dark" type="button" data-add-reminder>＋ 设置提醒</button>
+        <div class="summary-row" aria-label="当前号源汇总">
+          <div class="summary-total"><small>当前视图</small><strong data-doctor-count>0</strong><span data-date-count>位专家 · 等待同步</span></div>
+          <div class="summary-stat available"><i></i><strong data-available-count>0</strong><span>可约时段</span></div>
+          <div class="summary-stat waitlist"><i></i><strong data-waitlist-count>0</strong><span>候补时段</span></div>
+          <div class="summary-stat full"><i></i><strong data-full-count>0</strong><span>已约满</span></div>
+          <div class="legend" aria-label="图例"><span><i class="legend-available"></i>可约</span><span><i class="legend-waitlist"></i>候补</span><span><i class="legend-full"></i>约满</span><span><i class="legend-none"></i>无排班</span></div>
+        </div>
+
+        <section class="matrix-panel" aria-labelledby="matrix-title">
+          <div class="matrix-titlebar"><div><span>EXPERT SCHEDULE</span><h2 id="matrix-title">专家门诊时段矩阵</h2></div><p>点击有排班的状态，即可带入医生、日期与时段创建提醒</p></div>
+          <div class="matrix-scroll" tabindex="0" aria-label="专家号源表，可横向滚动">
+            <table class="availability-matrix" data-availability-matrix></table>
+            <div class="matrix-empty" data-matrix-empty>
+              <span>REAL SOURCE</span><h3>这个科室还没有同步真实号源</h3><p>先打开申康官方科室页；真实号源出现后，这里会自动按医生、日期和上午/下午排列。</p>
+              <button class="secondary-button" data-sync-empty type="button">同步当前科室</button>
             </div>
-            <div class="reminder-list" data-reminder-list><div class="reminder-empty">暂无提醒。建议设置在医院公布的放号时间前 5 分钟。</div></div>
           </div>
+          <p class="scroll-hint">左右滑动查看完整日期范围 →</p>
         </section>
-      </div>
+      </section>
+
+      <section class="reminder-section" aria-labelledby="reminder-title">
+        <header><div><p class="kicker"><span>MY SIGNALS</span> 本机提醒</p><h2 id="reminder-title">放号时间，也留在这张看板上</h2></div><button class="secondary-button" data-create-reminder type="button">＋ 添加提醒</button></header>
+        <div class="reminder-list" data-reminder-list></div>
+      </section>
+
+      <aside class="safety-strip"><strong>只提醒，不代约</strong><span>不登录医院账号</span><span>不保存身份证或医保卡</span><span>不绕过验证码</span><span>最终状态以医院官方入口为准</span></aside>
     </main>
 
-    <footer class="source-footer">
-      数据来源：<a href="https://internethospital.shdc.org.cn/yilian-cloud-v2.0-web/src/shssdc/shenkangyilian.html?origin=shrelease&amp;type=1" target="_blank" rel="noopener noreferrer">上海申康医院发展中心预约平台</a>。华山医院官网说明其专家预约号源通常提供两周范围并于 18:00 更新，实际以平台为准；瑞金医院请按官方最新通知自行设定提醒。本站不代挂号、不提交预约，也不收集患者资料。
-    </footer>
+    <footer class="footer"><span>号候 · 个人预约辅助</span><span>真实号源来自上海申康医院发展中心预约平台</span></footer>
 
-    <dialog data-reminder-dialog>
-      <div class="dialog-head">
-        <div><h2>设置放号提醒</h2><p>选择你想关注的医院、科室与时间。提醒不等于预约成功。</p></div>
-        <button class="dialog-close" type="button" aria-label="关闭" data-dialog-close>×</button>
-      </div>
-      <form class="reminder-form" data-reminder-form>
+    <dialog class="reminder-dialog" data-reminder-dialog>
+      <form data-reminder-form method="dialog">
+        <header class="dialog-head"><div><p class="kicker"><span>NEW SIGNAL</span> 放号提醒</p><h2>设置专家门诊提醒</h2></div><button class="close-button" data-dialog-close type="button" aria-label="关闭">×</button></header>
         <div class="form-grid">
-          <label>医院<select name="hospital"><option value="42500653900">华山医院</option><option value="42502656400">瑞金医院</option></select></label>
-          <label>科室<select name="department"><option value="digestive">消化内科</option><option value="neurology">神经内科</option></select></label>
+          <label class="field"><span>医院</span><select name="hospitalCode" data-reminder-hospital required><option value="42500653900">华山医院</option><option value="42502656400">瑞金医院</option></select></label>
+          <label class="field"><span>科室</span><select name="department" data-reminder-department required><option value="digestive">消化内科</option><option value="neurology">神经内科</option></select></label>
+          <label class="field span-2"><span>专家 <small>可留空，提醒该科室任一专家</small></span><input name="doctorName" data-doctor-name type="text" maxlength="40" placeholder="例如：陈坚" /></label>
+          <label class="field"><span>希望就诊起始日</span><input name="dateStart" data-date-start type="date" required /></label>
+          <label class="field"><span>希望就诊结束日</span><input name="dateEnd" data-date-end type="date" required /></label>
+          <label class="field"><span>时段</span><select name="session" data-session><option value="any">上午 / 下午均可</option><option value="morning">上午</option><option value="afternoon">下午</option></select></label>
+          <label class="field"><span>提前提醒</span><select name="leadMinutes"><option value="5">提前 5 分钟</option><option value="10" selected>提前 10 分钟</option><option value="30">提前 30 分钟</option><option value="60">提前 1 小时</option></select></label>
         </div>
-        <label>提醒时间<input name="remindAt" type="datetime-local" required /></label>
-        <div class="dialog-actions"><button class="button button--outline" type="button" data-dialog-cancel>取消</button><button class="button button--accent" type="submit">保存提醒</button></div>
+        <div class="notification-choice"><span>送达方式</span><strong>Chrome / Windows 桌面通知</strong><button data-test-notification type="button">先测试</button></div>
+        <div class="rule-preview" data-rule-preview><span>预计规则</span><p>选择医院后显示放号计算依据。</p></div>
+        <footer class="dialog-actions"><button class="quiet-button" data-dialog-cancel type="button">取消</button><button class="primary-button" type="submit">保存提醒</button></footer>
       </form>
     </dialog>
 
+    <dialog class="notification-drawer" data-notification-drawer>
+      <header><div><p class="kicker"><span>SIGNAL LOG</span> 本机记录</p><h2>提醒记录</h2></div><button class="close-button" data-notification-close type="button" aria-label="关闭">×</button></header>
+      <div class="notification-list" data-notification-list></div>
+      <button class="quiet-button read-all" data-read-all type="button">全部标为已读</button>
+    </dialog>
+
+    <div class="toast" data-toast role="status" aria-live="polite"></div>
     <script src="../../scripts/appointment-dashboard.ts"></script>
   </body>
 </html>
