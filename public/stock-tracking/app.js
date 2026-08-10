@@ -203,7 +203,7 @@
   }
 
   function runAutomaticRefresh(sections) {
-    if (document.visibilityState !== "visible" || !liveDataProvider) return;
+    if (document.visibilityState !== "visible" || !liveDataProvider || state.viewMode === "technical") return;
     const feedSections = sections.filter(section => section !== "quote");
     const options = {
       silent: true,
@@ -233,7 +233,7 @@
   }
 
   function handleVisibilityRefresh() {
-    if (document.visibilityState !== "visible") return;
+    if (document.visibilityState !== "visible" || state.viewMode === "technical") return;
     const feedCodes = watchlistAggregateView()
       ? data.stocks.map(stock => stock.code)
       : [selectedStock().code];
@@ -901,7 +901,7 @@
     } else {
       state.refreshNotice = `刷新失败：${errors[0] || "公开数据源暂不可用"}`;
     }
-    render();
+    if (!(options.silent && state.viewMode === "technical")) render();
     const pendingOptions = state.pendingRefreshOptions;
     state.pendingRefreshOptions = null;
     if (pendingOptions) refreshAllInformation(pendingOptions);

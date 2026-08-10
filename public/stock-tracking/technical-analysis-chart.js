@@ -2,6 +2,7 @@
 
 (function createTechnicalChart(global) {
   const instances = new WeakMap();
+  const tooltipDismissers = new WeakMap();
   const dimensionOrder = ["trend", "structure", "momentum", "volatility", "volumePrice"];
   const labels = { trend: "趋势", structure: "结构", momentum: "动量", volumePrice: "量价", volatility: "波动" };
   const colors = { trend: "#75a5ff", structure: "#53e1bc", momentum: "#34eda4", volumePrice: "#a77bff", volatility: "#ffb84d" };
@@ -50,6 +51,23 @@
     ];
   }
 
+  function bindTooltipDismiss(element, chart) {
+    tooltipDismissers.get(element)?.();
+    const hide = () => {
+      chart.dispatchAction({ type: "hideTip" });
+      chart.dispatchAction({ type: "updateAxisPointer", currTrigger: "leave" });
+    };
+    const zr = chart.getZr();
+    zr.on("globalout", hide);
+    element.addEventListener("pointerleave", hide);
+    global.addEventListener("blur", hide);
+    tooltipDismissers.set(element, () => {
+      zr.off("globalout", hide);
+      element.removeEventListener("pointerleave", hide);
+      global.removeEventListener("blur", hide);
+    });
+  }
+
   function renderRadar(element, result) {
     const chart = getChart(element);
     if (!chart || !result) return;
@@ -60,6 +78,10 @@
       animationEasing: "cubicOut",
       tooltip: {
         trigger: "item",
+        triggerOn: "mousemove",
+        hideDelay: 0,
+        enterable: false,
+        alwaysShowContent: false,
         confine: false,
         appendToBody: true,
         position: smartTooltipPosition,
@@ -98,6 +120,7 @@
         }]
       }]
     }, { notMerge: true });
+    bindTooltipDismiss(element, chart);
   }
 
   function renderTrend(element, result) {
@@ -123,6 +146,15 @@
       ],
       tooltip: {
         trigger: "axis",
+        triggerOn: "mousemove",
+        hideDelay: 0,
+        enterable: false,
+        alwaysShowContent: false,
+        axisPointer: {
+          type: "line",
+          snap: true,
+          lineStyle: { color: "rgba(164,178,220,.34)", width: 1, type: "dashed" }
+        },
         confine: false,
         appendToBody: true,
         position: smartTooltipPosition,
@@ -262,6 +294,7 @@
         }
       ]
     }, { notMerge: true });
+    bindTooltipDismiss(element, chart);
   }
 
   function resize(element) {
@@ -269,8 +302,15 @@
   }
 
   function dispose(element) {
+    tooltipDismissers.get(element)?.();
+    tooltipDismissers.delete(element);
     const chart = instances.get(element);
     if (chart) chart.dispose();
+    global.document?.querySelectorAll(".ta-echart-tooltip").forEach(content => {
+      const container = content.parentElement;
+      if (container && container !== global.document.body) container.remove();
+      else content.remove();
+    });
     instances.delete(element);
   }
 

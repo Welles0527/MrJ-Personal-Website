@@ -215,7 +215,7 @@
         const code = row.dataset.technicalStock;
         if (!code) return;
         if (row.dataset.current === "true") {
-          root.querySelector(".ta-analysis-workspace")?.scrollIntoView({
+          root.querySelector(".ta-stock-detail")?.scrollIntoView({
             behavior: global.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ? "auto" : "smooth",
             block: "start"
           });
@@ -253,7 +253,7 @@
     </div>`;
   }
 
-  function DashboardHeader(result, context, state) {
+  function DashboardHeader(result, state) {
     const stock = result.overview;
     const rising = Number(stock.changePct) >= 0;
     return `<header class="ta-dashboard-header">
@@ -262,7 +262,6 @@
         <span class="ta-brand-mark">${icon("trend")}</span>
         <div><h1>${escapeHtml(stock.name)}技术总览</h1><p>${stock.code} · ${escapeHtml(stock.periodLabel)}前复权 · 评分截至 ${escapeHtml(stock.scoreDate)} 收盘</p></div>
       </div>
-      ${StockSearchBar(context, state)}
       <div class="ta-live-quote ${rising ? "rise" : "fall"}">
         <strong>${formatNumber(stock.price)}</strong>
         <span>${rising ? "+" : ""}${formatNumber(stock.change)}　${rising ? "+" : ""}${formatNumber(stock.changePct)}%</span>
@@ -347,12 +346,6 @@
     return "neutral";
   }
 
-  function summaryBuyZone(item) {
-    return item.buyZone
-      ? `${formatNumber(item.buyZone.lower)}～${formatNumber(item.buyZone.upper)}`
-      : "--";
-  }
-
   function TimeframeSelector(period) {
     return `<div class="ta-timeframe-switch" role="group" aria-label="技术分析周期">
       ${Object.values(timeframes.PROFILES).map(profile => `<button type="button" data-action="set-technical-period" data-period="${profile.id}" aria-pressed="${profile.id === period}">${profile.label}</button>`).join("")}
@@ -368,41 +361,131 @@
       ? `<div class="ta-summary-state"><span class="ta-summary-loader" aria-hidden="true"></span><strong>正在计算全部自选股评分</strong><small>逐只读取最新完成交易日的真实行情</small></div>`
       : items.length || errors.length
         ? `<div class="ta-summary-scroll"><table>
-            <thead><tr><th scope="col">排名</th><th scope="col">股票</th><th scope="col">${profile.lineLabel}综合分数</th><th scope="col">买点</th><th scope="col">止损位</th><th scope="col">技术结论</th><th scope="col">本${profile.label}涨跌</th><th scope="col">评分截止日</th></tr></thead>
-            <tbody>${items.map((item, index) => {
-              const rising = Number(item.changePct) >= 0;
+            <thead><tr><th scope="col">股票</th><th scope="col">${profile.lineLabel}综合分数</th></tr></thead>
+            <tbody>${items.map(item => {
               const active = String(item.code) === String(currentCode);
               return `<tr class="${active ? "is-current" : ""}" role="link" tabindex="0" data-technical-stock="${escapeHtml(item.code)}" data-current="${active}" aria-label="查看 ${escapeHtml(item.name)} ${escapeHtml(item.code)} 的技术分析">
-                <td><span class="ta-summary-rank">${index + 1}</span></td>
                 <td><span class="ta-summary-stock"><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.code)}${active ? " · 当前" : ""}</small></span></td>
                 <td><span class="ta-summary-score ${scoreTone(item.score)}">${formatNumber(item.score, 0)}</span></td>
-                <td><span class="ta-summary-level buy">${summaryBuyZone(item)}</span></td>
-                <td><span class="ta-summary-level stop">${formatNumber(item.stop)}</span></td>
-                <td><span class="ta-summary-label ${scoreTone(item.score)}">${escapeHtml(item.label)}</span></td>
-                <td><span class="ta-summary-change ${rising ? "rise" : "fall"}">${rising ? "上涨" : "下跌"} ${rising ? "+" : ""}${formatNumber(item.changePct)}%</span></td>
-                <td><time datetime="${escapeHtml(item.scoreDate)}">${escapeHtml(item.scoreDate)}</time></td>
               </tr>`;
             }).join("")}${errors.map(error => {
               const active = String(error.code) === String(currentCode);
               return `<tr class="ta-summary-error-row ${active ? "is-current" : ""}" role="link" tabindex="0" data-technical-stock="${escapeHtml(error.code)}" data-current="${active}" aria-label="重试 ${escapeHtml(error.name)} ${escapeHtml(error.code)} 的技术分析">
-                <td><span class="ta-summary-rank">--</span></td>
                 <td><span class="ta-summary-stock"><strong>${escapeHtml(error.name)}</strong><small>${escapeHtml(error.code)}${active ? " · 当前" : ""}</small></span></td>
                 <td><span class="ta-summary-score">--</span></td>
-                <td><span class="ta-summary-level">--</span></td>
-                <td><span class="ta-summary-level">--</span></td>
-                <td><span class="ta-summary-label">行情暂不可用</span></td>
-                <td><span class="ta-summary-change">--</span></td>
-                <td><span class="ta-summary-retry" title="${escapeHtml(error.message)}">待重试</span></td>
               </tr>`;
             }).join("")}</tbody>
           </table></div>`
         : `<div class="ta-summary-state"><strong>暂时无法生成自选股评分汇总</strong><small>${errors.length ? `有 ${errors.length} 只股票行情读取失败，请稍后刷新` : "请先添加自选股"}</small></div>`;
     return `<section class="ta-score-summary" aria-labelledby="ta-score-summary-title">
       <div class="ta-panel-title ta-summary-heading">
-        <div><h2 id="ta-score-summary-title">全部自选股 · ${profile.lineLabel}综合评分</h2><p>${latestDate} 收盘 · 每一级均按对应周期真实行情独立计算</p></div>
+        <div><h2 id="ta-score-summary-title">全部自选股 · ${profile.lineLabel}综合评分</h2><p>${latestDate} 收盘 · 对应周期真实行情</p></div>
         <div class="ta-summary-controls">${TimeframeSelector(profile.id)}<span>${items.length} / ${items.length + errors.length || 0} 只已完成${status === "loading" ? " · 更新中" : ""}</span></div>
       </div>
       ${body}
+    </section>`;
+  }
+
+  function buildTechnicalNarrative(result) {
+    const indicatorSet = result.scores.indicators || {};
+    const dimensions = result.scores.dimensions || {};
+    const index = (indicatorSet.candles?.length || 1) - 1;
+    const previousIndex = index - 1;
+    const finite = value => value !== null && value !== "" && Number.isFinite(Number(value));
+    const latest = series => finite(series?.[index]) ? Number(series[index]) : null;
+    const previous = series => finite(series?.[previousIndex]) ? Number(series[previousIndex]) : null;
+    const dimensionScores = Object.entries(dimensions)
+      .filter(([, dimension]) => finite(dimension?.score))
+      .sort((left, right) => Number(right[1].score) - Number(left[1].score));
+    const strongest = dimensionScores[0];
+    const weakest = dimensionScores.at(-1);
+    const total = Number(result.scores.total);
+    const scoreMeaning = total >= 65
+      ? "偏多信号占优，但仍需价格与量能继续确认。"
+      : total < 45
+        ? "偏空信号占优，优先观察结构修复与风险边界。"
+        : "多空证据尚未统一，等待关键价位给出方向。";
+    const scoreEvidence = strongest && weakest
+      ? `${dimensionMeta[strongest[0]]?.label || strongest[0]} ${formatNumber(strongest[1].score, 0)} 最强；${dimensionMeta[weakest[0]]?.label || weakest[0]} ${formatNumber(weakest[1].score, 0)} 是当前短板。`
+      : "有效指标不足，暂不扩展结论。";
+
+    const breakthroughs = [];
+    const structure = result.scores.structure || {};
+    const profile = indicatorSet.profile || {};
+    const unit = profile.barLabel || "交易日";
+    const lookback = profile.structureLookback || 20;
+    if (structure.platform?.breakoutNow) breakthroughs.push(`收盘突破前${lookback}${unit}压力，平台突破成立`);
+    else if (structure.platform?.recentBreakout && finite(structure.platform.recentBreakout.level)) breakthroughs.push(`近期突破后仍守住 ${formatNumber(structure.platform.recentBreakout.level)} 平台顶部`);
+
+    const dif = latest(indicatorSet.macd?.dif);
+    const dea = latest(indicatorSet.macd?.dea);
+    const previousDif = previous(indicatorSet.macd?.dif);
+    const previousDea = previous(indicatorSet.macd?.dea);
+    if ([dif, dea, previousDif, previousDea].every(finite)) {
+      if (previousDif <= previousDea && dif > dea) breakthroughs.push("MACD 金叉刚形成");
+      else if (previousDif >= previousDea && dif < dea) breakthroughs.push("MACD 死叉刚形成");
+      else breakthroughs.push(dif > dea ? "MACD 维持多头侧" : "MACD 仍在空头侧");
+    }
+
+    const periods = profile.maPeriods || [5, 10, 20, 60];
+    const maSlots = [5, 10, 20, 60].map((key, slot) => ({
+      key,
+      label: `MA${periods[slot] || key}`,
+      current: latest(indicatorSet.ma?.[key]),
+      prior: previous(indicatorSet.ma?.[key])
+    })).filter(item => finite(item.current));
+    const close = latest(indicatorSet.close);
+    const priorClose = previous(indicatorSet.close);
+    const longAverage = maSlots.at(-1);
+    const shorterAverages = maSlots.slice(0, -1);
+    if (longAverage && shorterAverages.length === 3
+      && shorterAverages.every(item => longAverage.current > item.current)
+      && shorterAverages.some(item => finite(longAverage.prior) && finite(item.prior) && longAverage.prior <= item.prior)) {
+      breakthroughs.push(`${longAverage.label} 刚上穿全部短中期均线`);
+    } else if (finite(close) && maSlots.length === 4 && maSlots.every(item => close > item.current)
+      && finite(priorClose) && maSlots.some(item => finite(item.prior) && priorClose <= item.prior)) {
+      breakthroughs.push(`收盘价刚站上 ${maSlots.map(item => item.label).join("、")}`);
+    } else if (maSlots.length === 4 && maSlots.every((item, slot) => slot === maSlots.length - 1 || item.current > maSlots[slot + 1].current)) {
+      breakthroughs.push("均线保持多头排列");
+    }
+    if (!breakthroughs.length) breakthroughs.push("尚未出现平台、MACD 或均线级别的有效突破");
+
+    const changeSignals = [];
+    const volatility = dimensions.volatility || {};
+    const bandwidthPercentile = Number(volatility.values?.bandwidthPercentile);
+    const bollMiddle = latest(indicatorSet.boll?.middle);
+    if (volatility.compressionThenExpansion) {
+      changeSignals.push(`BOLL 压缩后扩张，变盘已启动，价格位于中轨${finite(close) && finite(bollMiddle) && close >= bollMiddle ? "上方" : "下方"}`);
+    } else if (finite(bandwidthPercentile) && bandwidthPercentile <= 30) {
+      changeSignals.push(`BOLL 带宽处于近${profile.percentileLookback || 120}${unit}低位，变盘窗口临近`);
+    } else if (finite(bandwidthPercentile) && bandwidthPercentile >= 70) {
+      changeSignals.push("波动率处于高位，方向延续同时伴随更大回撤风险");
+    } else {
+      changeSignals.push("波动率处于常态区间，暂未形成强变盘信号");
+    }
+    const adx = Number(dimensions.trend?.values?.adx);
+    const plusDI = Number(dimensions.trend?.values?.plusDI);
+    const minusDI = Number(dimensions.trend?.values?.minusDI);
+    if (finite(adx) && adx >= 25 && finite(plusDI) && finite(minusDI)) {
+      changeSignals.push(`ADX ${formatNumber(adx, 1)}，${plusDI > minusDI ? "多方" : "空方"}趋势强度占优`);
+    } else if (structure.flags?.hasHH && structure.flags?.hasHL) {
+      changeSignals.push("高点与低点同步抬升，结构偏多");
+    } else if (structure.flags?.hasLH && structure.flags?.hasLL) {
+      changeSignals.push("高点与低点同步下移，结构偏空");
+    }
+
+    return [
+      { label: "评分意义", title: `${formatNumber(total, 0)} 分 · ${escapeHtml(result.scores.label)}`, text: `${scoreMeaning}${scoreEvidence}`, tone: scoreTone(total) },
+      { label: "关键突破", title: breakthroughs.slice(0, 2).join("；"), text: "仅列出平台、MACD 与均线中优先级最高的信号。", tone: breakthroughs.some(item => item.includes("死叉") || item.includes("空头")) ? "weak" : "strong" },
+      { label: "变盘结论", title: changeSignals.slice(0, 2).join("；"), text: "结合波动扩张、趋势强度与高低点结构判断。", tone: "neutral" }
+    ];
+  }
+
+  function TechnicalNarrative(result) {
+    const insights = buildTechnicalNarrative(result);
+    return `<section class="ta-signal-brief" aria-labelledby="ta-signal-brief-title">
+      <div class="ta-panel-title"><div><h2 id="ta-signal-brief-title">技术指标解读</h2><p>从真实行情中提取最重要的突破与变盘证据</p></div></div>
+      <div class="ta-insight-list">${insights.map(insight => `<div class="ta-insight-row tone-${insight.tone}"><span>${insight.label}</span><strong>${insight.title}</strong><p>${insight.text}</p></div>`).join("")}</div>
     </section>`;
   }
 
@@ -506,11 +589,16 @@
       if (this.state.status === "error" || !this.state.result) return ErrorState(this.state, context);
       this.state.result.overview.name = stock.name || this.state.result.overview.name;
       return `<div class="technical-analysis-page">
-        ${StockScoreSummary(this.state.summary, this.state.summaryStatus, stock.code, this.state.query.period)}
-        ${DashboardHeader(this.state.result, context, this.state)}
-        <div class="ta-analysis-workspace">
-          <div class="ta-dashboard-grid">${RadarOverview(this.state.result)}${TradePositionPanel(this.state.result)}</div>
-          ${ScoreTrend(this.state.result)}
+        <div class="ta-technical-shell">
+          ${StockScoreSummary(this.state.summary, this.state.summaryStatus, stock.code, this.state.query.period)}
+          <main class="ta-stock-detail" aria-label="${escapeHtml(stock.name)}个股技术分析">
+            ${DashboardHeader(this.state.result, this.state)}
+            <div class="ta-analysis-workspace">
+              <div class="ta-dashboard-grid">${RadarOverview(this.state.result)}${TradePositionPanel(this.state.result)}</div>
+              ${ScoreTrend(this.state.result)}
+            </div>
+            ${TechnicalNarrative(this.state.result)}
+          </main>
         </div>
         <footer class="ta-data-foot">${escapeHtml(this.state.result.dataMeta.source)} · ${this.state.result.dataMeta.rawCount} 个有效${escapeHtml(this.state.result.dataMeta.barLabel)} · 前复权 · 技术评分描述当前状态，不代表上涨概率</footer>
       </div>`;
@@ -523,7 +611,10 @@
         return;
       }
       if (!this.state.result || this.state.status !== "ready") return;
-      this.chartElements.forEach(element => this.resizeObserver?.unobserve(element));
+      this.chartElements.forEach(element => {
+        this.resizeObserver?.unobserve(element);
+        global.StockTechnicalChart?.dispose(element);
+      });
       this.chartElements = [root.querySelector("#technical-radar-chart"), root.querySelector("#technical-score-trend-chart")].filter(Boolean);
       this.chartElements.forEach(element => this.resizeObserver?.observe(element));
       bindScoreTooltips(root);
