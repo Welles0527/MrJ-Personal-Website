@@ -2671,6 +2671,132 @@ body,
   .ai-job-progress-meter > span { transition: none; }
 }
 
+/* Technical-analysis atmosphere shared by the remaining dashboard views */
+.tracking-layout:not(:has(.technical-main)) {
+  --sidebar: #070809;
+  --surface: #08090b;
+  --surface-hover: #15171d;
+  --surface-selected: #171a25;
+  --line: rgba(255, 255, 255, .09);
+  --line-strong: rgba(255, 255, 255, .16);
+  --accent: #7891ff;
+  --accent-ink: #f7f8ff;
+  background:
+    radial-gradient(circle at 87% 19%, rgba(71, 145, 255, .28), transparent 30%),
+    radial-gradient(circle at 61% 5%, rgba(111, 78, 224, .23), transparent 27%),
+    radial-gradient(circle at 77% 88%, rgba(40, 216, 189, .16), transparent 30%),
+    #2b292d;
+}
+
+.tracking-layout:not(:has(.technical-main)):has(.position-header),
+.tracking-layout:not(:has(.technical-main)):has(.daily-digest-view:not(.calendar-view)) {
+  background: #333333;
+}
+
+.tracking-layout:not(:has(.technical-main)) :is(
+  .workspace-nav,
+  .watchlist,
+  .quote-block,
+  .position-metrics > div:not(.account-save-state),
+  .buy-logic-row,
+  .info-board,
+  .message-filters,
+  .sentiment-column,
+  .global-header,
+  .daily-stock-group,
+  .calendar-month-board,
+  .market-chart-panel,
+  .indicator-card,
+  .ai-selection-header,
+  .ai-snapshot-meta,
+  .ai-summary-grid article,
+  .ai-coverage-section,
+  .ai-results-section,
+  .ai-selection-state
+) {
+  border-color: var(--line);
+  background: linear-gradient(180deg, rgba(8, 9, 11, .99), rgba(3, 4, 5, .985));
+  box-shadow: 0 18px 42px rgba(0, 0, 0, .2);
+}
+
+.tracking-layout:not(:has(.technical-main)) :is(
+  .shared-account,
+  .shared-account.signed-in,
+  .stock-search input,
+  .watchlist-item,
+  .workspace-tab,
+  .daily-digest-summary > span,
+  .daily-stock-search,
+  .daily-stock-filter,
+  .calendar-event,
+  .ai-job-progress,
+  .ai-data-notice,
+  .ai-results-tabs,
+  .ai-results-table-wrap
+) {
+  border-color: var(--line);
+  background: rgba(255, 255, 255, .035);
+}
+
+.tracking-layout:not(:has(.technical-main)) .workspace-mark,
+.tracking-layout:not(:has(.technical-main)) .global-title-icon,
+.tracking-layout:not(:has(.technical-main)) .ai-selection-title-mark {
+  background: linear-gradient(145deg, #6e68f5, #5ba7ef);
+  color: #fff;
+  box-shadow: 0 8px 22px rgba(82, 112, 255, .22);
+}
+
+.tracking-layout:not(:has(.technical-main)) :is(
+  .workspace-tab:hover,
+  .watchlist-item:hover,
+  .info-board:hover,
+  .filter-options button:hover,
+  .daily-stock-filter:hover,
+  .calendar-event:hover,
+  .ai-results-tabs button:hover
+) { background: rgba(255, 255, 255, .075); }
+
+.tracking-layout:not(:has(.technical-main)) :is(
+  .workspace-tab.selected,
+  .watchlist-item.selected,
+  .info-board.selected,
+  .filter-options button.selected,
+  .daily-stock-filter.selected,
+  .ai-results-tabs button.selected
+) {
+  border-color: rgba(120, 145, 255, .42);
+  background: rgba(120, 145, 255, .14);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px rgba(120, 145, 255, .08);
+}
+
+.tracking-layout:not(:has(.technical-main)) .workspace-tab.selected svg,
+.tracking-layout:not(:has(.technical-main)) .watchlist-item.selected .stock-identity strong,
+.tracking-layout:not(:has(.technical-main)) .info-board.selected .board-title strong { color: var(--text); }
+.tracking-layout:not(:has(.technical-main)) .watchlist-item.selected .stock-identity small,
+.tracking-layout:not(:has(.technical-main)) .watchlist-item.selected .watchlist-manage,
+.tracking-layout:not(:has(.technical-main)) .info-board.selected .board-meta time { color: var(--muted); }
+.tracking-layout:not(:has(.technical-main)) .info-board.selected .board-icon,
+.tracking-layout:not(:has(.technical-main)) .info-board.selected .board-title em,
+.tracking-layout:not(:has(.technical-main)) .info-board.selected .board-unread.zero { background: rgba(255, 255, 255, .07); color: var(--text-2); }
+
+.tracking-layout:not(:has(.technical-main)) .daily-stock-group-header,
+.tracking-layout:not(:has(.technical-main)) .calendar-month-heading,
+.tracking-layout:not(:has(.technical-main)) .calendar-weekdays,
+.tracking-layout:not(:has(.technical-main)) .ai-results-table thead th { background: rgba(255, 255, 255, .035); border-color: var(--line); }
+.tracking-layout:not(:has(.technical-main)) .calendar-month-grid { background: var(--line); }
+.tracking-layout:not(:has(.technical-main)) .calendar-day { background: #0d0f12; }
+.tracking-layout:not(:has(.technical-main)) .calendar-day-outside,
+.tracking-layout:not(:has(.technical-main)) .calendar-day.past { background: #08090b; }
+.tracking-layout:not(:has(.technical-main)) .calendar-day.today { background: rgba(120, 145, 255, .13); box-shadow: inset 0 0 0 1px rgba(120, 145, 255, .5); }
+.tracking-layout:not(:has(.technical-main)) .calendar-today-label { background: rgba(120, 145, 255, .18); color: #dce3ff; }
+.tracking-layout:not(:has(.technical-main)) .ai-results-table { background: #070809; }
+.tracking-layout:not(:has(.technical-main)) .ai-results-table tbody tr:hover > * { background: rgba(120, 145, 255, .07); }
+
+@media (max-width: 980px) {
+  .tracking-layout:not(:has(.technical-main)) .watchlist { background: linear-gradient(180deg, rgba(8, 9, 11, .99), rgba(3, 4, 5, .985)); }
+}
+
 @media (min-width: 981px) {
   .watchlist .market-tools {
     display: grid;

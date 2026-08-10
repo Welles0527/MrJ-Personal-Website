@@ -331,9 +331,9 @@
     return `<aside class="ta-trade-panel" aria-labelledby="ta-trade-title">
       <div class="ta-panel-title"><h2 id="ta-trade-title">交易位置 / 买卖点</h2><p>基于支撑压力共振与 ATR 距离，不构成交易建议</p></div>
       <div class="ta-trade-list">
-        ${tradeItem("buy", "mint", "买点", buy ? `缩量回踩 ${formatNumber(buy.lower)}～${formatNumber(buy.upper)}` : "--", buy ? buy.sources.join(" + ") : "等待两项以上支撑共振")}
-        ${tradeItem("breakout", "green", breakout?.triggered ? "突破买点" : "关注突破", breakout ? `${breakout.triggered ? "放量站上" : "放量站上"} ${formatNumber(breakout.price)}` : "--", breakout?.condition || "尚未识别主要压力")}
-        ${tradeItem("stop", "red", "止损位", formatNumber(levels.stop), levels.stop ? `支撑下沿 - 0.4 ATR（ATR ${formatNumber(levels.atr)}）` : "支撑结构不足")}
+        ${tradeItem("buy", "red", "买点", buy ? `缩量回踩 ${formatNumber(buy.lower)}～${formatNumber(buy.upper)}` : "--", buy ? buy.sources.join(" + ") : "等待两项以上支撑共振")}
+        ${tradeItem("breakout", "red", breakout?.triggered ? "突破买点" : "关注突破", breakout ? `${breakout.triggered ? "放量站上" : "放量站上"} ${formatNumber(breakout.price)}` : "--", breakout?.condition || "尚未识别主要压力")}
+        ${tradeItem("stop", "green", "止损位", formatNumber(levels.stop), levels.stop ? `支撑下沿 - 0.4 ATR（ATR ${formatNumber(levels.atr)}）` : "支撑结构不足")}
         ${tradeItem("reduce", "orange", "减仓信号", levels.reduceSignal?.label || "--", levels.reduceSignal?.evidence?.join("；") || "未形成共振")}
       </div>
     </aside>`;
@@ -475,9 +475,9 @@
     }
 
     return [
-      { label: "评分意义", title: `${formatNumber(total, 0)} 分 · ${escapeHtml(result.scores.label)}`, text: `${scoreMeaning}${scoreEvidence}`, tone: scoreTone(total) },
-      { label: "关键突破", title: breakthroughs.slice(0, 2).join("；"), text: "仅列出平台、MACD 与均线中优先级最高的信号。", tone: breakthroughs.some(item => item.includes("死叉") || item.includes("空头")) ? "weak" : "strong" },
-      { label: "变盘结论", title: changeSignals.slice(0, 2).join("；"), text: "结合波动扩张、趋势强度与高低点结构判断。", tone: "neutral" }
+      { icon: "momentum", kind: "score", label: "评分意义", title: `${formatNumber(total, 0)} 分 · ${escapeHtml(result.scores.label)}`, text: `${scoreMeaning}${scoreEvidence}`, tone: scoreTone(total) },
+      { icon: "breakout", label: "关键突破", title: breakthroughs.slice(0, 2).join("；"), text: "仅列出平台、MACD 与均线中优先级最高的信号。", tone: breakthroughs.some(item => item.includes("死叉") || item.includes("空头")) ? "weak" : "strong" },
+      { icon: "volatility", label: "变盘结论", title: changeSignals.slice(0, 2).join("；"), text: "结合波动扩张、趋势强度与高低点结构判断。", tone: "neutral" }
     ];
   }
 
@@ -485,7 +485,7 @@
     const insights = buildTechnicalNarrative(result);
     return `<section class="ta-signal-brief" aria-labelledby="ta-signal-brief-title">
       <div class="ta-panel-title"><div><h2 id="ta-signal-brief-title">技术指标解读</h2><p>从真实行情中提取最重要的突破与变盘证据</p></div></div>
-      <div class="ta-insight-list">${insights.map(insight => `<div class="ta-insight-row tone-${insight.tone}"><span>${insight.label}</span><strong>${insight.title}</strong><p>${insight.text}</p></div>`).join("")}</div>
+      <div class="ta-insight-list">${insights.map(insight => `<div class="ta-insight-row tone-${insight.tone} ${insight.kind ? `insight-${insight.kind}` : ""}"><span>${icon(insight.icon)}${insight.label}</span><strong>${insight.title}</strong><p>${insight.text}</p></div>`).join("")}</div>
     </section>`;
   }
 
@@ -593,11 +593,11 @@
           ${StockScoreSummary(this.state.summary, this.state.summaryStatus, stock.code, this.state.query.period)}
           <main class="ta-stock-detail" aria-label="${escapeHtml(stock.name)}个股技术分析">
             ${DashboardHeader(this.state.result, this.state)}
+            ${TechnicalNarrative(this.state.result)}
             <div class="ta-analysis-workspace">
               <div class="ta-dashboard-grid">${RadarOverview(this.state.result)}${TradePositionPanel(this.state.result)}</div>
               ${ScoreTrend(this.state.result)}
             </div>
-            ${TechnicalNarrative(this.state.result)}
           </main>
         </div>
         <footer class="ta-data-foot">${escapeHtml(this.state.result.dataMeta.source)} · ${this.state.result.dataMeta.rawCount} 个有效${escapeHtml(this.state.result.dataMeta.barLabel)} · 前复权 · 技术评分描述当前状态，不代表上涨概率</footer>
