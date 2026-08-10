@@ -55,7 +55,15 @@ interface TechnicalAnalysisResult {
   candles: DailyCandle[];
   scores: TechnicalScoresResult;
   tradeLevels: TechnicalTradeLevels;
-  scoreHistory: Array<{ date: string; score: number | null }>;
+  scoreHistory: Array<{ date: string; score: number | null; changePct: number | null }>;
+  scorePerformance: {
+    comparisons: Array<{ date: string; score: number | null; changePct: number | null; priorScore: number | null; signal: "bullish" | "bearish" | "neutral"; signalLabel: string; direction: "up" | "down" | "flat"; hit: boolean | null }>;
+    hitCount: number;
+    evaluatedCount: number;
+    ignoredCount: number;
+    hitRate: number | null;
+    methodology: string;
+  };
   dataMeta: {
     source: string;
     adjustment: "forward";

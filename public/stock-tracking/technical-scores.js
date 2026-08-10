@@ -296,9 +296,54 @@
     const history = [];
     for (let index = start; index < normalized.length; index += 1) {
       const result = calculateTechnicalScore(normalized.slice(0, index + 1));
-      history.push({ date: normalized[index].date, score: result.total });
+      const previousClose = normalized[index - 1]?.close;
+      const changePct = Number.isFinite(previousClose) && previousClose !== 0
+        ? (normalized[index].close / previousClose - 1) * 100
+        : null;
+      history.push({ date: normalized[index].date, score: result.total, changePct });
     }
     return history.slice(-count);
+  }
+
+  function scoreSignal(score) {
+    const value = Number(score);
+    if (!Number.isFinite(value)) return { id: "neutral", label: "无有效评分" };
+    if (value >= 60) return { id: "bullish", label: "偏多" };
+    if (value < 45) return { id: "bearish", label: "偏空" };
+    return { id: "neutral", label: "中性" };
+  }
+
+  function calculateScorePerformance(scoreHistory) {
+    let hitCount = 0;
+    let evaluatedCount = 0;
+    const comparisons = (Array.isArray(scoreHistory) ? scoreHistory : []).map((item, index, history) => {
+      const previous = history[index - 1];
+      const signal = scoreSignal(previous?.score);
+      const changePct = Number(item?.changePct);
+      const direction = Number.isFinite(changePct) && changePct !== 0 ? (changePct > 0 ? "up" : "down") : "flat";
+      const eligible = Boolean(previous) && signal.id !== "neutral" && direction !== "flat";
+      const hit = eligible ? (signal.id === "bullish" ? direction === "up" : direction === "down") : null;
+      if (eligible) {
+        evaluatedCount += 1;
+        if (hit) hitCount += 1;
+      }
+      return {
+        ...item,
+        priorScore: Number.isFinite(Number(previous?.score)) ? Number(previous.score) : null,
+        signal: signal.id,
+        signalLabel: signal.label,
+        direction,
+        hit
+      };
+    });
+    return {
+      comparisons,
+      hitCount,
+      evaluatedCount,
+      ignoredCount: Math.max(0, comparisons.length - 1 - evaluatedCount),
+      hitRate: evaluatedCount ? Math.round(hitCount / evaluatedCount * 100) : null,
+      methodology: "前一交易日评分≥60视为偏多、<45视为偏空，对照下一交易日涨跌方向；中性评分和平盘不计。"
+    };
   }
 
   return {
@@ -310,6 +355,8 @@
     calculateTotalScore,
     calculateTechnicalScore,
     calculateScoreHistory,
+    calculateScorePerformance,
+    scoreSignal,
     scoreLabel,
     detectBearishDivergence
   };

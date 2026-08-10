@@ -233,10 +233,19 @@
   }
 
   function ScoreTrend(result) {
+    const performance = result.scorePerformance || global.StockTechnicalScores.calculateScorePerformance(result.scoreHistory);
+    const hitRate = Number.isFinite(Number(performance.hitRate)) ? `${performance.hitRate}%` : "--";
     return `<section class="ta-score-trend" aria-labelledby="ta-score-trend-title">
-      <div class="ta-panel-title"><h2 id="ta-score-trend-title">综合评分趋势（近30个交易日）</h2><p>每个交易日均仅使用当时已确认的数据重新计算</p></div>
-      <div id="technical-score-trend-chart" class="ta-score-trend-chart" role="img" aria-label="近30个交易日综合技术评分趋势"></div>
-      <div class="ta-latest-score"><strong>${formatNumber(result.scores.total, 0)}</strong><span>最新评分</span><small>${result.overview.scoreDate.slice(5)}</small></div>
+      <div class="ta-panel-title ta-score-heading">
+        <div><h2 id="ta-score-trend-title">评分与涨跌对照（近30个交易日）</h2><p>上层为每日收盘技术评分，下层为当日涨跌幅；两组柱状图共享同一交易日轴</p></div>
+        <div class="ta-score-legend" aria-label="图例"><span class="score">评分</span><span class="rise">上涨</span><span class="fall">下跌</span><strong>最新 ${formatNumber(result.scores.total, 0)}</strong></div>
+      </div>
+      <div id="technical-score-trend-chart" class="ta-score-trend-chart" role="img" aria-label="近30个交易日综合技术评分与每日涨跌幅柱状对比"></div>
+      <aside class="ta-score-validation" aria-label="技术评分次日方向验证">
+        <div class="ta-validation-primary"><span>次日方向命中率</span><strong>${hitRate}</strong></div>
+        <dl><div><dt>有效样本</dt><dd>${performance.evaluatedCount}</dd></div><div><dt>方向命中</dt><dd>${performance.hitCount}</dd></div><div><dt>未计样本</dt><dd>${performance.ignoredCount}</dd></div></dl>
+        <p>以前一交易日评分判断下一交易日方向：评分 ≥60 偏多、＜45 偏空；中性评分和平盘不计。</p>
+      </aside>
     </section>`;
   }
 

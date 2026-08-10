@@ -183,13 +183,26 @@
 .ta-trade-item.tone-purple { color: var(--ta-purple); }
 .ta-trade-item.tone-orange { color: var(--ta-orange); }
 
-.ta-score-trend { min-height: 154px; display: grid; grid-template-columns: minmax(0, 1fr) 106px; grid-template-rows: auto 1fr; margin-top: 14px; overflow: hidden; }
+.ta-score-trend { min-height: 344px; display: grid; grid-template-columns: minmax(0, 1fr) 174px; grid-template-rows: auto 1fr; margin-top: 14px; overflow: hidden; }
 .ta-score-trend .ta-panel-title { grid-column: 1 / -1; }
-.ta-score-trend-chart { min-width: 0; height: 100px; margin: 0 0 4px 6px; }
-.ta-latest-score { align-self: center; min-height: 82px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 16px 8px 0; border: 1px solid rgba(120, 145, 255, .2); border-radius: 14px; background: rgba(120, 145, 255, .06); }
-.ta-latest-score strong { color: #91a4ff; font-size: 34px; font-weight: 680; font-variant-numeric: tabular-nums; line-height: 1; }
-.ta-latest-score span { margin-top: 5px; color: #c7cceb; font-size: 10px; }
-.ta-latest-score small { margin-top: 3px; color: #757985; font-size: 9px; }
+.ta-score-heading { align-items: flex-start; }
+.ta-score-heading > div:first-child { min-width: 0; }
+.ta-score-heading p { margin-top: 4px; text-align: left; }
+.ta-score-legend { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px 13px; color: var(--ta-muted); font-size: 11px; white-space: nowrap; }
+.ta-score-legend span::before { width: 7px; height: 7px; display: inline-block; margin-right: 5px; border-radius: 2px; content: ""; }
+.ta-score-legend .score::before { background: var(--ta-blue); }
+.ta-score-legend .rise::before { background: var(--ta-red); }
+.ta-score-legend .fall::before { background: var(--ta-green); }
+.ta-score-legend strong { padding: 5px 8px; border-radius: 10px; color: #aab8ff; background: rgba(120, 145, 255, .09); font-size: 11px; }
+.ta-score-trend-chart { min-width: 0; height: 270px; margin: 0 0 6px 4px; }
+.ta-score-validation { align-self: stretch; display: flex; flex-direction: column; justify-content: center; margin: 14px 16px 16px 0; padding: 16px; border: 1px solid rgba(120, 145, 255, .18); border-radius: 16px; background: rgba(120, 145, 255, .055); }
+.ta-validation-primary span { display: block; color: #d5d6d2; font-size: 11px; }
+.ta-validation-primary strong { display: block; margin-top: 6px; color: #aab8ff; font-size: 29px; font-weight: 680; font-variant-numeric: tabular-nums; line-height: 1; }
+.ta-score-validation dl { display: grid; gap: 7px; margin: 16px 0 0; }
+.ta-score-validation dl div { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ta-score-validation dt { color: var(--ta-muted); font-size: 11px; }
+.ta-score-validation dd { margin: 0; color: #d5d6d2; font-size: 12px; font-variant-numeric: tabular-nums; }
+.ta-score-validation p { margin-top: 15px; color: var(--ta-muted); font-size: 11px; line-height: 1.55; }
 .ta-data-foot { position: relative; z-index: 1; margin: 10px 8px 0; color: rgba(229, 231, 241, .48); font-size: 9px; text-align: right; }
 
 .ta-state-page { min-height: min(720px, calc(100vh - 110px)); }
@@ -282,10 +295,13 @@
   .ta-conclusions span { padding: 6px 10px; font-size: 10px; }
   .ta-trade-list { grid-template-columns: 1fr; padding: 14px; }
   .ta-trade-item { min-height: 70px; }
-  .ta-score-trend { grid-template-columns: minmax(0, 1fr) 82px; min-height: 200px; }
-  .ta-score-trend-chart { height: 144px; }
-  .ta-latest-score { min-height: 84px; margin-right: 8px; }
-  .ta-latest-score strong { font-size: 27px; }
+  .ta-score-trend { grid-template-columns: 1fr; min-height: 480px; }
+  .ta-score-heading { display: block; }
+  .ta-score-legend { justify-content: flex-start; margin-top: 10px; white-space: normal; }
+  .ta-score-trend-chart { height: 286px; margin-right: 2px; }
+  .ta-score-validation { display: grid; grid-template-columns: minmax(110px, .7fr) minmax(150px, 1fr); align-items: center; gap: 8px 16px; margin: 0 14px 14px; padding: 13px 14px; }
+  .ta-score-validation dl { margin-top: 0; }
+  .ta-score-validation p { grid-column: 1 / -1; margin-top: 2px; }
   .ta-data-foot { text-align: left; line-height: 1.5; }
 }
 

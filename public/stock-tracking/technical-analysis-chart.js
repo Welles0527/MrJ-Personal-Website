@@ -72,60 +72,118 @@
     const chart = getChart(element);
     if (!chart || !result) return;
     const data = result.scoreHistory.filter(item => Number.isFinite(Number(item.score)));
+    const comparisons = result.scorePerformance?.comparisons || [];
+    const comparisonByDate = new Map(comparisons.map(item => [item.date, item]));
+    const dates = data.map(item => item.date);
+    const maximumMove = Math.max(2, Math.ceil(Math.max(...data.map(item => Math.abs(Number(item.changePct) || 0)))));
     const reduceMotion = global.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
     chart.setOption({
       animation: !reduceMotion,
       animationDuration: 420,
       animationEasing: "cubicOut",
-      grid: { top: 18, right: 26, bottom: 28, left: 42, containLabel: false },
+      grid: [
+        { top: 14, right: 32, height: "49%", left: 46, containLabel: false },
+        { top: "67%", right: 32, bottom: 30, left: 46, containLabel: false }
+      ],
       tooltip: {
         trigger: "axis",
+        confine: true,
         backgroundColor: "rgba(5,7,9,.96)",
         borderColor: "rgba(255,255,255,.12)",
         textStyle: { color: "#f7f8fc" },
-        formatter: points => `${points[0].axisValue}<br><strong>综合技术评分 ${points[0].value}</strong>`
-      },
-      xAxis: {
-        type: "category",
-        boundaryGap: false,
-        data: data.map(item => item.date.slice(5)),
-        axisLine: { lineStyle: { color: "rgba(255,255,255,.09)" } },
-        axisTick: { show: false },
-        axisLabel: { color: "rgba(220,225,238,.52)", fontSize: 10, interval: Math.max(0, Math.floor(data.length / 6) - 1) }
-      },
-      yAxis: {
-        type: "value",
-        min: 0,
-        max: 100,
-        interval: 25,
-        axisLine: { show: false },
-        axisTick: { show: false },
-        axisLabel: { color: "rgba(220,225,238,.48)", fontSize: 10 },
-        splitLine: { lineStyle: { color: "rgba(255,255,255,.055)" } }
-      },
-      series: [{
-        type: "line",
-        smooth: 0.32,
-        showSymbol: false,
-        symbol: "circle",
-        symbolSize: 8,
-        data: data.map(item => item.score),
-        lineStyle: { color: "#7188ff", width: 2.2 },
-        itemStyle: { color: "#93a5ff" },
-        areaStyle: {
-          color: new global.echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: "rgba(113,136,255,.38)" },
-            { offset: 1, color: "rgba(41,223,183,.015)" }
-          ])
-        },
-        markPoint: {
-          symbol: "circle",
-          symbolSize: 10,
-          label: { show: false },
-          data: data.length ? [{ coord: [data.length - 1, data.at(-1).score] }] : [],
-          itemStyle: { color: "#78f0c3", borderColor: "#07100d", borderWidth: 2 }
+        formatter: points => {
+          const date = points[0]?.axisValue;
+          const item = data.find(entry => entry.date === date);
+          const comparison = comparisonByDate.get(date);
+          const changePct = Number(item?.changePct);
+          const changeLabel = Number.isFinite(changePct) ? `${changePct >= 0 ? "+" : ""}${changePct.toFixed(2)}%` : "--";
+          const verdict = comparison?.hit === true ? "命中" : comparison?.hit === false ? "未命中" : "不计入样本";
+          return `<div class="ta-echart-tooltip ta-comparison-tooltip"><strong>${date}</strong><span>综合技术评分<b>${item?.score ?? "--"}</b></span><span>当日涨跌幅<b>${changeLabel}</b></span><span>前日评分信号<b>${comparison?.signalLabel || "--"}${Number.isFinite(comparison?.priorScore) ? ` ${comparison.priorScore}` : ""}</b></span><span>方向验证<b>${verdict}</b></span></div>`;
         }
-      }]
+      },
+      axisPointer: { link: [{ xAxisIndex: [0, 1] }] },
+      xAxis: [
+        {
+          type: "category",
+          gridIndex: 0,
+          boundaryGap: true,
+          data: dates,
+          axisLine: { lineStyle: { color: "rgba(255,255,255,.09)" } },
+          axisTick: { show: false },
+          axisLabel: { show: false }
+        },
+        {
+          type: "category",
+          gridIndex: 1,
+          boundaryGap: true,
+          data: dates,
+          axisLine: { lineStyle: { color: "rgba(255,255,255,.12)" } },
+          axisTick: { show: false },
+          axisLabel: {
+            color: "rgba(220,225,238,.52)",
+            fontSize: 10,
+            formatter: value => value.slice(5),
+            interval: Math.max(0, Math.floor(data.length / 6) - 1)
+          }
+        }
+      ],
+      yAxis: [
+        {
+          type: "value",
+          gridIndex: 0,
+          min: 0,
+          max: 100,
+          interval: 25,
+          axisLine: { show: false },
+          axisTick: { show: false },
+          axisLabel: { color: "rgba(220,225,238,.48)", fontSize: 10 },
+          splitLine: { lineStyle: { color: "rgba(255,255,255,.055)" } }
+        },
+        {
+          type: "value",
+          gridIndex: 1,
+          min: -maximumMove,
+          max: maximumMove,
+          splitNumber: 2,
+          axisLine: { show: true, lineStyle: { color: "rgba(255,255,255,.14)" } },
+          axisTick: { show: false },
+          axisLabel: { color: "rgba(220,225,238,.48)", fontSize: 10, formatter: value => `${value}%` },
+          splitLine: { lineStyle: { color: "rgba(255,255,255,.045)" } }
+        }
+      ],
+      series: [
+        {
+          name: "综合技术评分",
+          type: "bar",
+          xAxisIndex: 0,
+          yAxisIndex: 0,
+          barMaxWidth: 18,
+          data: data.map(item => item.score),
+          itemStyle: {
+            color: params => params.dataIndex === data.length - 1 ? "#4ee0bc" : "#7891ff",
+            borderRadius: [4, 4, 0, 0]
+          },
+          markLine: {
+            silent: true,
+            symbol: "none",
+            label: { show: false },
+            lineStyle: { type: "dashed", width: 1, color: "rgba(162,120,255,.28)" },
+            data: [{ yAxis: 60 }, { yAxis: 45 }]
+          }
+        },
+        {
+          name: "当日涨跌幅",
+          type: "bar",
+          xAxisIndex: 1,
+          yAxisIndex: 1,
+          barMaxWidth: 18,
+          data: data.map(item => Number.isFinite(Number(item.changePct)) ? Number(item.changePct) : 0),
+          itemStyle: {
+            color: params => params.value > 0 ? "#ff6b78" : params.value < 0 ? "#38e79f" : "#9496a0",
+            borderRadius: params => params.value >= 0 ? [3, 3, 0, 0] : [0, 0, 3, 3]
+          }
+        }
+      ]
     }, { notMerge: true });
   }
 

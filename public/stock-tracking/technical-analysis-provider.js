@@ -65,12 +65,14 @@
     const scoreResult = scores.calculateTechnicalScore(candles);
     const levels = tradeLevels.calculateTradeLevels(scoreResult);
     const scoreHistory = scores.calculateScoreHistory(candles, 30, 120);
+    const scorePerformance = scores.calculateScorePerformance(scoreHistory);
     return {
       overview: buildOverview(code, snapshot),
       candles,
       scores: scoreResult,
       tradeLevels: levels,
       scoreHistory,
+      scorePerformance,
       sparklines: buildSparklines(scoreResult),
       dataMeta: {
         source: snapshot.history.source,

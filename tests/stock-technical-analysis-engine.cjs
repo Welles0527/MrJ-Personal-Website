@@ -69,7 +69,23 @@ function run() {
   const history = scores.calculateScoreHistory(candles, 30, 120);
   assert.strictEqual(history.length, 30);
   assert.strictEqual(history.at(-1).score, result.total);
+  assert.ok(history.every(item => Number.isFinite(item.changePct)));
   assert.ok(new Set(history.map(item => item.score)).size > 1, "30日评分不能复制同一个当前值");
+
+  const performance = scores.calculateScorePerformance([
+    { date: "2026-01-01", score: 65, changePct: 1 },
+    { date: "2026-01-02", score: 70, changePct: 2 },
+    { date: "2026-01-03", score: 40, changePct: -1 },
+    { date: "2026-01-04", score: 50, changePct: -2 },
+    { date: "2026-01-05", score: 30, changePct: 1 },
+    { date: "2026-01-06", score: 70, changePct: -1 }
+  ]);
+  assert.strictEqual(performance.evaluatedCount, 4);
+  assert.strictEqual(performance.hitCount, 3);
+  assert.strictEqual(performance.hitRate, 75);
+  assert.strictEqual(performance.comparisons[1].hit, true);
+  assert.strictEqual(performance.comparisons[2].hit, false);
+  assert.strictEqual(performance.comparisons[4].hit, null);
 
   const cutoff = 295;
   const causalAtCutoff = scores.calculateTechnicalScore(candles.slice(0, cutoff)).total;
