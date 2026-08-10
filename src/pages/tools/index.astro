@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1d1d1c" />
+    <meta name="description" content="J先生个人空间的实用工具集合，按生活、AI 与运动分类。" />
+    <link rel="icon" type="image/png" href="/officialwebsite/favicon.png" />
+    <title>实用工具｜J先生的个人空间</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;family=Noto+Sans+SC:wght@400;500;600;700;800&amp;display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #1d1d1c;
+        --panel: #252524;
+        --panel-strong: #2c2c2b;
+        --line: rgba(255, 255, 255, 0.11);
+        --ink: #f4f4f3;
+        --muted: #a5a5a0;
+        --blue: #7f96ff;
+        --pink: #ff5d98;
+        --font: "Manrope", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+      }
+
+      * { box-sizing: border-box; }
+      html { min-width: 320px; min-height: 100%; background: var(--bg); }
+      body {
+        min-width: 320px;
+        min-height: 100svh;
+        margin: 0;
+        overflow-x: hidden;
+        background:
+          radial-gradient(ellipse 70% 55% at 96% 0%, rgba(75, 89, 146, 0.22), transparent 68%),
+          radial-gradient(ellipse 52% 48% at 6% 100%, rgba(169, 55, 109, 0.2), transparent 72%),
+          var(--bg);
+        color: var(--ink);
+        font-family: var(--font);
+        text-rendering: optimizeLegibility;
+      }
+
+      a { color: inherit; text-decoration: none; }
+
+      .shell { width: min(1180px, calc(100% - 48px)); margin: 0 auto; padding: 22px 0 78px; }
+      .topbar { display: flex; align-items: center; justify-content: space-between; }
+      .brand { display: inline-flex; align-items: center; gap: 11px; font-weight: 700; }
+      .brand svg { width: 34px; height: 34px; }
+      .home-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 600;
+        transition: color 180ms ease;
+      }
+      .home-link:hover { color: var(--ink); }
+
+      .hero { padding: clamp(80px, 13vw, 150px) 0 clamp(50px, 7vw, 82px); }
+      .eyebrow { margin: 0 0 18px; color: var(--blue); font-size: 12px; font-weight: 800; letter-spacing: 0.18em; }
+      h1 { margin: 0; font-size: clamp(48px, 8vw, 102px); letter-spacing: -0.065em; line-height: 0.92; }
+      .hero-copy { max-width: 520px; margin: 28px 0 0; color: var(--muted); font-size: 16px; line-height: 1.8; }
+
+      .catalog { border-top: 1px solid var(--line); }
+      .category {
+        display: grid;
+        grid-template-columns: 180px minmax(0, 1fr);
+        gap: 38px;
+        padding: 34px 0 40px;
+        border-bottom: 1px solid var(--line);
+      }
+      .category-title { display: flex; align-items: baseline; gap: 12px; }
+      .category-index { color: #73736f; font-size: 11px; font-weight: 700; letter-spacing: 0.14em; }
+      h2 { margin: 0; font-size: 22px; letter-spacing: -0.035em; }
+      .tools-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+      .tool-card {
+        position: relative;
+        display: grid;
+        min-height: 178px;
+        grid-template-columns: 52px 1fr auto;
+        align-items: center;
+        gap: 20px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        padding: 27px;
+        background: rgba(37, 37, 36, 0.88);
+        transition: border-color 220ms ease, transform 220ms ease, background 220ms ease;
+      }
+      .tool-card::before {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        background: radial-gradient(circle at 5% 100%, rgba(255, 93, 152, 0.16), transparent 44%);
+        content: "";
+        transition: opacity 220ms ease;
+      }
+      .tool-card:hover { border-color: rgba(127, 150, 255, 0.42); background: var(--panel-strong); transform: translateY(-3px); }
+      .tool-card:hover::before { opacity: 1; }
+      .tool-icon {
+        position: relative;
+        display: grid;
+        width: 52px;
+        height: 52px;
+        place-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 16px;
+        background: #20201f;
+      }
+      .tool-icon svg { width: 27px; fill: none; stroke: #f4f4f3; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+      .tool-copy { position: relative; }
+      .tool-copy h3 { margin: 0 0 9px; font-size: 23px; letter-spacing: -0.035em; }
+      .tool-copy p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.65; }
+      .tool-meta { position: relative; display: flex; align-items: center; gap: 8px; }
+      .tag { border: 1px solid rgba(127, 150, 255, 0.3); border-radius: 999px; padding: 6px 9px; color: #aebcff; font-size: 10px; font-weight: 700; }
+      .arrow { color: #d8d8d4; font-size: 21px; }
+      .empty-card {
+        min-height: 126px;
+        border: 1px dashed rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 28px;
+        color: #767672;
+        font-size: 13px;
+        line-height: 1.7;
+      }
+      .empty-card strong { display: block; margin-bottom: 7px; color: #9a9a95; font-size: 15px; }
+
+      @media (max-width: 760px) {
+        .shell { width: min(100% - 28px, 560px); padding-top: 15px; }
+        .brand span { font-size: 14px; }
+        .hero { padding: 82px 0 54px; }
+        .hero-copy { font-size: 14px; }
+        .category { grid-template-columns: 1fr; gap: 22px; padding: 28px 0 32px; }
+        .tools-grid { grid-template-columns: 1fr; }
+        .tool-card { min-height: 150px; grid-template-columns: 46px 1fr; gap: 16px; padding: 22px 18px; }
+        .tool-icon { width: 46px; height: 46px; border-radius: 14px; }
+        .tool-meta { grid-column: 2; justify-content: space-between; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <nav class="topbar" aria-label="页面导航">
+        <a class="brand" href="/officialwebsite/" aria-label="返回个人空间首页">
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <defs><linearGradient id="logo-gradient" x1="0.12" y1="0.98" x2="0.85" y2="0.08"><stop offset="0" stop-color="#6887ff"/><stop offset="0.34" stop-color="#a961ff"/><stop offset="0.61" stop-color="#ff3868"/><stop offset="1" stop-color="#ff7200"/></linearGradient></defs>
+            <path fill="url(#logo-gradient)" d="M0 64V22C0 9.85 9.85 0 22 0s22 9.85 22 22v3h2c9.94 0 18 8.06 18 18s-8.06 18-18 18H21.5C13.9 61 6.56 62.04 0 64Z"/>
+          </svg>
+          <span>J先生的个人空间</span>
+        </a>
+        <a class="home-link" href="/officialwebsite/">首页 <span aria-hidden="true">↗</span></a>
+      </nav>
+
+      <header class="hero">
+        <p class="eyebrow">UTILITY SHELF · 08</p>
+        <h1>实用工具</h1>
+        <p class="hero-copy">把真正会反复使用的小工具放在一起。少一点跳转，多一点一眼就能看懂的结果。</p>
+      </header>
+
+      <div class="catalog">
+        <section class="category" aria-labelledby="life-title">
+          <div class="category-title"><span class="category-index">01</span><h2 id="life-title">生活</h2></div>
+          <div class="tools-grid">
+            <a class="tool-card" href="/officialwebsite/tools/appointment/">
+              <span class="tool-icon" aria-hidden="true">
+                <svg viewBox="0 0 32 32"><rect x="5" y="7" width="22" height="20" rx="4"/><path d="M10 4v6M22 4v6M5 13h22M11 20h10M16 15v10"/></svg>
+              </span>
+              <span class="tool-copy"><h3>挂号</h3><p>华山、瑞金专家号源一屏总览，含上午/下午状态与放号提醒。</p></span>
+              <span class="tool-meta"><span class="tag">真实号源</span><span class="arrow" aria-hidden="true">↗</span></span>
+            </a>
+          </div>
+        </section>
+
+        <section class="category" aria-labelledby="ai-title">
+          <div class="category-title"><span class="category-index">02</span><h2 id="ai-title">AI</h2></div>
+          <div class="empty-card"><strong>下一件工具，留给真正需要的场景</strong>这里不会为了填满列表而放置占位功能。</div>
+        </section>
+
+        <section class="category" aria-labelledby="sport-title">
+          <div class="category-title"><span class="category-index">03</span><h2 id="sport-title">运动</h2></div>
+          <div class="empty-card"><strong>运动工具正在候场</strong>后续可从训练记录、跑步计划或恢复提醒中选择最常用的一项加入。</div>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>
