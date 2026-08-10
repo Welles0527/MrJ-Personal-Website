@@ -8,5 +8,9 @@ assert.match(appSource, /renderDailyDigestStockGroups\(messages, options\)/);
 assert.match(appSource, /id="daily-stock-search"/);
 assert.match(appSource, /data-action="set-daily-stock"/);
 assert.match(appSource, /showStockBadge:\s*false/);
+assert.match(appSource, /function renderDailyResearchSection\(/);
+assert.match(appSource, /今日个股研读/);
+assert.match(appSource, /data-action="set-research-stock"/);
+assert.match(appSource, /function renderDailyResearchStock\(/);
 
 console.log("Stock tracking daily stock grouping contract passed.");

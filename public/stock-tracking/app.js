@@ -5,6 +5,7 @@
   const accountStorage = window.StockTrackingAccountStorage;
   const messageTaxonomy = window.StockTrackingMessageTaxonomy;
   const messageReadState = window.StockTrackingMessageReadState;
+  const dailyResearch = window.STOCK_DAILY_RESEARCH || null;
   if (!messageTaxonomy) throw new Error("消息分类模块未加载");
   if (!messageReadState) throw new Error("消息已读状态模块未加载");
   const MESSAGE_CATEGORY = messageTaxonomy.categories;
@@ -74,6 +75,7 @@
     activeGroup: requestedGroup,
     query: "",
     dailyStockQuery: "",
+    researchStockCode: dailyResearch?.stocks?.some(stock => stock.code === requestedStockId) ? requestedStockId : "all",
     readStateByScope: new Map(),
     editField: null,
     costDraft: "",
@@ -1029,6 +1031,7 @@
         ${renderDailyDigestFilters(true, "今日必读")}
         ${renderDailyDigestSection("今日发布", "当天发布的信息", visibleSections.today, "today")}
         ${allSections.catchUp.length ? renderDailyDigestSection("历史未读补看", "今天以前尚未阅读，不含未来事件", visibleSections.catchUp, "catch-up") : ""}
+        ${renderDailyResearchSection()}
       </section>`;
   }
 
@@ -1190,6 +1193,107 @@
             </section>`;
         }).join("")}
       </div>`;
+  }
+
+  function researchSentimentClass(sentiment) {
+    return {
+      "机会": "opportunity",
+      "风险": "risk",
+      "融资/摊薄": "dilution",
+      "中性": "neutral"
+    }[sentiment] || "neutral";
+  }
+
+  function renderDailyResearchSection() {
+    const feedStocks = Array.isArray(dailyResearch?.stocks) ? dailyResearch.stocks : [];
+    const selectedCode = state.researchStockCode;
+    const visibleStocks = selectedCode === "all"
+      ? feedStocks
+      : feedStocks.filter(stock => stock.code === selectedCode);
+    const generatedLabel = dailyResearch?.generatedAt ? formatDateTime(dailyResearch.generatedAt) : "等待生成";
+    return `
+      <section class="daily-research-section" aria-label="今日个股研读">
+        <header class="daily-research-heading">
+          <div>
+            <strong>今日个股研读</strong>
+            <span>逐股复核价格行为、行业相对强弱、公司事件与投资逻辑</span>
+          </div>
+          <div class="daily-research-meta">
+            <b>${escapeHtml(dailyResearch?.asOfTradeDate || "暂无日期")} ${escapeHtml(dailyResearch?.runLabel || "")}</b>
+            <span>${feedStocks.length} 只 · 实质变化 ${Number(dailyResearch?.materialChangeCount || 0)} 只 · ${escapeHtml(generatedLabel)}</span>
+          </div>
+        </header>
+        ${feedStocks.length ? `
+          <nav class="daily-research-stock-nav" aria-label="选择研读股票">
+            <button type="button" class="${selectedCode === "all" ? "selected" : ""}" data-action="set-research-stock" data-stock-code="all" aria-pressed="${selectedCode === "all"}">全部研读</button>
+            ${feedStocks.map(stock => `
+              <button type="button" class="${selectedCode === stock.code ? "selected" : ""}" data-action="set-research-stock" data-stock-code="${escapeHtml(stock.code)}" aria-pressed="${selectedCode === stock.code}">
+                <b>${escapeHtml(stock.name)}</b><span>${escapeHtml(stock.code)}</span>
+              </button>`).join("")}
+          </nav>
+          <div class="daily-research-list">
+            ${visibleStocks.map(stock => renderDailyResearchStock(stock, selectedCode !== "all")).join("")}
+          </div>` : `
+          <div class="daily-research-empty" role="status">
+            <strong>今日研读报告尚未生成</strong>
+            <span>完成每日行情与信息核验后，这里会同步展示完整逐股结论。</span>
+          </div>`}
+      </section>`;
+  }
+
+  function renderDailyResearchStock(stock, expanded) {
+    const price = stock.price || {};
+    const levels = stock.keyLevels || {};
+    const sentimentClass = researchSentimentClass(stock.sentiment);
+    const priceClass = Number(price.changePct) > 0 ? "price-up" : Number(price.changePct) < 0 ? "price-down" : "price-flat";
+    return `
+      <article class="daily-research-stock sentiment-${sentimentClass}">
+        <header class="daily-research-stock-header">
+          <div class="daily-research-identity">
+            <span><strong>${escapeHtml(stock.name)}</strong><b>${escapeHtml(stock.code)}</b></span>
+            <small>${escapeHtml(stock.sector || "")}</small>
+          </div>
+          <div class="daily-research-status">
+            <span class="research-sentiment sentiment-${sentimentClass}">${escapeHtml(stock.sentiment || "中性")}</span>
+            <b>${stock.hasMaterialChange ? "有实质变化" : "未发现实质变化"}</b>
+          </div>
+        </header>
+        <p class="daily-research-headline">${escapeHtml(stock.headline || "未发现变化")}</p>
+        <div class="daily-research-metrics" aria-label="${escapeHtml(stock.name)}行情摘要">
+          <span><small>收盘</small><b>${formatNumber(price.close)}</b></span>
+          <span><small>日涨跌</small><b class="${priceClass}">${formatSigned(price.changePct, "%")}</b></span>
+          <span><small>换手率</small><b>${formatNumber(price.turnoverPct)}%</b></span>
+          <span><small>近20日</small><b>${formatSigned(price.return20dPct, "%")}</b></span>
+          <span class="daily-research-current-status"><small>当前判断</small><b>${escapeHtml(stock.status || "等待判断")}</b></span>
+        </div>
+        <details class="daily-research-details" ${expanded ? "open" : ""}>
+          <summary><span>查看完整研读</span><b>完整内容</b></summary>
+          <div class="daily-research-analysis-grid">
+            ${renderResearchAnalysis("价格行为", stock.priceBehavior)}
+            ${renderResearchAnalysis("行业与外部催化", stock.marketContext)}
+            ${renderResearchAnalysis("相对强弱", stock.relativeStrength)}
+            ${renderResearchAnalysis("公司事件", stock.companyUpdate)}
+            ${renderResearchAnalysis("投资逻辑变化", stock.logicChange, "daily-research-analysis-wide")}
+          </div>
+          <section class="daily-research-levels" aria-label="关键价位与验证条件">
+            <h4>关键价位与验证条件</h4>
+            <dl>
+              <div><dt>压力区</dt><dd>${escapeHtml(levels.resistance || "等待确认")}</dd></div>
+              <div><dt>支撑区</dt><dd>${escapeHtml(levels.support || "等待确认")}</dd></div>
+              <div><dt>偏强确认</dt><dd>${escapeHtml(levels.bullish_confirmation || "等待确认")}</dd></div>
+              <div><dt>转弱确认</dt><dd>${escapeHtml(levels.bearish_confirmation || "等待确认")}</dd></div>
+            </dl>
+          </section>
+          <div class="daily-research-sources">
+            <strong>核验来源</strong>
+            <div>${(stock.sources || []).map(source => `<a href="${escapeHtml(source.url || "#")}" target="_blank" rel="noreferrer">${escapeHtml(source.title || source.publisher || "查看来源")}</a>`).join("")}</div>
+          </div>
+        </details>
+      </article>`;
+  }
+
+  function renderResearchAnalysis(title, content, className = "") {
+    return `<section class="daily-research-analysis ${className}"><h4>${title}</h4><p>${escapeHtml(content || "未发现变化")}</p></section>`;
   }
 
   function syncUrl() {
@@ -2007,6 +2111,8 @@
     } else if (action === "set-daily-stock") {
       state.filters.stock = target.dataset.stockId || "all";
       state.dailyStockQuery = "";
+    } else if (action === "set-research-stock") {
+      state.researchStockCode = target.dataset.stockCode || "all";
     } else if (action === "refresh-all") {
       const dailyCodes = watchlistAggregateView() ? data.stocks.map(stock => stock.code) : undefined;
       refreshAllInformation({ force: true, feedCodes: dailyCodes });
