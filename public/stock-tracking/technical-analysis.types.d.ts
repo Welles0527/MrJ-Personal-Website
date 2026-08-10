@@ -63,6 +63,16 @@ interface TechnicalAnalysisResult {
     ignoredCount: number;
     hitRate: number | null;
     methodology: string;
+    period: { months: 3; startDate: string; endDate: string };
+  };
+  sparklines: {
+    trend: number[];
+    structure: number[];
+    momentum: number[];
+    volumePrice: number[];
+    volatility: number[];
+    boll: { upper: number[]; middle: number[]; lower: number[] };
+    dates: string[];
   };
   dataMeta: {
     source: string;
@@ -72,4 +82,23 @@ interface TechnicalAnalysisResult {
     completedThrough: string;
     checkedAt: string;
   };
+}
+
+interface TechnicalScoreSummaryItem {
+  code: string;
+  name: string;
+  score: number;
+  label: string;
+  scoreDate: string;
+  price: number;
+  changePct: number;
+  buyZone: { lower: number; upper: number } | null;
+  stop: number | null;
+  updatedAt: string;
+}
+
+interface TechnicalScoreSummary {
+  items: TechnicalScoreSummaryItem[];
+  errors: Array<{ code: string; name: string; message: string }>;
+  checkedAt: string;
 }

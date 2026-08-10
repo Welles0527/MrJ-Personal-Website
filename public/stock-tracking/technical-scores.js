@@ -259,7 +259,7 @@
     if (!finite(total)) return "行情数据未连接";
     let label = total >= 85 ? "强势上行"
       : total >= 75 ? "综合偏强"
-        : total >= 60 ? "偏多震荡"
+        : total >= 65 ? "偏多震荡"
           : total >= 45 ? "中性震荡"
             : total >= 30 ? "综合偏弱"
               : "弱势下行";
@@ -308,12 +308,13 @@
   function scoreSignal(score) {
     const value = Number(score);
     if (!Number.isFinite(value)) return { id: "neutral", label: "无有效评分" };
-    if (value >= 60) return { id: "bullish", label: "偏多" };
+    if (value >= 65) return { id: "bullish", label: "偏多" };
     if (value < 45) return { id: "bearish", label: "偏空" };
     return { id: "neutral", label: "中性" };
   }
 
-  function calculateScorePerformance(scoreHistory) {
+  function calculateScorePerformance(scoreHistory, options = {}) {
+    const fromDate = String(options.fromDate || "");
     let hitCount = 0;
     let evaluatedCount = 0;
     const comparisons = (Array.isArray(scoreHistory) ? scoreHistory : []).map((item, index, history) => {
@@ -321,7 +322,8 @@
       const signal = scoreSignal(previous?.score);
       const changePct = Number(item?.changePct);
       const direction = Number.isFinite(changePct) && changePct !== 0 ? (changePct > 0 ? "up" : "down") : "flat";
-      const eligible = Boolean(previous) && signal.id !== "neutral" && direction !== "flat";
+      const inPeriod = !fromDate || String(item?.date || "") >= fromDate;
+      const eligible = inPeriod && Boolean(previous) && signal.id !== "neutral" && direction !== "flat";
       const hit = eligible ? (signal.id === "bullish" ? direction === "up" : direction === "down") : null;
       if (eligible) {
         evaluatedCount += 1;
@@ -336,13 +338,15 @@
         hit
       };
     });
+    const periodComparisons = fromDate ? comparisons.filter(item => String(item.date || "") >= fromDate) : comparisons;
+    const comparableCount = periodComparisons.filter(item => item.priorScore !== null).length;
     return {
-      comparisons,
+      comparisons: periodComparisons,
       hitCount,
       evaluatedCount,
-      ignoredCount: Math.max(0, comparisons.length - 1 - evaluatedCount),
+      ignoredCount: Math.max(0, comparableCount - evaluatedCount),
       hitRate: evaluatedCount ? Math.round(hitCount / evaluatedCount * 100) : null,
-      methodology: "前一交易日评分≥60视为偏多、<45视为偏空，对照下一交易日涨跌方向；中性评分和平盘不计。"
+      methodology: "前一交易日评分≥65视为偏多、<45视为偏空，对照下一交易日涨跌方向；中性评分和平盘不计。"
     };
   }
 

@@ -991,6 +991,7 @@
     }
     return technicalPage.render(stock, {
       allStocks: allStocks(),
+      trackedStocks: data.stocks.map(item => ({ code: item.code, name: item.name })),
       trackedCodes: new Set(data.stocks.map(item => item.code))
     });
   }

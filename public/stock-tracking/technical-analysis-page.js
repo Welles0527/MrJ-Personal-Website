@@ -71,17 +71,16 @@
       buy: '<circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>',
       breakout: '<path d="M4 18l5-5 3 3 7-9"/><path d="M14 7h5v5"/><path d="M5 21h14"/>',
       stop: '<path d="M12 3 5 6v5c0 4.4 2.9 8.3 7 10 4.1-1.7 7-5.6 7-10V6z"/><path d="m9 12 2 2 4-5"/>',
-      target: '<path d="M5 21V4"/><path d="M6 5h11l-2 3 2 3H6"/>',
       reduce: '<path d="M12 3 3 20h18z"/><path d="M12 9v5M12 17h.01"/>'
     };
     return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[name] || paths.trend}</svg>`;
   }
 
-  function linePath(values, width = 118, height = 34) {
+  function linePath(values, width = 118, height = 34, domain = null) {
     const finiteValues = values.map(Number).filter(Number.isFinite);
     if (finiteValues.length < 2) return "";
-    const minimum = Math.min(...finiteValues);
-    const maximum = Math.max(...finiteValues);
+    const minimum = Number.isFinite(domain?.minimum) ? domain.minimum : Math.min(...finiteValues);
+    const maximum = Number.isFinite(domain?.maximum) ? domain.maximum : Math.max(...finiteValues);
     const range = maximum - minimum || 1;
     return values.map((rawValue, index) => {
       const value = Number(rawValue);
@@ -113,14 +112,126 @@
         <path d="${linePath(prices)}"/>
       </svg>`;
     }
+    if (id === "volatility") {
+      const boll = result.sparklines.boll || {};
+      const series = [boll.upper, boll.middle, boll.lower].filter(Array.isArray);
+      const finiteValues = series.flat().map(Number).filter(Number.isFinite);
+      if (series.length === 3 && finiteValues.length >= 6) {
+        const domain = { minimum: Math.min(...finiteValues), maximum: Math.max(...finiteValues) };
+        return `<svg class="ta-spark boll" viewBox="0 0 118 34" role="img" aria-label="BOLL 上轨、中轨、下轨最近18个交易日走势">
+          <path class="upper" d="${linePath(boll.upper, 118, 34, domain)}"/>
+          <path class="middle" d="${linePath(boll.middle, 118, 34, domain)}"/>
+          <path class="lower" d="${linePath(boll.lower, 118, 34, domain)}"/>
+        </svg>`;
+      }
+    }
     return `<svg class="ta-spark" viewBox="0 0 118 34" aria-hidden="true"><path d="${linePath(values)}"/></svg>`;
   }
 
   function detailsTooltip(meta, dimension) {
-    return `<span class="ta-score-tooltip" role="tooltip">
+    return `<span class="ta-score-tooltip" role="tooltip" popover="manual">
       <strong>${meta.label}评分 ${formatNumber(dimension.score, 0)}</strong>
       ${dimension.details.map(detail => `<span><b>${escapeHtml(detail.label)}</b><em>${Number.isFinite(Number(detail.points)) ? `${formatNumber(detail.points, 1)}/${detail.max}` : "--"}</em></span><small>${escapeHtml(detail.evidence)}</small>`).join("")}
     </span>`;
+  }
+
+  function overlapArea(rect, other) {
+    const width = Math.max(0, Math.min(rect.right, other.right) - Math.max(rect.left, other.left));
+    const height = Math.max(0, Math.min(rect.bottom, other.bottom) - Math.max(rect.top, other.top));
+    return width * height;
+  }
+
+  function placeScoreTooltip(trigger, root) {
+    const tooltip = trigger.querySelector(".ta-score-tooltip");
+    if (!tooltip) return;
+    trigger.classList.add("is-tooltip-open");
+    if (typeof tooltip.showPopover === "function" && !tooltip.matches(":popover-open")) tooltip.showPopover();
+    tooltip.style.visibility = "hidden";
+    tooltip.style.left = "0px";
+    tooltip.style.top = "0px";
+    const anchor = trigger.getBoundingClientRect();
+    const measured = tooltip.getBoundingClientRect();
+    const width = measured.width;
+    const height = measured.height;
+    const margin = 12;
+    const gap = 10;
+    const viewport = { width: global.innerWidth, height: global.innerHeight };
+    const stage = trigger.closest(".ta-radar-stage")?.getBoundingClientRect() || anchor;
+    const anchorCenterX = anchor.left + anchor.width / 2;
+    const anchorCenterY = anchor.top + anchor.height / 2;
+    const verticalPreference = anchorCenterY >= stage.top + stage.height / 2 ? "top" : "bottom";
+    const horizontalPreference = anchorCenterX >= stage.left + stage.width / 2 ? "left" : "right";
+    const preference = [verticalPreference, horizontalPreference, horizontalPreference === "left" ? "right" : "left", verticalPreference === "top" ? "bottom" : "top"];
+    const coordinates = {
+      top: { left: anchorCenterX - width / 2, top: anchor.top - height - gap },
+      bottom: { left: anchorCenterX - width / 2, top: anchor.bottom + gap },
+      left: { left: anchor.left - width - gap, top: anchorCenterY - height / 2 },
+      right: { left: anchor.right + gap, top: anchorCenterY - height / 2 }
+    };
+    const avoidRects = [...root.querySelectorAll(".ta-dimension, .ta-total-score, .ta-conclusions")]
+      .filter(element => element !== trigger)
+      .map(element => element.getBoundingClientRect());
+    const candidates = preference.map((placement, preferenceIndex) => {
+      const point = coordinates[placement];
+      const rect = { left: point.left, top: point.top, right: point.left + width, bottom: point.top + height };
+      const overflow = Math.max(0, margin - rect.left)
+        + Math.max(0, rect.right - viewport.width + margin)
+        + Math.max(0, margin - rect.top)
+        + Math.max(0, rect.bottom - viewport.height + margin);
+      const overlap = avoidRects.reduce((total, other) => total + overlapArea(rect, other), 0);
+      return { placement, point, score: overflow * 100000 + overlap + preferenceIndex * 500 };
+    });
+    const best = candidates.sort((left, right) => left.score - right.score)[0];
+    const left = Math.min(Math.max(margin, best.point.left), Math.max(margin, viewport.width - width - margin));
+    const top = Math.min(Math.max(margin, best.point.top), Math.max(margin, viewport.height - height - margin));
+    tooltip.dataset.placement = best.placement;
+    tooltip.style.left = `${Math.round(left)}px`;
+    tooltip.style.top = `${Math.round(top)}px`;
+    tooltip.style.visibility = "visible";
+  }
+
+  function bindScoreTooltips(root) {
+    root.querySelectorAll(".ta-dimension, .ta-total-score").forEach(trigger => {
+      const open = () => placeScoreTooltip(trigger, root);
+      const close = () => {
+        trigger.classList.remove("is-tooltip-open");
+        const tooltip = trigger.querySelector(".ta-score-tooltip");
+        if (tooltip) {
+          if (typeof tooltip.hidePopover === "function" && tooltip.matches(":popover-open")) tooltip.hidePopover();
+          tooltip.style.visibility = "";
+        }
+      };
+      trigger.addEventListener("pointerenter", open);
+      trigger.addEventListener("pointerleave", close);
+      trigger.addEventListener("focusin", open);
+      trigger.addEventListener("focusout", close);
+    });
+  }
+
+  function bindSummaryRows(root) {
+    root.querySelectorAll("[data-technical-stock]").forEach(row => {
+      const activate = () => {
+        const code = row.dataset.technicalStock;
+        if (!code) return;
+        if (row.dataset.current === "true") {
+          root.querySelector(".ta-analysis-workspace")?.scrollIntoView({
+            behavior: global.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ? "auto" : "smooth",
+            block: "start"
+          });
+          return;
+        }
+        const url = new URL(global.location.href);
+        url.searchParams.set("stock", code);
+        url.searchParams.set("view", "technical");
+        global.location.assign(url.href);
+      };
+      row.addEventListener("click", activate);
+      row.addEventListener("keydown", event => {
+        if (!["Enter", " "].includes(event.key)) return;
+        event.preventDefault();
+        activate();
+      });
+    });
   }
 
   function StockSearchBar(context, state) {
@@ -186,7 +297,7 @@
       const weight = global.StockTechnicalScores.DIMENSION_WEIGHTS[id];
       return `<span><b>${meta.label} ${formatNumber(score, 0)}</b><em>× ${weight}%</em></span>`;
     }).join("");
-    return `<span class="ta-score-tooltip ta-total-tooltip" role="tooltip"><strong>综合技术评分</strong>${rows}<small>= ${formatNumber(result.scores.total, 0)}</small></span>`;
+    return `<span class="ta-score-tooltip ta-total-tooltip" role="tooltip" popover="manual"><strong>综合技术评分</strong>${rows}<small>= ${formatNumber(result.scores.total, 0)}</small></span>`;
   }
 
   function RadarOverview(result) {
@@ -217,19 +328,74 @@
     const levels = result.tradeLevels;
     const buy = levels.buyZone;
     const breakout = levels.breakout;
-    const target1 = levels.targets[0];
-    const target2 = levels.targets[1];
     return `<aside class="ta-trade-panel" aria-labelledby="ta-trade-title">
       <div class="ta-panel-title"><h2 id="ta-trade-title">交易位置 / 买卖点</h2><p>基于支撑压力共振与 ATR 距离，不构成交易建议</p></div>
       <div class="ta-trade-list">
         ${tradeItem("buy", "mint", "买点", buy ? `缩量回踩 ${formatNumber(buy.lower)}～${formatNumber(buy.upper)}` : "--", buy ? buy.sources.join(" + ") : "等待两项以上支撑共振")}
         ${tradeItem("breakout", "green", breakout?.triggered ? "突破买点" : "关注突破", breakout ? `${breakout.triggered ? "放量站上" : "放量站上"} ${formatNumber(breakout.price)}` : "--", breakout?.condition || "尚未识别主要压力")}
         ${tradeItem("stop", "red", "止损位", formatNumber(levels.stop), levels.stop ? `支撑下沿 - 0.4 ATR（ATR ${formatNumber(levels.atr)}）` : "支撑结构不足")}
-        ${tradeItem("target", "blue", "第一目标位", formatNumber(target1), target1 ? "优先采用上方真实技术压力" : "--")}
-        ${tradeItem("target", "purple", "第二目标位", formatNumber(target2), target2 ? "次级压力；无压力时采用风险收益模型" : "--")}
         ${tradeItem("reduce", "orange", "减仓信号", levels.reduceSignal?.label || "--", levels.reduceSignal?.evidence?.join("；") || "未形成共振")}
       </div>
     </aside>`;
+  }
+
+  function scoreTone(score) {
+    const value = Number(score);
+    if (value >= 65) return "strong";
+    if (value < 45) return "weak";
+    return "neutral";
+  }
+
+  function summaryBuyZone(item) {
+    return item.buyZone
+      ? `${formatNumber(item.buyZone.lower)}～${formatNumber(item.buyZone.upper)}`
+      : "--";
+  }
+
+  function StockScoreSummary(summary, status, currentCode) {
+    const items = Array.isArray(summary?.items) ? summary.items : [];
+    const errors = Array.isArray(summary?.errors) ? summary.errors : [];
+    const latestDate = items.map(item => item.scoreDate).filter(Boolean).sort().at(-1) || "--";
+    const body = status === "loading" && !items.length
+      ? `<div class="ta-summary-state"><span class="ta-summary-loader" aria-hidden="true"></span><strong>正在计算全部自选股评分</strong><small>逐只读取最新完成交易日的真实行情</small></div>`
+      : items.length || errors.length
+        ? `<div class="ta-summary-scroll"><table>
+            <thead><tr><th scope="col">排名</th><th scope="col">股票</th><th scope="col">当日综合分数</th><th scope="col">买点</th><th scope="col">止损位</th><th scope="col">技术结论</th><th scope="col">当日涨跌</th><th scope="col">评分交易日</th></tr></thead>
+            <tbody>${items.map((item, index) => {
+              const rising = Number(item.changePct) >= 0;
+              const active = String(item.code) === String(currentCode);
+              return `<tr class="${active ? "is-current" : ""}" role="link" tabindex="0" data-technical-stock="${escapeHtml(item.code)}" data-current="${active}" aria-label="查看 ${escapeHtml(item.name)} ${escapeHtml(item.code)} 的技术分析">
+                <td><span class="ta-summary-rank">${index + 1}</span></td>
+                <td><span class="ta-summary-stock"><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.code)}${active ? " · 当前" : ""}</small></span></td>
+                <td><span class="ta-summary-score ${scoreTone(item.score)}">${formatNumber(item.score, 0)}</span></td>
+                <td><span class="ta-summary-level buy">${summaryBuyZone(item)}</span></td>
+                <td><span class="ta-summary-level stop">${formatNumber(item.stop)}</span></td>
+                <td><span class="ta-summary-label ${scoreTone(item.score)}">${escapeHtml(item.label)}</span></td>
+                <td><span class="ta-summary-change ${rising ? "rise" : "fall"}">${rising ? "上涨" : "下跌"} ${rising ? "+" : ""}${formatNumber(item.changePct)}%</span></td>
+                <td><time datetime="${escapeHtml(item.scoreDate)}">${escapeHtml(item.scoreDate)}</time></td>
+              </tr>`;
+            }).join("")}${errors.map(error => {
+              const active = String(error.code) === String(currentCode);
+              return `<tr class="ta-summary-error-row ${active ? "is-current" : ""}" role="link" tabindex="0" data-technical-stock="${escapeHtml(error.code)}" data-current="${active}" aria-label="重试 ${escapeHtml(error.name)} ${escapeHtml(error.code)} 的技术分析">
+                <td><span class="ta-summary-rank">--</span></td>
+                <td><span class="ta-summary-stock"><strong>${escapeHtml(error.name)}</strong><small>${escapeHtml(error.code)}${active ? " · 当前" : ""}</small></span></td>
+                <td><span class="ta-summary-score">--</span></td>
+                <td><span class="ta-summary-level">--</span></td>
+                <td><span class="ta-summary-level">--</span></td>
+                <td><span class="ta-summary-label">行情暂不可用</span></td>
+                <td><span class="ta-summary-change">--</span></td>
+                <td><span class="ta-summary-retry" title="${escapeHtml(error.message)}">待重试</span></td>
+              </tr>`;
+            }).join("")}</tbody>
+          </table></div>`
+        : `<div class="ta-summary-state"><strong>暂时无法生成自选股评分汇总</strong><small>${errors.length ? `有 ${errors.length} 只股票行情读取失败，请稍后刷新` : "请先添加自选股"}</small></div>`;
+    return `<section class="ta-score-summary" aria-labelledby="ta-score-summary-title">
+      <div class="ta-panel-title ta-summary-heading">
+        <div><h2 id="ta-score-summary-title">全部自选股 · 当日综合评分</h2><p>${latestDate} 收盘 · 按综合分数从高到低排列</p></div>
+        <span>${items.length} / ${items.length + errors.length || 0} 只已完成${status === "loading" ? " · 更新中" : ""}</span>
+      </div>
+      ${body}
+    </section>`;
   }
 
   function ScoreTrend(result) {
@@ -238,13 +404,13 @@
     return `<section class="ta-score-trend" aria-labelledby="ta-score-trend-title">
       <div class="ta-panel-title ta-score-heading">
         <div><h2 id="ta-score-trend-title">评分与涨跌对照（近30个交易日）</h2><p>上层为每日收盘技术评分，下层为当日涨跌幅；两组柱状图共享同一交易日轴</p></div>
-        <div class="ta-score-legend" aria-label="图例"><span class="score">评分</span><span class="rise">上涨</span><span class="fall">下跌</span><strong>最新 ${formatNumber(result.scores.total, 0)}</strong></div>
+        <div class="ta-score-legend" aria-label="图例"><span class="score-bullish">≥65 偏多</span><span class="score-neutral">45～64 中性</span><span class="score-bearish">＜45 偏空</span><span class="rise">上涨</span><span class="fall">下跌</span><strong>最新 ${formatNumber(result.scores.total, 0)}</strong></div>
       </div>
       <div id="technical-score-trend-chart" class="ta-score-trend-chart" role="img" aria-label="近30个交易日综合技术评分与每日涨跌幅柱状对比"></div>
       <aside class="ta-score-validation" aria-label="技术评分次日方向验证">
-        <div class="ta-validation-primary"><span>次日方向命中率</span><strong>${hitRate}</strong></div>
+        <div class="ta-validation-primary"><span>近3个月次日方向命中率</span><strong>${hitRate}</strong></div>
         <dl><div><dt>有效样本</dt><dd>${performance.evaluatedCount}</dd></div><div><dt>方向命中</dt><dd>${performance.hitCount}</dd></div><div><dt>未计样本</dt><dd>${performance.ignoredCount}</dd></div></dl>
-        <p>以前一交易日评分判断下一交易日方向：评分 ≥60 偏多、＜45 偏空；中性评分和平盘不计。</p>
+        <p>统计最近3个月：以前一交易日评分判断下一交易日方向，评分 ≥65 偏多、＜45 偏空；45～64分和平盘不计。</p>
       </aside>
     </section>`;
   }
@@ -275,6 +441,9 @@
       this.state = {
         status: "idle",
         result: null,
+        summary: null,
+        summaryStatus: "idle",
+        summaryError: "",
         error: "",
         searchQuery: "",
         query: { period: "day", adjustment: "forward" }
@@ -286,6 +455,8 @@
       if (!options.forceRefresh && this.currentStockCode === stockCode && ["loading", "ready"].includes(this.state.status)) return;
       this.currentStockCode = stockCode;
       this.state.status = "loading";
+      this.state.summaryStatus = "loading";
+      this.state.summaryError = "";
       this.state.error = "";
       this.state.result = null;
       this.onChange();
@@ -294,6 +465,14 @@
         if (this.currentStockCode !== stockCode) return;
         this.state.result = result;
         this.state.status = "ready";
+        this.onChange();
+        try {
+          this.state.summary = await this.provider.getTechnicalSummary(this.trackedStocks, this.state.query, options);
+          this.state.summaryStatus = "ready";
+        } catch (summaryError) {
+          this.state.summaryStatus = "error";
+          this.state.summaryError = summaryError?.message || "自选股评分汇总失败";
+        }
       } catch (error) {
         if (this.currentStockCode !== stockCode) return;
         this.state.status = "error";
@@ -303,14 +482,18 @@
     }
 
     render(stock, context) {
+      this.trackedStocks = Array.isArray(context.trackedStocks) ? context.trackedStocks : [];
       if (this.state.status === "idle" || (this.currentStockCode && this.currentStockCode !== stock.code)) return LoadingState(context, this.state);
       if (this.state.status === "loading") return LoadingState(context, this.state);
       if (this.state.status === "error" || !this.state.result) return ErrorState(this.state, context);
       this.state.result.overview.name = stock.name || this.state.result.overview.name;
       return `<div class="technical-analysis-page">
+        ${StockScoreSummary(this.state.summary, this.state.summaryStatus, stock.code)}
         ${DashboardHeader(this.state.result, context, this.state)}
-        <div class="ta-dashboard-grid">${RadarOverview(this.state.result)}${TradePositionPanel(this.state.result)}</div>
-        ${ScoreTrend(this.state.result)}
+        <div class="ta-analysis-workspace">
+          <div class="ta-dashboard-grid">${RadarOverview(this.state.result)}${TradePositionPanel(this.state.result)}</div>
+          ${ScoreTrend(this.state.result)}
+        </div>
         <footer class="ta-data-foot">${escapeHtml(this.state.result.dataMeta.source)} · ${this.state.result.dataMeta.rawCount} 个已完成交易日 · 前复权 · 技术评分描述当前状态，不代表上涨概率</footer>
       </div>`;
     }
@@ -325,6 +508,8 @@
       this.chartElements.forEach(element => this.resizeObserver?.unobserve(element));
       this.chartElements = [root.querySelector("#technical-radar-chart"), root.querySelector("#technical-score-trend-chart")].filter(Boolean);
       this.chartElements.forEach(element => this.resizeObserver?.observe(element));
+      bindScoreTooltips(root);
+      bindSummaryRows(root);
       global.StockTechnicalChart?.renderRadar(this.chartElements[0], this.state.result);
       global.StockTechnicalChart?.renderTrend(this.chartElements[1], this.state.result);
     }

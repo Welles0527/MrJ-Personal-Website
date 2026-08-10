@@ -16,9 +16,38 @@
     return chart;
   }
 
-  function detailsHtml(result, id) {
-    const dimension = result.scores.dimensions[id];
-    return `<div class="ta-echart-tooltip"><strong>${labels[id]}评分 ${dimension.score ?? "--"}</strong>${dimension.details.map(detail => `<span>${detail.label}<b>${Number.isFinite(Number(detail.points)) ? `${Number(detail.points).toFixed(1)}/${detail.max}` : "--"}</b></span>`).join("")}</div>`;
+  function radarSummaryHtml(result) {
+    return `<div class="ta-echart-tooltip ta-radar-summary-tooltip"><strong>五维技术评分</strong>${dimensionOrder.map(id => `<span>${labels[id]}<b>${result.scores.dimensions[id].score ?? "--"}</b></span>`).join("")}</div>`;
+  }
+
+  function smartTooltipPosition(point, params, dom, rect, size) {
+    const [pointX, pointY] = point;
+    const [viewWidth, viewHeight] = size.viewSize;
+    const contentWidth = size.contentSize?.[0] || dom.offsetWidth || 220;
+    const contentHeight = size.contentSize?.[1] || dom.offsetHeight || 160;
+    const margin = 10;
+    const gap = 12;
+    const verticalPreference = pointY > viewHeight / 2 ? "top" : "bottom";
+    const horizontalPreference = pointX > viewWidth / 2 ? "left" : "right";
+    const preference = [verticalPreference, horizontalPreference, horizontalPreference === "left" ? "right" : "left", verticalPreference === "top" ? "bottom" : "top"];
+    const coordinates = {
+      top: [pointX - contentWidth / 2, pointY - contentHeight - gap],
+      bottom: [pointX - contentWidth / 2, pointY + gap],
+      left: [pointX - contentWidth - gap, pointY - contentHeight / 2],
+      right: [pointX + gap, pointY - contentHeight / 2]
+    };
+    const best = preference.map((placement, index) => {
+      const [left, top] = coordinates[placement];
+      const overflow = Math.max(0, margin - left)
+        + Math.max(0, left + contentWidth - viewWidth + margin)
+        + Math.max(0, margin - top)
+        + Math.max(0, top + contentHeight - viewHeight + margin);
+      return { left, top, score: overflow * 100000 + index * 100 };
+    }).sort((left, right) => left.score - right.score)[0];
+    return [
+      Math.round(Math.min(Math.max(margin, best.left), Math.max(margin, viewWidth - contentWidth - margin))),
+      Math.round(Math.min(Math.max(margin, best.top), Math.max(margin, viewHeight - contentHeight - margin)))
+    ];
   }
 
   function renderRadar(element, result) {
@@ -31,13 +60,16 @@
       animationEasing: "cubicOut",
       tooltip: {
         trigger: "item",
-        confine: true,
+        confine: false,
+        appendToBody: true,
+        position: smartTooltipPosition,
         backgroundColor: "rgba(5,7,9,.96)",
         borderColor: "rgba(255,255,255,.12)",
         borderWidth: 1,
         padding: 0,
         textStyle: { color: "#f7f8fc" },
-        formatter: params => dimensionOrder.map(id => detailsHtml(result, id)).join("")
+        extraCssText: "z-index:2147483000;max-height:70vh;overflow:auto;",
+        formatter: () => radarSummaryHtml(result)
       },
       radar: {
         center: ["50%", "52%"],
@@ -75,22 +107,28 @@
     const comparisons = result.scorePerformance?.comparisons || [];
     const comparisonByDate = new Map(comparisons.map(item => [item.date, item]));
     const dates = data.map(item => item.date);
-    const maximumMove = Math.max(2, Math.ceil(Math.max(...data.map(item => Math.abs(Number(item.changePct) || 0)))));
+    const maximumMove = Math.max(2, Math.ceil(Math.max(...data.map(item => Math.abs(Number(item.changePct) || 0))) * 1.18));
     const reduceMotion = global.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    const narrow = element.clientWidth < 640;
+    const scoreColor = score => Number(score) >= 65 ? "#ff6b78" : Number(score) < 45 ? "#38e79f" : "#7891ff";
+    const scoreLabelColor = score => Number(score) >= 65 ? "#ffadb5" : Number(score) < 45 ? "#8ff0cc" : "#c8d2ff";
     chart.setOption({
       animation: !reduceMotion,
       animationDuration: 420,
       animationEasing: "cubicOut",
       grid: [
-        { top: 14, right: 32, height: "49%", left: 46, containLabel: false },
-        { top: "67%", right: 32, bottom: 30, left: 46, containLabel: false }
+        { top: 22, right: 32, height: "44%", left: 46, containLabel: false },
+        { top: "66%", right: 32, bottom: 34, left: 46, containLabel: false }
       ],
       tooltip: {
         trigger: "axis",
-        confine: true,
+        confine: false,
+        appendToBody: true,
+        position: smartTooltipPosition,
         backgroundColor: "rgba(5,7,9,.96)",
         borderColor: "rgba(255,255,255,.12)",
         textStyle: { color: "#f7f8fc" },
+        extraCssText: "z-index:2147483000;",
         formatter: points => {
           const date = points[0]?.axisValue;
           const item = data.find(entry => entry.date === date);
@@ -158,9 +196,26 @@
           xAxisIndex: 0,
           yAxisIndex: 0,
           barMaxWidth: 18,
-          data: data.map(item => item.score),
+          data: data.map((item, index) => ({
+            value: item.score,
+            label: { color: scoreLabelColor(item.score) },
+            itemStyle: {
+              color: scoreColor(item.score),
+              borderColor: index === data.length - 1 ? "rgba(255,255,255,.85)" : "transparent",
+              borderWidth: index === data.length - 1 ? 1 : 0
+            }
+          })),
+          label: {
+            show: true,
+            position: "top",
+            distance: 2,
+            rotate: narrow ? 90 : 0,
+            fontSize: narrow ? 7 : 9,
+            fontWeight: 650,
+            formatter: params => `${Math.round(Number(params.value))}`
+          },
+          labelLayout: { hideOverlap: false },
           itemStyle: {
-            color: params => params.dataIndex === data.length - 1 ? "#4ee0bc" : "#7891ff",
             borderRadius: [4, 4, 0, 0]
           },
           markLine: {
@@ -168,7 +223,7 @@
             symbol: "none",
             label: { show: false },
             lineStyle: { type: "dashed", width: 1, color: "rgba(162,120,255,.28)" },
-            data: [{ yAxis: 60 }, { yAxis: 45 }]
+            data: [{ yAxis: 65 }, { yAxis: 45 }]
           }
         },
         {
@@ -177,7 +232,28 @@
           xAxisIndex: 1,
           yAxisIndex: 1,
           barMaxWidth: 18,
-          data: data.map(item => Number.isFinite(Number(item.changePct)) ? Number(item.changePct) : 0),
+          data: data.map(item => {
+            const value = Number.isFinite(Number(item.changePct)) ? Number(item.changePct) : 0;
+            return {
+              value,
+              label: {
+                position: value >= 0 ? "top" : "bottom",
+                color: value > 0 ? "#ff9aa3" : value < 0 ? "#79e7c0" : "#a7a9b1"
+              }
+            };
+          }),
+          label: {
+            show: true,
+            distance: 2,
+            rotate: narrow ? 90 : 0,
+            fontSize: narrow ? 7 : 8,
+            fontWeight: 600,
+            formatter: params => {
+              const value = Number(params.value) || 0;
+              return `${value > 0 ? "+" : ""}${value.toFixed(2)}%`;
+            }
+          },
+          labelLayout: { hideOverlap: false },
           itemStyle: {
             color: params => params.value > 0 ? "#ff6b78" : params.value < 0 ? "#38e79f" : "#9496a0",
             borderRadius: params => params.value >= 0 ? [3, 3, 0, 0] : [0, 0, 3, 3]
