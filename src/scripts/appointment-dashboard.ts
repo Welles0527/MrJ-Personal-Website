@@ -303,6 +303,7 @@ function officialDepartmentUrl() {
     parentId: "03",
     hosDeptCode: department.code,
     deptType: "1",
+    type: "1",
     clinicName: department.officialName,
     platformHosNo: selectedHospital,
   });
