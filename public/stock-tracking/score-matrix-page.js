@@ -58,19 +58,20 @@
     return "neutral";
   }
 
-  function scoreState(score) {
-    const value = Number(score);
-    if (value >= 65) return "偏多";
-    if (value < 45) return "偏空";
-    return "中性";
-  }
-
   function refreshIcon() {
     return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M18.5 9A7 7 0 0 0 6 7l-2 5M5.5 15A7 7 0 0 0 18 17l2-5"/></svg>`;
   }
 
   function matrixIcon() {
     return `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4" width="17" height="16" rx="2"/><path d="M9 4v16M15 4v16M3.5 9.5h17M3.5 15h17"/></svg>`;
+  }
+
+  function searchIcon() {
+    return `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg>`;
+  }
+
+  function clearIcon() {
+    return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg>`;
   }
 
   class ScoreMatrixPage {
@@ -87,6 +88,7 @@
       this.generation = 0;
       this.weights = readWeights();
       this.draftWeights = { ...this.weights };
+      this.stockQuery = "";
     }
 
     setStocks(stocks) {
@@ -119,7 +121,7 @@
             ? `已完成 ${completed} / ${total}`
             : "等待读取真实行情";
       const rows = this.stocks.length
-        ? this.stocks.map(stock => `<tr>
+        ? this.stocks.map(stock => `<tr data-matrix-stock-row data-matrix-stock-search="${escapeHtml(`${stock.name} ${stock.code}`.toLowerCase())}">
             <th scope="row"><span class="matrix-stock"><strong>${escapeHtml(stock.name)}</strong><small>${escapeHtml(stock.code)}</small></span></th>
             ${PERIODS.map(period => this.renderScoreCell(stock, period)).join("")}
           </tr>`).join("")
@@ -129,21 +131,8 @@
         : "";
 
       return `<section class="score-matrix-page" aria-labelledby="score-matrix-title">
-        <header class="matrix-control-panel">
-          <div class="matrix-intro">
-            <span class="matrix-intro-icon">${matrixIcon()}</span>
-            <div>
-              <h1 id="score-matrix-title">多周期综合评分矩阵</h1>
-              <p>同一组权重横向比较日、周、月、季、年，行序与自选股保持一致。</p>
-            </div>
-            <div class="matrix-load-state">
-              <span data-matrix-progress aria-live="polite">${escapeHtml(statusCopy)}</span>
-              <button type="button" data-action="refresh-score-matrix" ${this.status === "loading" || !this.stocks.length ? "disabled" : ""}>
-                ${refreshIcon()}<span>${this.status === "loading" ? "计算中" : "重新计算"}</span>
-              </button>
-            </div>
-          </div>
-          <section class="matrix-weight-panel" aria-labelledby="matrix-weight-title">
+        <div class="matrix-workspace">
+          <aside class="matrix-weight-panel" aria-labelledby="matrix-weight-title">
             <div class="matrix-weight-heading">
               <div><h2 id="matrix-weight-title">综合分数权重</h2><p>五项合计必须为 100%，应用后立即重算整张矩阵。</p></div>
               <output class="matrix-weight-total is-valid" data-matrix-weight-total aria-live="polite">合计 100%</output>
@@ -159,23 +148,48 @@
               <button class="matrix-weight-reset" type="button" data-action="reset-score-weights">恢复默认</button>
               <button class="matrix-weight-apply" type="button" data-action="apply-score-weights">应用权重</button>
             </div>
-          </section>
-        </header>
+          </aside>
 
-        <section class="matrix-table-panel" aria-labelledby="matrix-table-title">
-          <div class="matrix-table-heading">
-            <div><h2 id="matrix-table-title">全部自选股 · 五周期综合分数</h2><p>每个分数均由该周期最近完成行情的五维指标重新计算。</p></div>
-            <div class="matrix-score-legend" aria-label="分数区间"><span class="bullish">≥65 偏多</span><span class="neutral">45～64 中性</span><span class="bearish">＜45 偏空</span></div>
+          <div class="matrix-content">
+            <header class="matrix-control-panel">
+              <div class="matrix-intro">
+                <span class="matrix-intro-icon">${matrixIcon()}</span>
+                <div>
+                  <h1 id="score-matrix-title">多周期综合评分矩阵</h1>
+                  <p>同一组权重横向比较日、周、月、季、年，行序与自选股保持一致。</p>
+                </div>
+                <div class="matrix-load-state">
+                  <span data-matrix-progress aria-live="polite">${escapeHtml(statusCopy)}</span>
+                  <button type="button" data-action="refresh-score-matrix" ${this.status === "loading" || !this.stocks.length ? "disabled" : ""}>
+                    ${refreshIcon()}<span>${this.status === "loading" ? "计算中" : "重新计算"}</span>
+                  </button>
+                </div>
+              </div>
+            </header>
+
+            <section class="matrix-table-panel" aria-labelledby="matrix-table-title">
+              <div class="matrix-table-heading">
+                <div><h2 id="matrix-table-title">全部自选股 · 五周期综合分数</h2><p>每个分数均由该周期最近完成行情的五维指标重新计算。</p></div>
+                <div class="matrix-table-tools">
+                  <label class="matrix-stock-filter">
+                    ${searchIcon()}
+                    <input type="search" data-matrix-stock-filter value="${escapeHtml(this.stockQuery)}" placeholder="筛选股票名称或代码" autocomplete="off" aria-label="筛选股票名称或代码">
+                    <button type="button" data-action="clear-score-matrix-filter" aria-label="清除股票筛选" ${this.stockQuery ? "" : "hidden"}>${clearIcon()}</button>
+                  </label>
+                  <div class="matrix-score-legend" aria-label="分数区间"><span class="bullish">≥65</span><span class="neutral">45～64</span><span class="bearish">＜45</span></div>
+                </div>
+              </div>
+              <div class="matrix-table-wrap">
+                <table>
+                  <thead><tr><th scope="col">股票</th>${PERIODS.map(period => `<th scope="col"><strong>${period.label}</strong><small>${period.lineLabel}</small></th>`).join("")}</tr></thead>
+                  <tbody>${rows}<tr class="matrix-filter-empty" data-matrix-filter-empty hidden><td colspan="6"><strong>没有匹配的股票</strong><span>请更换名称或代码后重试。</span></td></tr></tbody>
+                </table>
+              </div>
+              ${errorNotice}
+              <footer>权重只改变综合分数，不改变趋势、结构、动量、量价与波动的原始维度评分。</footer>
+            </section>
           </div>
-          <div class="matrix-table-wrap">
-            <table>
-              <thead><tr><th scope="col">股票</th>${PERIODS.map(period => `<th scope="col"><strong>${period.label}</strong><small>${period.lineLabel}</small></th>`).join("")}</tr></thead>
-              <tbody>${rows}</tbody>
-            </table>
-          </div>
-          ${errorNotice}
-          <footer>权重只改变综合分数，不改变趋势、结构、动量、量价与波动的原始维度评分。</footer>
-        </section>
+        </div>
       </section>`;
     }
 
@@ -185,9 +199,7 @@
       if (result) {
         const score = global.StockTechnicalScores.calculateTotalScore(result.scores.dimensions, this.weights);
         const tone = scoreTone(score);
-        const label = scoreState(score);
-        const date = result.overview?.scoreDate || "--";
-        return `<td><span class="matrix-score tone-${tone}" aria-label="${escapeHtml(stock.name)}${period.lineLabel}综合评分 ${score}，${label}，截至 ${escapeHtml(date)}"><strong>${score}</strong><small>${label}</small><em>${escapeHtml(date)}</em></span></td>`;
+        return `<td><span class="matrix-score tone-${tone}" aria-label="${escapeHtml(stock.name)}${period.lineLabel}综合评分 ${score}"><strong>${score}</strong></span></td>`;
       }
       if (this.errors.has(key)) {
         return `<td><span class="matrix-score is-error" title="${escapeHtml(this.errors.get(key))}"><strong>--</strong><small>数据不足</small></span></td>`;
@@ -199,10 +211,16 @@
       this.root = root;
       this.setStocks(stocks);
       this.updateWeightControls();
+      this.updateStockFilter();
       if (this.status === "idle" && this.stocks.length) void this.load(false);
     }
 
     handleInput(target) {
+      if (target?.matches?.("[data-matrix-stock-filter]")) {
+        this.stockQuery = target.value;
+        this.updateStockFilter();
+        return true;
+      }
       const key = target?.dataset?.matrixWeight;
       if (!key || !DIMENSIONS.some(item => item.id === key)) return false;
       this.draftWeights[key] = target.value;
@@ -235,7 +253,32 @@
         void this.load(true);
         return "async";
       }
+      if (action === "clear-score-matrix-filter") {
+        this.stockQuery = "";
+        const input = this.root?.querySelector("[data-matrix-stock-filter]");
+        if (input) {
+          input.value = "";
+          input.focus();
+        }
+        this.updateStockFilter();
+        return "async";
+      }
       return false;
+    }
+
+    updateStockFilter() {
+      if (!this.root) return;
+      const query = this.stockQuery.trim().toLowerCase();
+      let visibleCount = 0;
+      this.root.querySelectorAll("[data-matrix-stock-row]").forEach(row => {
+        const matches = !query || String(row.dataset.matrixStockSearch || "").includes(query);
+        row.hidden = !matches;
+        if (matches) visibleCount += 1;
+      });
+      const empty = this.root.querySelector("[data-matrix-filter-empty]");
+      if (empty) empty.hidden = !query || visibleCount > 0;
+      const clear = this.root.querySelector('[data-action="clear-score-matrix-filter"]');
+      if (clear) clear.hidden = !query;
     }
 
     updateWeightControls() {
