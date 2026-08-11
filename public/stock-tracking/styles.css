@@ -2797,6 +2797,78 @@ body,
   .tracking-layout:not(:has(.technical-main)) .watchlist { background: linear-gradient(180deg, rgba(8, 9, 11, .99), rgba(3, 4, 5, .985)); }
 }
 
+/* Generated research remains available to the data layer while its page section is paused. */
+.daily-research-section { display: none !important; }
+
+/* Stock identity and the four stock-analysis destinations share one compact control row. */
+.position-header { display: block; }
+.quote-block { width: 100%; }
+.quote-title {
+  min-width: 0;
+  flex-wrap: nowrap;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 3px;
+  scrollbar-width: none;
+}
+.quote-title::-webkit-scrollbar { display: none; }
+.quote-stock-identity {
+  min-height: 42px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: baseline;
+  gap: 9px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text);
+  padding: 0 4px;
+  text-align: left;
+}
+.quote-stock-identity:hover,
+.quote-stock-identity:focus-visible { background: rgba(255, 255, 255, .07); }
+.quote-stock-identity h2 { margin: 0; }
+.quote-stock-identity > span { color: var(--text-2); font: 18px/1 var(--mono); }
+.quote-group-tabs { display: flex; flex: 0 0 auto; align-items: center; gap: 7px; }
+.quote-group-tab {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .045);
+  color: var(--text-2);
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 680;
+  white-space: nowrap;
+}
+.quote-group-tab:hover { border-color: var(--line-strong); background: rgba(255, 255, 255, .08); color: var(--text); }
+.quote-group-tab.selected { border-color: rgba(120, 145, 255, .5); background: rgba(120, 145, 255, .14); color: #dce3ff; }
+.quote-group-icon { display: grid; place-items: center; color: #8da2ff; }
+.quote-group-icon svg { width: 15px; height: 15px; }
+.quote-group-count {
+  min-width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #7891ff;
+  color: #fff;
+  font: 700 10px/1 var(--mono);
+}
+.quote-group-count.zero { background: rgba(255, 255, 255, .09); color: var(--muted); }
+.quote-title-actions { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 7px; }
+
+@media (max-width: 620px) {
+  .quote-title { gap: 8px; }
+  .quote-stock-identity { min-height: 38px; }
+  .quote-stock-identity h2 { font-size: 22px; }
+  .quote-stock-identity > span { font-size: 15px; }
+  .quote-group-tab { min-height: 36px; padding: 0 9px; }
+}
+
 @media (min-width: 981px) {
   .watchlist .market-tools {
     display: grid;
@@ -3200,3 +3272,22 @@ body,
   .daily-research-sources { flex-direction: column; gap: 7px; padding: 13px 14px 15px; }
   .daily-research-sources > strong { line-height: 1.4; }
 }
+
+/* Keep each stock visually recognizable throughout the calendar. */
+.tracking-layout:not(:has(.technical-main)) .calendar-event[class*="stock-tone-"] {
+  border-color: var(--calendar-stock-border);
+  border-left-width: 1px;
+  background: var(--calendar-stock-bg);
+}
+.tracking-layout:not(:has(.technical-main)) .calendar-event[class*="stock-tone-"]:hover {
+  border-color: var(--calendar-stock-border-hover);
+  background: var(--calendar-stock-bg-hover);
+}
+.tracking-layout:not(:has(.technical-main)) .calendar-event[class*="stock-tone-"] .calendar-event-stock i,
+.tracking-layout:not(:has(.technical-main)) .calendar-event[class*="stock-tone-"].unread .calendar-event-stock i { background: var(--calendar-stock-accent); }
+.calendar-event.stock-tone-0 { --calendar-stock-bg: #20283c; --calendar-stock-bg-hover: #28334d; --calendar-stock-border: #3f527e; --calendar-stock-border-hover: #657db3; --calendar-stock-accent: #8ea7ff; }
+.calendar-event.stock-tone-1 { --calendar-stock-bg: #2c2238; --calendar-stock-bg-hover: #382b48; --calendar-stock-border: #60487a; --calendar-stock-border-hover: #8867aa; --calendar-stock-accent: #c09af2; }
+.calendar-event.stock-tone-2 { --calendar-stock-bg: #18322d; --calendar-stock-bg-hover: #204039; --calendar-stock-border: #32695c; --calendar-stock-border-hover: #4d8f7f; --calendar-stock-accent: #63d9bc; }
+.calendar-event.stock-tone-3 { --calendar-stock-bg: #382b1d; --calendar-stock-bg-hover: #463724; --calendar-stock-border: #725936; --calendar-stock-border-hover: #9c7847; --calendar-stock-accent: #f0bd6a; }
+.calendar-event.stock-tone-4 { --calendar-stock-bg: #382126; --calendar-stock-bg-hover: #472a31; --calendar-stock-border: #76434e; --calendar-stock-border-hover: #a65f6d; --calendar-stock-accent: #ff8b9c; }
+.calendar-event.stock-tone-5 { --calendar-stock-bg: #19313a; --calendar-stock-bg-hover: #20404b; --calendar-stock-border: #356674; --calendar-stock-border-hover: #4f8b9a; --calendar-stock-accent: #69ccdf; }

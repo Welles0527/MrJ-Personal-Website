@@ -940,7 +940,18 @@
     if (state.viewMode === "ai-selection") {
       aiSelectionPage?.mount(root);
     }
-    root.querySelector(".workspace-tab.selected")?.scrollIntoView({ block: "nearest", inline: "center" });
+    keepSelectedWorkspaceTabVisible();
+  }
+
+  function keepSelectedWorkspaceTabVisible() {
+    const tabs = root.querySelector(".workspace-tabs");
+    const selected = tabs?.querySelector(".workspace-tab.selected");
+    if (!tabs || !selected) return;
+    const selectedLeft = selected.offsetLeft;
+    const selectedRight = selectedLeft + selected.offsetWidth;
+    const visibleRight = tabs.scrollLeft + tabs.clientWidth;
+    if (selectedLeft < tabs.scrollLeft) tabs.scrollLeft = selectedLeft;
+    else if (selectedRight > visibleRight) tabs.scrollLeft = selectedRight - tabs.clientWidth;
   }
 
   function renderWorkspaceNav(stock) {
@@ -981,7 +992,6 @@
   function renderStockView(stock) {
     return `
       ${renderPositionHeader(stock)}
-      ${renderBoards(stock)}
       ${renderMessageHeader("stock")}
       ${renderFilters()}
       ${renderMessageResults(filteredStockMessages(stock))}`;
@@ -1118,13 +1128,22 @@
       </section>`;
   }
 
+  function calendarStockTone(message) {
+    const key = String(message.trackingStockCode || message.trackingStockId || "stock");
+    let hash = 0;
+    for (let index = 0; index < key.length; index += 1) {
+      hash = ((hash * 31) + key.charCodeAt(index)) >>> 0;
+    }
+    return hash % 6;
+  }
+
   function renderCalendarEvent(message) {
     const scopeId = messageScopeId(message);
     const unread = isUnread(message, scopeId);
     const stockName = message.trackingStockName || message.trackingStockCode || "自选股";
     const stockCode = message.trackingStockCode || "";
     return `
-      <article class="calendar-event ${unread ? "unread" : "read"}">
+      <article class="calendar-event stock-tone-${calendarStockTone(message)} ${unread ? "unread" : "read"}">
         <div class="calendar-event-meta">
           <button class="calendar-event-stock" type="button" data-action="select-stock" data-stock-id="${escapeHtml(message.trackingStockId)}" title="查看${escapeHtml(stockName)}动态">
             <i aria-hidden="true"></i><b>${escapeHtml(stockName)}</b><span>${escapeHtml(stockCode)}</span>
@@ -1480,26 +1499,22 @@
     const direction = hasQuote && stock.changePct >= 0 ? "positive" : "negative";
     const position = positionValues(stock);
     const returnPct = hasQuote && position.cost > 0 ? ((stock.price - position.cost) / position.cost) * 100 : null;
-    const account = accountStorage.getAccount();
-    const sync = accountStorage.getSyncStatus?.() || { mode: "local" };
-    const saveState = !account.signedIn
-      ? "未登录 · 当前浏览器访客空间"
-      : sync.mode === "cloud"
-        ? "已同步至登录账号云端"
-        : sync.mode === "error"
-          ? "云同步失败 · 已保留本机"
-          : "正在同步登录账号";
     return `
       <header class="position-header">
         <div class="quote-block">
           <div class="quote-title">
-            <h2>${escapeHtml(stock.name)}</h2>
-            <span>${stock.code}</span>
-            <span class="market-badge ${stock.tracked ? "" : "static-data"}"><i></i>${stock.tracked ? "已加入自选" : "未加入自选"}</span>
-            <button class="header-watchlist-action ${stock.tracked ? "remove" : "add"}" type="button"
-              data-action="${stock.tracked ? "remove-watchlist" : "add-watchlist"}" data-stock-id="${stock.id}">
-              ${icon(stock.tracked ? "remove" : "plus")}<span>${stock.tracked ? "移除" : "加入自选"}</span>
+            <button class="quote-stock-identity ${state.activeGroup === "all" ? "selected" : ""}" type="button"
+              data-action="show-all" aria-pressed="${state.activeGroup === "all"}" aria-label="查看${escapeHtml(stock.name)}全部动态">
+              <h2>${escapeHtml(stock.name)}</h2><span>${stock.code}</span>
             </button>
+            ${renderStockGroupTabs(stock)}
+            <span class="quote-title-actions">
+              <span class="market-badge ${stock.tracked ? "" : "static-data"}"><i></i>${stock.tracked ? "已加入自选" : "未加入自选"}</span>
+              <button class="header-watchlist-action ${stock.tracked ? "remove" : "add"}" type="button"
+                data-action="${stock.tracked ? "remove-watchlist" : "add-watchlist"}" data-stock-id="${stock.id}">
+                ${icon(stock.tracked ? "remove" : "plus")}<span>${stock.tracked ? "移除" : "加入自选"}</span>
+              </button>
+            </span>
           </div>
           <div class="quote-price ${direction}">
             <strong>${formatNumber(stock.price)}</strong>
@@ -1510,18 +1525,25 @@
           <span class="quote-updated-at">${stock.quoteKind === "realtime" ? "实时行情" : stock.quoteKind === "delayed" ? "延迟行情" : "收盘行情"} ${stock.quoteUpdatedAt ? formatDateTime(stock.quoteUpdatedAt) : "等待刷新"}</span>
           </div>
         </div>
-        <dl class="position-metrics">
-          ${renderEditableCost(position.cost)}
-          <div><dt>买入日期</dt><dd>${stock.buyDate || "—"}</dd></div>
-          <div><dt>持仓天数</dt><dd>${stock.holdingDays === null ? "—" : `${stock.holdingDays} 天`}</dd></div>
-          <div><dt>持仓占比</dt><dd>${formatNumber(stock.positionPct, 1)}%</dd></div>
-          <div class="account-save-state">
-            <span class="${account.signedIn ? "signed-in" : ""}"></span>
-            ${saveState}
-          </div>
-        </dl>
-        ${renderEditableThesis(position.thesis)}
       </header>`;
+  }
+
+  function renderStockGroupTabs(stock) {
+    return `<nav class="quote-group-tabs" aria-label="${escapeHtml(stock.name)}动态分类">
+      ${stockGroups.filter(group => group.id !== "all").map(group => {
+        const messages = messagesForGroup(stock, group).sort(sortByNewest);
+        const unread = messages.filter(message => isUnread(message)).length;
+        const selected = state.activeGroup === group.id;
+        const latest = messages[0];
+        const note = group.id === "health" ? "，建议仅供参考" : "";
+        return `<button class="quote-group-tab ${selected ? "selected" : ""}" type="button"
+          data-action="select-group" data-group="${group.id}" aria-pressed="${selected}"
+          aria-label="${group.title}，${unread}条未读${note}" title="${latest ? `最新 ${formatDateTime(latest.publishedAt)}` : "暂无最新动态"}${note}">
+          <span class="quote-group-icon">${icon(group.icon)}</span><span>${group.title}</span>
+          <b class="quote-group-count ${unread ? "" : "zero"}">${unread}</b>
+        </button>`;
+      }).join("")}
+    </nav>`;
   }
 
   function renderEditableCost(cost) {

@@ -71,11 +71,8 @@
   function renderRadar(element, result) {
     const chart = getChart(element);
     if (!chart || !result) return;
-    const reduceMotion = global.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
     chart.setOption({
-      animation: !reduceMotion,
-      animationDuration: 420,
-      animationEasing: "cubicOut",
+      animation: false,
       tooltip: {
         trigger: "item",
         triggerOn: "mousemove",
@@ -132,14 +129,11 @@
     const comparisonByDate = new Map(comparisons.map(item => [item.date, item]));
     const dates = data.map(item => item.date);
     const maximumMove = Math.max(2, Math.ceil(Math.max(...data.map(item => Math.abs(Number(item.changePct) || 0))) * 1.18));
-    const reduceMotion = global.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
     const narrow = element.clientWidth < 640;
     const scoreColor = score => Number(score) >= 65 ? "#ff6b78" : Number(score) < 45 ? "#38e79f" : "#7891ff";
     const scoreLabelColor = score => Number(score) >= 65 ? "#ffadb5" : Number(score) < 45 ? "#8ff0cc" : "#c8d2ff";
     chart.setOption({
-      animation: !reduceMotion,
-      animationDuration: 420,
-      animationEasing: "cubicOut",
+      animation: false,
       grid: [
         { top: 22, right: 32, height: "44%", left: 46, containLabel: false },
         { top: "66%", right: 32, bottom: 34, left: 46, containLabel: false }

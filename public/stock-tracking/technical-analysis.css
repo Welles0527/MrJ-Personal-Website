@@ -32,7 +32,6 @@
     radial-gradient(circle at 77% 88%, rgba(40, 216, 189, .19), transparent 28%),
     #2b292d;
   font-family: "Segoe UI", "Microsoft YaHei UI", "PingFang SC", sans-serif;
-  animation: ta-page-in 420ms cubic-bezier(.2, .75, .25, 1) both;
 }
 
 .technical-analysis-page::before {
@@ -161,8 +160,9 @@
 .ta-panel-title p { max-width: 48ch; color: var(--ta-muted); font-size: 10px; line-height: 1.45; text-align: right; }
 
 .ta-radar-stage { position: relative; min-height: 420px; margin: 0 12px; }
-.ta-radar-chart { position: absolute; z-index: 1; top: 42px; left: 50%; width: min(44%, 430px); height: 330px; transform: translateX(-50%); }
-.ta-total-score { position: absolute; z-index: 4; top: 195px; left: 50%; width: 126px; min-height: 94px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 0; border-radius: 50%; background: radial-gradient(circle, rgba(17, 22, 46, .96) 0 46%, rgba(6, 8, 13, .72) 68%, transparent 70%); transform: translate(-50%, -50%); cursor: help; }
+.ta-radar-stage::after { content: ""; position: absolute; z-index: 2; top: 195px; left: 50%; width: 126px; height: 94px; border-radius: 50%; background: radial-gradient(circle, rgba(17, 22, 46, .96) 0 46%, rgba(6, 8, 13, .72) 68%, transparent 70%); transform: translate(-50%, -50%); pointer-events: none; }
+.ta-radar-chart { position: absolute; z-index: 3; top: 42px; left: 50%; width: min(44%, 430px); height: 330px; transform: translateX(-50%); }
+.ta-total-score { position: absolute; z-index: 4; top: 195px; left: 50%; width: 126px; min-height: 94px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 0; border-radius: 50%; background: transparent; transform: translate(-50%, -50%); cursor: help; }
 .ta-total-score strong { color: #8da2ff; font-size: 46px; font-weight: 670; font-variant-numeric: tabular-nums; letter-spacing: -.04em; line-height: 1; }
 .ta-total-score > span:not(.ta-score-tooltip) { margin-top: 5px; color: #b6c0ff; font-size: 14px; font-weight: 660; }
 
@@ -289,20 +289,11 @@
 .ta-echart-tooltip b { color: #dbe1ff; font-weight: 650; }
 
 @keyframes ta-spin { to { transform: rotate(360deg); } }
-@keyframes ta-page-in { from { opacity: .72; transform: translateY(4px); } to { opacity: 1; transform: none; } }
-
-@media (min-width: 1800px) {
-  .ta-analysis-workspace { position: relative; z-index: 1; display: grid; grid-template-areas: "trade radar trend"; grid-template-columns: minmax(330px, .68fr) minmax(640px, 1.35fr) minmax(820px, 1.67fr); align-items: stretch; gap: 14px; margin-top: 14px; }
-  .ta-analysis-workspace .ta-dashboard-grid { display: contents; margin-top: 0; }
-  .ta-analysis-workspace .ta-radar-panel, .ta-analysis-workspace .ta-trade-panel, .ta-analysis-workspace .ta-score-trend { min-height: 526px; margin-top: 0; }
-  .ta-analysis-workspace .ta-score-trend { grid-template-columns: minmax(0, 1fr) 168px; }
-  .ta-analysis-workspace .ta-score-trend-chart { height: 420px; }
-}
-
 @media (max-width: 1320px) {
   .ta-dashboard-header { grid-template-columns: minmax(300px, 1.4fr) auto auto; gap: 13px; }
   .ta-update { grid-column: 1 / -1; justify-content: flex-end; min-height: 0; margin-top: -8px; }
   .ta-radar-stage { min-height: 440px; }
+  .ta-radar-stage::after { top: 210px; }
   .ta-radar-chart { top: 52px; width: min(45%, 410px); height: 340px; }
   .ta-total-score { top: 210px; }
   .ta-dimension { width: 206px; }
@@ -352,6 +343,7 @@
   .ta-summary-scroll table { min-width: 0; }
   .ta-summary-scroll th, .ta-summary-scroll td { padding-right: 11px; padding-left: 11px; }
   .ta-radar-stage { min-height: 540px; margin: 0 5px; }
+  .ta-radar-stage::after { top: 182px; width: 110px; height: 86px; }
   .ta-radar-chart { top: 52px; width: 96%; height: 280px; }
   .ta-total-score { top: 182px; width: 110px; min-height: 86px; }
   .ta-total-score strong { font-size: 42px; }
