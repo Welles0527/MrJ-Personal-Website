@@ -253,14 +253,14 @@
     </div>`;
   }
 
-  function DashboardHeader(result, state) {
+  function DashboardHeader(result, state, marketMode = false) {
     const stock = result.overview;
     const rising = Number(stock.changePct) >= 0;
     return `<header class="ta-dashboard-header">
       <div class="ta-identity">
         <button type="button" class="ta-back" data-action="return-stock-view" aria-label="返回个股跟踪">${icon("back")}</button>
         <span class="ta-brand-mark">${icon("trend")}</span>
-        <div><h1>${escapeHtml(stock.name)}技术总览</h1><p>${stock.code} · ${escapeHtml(stock.periodLabel)}前复权 · 评分截至 ${escapeHtml(stock.scoreDate)} 收盘</p></div>
+        <div><h1>${escapeHtml(stock.name)}技术总览</h1><p>${stock.code} · ${escapeHtml(stock.periodLabel)}${marketMode ? "指数行情" : "前复权"} · 评分截至 ${escapeHtml(stock.scoreDate)} 收盘</p></div>
       </div>
       <div class="ta-live-quote ${rising ? "rise" : "fall"}">
         <strong>${formatNumber(stock.price)}</strong>
@@ -350,6 +350,17 @@
     return `<div class="ta-timeframe-switch" role="group" aria-label="技术分析周期">
       ${Object.values(timeframes.PROFILES).map(profile => `<button type="button" data-action="set-technical-period" data-period="${profile.id}" aria-pressed="${profile.id === period}">${profile.label}</button>`).join("")}
     </div>`;
+  }
+
+  function MarketPricePanel(result) {
+    const candles = Array.isArray(result.dailyCandles) ? result.dailyCandles : [];
+    const completedThrough = result.dataMeta?.dailySeriesCompletedThrough || candles.at(-1)?.date || "--";
+    return `<section class="ta-market-price" aria-labelledby="ta-market-price-title">
+      <div class="ta-panel-title ta-market-price-heading">
+        <div><h2 id="ta-market-price-title">上证指数真实走势</h2><p>${candles.length} 个已完成交易日 · 更新至 ${escapeHtml(completedThrough)} · 日线收盘及周/月/季/年均线</p></div>
+      </div>
+      <div id="technical-market-price-chart" class="ta-market-price-chart" role="img" aria-label="上证指数日线收盘走势，以及周均、月均、季均和年均线"></div>
+    </section>`;
   }
 
   function StockScoreSummary(summary, status, currentCode, period) {
@@ -481,10 +492,11 @@
     ];
   }
 
-  function TechnicalNarrative(result) {
+  function TechnicalNarrative(result, showTimeframeSelector = false) {
     const insights = buildTechnicalNarrative(result);
+    const profile = timeframes.getProfile(result.query?.period || result.dataMeta?.period);
     return `<section class="ta-signal-brief" aria-labelledby="ta-signal-brief-title">
-      <div class="ta-panel-title"><div><h2 id="ta-signal-brief-title">技术指标解读</h2><p>从真实行情中提取最重要的突破与变盘证据</p></div></div>
+      <div class="ta-panel-title"><div><h2 id="ta-signal-brief-title">技术指标解读</h2><p>从真实行情中提取最重要的突破与变盘证据</p></div>${showTimeframeSelector ? `<div class="ta-market-period-control"><span>技术评分周期</span>${TimeframeSelector(profile.id)}</div>` : ""}</div>
       <div class="ta-insight-list">${insights.map(insight => `<div class="ta-insight-row tone-${insight.tone} ${insight.kind ? `insight-${insight.kind}` : ""}"><span>${icon(insight.icon)}${insight.label}</span><strong>${insight.title}</strong><p>${insight.text}</p></div>`).join("")}</div>
     </section>`;
   }
@@ -510,14 +522,14 @@
   }
 
   function LoadingState(context, state) {
-    return `<div class="technical-analysis-page ta-state-page">
+    return `<div class="technical-analysis-page ta-state-page ${context.variant === "market" ? "market-technical-analysis-page" : ""}">
       <header class="ta-state-header"><button type="button" class="ta-back" data-action="return-stock-view">${icon("back")}</button>${StockSearchBar(context, state)}</header>
-      <section class="ta-loading" aria-live="polite" aria-busy="true"><span class="ta-loader"></span><h2>正在读取真实行情</h2><p>加载至少250个交易日的前复权日线，并逐日计算技术评分…</p></section>
+      <section class="ta-loading" aria-live="polite" aria-busy="true"><span class="ta-loader"></span><h2>正在读取真实行情</h2><p>加载至少250个交易日的${context.variant === "market" ? "指数" : "前复权"}行情，并逐日计算技术评分…</p></section>
     </div>`;
   }
 
   function ErrorState(state, context) {
-    return `<div class="technical-analysis-page ta-state-page">
+    return `<div class="technical-analysis-page ta-state-page ${context.variant === "market" ? "market-technical-analysis-page" : ""}">
       <header class="ta-state-header"><button type="button" class="ta-back" data-action="return-stock-view">${icon("back")}</button>${StockSearchBar(context, state)}</header>
       <section class="ta-error-state"><span>行情数据未连接</span><h2>无法生成正式技术评分</h2><p>${escapeHtml(state.error || "真实行情暂不可用，请稍后重试。")}</p><button type="button" data-action="refresh-technical">重新读取真实行情</button></section>
     </div>`;
@@ -588,19 +600,21 @@
       if (this.state.status === "loading") return LoadingState(context, this.state);
       if (this.state.status === "error" || !this.state.result) return ErrorState(this.state, context);
       this.state.result.overview.name = stock.name || this.state.result.overview.name;
-      return `<div class="technical-analysis-page">
+      const marketMode = context.variant === "market";
+      return `<div class="technical-analysis-page ${marketMode ? "market-technical-analysis-page" : ""}">
         <div class="ta-technical-shell">
-          ${StockScoreSummary(this.state.summary, this.state.summaryStatus, stock.code, this.state.query.period)}
-          <main class="ta-stock-detail" aria-label="${escapeHtml(stock.name)}个股技术分析">
-            ${DashboardHeader(this.state.result, this.state)}
-            ${TechnicalNarrative(this.state.result)}
+          ${marketMode ? "" : StockScoreSummary(this.state.summary, this.state.summaryStatus, stock.code, this.state.query.period)}
+          <main class="ta-stock-detail" aria-label="${escapeHtml(stock.name)}${marketMode ? "大盘" : "个股"}技术分析">
+            ${DashboardHeader(this.state.result, this.state, marketMode)}
+            ${marketMode ? MarketPricePanel(this.state.result) : ""}
+            ${TechnicalNarrative(this.state.result, marketMode)}
             <div class="ta-analysis-workspace">
               <div class="ta-dashboard-grid">${RadarOverview(this.state.result)}${TradePositionPanel(this.state.result)}</div>
               ${ScoreTrend(this.state.result)}
             </div>
           </main>
         </div>
-        <footer class="ta-data-foot">${escapeHtml(this.state.result.dataMeta.source)} · ${this.state.result.dataMeta.rawCount} 个有效${escapeHtml(this.state.result.dataMeta.barLabel)} · 前复权 · 技术评分描述当前状态，不代表上涨概率</footer>
+        <footer class="ta-data-foot">${escapeHtml(this.state.result.dataMeta.source)} · ${this.state.result.dataMeta.rawCount} 个有效${escapeHtml(this.state.result.dataMeta.barLabel)} · ${marketMode ? "指数行情" : "前复权"} · 技术评分描述当前状态，不代表上涨概率</footer>
       </div>`;
     }
 
@@ -615,12 +629,16 @@
         this.resizeObserver?.unobserve(element);
         global.StockTechnicalChart?.dispose(element);
       });
-      this.chartElements = [root.querySelector("#technical-radar-chart"), root.querySelector("#technical-score-trend-chart")].filter(Boolean);
+      const marketPriceElement = root.querySelector("#technical-market-price-chart");
+      const radarElement = root.querySelector("#technical-radar-chart");
+      const scoreTrendElement = root.querySelector("#technical-score-trend-chart");
+      this.chartElements = [marketPriceElement, radarElement, scoreTrendElement].filter(Boolean);
       this.chartElements.forEach(element => this.resizeObserver?.observe(element));
       bindScoreTooltips(root);
       bindSummaryRows(root);
-      global.StockTechnicalChart?.renderRadar(this.chartElements[0], this.state.result);
-      global.StockTechnicalChart?.renderTrend(this.chartElements[1], this.state.result);
+      global.StockTechnicalChart?.renderMarketPrice(marketPriceElement, this.state.result);
+      global.StockTechnicalChart?.renderRadar(radarElement, this.state.result);
+      global.StockTechnicalChart?.renderTrend(scoreTrendElement, this.state.result);
     }
 
     handleAction(target) {

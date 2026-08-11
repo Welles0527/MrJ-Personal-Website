@@ -140,6 +140,8 @@
       this.liveProvider = options.liveProvider || new global.StockTrackingLiveData.EastmoneyStockLiveDataProvider(liveOptions);
       this.cache = new Map();
       this.cacheTtl = Number(options.cacheTtl) || 10 * 60 * 1000;
+      this.includeDailySeries = Boolean(options.includeDailySeries);
+      this.dailySeriesLimit = Math.max(260, Math.min(500, Number(options.dailySeriesLimit) || 500));
     }
 
     async getTechnicalAnalysis(stockCode, query, options = {}) {
@@ -149,13 +151,28 @@
       const cacheKey = `${code}:${profile.id}`;
       const cached = this.cache.get(cacheKey);
       if (!options.forceRefresh && cached && Date.now() - cached.createdAt < this.cacheTtl) return cached.value;
+      const primaryLimit = this.includeDailySeries && profile.sourcePeriod === "day"
+        ? Math.max(profile.sourceLimit, this.dailySeriesLimit)
+        : profile.sourceLimit;
       const snapshot = await this.liveProvider.getTechnicalSnapshot(code, {
         force: Boolean(options.forceRefresh),
         period: profile.sourcePeriod,
-        limit: profile.sourceLimit
+        limit: primaryLimit
       });
       const value = analyzeSnapshot(code, snapshot, { ...query, period: profile.id });
       value.query = { ...query, period: profile.id, adjustment: "forward" };
+      if (this.includeDailySeries) {
+        const dailySnapshot = profile.sourcePeriod === "day"
+          ? snapshot
+          : await this.liveProvider.getTechnicalSnapshot(code, {
+              force: Boolean(options.forceRefresh),
+              period: "day",
+              limit: this.dailySeriesLimit
+            });
+        value.dailyCandles = (dailySnapshot.history?.candles || []).slice(-this.dailySeriesLimit);
+        value.dataMeta.dailySeriesSource = dailySnapshot.history?.source || "";
+        value.dataMeta.dailySeriesCompletedThrough = dailySnapshot.history?.lastCompletedDate || "";
+      }
       this.cache.set(cacheKey, { createdAt: Date.now(), value });
       return value;
     }

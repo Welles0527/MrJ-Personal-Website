@@ -2,7 +2,9 @@
 
 (function createStockLiveDataProvider(global) {
   const REALTIME_QUOTE_ENDPOINT = "https://push2.eastmoney.com/api/qt/stock/get";
+  const REALTIME_QUOTE_FALLBACK_ENDPOINT = "https://push2delay.eastmoney.com/api/qt/stock/get";
   const DAILY_KLINE_ENDPOINT = "https://push2his.eastmoney.com/api/qt/stock/kline/get";
+  const TENCENT_KLINE_ENDPOINT = "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get";
   const ANNOUNCEMENT_ENDPOINT = "https://np-anotice-stock.eastmoney.com/api/security/ann";
   const NEWS_ENDPOINT = "https://search-api-web.eastmoney.com/search/jsonp";
   const DEFAULT_PROXY_ENDPOINT = ["127.0.0.1", "localhost"].includes(global.location.hostname)
@@ -162,6 +164,12 @@
     constructor(options = {}) {
       this.timeout = Number(options.timeout) || 12000;
       this.proxyEndpoint = options.proxyEndpoint || DEFAULT_PROXY_ENDPOINT;
+      this.marketId = ["0", "1"].includes(String(options.marketId)) ? String(options.marketId) : "";
+      this.directOnly = Boolean(options.directOnly);
+    }
+
+    marketIdForCode(code) {
+      return this.marketId || marketIdFor(code);
     }
 
     async request(url) {
@@ -333,11 +341,27 @@
 
     async getDirectRealtimeQuote(stockCode) {
       const code = String(stockCode).padStart(6, "0");
-      const url = new URL(REALTIME_QUOTE_ENDPOINT);
-      url.searchParams.set("secid", `${marketIdFor(code)}.${code}`);
-      url.searchParams.set("fields", "f43,f44,f45,f46,f47,f48,f57,f58,f60,f86,f116,f117,f168,f169,f170,f171");
-      url.searchParams.set("_", Date.now());
-      const payload = await this.requestJson(url);
+      const quoteUrl = endpoint => {
+        const url = new URL(endpoint);
+        url.searchParams.set("secid", `${this.marketIdForCode(code)}.${code}`);
+        url.searchParams.set("fields", "f43,f44,f45,f46,f47,f48,f57,f58,f60,f86,f116,f117,f168,f169,f170,f171");
+        url.searchParams.set("_", Date.now());
+        return url;
+      };
+      let payload;
+      let quoteKind = "realtime";
+      let source = "东方财富公开实时行情";
+      try {
+        payload = await this.requestJson(quoteUrl(this.marketId ? REALTIME_QUOTE_FALLBACK_ENDPOINT : REALTIME_QUOTE_ENDPOINT));
+        if (this.marketId) {
+          quoteKind = "delayed";
+          source = "东方财富公开延迟行情";
+        }
+      } catch {
+        payload = await this.requestJson(quoteUrl(REALTIME_QUOTE_FALLBACK_ENDPOINT));
+        quoteKind = "delayed";
+        source = "东方财富公开延迟行情";
+      }
       const item = payload?.data;
       if (!item || String(item.f57) !== code || !Number.isFinite(Number(item.f43))) {
         throw new Error("实时行情暂不可用");
@@ -359,15 +383,62 @@
         totalMarketValue: scaled(item.f116),
         circulatingMarketValue: scaled(item.f117),
         updatedAt: shanghaiIsoFromUnix(item.f86),
-        quoteKind: "realtime",
-        source: "东方财富公开实时行情"
+        quoteKind,
+        source
+      };
+    }
+
+    async getTencentIndexHistory(stockCode, options = {}) {
+      const code = String(stockCode).padStart(6, "0");
+      const period = ["day", "week", "month"].includes(options.period) ? options.period : "day";
+      const minimumLimit = period === "day" ? 260 : period === "week" ? 120 : 60;
+      const limit = Math.max(minimumLimit, Math.min(500, Number(options.limit) || 360));
+      const symbol = `${this.marketIdForCode(code) === "1" ? "sh" : "sz"}${code}`;
+      const url = new URL(TENCENT_KLINE_ENDPOINT);
+      url.searchParams.set("param", `${symbol},${period},,,${limit},qfq`);
+      const payload = await this.requestJson(url);
+      const item = payload?.data?.[symbol];
+      const rows = Array.isArray(item?.[period]) ? item[period] : [];
+      const candles = rows.map((row, index) => {
+        const [date, openValue, closeValue, highValue, lowValue, volumeValue] = row;
+        const open = scaled(openValue);
+        const close = scaled(closeValue);
+        const high = scaled(highValue);
+        const low = scaled(lowValue);
+        const volume = scaled(volumeValue);
+        const previousClose = index ? scaled(rows[index - 1]?.[2]) : null;
+        const change = Number.isFinite(previousClose) ? close - previousClose : null;
+        return {
+          date,
+          open,
+          high,
+          low,
+          close,
+          volume,
+          amount: Number.isFinite(volume) && Number.isFinite(close) ? volume * close : null,
+          turnoverRate: null,
+          amplitude: Number.isFinite(previousClose) && previousClose !== 0 ? (high - low) / previousClose * 100 : null,
+          changePct: Number.isFinite(change) && previousClose !== 0 ? change / previousClose * 100 : null,
+          change
+        };
+      }).filter(candle => candle.date && [candle.open, candle.high, candle.low, candle.close, candle.volume, candle.amount].every(Number.isFinite));
+      if (!candles.length) throw new Error("指数历史行情暂不可用");
+      return {
+        code,
+        name: String(item?.qt?.[symbol]?.[1] || ""),
+        period,
+        adjustment: "none",
+        candles,
+        lastCompletedDate: candles.at(-1).date,
+        updatedAt: `${candles.at(-1).date}T15:00:00+08:00`,
+        source: `腾讯证券公开${period === "day" ? "日" : period === "week" ? "周" : "月"}线指数行情`
       };
     }
 
     async getClosingQuote(stockCode) {
       const code = String(stockCode).padStart(6, "0");
       const url = new URL(DAILY_KLINE_ENDPOINT);
-      url.searchParams.set("secid", `${marketIdFor(code)}.${code}`);
+      url.searchParams.set("secid", `${this.marketIdForCode(code)}.${code}`);
       url.searchParams.set("klt", "101");
       url.searchParams.set("fqt", "1");
       url.searchParams.set("lmt", "3");
@@ -424,12 +495,13 @@
 
     async getDirectHistory(stockCode, options = {}) {
       const code = String(stockCode).padStart(6, "0");
+      if (this.marketId) return this.getTencentIndexHistory(code, options);
       const period = ["day", "week", "month"].includes(options.period) ? options.period : "day";
       const klt = { day: "101", week: "102", month: "103" }[period];
       const periodLabel = { day: "日线", week: "周线", month: "月线" }[period];
       const minimumLimit = period === "day" ? 260 : period === "week" ? 120 : 60;
       const url = new URL(DAILY_KLINE_ENDPOINT);
-      url.searchParams.set("secid", `${marketIdFor(code)}.${code}`);
+      url.searchParams.set("secid", `${this.marketIdForCode(code)}.${code}`);
       url.searchParams.set("klt", klt);
       url.searchParams.set("fqt", "1");
       url.searchParams.set("lmt", String(Math.max(minimumLimit, Math.min(500, Number(options.limit) || 360))));
@@ -478,6 +550,19 @@
 
     async getTechnicalSnapshot(stockCode, options = {}) {
       const code = String(stockCode).padStart(6, "0");
+      if (this.directOnly) {
+        const [quoteResult, historyResult] = await Promise.allSettled([
+          this.getDirectRealtimeQuote(code),
+          this.getDirectHistory(code, { period: options.period, limit: options.limit })
+        ]);
+        if (historyResult.status !== "fulfilled") throw historyResult.reason;
+        return {
+          quote: quoteResult.status === "fulfilled" ? quoteResult.value : null,
+          history: historyResult.value,
+          errors: quoteResult.status === "rejected" ? { quote: quoteResult.reason?.message || "实时行情暂不可用" } : {},
+          checkedAt: new Date().toISOString()
+        };
+      }
       try {
         let payload = await this.requestJson(this.proxyUrl(code, ["quote", "history"], options));
         if (!payload?.history && payload?.errors?.history) {

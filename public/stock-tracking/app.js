@@ -5,7 +5,6 @@
   const accountStorage = window.StockTrackingAccountStorage;
   const messageTaxonomy = window.StockTrackingMessageTaxonomy;
   const messageReadState = window.StockTrackingMessageReadState;
-  const dailyResearch = window.STOCK_DAILY_RESEARCH || null;
   if (!messageTaxonomy) throw new Error("消息分类模块未加载");
   if (!messageReadState) throw new Error("消息已读状态模块未加载");
   const MESSAGE_CATEGORY = messageTaxonomy.categories;
@@ -27,7 +26,16 @@
   const technicalProvider = window.StockTechnicalAnalysis
     ? new window.StockTechnicalAnalysis.EastmoneyTechnicalAnalysisProvider()
     : null;
+  const MARKET_INDEX = { id: "market-shanghai", code: "000001", name: "上证指数" };
+  const marketTechnicalProvider = window.StockTechnicalAnalysis && window.StockTrackingLiveData
+    ? new window.StockTechnicalAnalysis.EastmoneyTechnicalAnalysisProvider({
+        liveProvider: new window.StockTrackingLiveData.EastmoneyStockLiveDataProvider({ marketId: "1", directOnly: true }),
+        includeDailySeries: true,
+        dailySeriesLimit: 500
+      })
+    : null;
   const aiSelectionProvider = window.AIStockSelectionProvider || null;
+  const VIEW_MODES = ["stock", "daily", "calendar", "market", "macro", "technical", "score-matrix", "ai-selection"];
   const stockGroups = [
     { id: "all", title: "全部动态", icon: "all", categories: [MESSAGE_CATEGORY.INDUSTRY, MESSAGE_CATEGORY.COMPANY], size: "primary" },
     { id: "industry", title: "行业大事件", icon: "globe", categories: [MESSAGE_CATEGORY.INDUSTRY], size: "secondary" },
@@ -72,11 +80,10 @@
     : legacyGroupMap[requestedCategory] || "all";
   const state = {
     selectedStockId: requestedStockId || data?.stocks?.[0]?.id || "",
-    viewMode: ["technical", "score-matrix", "daily", "calendar", "ai-selection"].includes(requestedView) ? requestedView : "stock",
+    viewMode: VIEW_MODES.includes(requestedView) ? requestedView : "stock",
     activeGroup: requestedGroup,
     query: "",
     dailyStockQuery: "",
-    researchStockCode: dailyResearch?.stocks?.some(stock => stock.code === requestedStockId) ? requestedStockId : "all",
     readStateByScope: new Map(),
     editField: null,
     costDraft: "",
@@ -105,6 +112,7 @@
 
   let root;
   let technicalPage;
+  let marketTechnicalPage;
   let scoreMatrixPage;
   let aiSelectionPage;
   let completeEmailSignUp;
@@ -117,6 +125,9 @@
     restoreWatchlist();
     if (technicalProvider && window.StockTechnicalAnalysisPage) {
       technicalPage = window.StockTechnicalAnalysisPage.create(technicalProvider, render);
+    }
+    if (marketTechnicalProvider && window.StockTechnicalAnalysisPage) {
+      marketTechnicalPage = window.StockTechnicalAnalysisPage.create(marketTechnicalProvider, render);
     }
     if (technicalProvider && window.StockScoreMatrixPage) {
       scoreMatrixPage = window.StockScoreMatrixPage.create(technicalProvider, render);
@@ -917,22 +928,25 @@
   function render() {
     const stock = selectedStock();
     const analysisView = analysisWorkspaceView();
+    const fullWidthView = analysisView || state.viewMode === "market";
     document.title = state.viewMode === "score-matrix"
       ? "多周期评分矩阵 - A股个股跟踪"
       : state.viewMode === "technical"
       ? `${stock.name}技术分析 - A股个股跟踪`
       : state.viewMode === "daily"
         ? "今日必读 - A股个股跟踪"
-        : state.viewMode === "calendar"
+          : state.viewMode === "calendar"
           ? "个股日历 - A股个股跟踪"
+          : state.viewMode === "market"
+            ? "大盘走势 - A股个股跟踪"
           : state.viewMode === "ai-selection"
             ? "AI选股 - A股个股跟踪"
             : "A股个股跟踪";
     root.innerHTML = `
       <div class="tracking-layout ${state.viewMode === "ai-selection" ? "ai-selection-layout" : ""}">
         ${renderWorkspaceNav(stock)}
-        ${renderSidebar(stock)}
-        <main class="tracking-main ${analysisView ? "technical-main" : ""} ${state.viewMode === "score-matrix" ? "score-matrix-main" : ""}">
+        ${state.viewMode === "market" ? "" : renderSidebar(stock)}
+        <main class="tracking-main ${fullWidthView ? "technical-main" : ""} ${state.viewMode === "score-matrix" ? "score-matrix-main" : ""}">
           ${state.viewMode === "stock" ? renderStockView(stock) : ""}
           ${state.viewMode === "daily" ? renderDailyDigestView() : ""}
           ${state.viewMode === "calendar" ? renderCalendarView() : ""}
@@ -946,6 +960,7 @@
       ${renderAuthModal()}`;
     syncUrl();
     if (state.viewMode === "technical") technicalPage?.mount(root, stock);
+    if (state.viewMode === "market") marketTechnicalPage?.mount(root, MARKET_INDEX);
     if (state.viewMode === "score-matrix") scoreMatrixPage?.mount(root, data.stocks);
     if (state.viewMode === "ai-selection") {
       aiSelectionPage?.mount(root);
@@ -971,14 +986,14 @@
   function renderWorkspaceNav(stock) {
     const account = accountStorage.getAccount();
     const views = [
-      ["stock", "all", "个股看板"],
       ["daily", "digest", "今日必读"],
+      ["stock", "all", "个股看板"],
       ["calendar", "calendar", "个股日历"],
-      ["macro", "news", "宏观事件"],
       ["market", "pulse", "大盘走势"],
-      ["ai-selection", "ai", "AI选股"],
+      ["macro", "news", "宏观事件"],
       ["technical", "chart", "技术分析"],
-      ["score-matrix", "matrix", "评分矩阵"]
+      ["score-matrix", "matrix", "评分矩阵"],
+      ["ai-selection", "ai", "AI选股"]
     ];
     return `
       <header class="workspace-nav" aria-label="个股投资主导航">
@@ -1059,7 +1074,10 @@
             <small><b>今日 ${allSections.today.length} · 补看 ${allSections.catchUp.length}</b><span>已检查 ${checkState.checkedCount}/${data.stocks.length}${checkState.latestAt ? ` · ${formatDateTime(checkState.latestAt)}` : ""}</span></small>
           </div>
         </header>
-        ${renderDailyResearchSection()}
+        ${renderMessageHeader("daily")}
+        ${renderDailyDigestFilters(true, "今日必读")}
+        ${renderDailyDigestSection("今日发布", "当天发布的信息", visibleSections.today, "today")}
+        ${allSections.catchUp.length ? renderDailyDigestSection("历史未读补看", "今天以前尚未阅读，不含未来事件", visibleSections.catchUp, "catch-up") : ""}
       </section>`;
   }
 
@@ -1067,8 +1085,10 @@
     const account = accountStorage.getAccount();
     const allReminders = currentMonthCalendarReminders();
     const visibleReminders = calendarReminderMessages();
-    const reminderStocks = new Set(allReminders.map(message => String(message.trackingStockId))).size;
-    const unread = allReminders.filter(messageIsUnread).length;
+    const filteredByStock = state.filters.stock !== "all";
+    const summaryReminders = filteredByStock ? visibleReminders : allReminders;
+    const reminderStocks = new Set(summaryReminders.map(message => String(message.trackingStockId))).size;
+    const unread = summaryReminders.filter(messageIsUnread).length;
     const today = shanghaiDateParts();
     const monthLabel = `${today.year}年${today.month}月`;
     return `
@@ -1078,13 +1098,13 @@
           <div>
             <p>${account.signedIn ? "登录账号自选股" : "当前浏览器自选股"} · 上海时间</p>
             <h2>个股日历</h2>
-            <span>汇总 ${data.stocks.length} 只自选股在${monthLabel}尚未到期的公司事项</span>
+            <span>${filteredByStock ? `仅显示 ${escapeHtml(selectedStock().name)}` : `汇总 ${data.stocks.length} 只自选股`}在${monthLabel}尚未到期的公司事项</span>
           </div>
           <div class="daily-digest-summary" aria-label="个股日历汇总">
-            <span class="neutral"><b>${allReminders.length}</b>本月提醒</span>
+            <span class="neutral"><b>${summaryReminders.length}</b>本月提醒</span>
             <span class="neutral"><b>${reminderStocks}</b>只股票</span>
             <span class="neutral"><b>${unread}</b>未读</span>
-            <small><b>${allReminders[0] ? `最近 ${formatDateTime(allReminders[0].publishedAt)}` : "本月暂无提醒"}</b><span>仅显示本月未到期事项</span></small>
+            <small><b>${summaryReminders[0] ? `最近 ${formatDateTime(summaryReminders[0].publishedAt)}` : "本月暂无提醒"}</b><span>仅显示本月未到期事项</span></small>
           </div>
         </header>
         ${renderMessageHeader("calendar")}
@@ -1232,110 +1252,9 @@
       </div>`;
   }
 
-  function researchSentimentClass(sentiment) {
-    return {
-      "机会": "opportunity",
-      "风险": "risk",
-      "融资/摊薄": "dilution",
-      "中性": "neutral"
-    }[sentiment] || "neutral";
-  }
-
-  function renderDailyResearchSection() {
-    const feedStocks = Array.isArray(dailyResearch?.stocks) ? dailyResearch.stocks : [];
-    const selectedCode = state.researchStockCode;
-    const visibleStocks = selectedCode === "all"
-      ? feedStocks
-      : feedStocks.filter(stock => stock.code === selectedCode);
-    const generatedLabel = dailyResearch?.generatedAt ? formatDateTime(dailyResearch.generatedAt) : "等待生成";
-    return `
-      <section class="daily-research-section" aria-label="今日个股研读">
-        <header class="daily-research-heading">
-          <div>
-            <strong>今日个股研读</strong>
-            <span>逐股复核价格行为、行业相对强弱、公司事件与投资逻辑</span>
-          </div>
-          <div class="daily-research-meta">
-            <b>${escapeHtml(dailyResearch?.asOfTradeDate || "暂无日期")} ${escapeHtml(dailyResearch?.runLabel || "")}</b>
-            <span>${feedStocks.length} 只 · 实质变化 ${Number(dailyResearch?.materialChangeCount || 0)} 只 · ${escapeHtml(generatedLabel)}</span>
-          </div>
-        </header>
-        ${feedStocks.length ? `
-          <nav class="daily-research-stock-nav" aria-label="选择研读股票">
-            <button type="button" class="${selectedCode === "all" ? "selected" : ""}" data-action="set-research-stock" data-stock-code="all" aria-pressed="${selectedCode === "all"}">全部研读</button>
-            ${feedStocks.map(stock => `
-              <button type="button" class="${selectedCode === stock.code ? "selected" : ""}" data-action="set-research-stock" data-stock-code="${escapeHtml(stock.code)}" aria-pressed="${selectedCode === stock.code}">
-                <b>${escapeHtml(stock.name)}</b><span>${escapeHtml(stock.code)}</span>
-              </button>`).join("")}
-          </nav>
-          <div class="daily-research-list">
-            ${visibleStocks.map(stock => renderDailyResearchStock(stock, selectedCode !== "all")).join("")}
-          </div>` : `
-          <div class="daily-research-empty" role="status">
-            <strong>今日研读报告尚未生成</strong>
-            <span>完成每日行情与信息核验后，这里会同步展示完整逐股结论。</span>
-          </div>`}
-      </section>`;
-  }
-
-  function renderDailyResearchStock(stock, expanded) {
-    const price = stock.price || {};
-    const levels = stock.keyLevels || {};
-    const sentimentClass = researchSentimentClass(stock.sentiment);
-    const priceClass = Number(price.changePct) > 0 ? "price-up" : Number(price.changePct) < 0 ? "price-down" : "price-flat";
-    return `
-      <article class="daily-research-stock sentiment-${sentimentClass}">
-        <header class="daily-research-stock-header">
-          <div class="daily-research-identity">
-            <span><strong>${escapeHtml(stock.name)}</strong><b>${escapeHtml(stock.code)}</b></span>
-            <small>${escapeHtml(stock.sector || "")}</small>
-          </div>
-          <div class="daily-research-status">
-            <span class="research-sentiment sentiment-${sentimentClass}">${escapeHtml(stock.sentiment || "中性")}</span>
-            <b>${stock.hasMaterialChange ? "有实质变化" : "未发现实质变化"}</b>
-          </div>
-        </header>
-        <p class="daily-research-headline">${escapeHtml(stock.headline || "未发现变化")}</p>
-        <div class="daily-research-metrics" aria-label="${escapeHtml(stock.name)}行情摘要">
-          <span><small>收盘</small><b>${formatNumber(price.close)}</b></span>
-          <span><small>日涨跌</small><b class="${priceClass}">${formatSigned(price.changePct, "%")}</b></span>
-          <span><small>换手率</small><b>${formatNumber(price.turnoverPct)}%</b></span>
-          <span><small>近20日</small><b>${formatSigned(price.return20dPct, "%")}</b></span>
-          <span class="daily-research-current-status"><small>当前判断</small><b>${escapeHtml(stock.status || "等待判断")}</b></span>
-        </div>
-        <details class="daily-research-details" ${expanded ? "open" : ""}>
-          <summary><span>查看完整研读</span><b>完整内容</b></summary>
-          <div class="daily-research-analysis-grid">
-            ${renderResearchAnalysis("价格行为", stock.priceBehavior)}
-            ${renderResearchAnalysis("行业与外部催化", stock.marketContext)}
-            ${renderResearchAnalysis("相对强弱", stock.relativeStrength)}
-            ${renderResearchAnalysis("公司事件", stock.companyUpdate)}
-            ${renderResearchAnalysis("投资逻辑变化", stock.logicChange, "daily-research-analysis-wide")}
-          </div>
-          <section class="daily-research-levels" aria-label="关键价位与验证条件">
-            <h4>关键价位与验证条件</h4>
-            <dl>
-              <div><dt>压力区</dt><dd>${escapeHtml(levels.resistance || "等待确认")}</dd></div>
-              <div><dt>支撑区</dt><dd>${escapeHtml(levels.support || "等待确认")}</dd></div>
-              <div><dt>偏强确认</dt><dd>${escapeHtml(levels.bullish_confirmation || "等待确认")}</dd></div>
-              <div><dt>转弱确认</dt><dd>${escapeHtml(levels.bearish_confirmation || "等待确认")}</dd></div>
-            </dl>
-          </section>
-          <div class="daily-research-sources">
-            <strong>核验来源</strong>
-            <div>${(stock.sources || []).map(source => `<a href="${escapeHtml(source.url || "#")}" target="_blank" rel="noreferrer">${escapeHtml(source.title || source.publisher || "查看来源")}</a>`).join("")}</div>
-          </div>
-        </details>
-      </article>`;
-  }
-
-  function renderResearchAnalysis(title, content, className = "") {
-    return `<section class="daily-research-analysis ${className}"><h4>${title}</h4><p>${escapeHtml(content || "未发现变化")}</p></section>`;
-  }
-
   function syncUrl() {
     const url = new URL(window.location.href);
-    if (["technical", "score-matrix", "daily", "calendar", "ai-selection"].includes(state.viewMode)) {
+    if (state.viewMode !== "stock" && VIEW_MODES.includes(state.viewMode)) {
       url.searchParams.set("view", state.viewMode);
       url.searchParams.set("stock", state.selectedStockId);
       url.searchParams.delete("category");
@@ -1364,16 +1283,6 @@
             </button>
           </div>
           ${renderSharedAccount()}
-          <nav class="market-tools" aria-label="全市场看板">
-            ${(() => {
-              const digest = dailyDigestSections(false);
-              return renderMarketTool("daily", "digest", "今日必读", `${data.stocks.length} 只自选 · 今日 ${digest.today.length} · 补看 ${digest.catchUp.length}`);
-            })()}
-            ${renderMarketTool("calendar", "calendar", "个股日历", `${calendarReminderMessages().length} 条未到期提醒`)}
-            ${renderMarketTool("macro", "news", "宏观大事件", "5 则市场要闻")}
-            ${renderMarketTool("market", "pulse", "大盘技术走势", "指数与技术指标")}
-            ${renderMarketTool("ai-selection", "ai", "AI选股", "机构增仓与多机构共振")}
-          </nav>
           <label class="stock-search">
             ${icon("search")}
             <input id="stock-search" type="search" value="${escapeHtml(state.query)}" placeholder="名称 / 代码 / 拼音首字母" autocomplete="off">
@@ -1482,18 +1391,8 @@
       </div>`;
   }
 
-  function renderMarketTool(view, iconName, title, description) {
-    const active = state.viewMode === view;
-    return `
-      <button class="market-tool market-tool-${view} ${active ? "selected" : ""}" type="button" data-action="select-view" data-view="${view}" aria-pressed="${active}">
-        <span class="market-tool-icon">${icon(iconName)}</span>
-        <span><strong>${title}</strong><small>${description}</small></span>
-        <span class="market-tool-arrow">›</span>
-      </button>`;
-  }
-
   function renderStockItem(stock, selected) {
-    const active = ["stock", "technical"].includes(state.viewMode) && stock.id === selected.id;
+    const active = stock.id === selected.id;
     const unread = unreadCount(stock);
     const hasQuote = Number.isFinite(Number(stock.changePct)) && stock.changePct !== null;
     const manageAction = stock.tracked ? "remove-watchlist" : "add-watchlist";
@@ -1643,43 +1542,6 @@
       </section>`;
   }
 
-  function renderBoards(stock) {
-    return `
-      <section class="board-grid" aria-label="信息分类看板">
-        ${stockGroups.map(group => renderBoard(stock, group)).join("")}
-      </section>`;
-  }
-
-  function renderBoard(stock, group) {
-    const messages = messagesForGroup(stock, group).sort(sortByNewest);
-    const unread = messages.filter(message => isUnread(message)).length;
-    const latest = messages[0];
-    const riskCounts = messages.reduce((counts, message) => {
-      if (Object.hasOwn(counts, message.importance)) counts[message.importance] += 1;
-      return counts;
-    }, { "高": 0, "中": 0, "低": 0 });
-    const selected = state.activeGroup === group.id;
-    return `
-      <button class="info-board board-${group.size} ${selected ? "selected" : ""}" type="button" data-action="select-group" data-group="${group.id}" aria-pressed="${selected}">
-        <span class="board-line">
-          <span class="board-icon">${icon(group.icon)}</span>
-          <span class="board-title">
-            <strong>${group.title}</strong>
-            ${group.id === "health" ? `<em>建议仅供参考</em>` : ""}
-          </span>
-          <span class="board-unread ${unread ? "" : "zero"}">${unread}</span>
-        </span>
-        <span class="board-meta">
-          <time>${latest ? formatDateTime(latest.publishedAt) : "暂无时间"}</time>
-          <span class="board-risk-summary" aria-label="风险分布">
-            <b class="board-risk-count risk-高" aria-label="${riskCounts["高"]}条高风险" title="${riskCounts["高"]}条高风险"><span>高</span>${riskCounts["高"]}</b>
-            <b class="board-risk-count risk-中" aria-label="${riskCounts["中"]}条中性" title="${riskCounts["中"]}条中性"><span>中</span>${riskCounts["中"]}</b>
-            <b class="board-risk-count risk-低" aria-label="${riskCounts["低"]}条低风险" title="${riskCounts["低"]}条低风险"><span>低</span>${riskCounts["低"]}</b>
-          </span>
-        </span>
-      </button>`;
-  }
-
   function renderMessageHeader(mode) {
     const group = activeGroup();
     const stock = selectedStock();
@@ -1691,7 +1553,7 @@
           ? calendarReminderMessages()
           : messagesForGroup(stock);
     const unread = messages.filter(messageIsUnread).length;
-    const title = mode === "macro" ? "宏观大事件" : mode === "daily" ? "今日自选动态" : mode === "calendar" ? "未到期日历提醒" : group.title;
+    const title = mode === "macro" ? "宏观大事件" : mode === "daily" ? "今日自选动态" : mode === "calendar" ? "日历提醒" : group.title;
     const checkedAt = mode === "stock" ? state.dynamicsCheckedByCode.get(stock.code) : null;
     return `
       <header class="message-header">
@@ -1871,69 +1733,15 @@
   }
 
   function renderMarketTechnicalView() {
-    const market = data.market.technical;
-    const direction = market.changePct >= 0 ? "positive" : "negative";
-    return `
-      <section class="global-view technical-view">
-        <header class="global-header market-index-header">
-          <div class="global-title-icon">${icon("pulse")}</div>
-          <div>
-            <p>全市场视角 · 与个股无关</p>
-            <h2>大盘技术走势</h2>
-            <span>${market.indexName} ${market.code} · ${formatDateTime(market.updatedAt)}</span>
-          </div>
-          <div class="market-index-quote ${direction}">
-            <strong>${formatNumber(market.price)}</strong>
-            <span>${formatSigned(market.change)}　${formatSigned(market.changePct, "%")}</span>
-          </div>
-        </header>
-        <div class="technical-conclusion">
-          <span>当前结论</span>
-          <strong>${escapeHtml(market.conclusion)}</strong>
-        </div>
-        <section class="market-chart-panel" aria-label="上证指数近期走势">
-          <div class="panel-heading"><strong>近期走势</strong><span>模拟收盘点位 · 最近 12 个交易日</span></div>
-          ${renderMarketChart(market.points, market.labels)}
-        </section>
-        <section class="indicator-grid" aria-label="大盘技术指标">
-          ${market.indicators.map(indicator => `
-            <article class="indicator-card">
-              <span>${escapeHtml(indicator.name)}</span>
-              <strong class="indicator-${indicator.level}">${escapeHtml(indicator.value)}</strong>
-              <small>${escapeHtml(indicator.note)}</small>
-            </article>`).join("")}
-        </section>
-      </section>`;
-  }
-
-  function renderMarketChart(points, labels) {
-    const width = 960;
-    const height = 214;
-    const paddingX = 26;
-    const paddingY = 22;
-    const min = Math.min(...points) - 8;
-    const max = Math.max(...points) + 8;
-    const xStep = (width - paddingX * 2) / (points.length - 1);
-    const yFor = value => paddingY + ((max - value) / (max - min)) * (height - paddingY * 2);
-    const coordinates = points.map((point, index) => `${paddingX + index * xStep},${yFor(point)}`).join(" ");
-    const area = `${paddingX},${height - paddingY} ${coordinates} ${width - paddingX},${height - paddingY}`;
-    const labelIndexes = [0, 3, 6, 9, points.length - 1];
-    return `
-      <div class="market-chart">
-        <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="指数近十二个交易日震荡上行">
-          <defs>
-            <linearGradient id="chartArea" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#58bf79" stop-opacity=".24"/>
-              <stop offset="100%" stop-color="#58bf79" stop-opacity="0"/>
-            </linearGradient>
-          </defs>
-          <path class="chart-grid" d="M26 46H934M26 107H934M26 168H934"/>
-          <polygon points="${area}" fill="url(#chartArea)" stroke="none"/>
-          <polyline class="chart-line" points="${coordinates}"/>
-          ${points.map((point, index) => `<circle class="chart-point" cx="${paddingX + index * xStep}" cy="${yFor(point)}" r="3"/>`).join("")}
-          ${labelIndexes.map(index => `<text x="${paddingX + index * xStep}" y="207" text-anchor="${index === 0 ? "start" : index === points.length - 1 ? "end" : "middle"}">${labels[index]}</text>`).join("")}
-        </svg>
-      </div>`;
+    if (!marketTechnicalPage) {
+      return `<section class="ta-empty-state"><div class="ta-empty-content"><h2>大盘技术分析模块未能加载</h2><p>请刷新页面后重试。</p></div></section>`;
+    }
+    return marketTechnicalPage.render(MARKET_INDEX, {
+      variant: "market",
+      allStocks: [],
+      trackedStocks: [],
+      trackedCodes: new Set()
+    });
   }
 
   function resetForNavigation() {
@@ -2064,10 +1872,9 @@
       refreshDailyAfterRender = watchlistAggregateView();
     } else if (action === "select-stock") {
       state.selectedStockId = target.dataset.stockId;
-      state.viewMode = state.viewMode === "technical" || target.dataset.stockView === "technical" ? "technical" : "stock";
+      if (["daily", "calendar"].includes(state.viewMode)) state.filters.stock = state.selectedStockId;
       state.activeGroup = "all";
       technicalPage?.clearSearch();
-      resetForNavigation();
       refreshCodeAfterRender = state.selectedStockId;
     } else if (action === "select-group") {
       if (target.dataset.group === "technical") {
@@ -2151,8 +1958,6 @@
     } else if (action === "set-daily-stock") {
       state.filters.stock = target.dataset.stockId || "all";
       state.dailyStockQuery = "";
-    } else if (action === "set-research-stock") {
-      state.researchStockCode = target.dataset.stockCode || "all";
     } else if (action === "refresh-all") {
       const dailyCodes = watchlistAggregateView() ? data.stocks.map(stock => stock.code) : undefined;
       refreshAllInformation({ force: true, feedCodes: dailyCodes });
@@ -2163,6 +1968,10 @@
       if (!handled) return;
     } else if (state.viewMode === "score-matrix" && scoreMatrixPage) {
       const handled = scoreMatrixPage.handleAction(target);
+      if (handled === "async") return;
+      if (!handled) return;
+    } else if (state.viewMode === "market" && marketTechnicalPage) {
+      const handled = marketTechnicalPage.handleAction(target);
       if (handled === "async") return;
       if (!handled) return;
     } else if (state.viewMode === "technical" && technicalPage) {

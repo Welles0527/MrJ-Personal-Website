@@ -58,9 +58,24 @@
   gap: 14px;
 }
 
+.market-technical-analysis-page .ta-technical-shell { grid-template-columns: minmax(0, 1fr); }
+.market-technical-analysis-page.ta-state-page .ta-search-wrap { display: none; }
+
 .ta-stock-detail { min-width: 0; }
 
-.ta-dashboard-header, .ta-score-summary, .ta-radar-panel, .ta-trade-panel, .ta-score-trend, .ta-signal-brief, .ta-state-header, .ta-loading, .ta-error-state {
+.ta-market-price { min-width: 0; margin-top: 14px; overflow: hidden; border-radius: 20px; }
+.ta-market-price-heading { align-items: flex-start; padding-bottom: 8px; }
+.ta-market-price-heading > div:first-child { min-width: 0; }
+.ta-market-price-heading > div:first-child p { margin-top: 5px; text-align: left; }
+.ta-market-period-control { flex: 0 0 278px; display: flex; flex-direction: column; gap: 5px; }
+.ta-market-period-control > span { color: var(--ta-muted); font-size: 9px; text-align: right; }
+.ta-signal-brief .ta-market-period-control { margin-left: auto; }
+.ta-market-price-chart { min-width: 0; height: 360px; margin: 0 8px 8px; }
+.ta-market-price-tooltip span { align-items: center; }
+.ta-market-price-tooltip i { width: 14px; height: 2px; flex: 0 0 auto; border-radius: 2px; }
+.ta-market-price-tooltip b { margin-left: auto; }
+
+.ta-dashboard-header, .ta-score-summary, .ta-market-price, .ta-radar-panel, .ta-trade-panel, .ta-score-trend, .ta-signal-brief, .ta-state-header, .ta-loading, .ta-error-state {
   position: relative;
   z-index: 1;
   border: 1px solid var(--ta-line);
@@ -338,6 +353,10 @@
   .ta-timeframe-switch { grid-template-columns: repeat(5, minmax(38px, 1fr)); flex: 1 1 auto; }
   .ta-panel-title { display: block; padding: 15px 15px 0; }
   .ta-panel-title p { margin-top: 5px; text-align: left; }
+  .ta-market-price-heading { padding-bottom: 10px; }
+  .ta-market-period-control { width: 100%; margin: 12px 0 0; }
+  .ta-market-period-control > span { text-align: left; }
+  .ta-market-price-chart { height: 310px; margin: 0 2px 7px; }
   .ta-summary-heading { display: flex; align-items: flex-end; padding-bottom: 12px; }
   .ta-summary-heading > span { text-align: right; }
   .ta-summary-scroll table { min-width: 0; }

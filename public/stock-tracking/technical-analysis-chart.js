@@ -121,6 +121,108 @@
     bindTooltipDismiss(element, chart);
   }
 
+  function movingAverage(values, period) {
+    let total = 0;
+    return values.map((value, index) => {
+      total += Number(value);
+      if (index >= period) total -= Number(values[index - period]);
+      return index + 1 >= period ? Number((total / period).toFixed(3)) : null;
+    });
+  }
+
+  function renderMarketPrice(element, result) {
+    const chart = getChart(element);
+    const candles = Array.isArray(result?.dailyCandles) ? result.dailyCandles : [];
+    if (!chart || !candles.length) return;
+    const dates = candles.map(candle => candle.date);
+    const closes = candles.map(candle => Number(candle.close));
+    const narrow = element.clientWidth < 640;
+    const definitions = [
+      { name: "日线收盘", values: closes, color: "#edf1ff", width: 2.2, z: 6 },
+      { name: "周均 MA5", values: movingAverage(closes, 5), color: "#7891ff", width: 1.6, z: 5 },
+      { name: "月均 MA20", values: movingAverage(closes, 20), color: "#a278ff", width: 1.6, z: 4 },
+      { name: "季均 MA60", values: movingAverage(closes, 60), color: "#4ee0bc", width: 1.6, z: 3 },
+      { name: "年均 MA250", values: movingAverage(closes, 250), color: "#ffb447", width: 1.8, z: 2 }
+    ];
+    chart.setOption({
+      animation: false,
+      color: definitions.map(item => item.color),
+      grid: { top: narrow ? 68 : 58, right: narrow ? 14 : 24, bottom: 36, left: narrow ? 46 : 62, containLabel: false },
+      legend: {
+        type: narrow ? "scroll" : "plain",
+        top: 14,
+        left: narrow ? 10 : 20,
+        right: narrow ? 10 : 20,
+        itemWidth: narrow ? 15 : 20,
+        itemHeight: 3,
+        itemGap: narrow ? 10 : 18,
+        pageIconColor: "#9cabec",
+        pageIconInactiveColor: "rgba(255,255,255,.18)",
+        pageTextStyle: { color: "rgba(225,229,240,.58)", fontSize: 9 },
+        textStyle: { color: "rgba(225,229,240,.72)", fontSize: narrow ? 9 : 11 }
+      },
+      tooltip: {
+        trigger: "axis",
+        triggerOn: "mousemove",
+        hideDelay: 0,
+        enterable: false,
+        alwaysShowContent: false,
+        appendToBody: true,
+        confine: false,
+        position: smartTooltipPosition,
+        axisPointer: { type: "line", snap: true, lineStyle: { color: "rgba(171,184,224,.42)", width: 1, type: "dashed" } },
+        backgroundColor: "rgba(5,7,9,.96)",
+        borderColor: "rgba(255,255,255,.12)",
+        borderWidth: 1,
+        padding: 0,
+        textStyle: { color: "#f7f8fc" },
+        extraCssText: "z-index:2147483000;",
+        formatter: points => {
+          const rows = points.filter(point => Number.isFinite(Number(point.value))).map(point => `<span><i style="background:${point.color}"></i>${point.seriesName}<b>${Number(point.value).toLocaleString("zh-CN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</b></span>`).join("");
+          return `<div class="ta-echart-tooltip ta-market-price-tooltip"><strong>${points[0]?.axisValue || ""}</strong>${rows}</div>`;
+        }
+      },
+      xAxis: {
+        type: "category",
+        boundaryGap: false,
+        data: dates,
+        axisLine: { lineStyle: { color: "rgba(255,255,255,.12)" } },
+        axisTick: { show: false },
+        axisLabel: { color: "rgba(220,225,238,.52)", fontSize: 10, formatter: value => value.slice(5), interval: narrow ? 29 : 24 }
+      },
+      yAxis: {
+        type: "value",
+        scale: true,
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { color: "rgba(220,225,238,.52)", fontSize: 10, formatter: value => Number(value).toLocaleString("zh-CN", { maximumFractionDigits: 0 }) },
+        splitLine: { lineStyle: { color: "rgba(255,255,255,.055)" } }
+      },
+      dataZoom: [{
+        type: "inside",
+        startValue: dates[Math.max(0, dates.length - (narrow ? 100 : 180))],
+        endValue: dates.at(-1),
+        zoomOnMouseWheel: true,
+        moveOnMouseMove: true,
+        moveOnMouseWheel: false
+      }],
+      series: definitions.map(item => ({
+        name: item.name,
+        type: "line",
+        data: item.values,
+        showSymbol: false,
+        connectNulls: false,
+        smooth: false,
+        sampling: "lttb",
+        z: item.z,
+        lineStyle: { color: item.color, width: item.width, opacity: item.name === "日线收盘" ? .88 : .94 },
+        itemStyle: { color: item.color },
+        emphasis: { focus: "series", lineStyle: { width: item.width + .8 } }
+      }))
+    }, { notMerge: true });
+    bindTooltipDismiss(element, chart);
+  }
+
   function renderTrend(element, result) {
     const chart = getChart(element);
     if (!chart || !result) return;
@@ -309,5 +411,5 @@
     instances.delete(element);
   }
 
-  global.StockTechnicalChart = { renderRadar, renderTrend, resize, dispose };
+  global.StockTechnicalChart = { renderRadar, renderMarketPrice, renderTrend, resize, dispose };
 })(window);
