@@ -1,0 +1,717 @@
+---
+import albumData from '../../../../../data/coffee-latte-art-album.json';
+import { sitePath } from '../../../../../data/site';
+
+const photoWallHref = sitePath('/topics/space/travel/photo-wall');
+const years = albumData.album.yearOrder.map((year) => ({ year, count: albumData.album.countsByYear[year] }));
+const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
+const monthMap = new Map();
+for (const photo of albumData.photos) {
+  if (!monthMap.has(photo.monthKey)) {
+    monthMap.set(photo.monthKey, {
+      key: photo.monthKey,
+      year: photo.year,
+      label: `${photo.year} · ${monthNames[photo.month - 1]}`,
+      photos: [],
+    });
+  }
+  monthMap.get(photo.monthKey).photos.push(photo);
+}
+const months = [...monthMap.values()];
+const mapBounds = { west: 95, east: 155, north: 45, south: -40 };
+const mapLocations = albumData.locations.map((location) => ({
+  ...location,
+  x: ((location.longitude - mapBounds.west) / (mapBounds.east - mapBounds.west)) * 100,
+  y: ((mapBounds.north - location.latitude) / (mapBounds.north - mapBounds.south)) * 100,
+}));
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1b100a" />
+    <meta name="robots" content="noindex" />
+    <meta name="description" content={`咖啡拉花静态相册，共${albumData.album.count}张照片，按年月与拍摄地点编排。`} />
+    <title>咖啡拉花 · J先生的生活影集</title>
+    <style is:global>
+      :root {
+        color-scheme: dark;
+        font-family: "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+        background: #1b100a;
+        color: #f5ead8;
+      }
+
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        min-width: 320px;
+        min-height: 100svh;
+        margin: 0;
+        overflow-x: hidden;
+        background:
+          radial-gradient(circle at 83% 12%, transparent 0 76px, rgba(224, 170, 116, 0.08) 77px 79px, transparent 80px 106px, rgba(224, 170, 116, 0.055) 107px 109px, transparent 110px),
+          radial-gradient(circle at 8% 32%, rgba(112, 57, 29, 0.34), transparent 34rem),
+          linear-gradient(145deg, #24140c 0%, #160d09 48%, #21120b 100%);
+      }
+      button, a { font: inherit; }
+      button { color: inherit; }
+      .shell { width: min(1440px, calc(100% - 52px)); margin: 0 auto; }
+
+      .topbar {
+        display: flex;
+        min-height: 78px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        border-bottom: 1px solid rgba(245, 234, 216, 0.14);
+      }
+      .back-link, .home-link {
+        color: #f5ead8;
+        font-size: 13px;
+        font-weight: 800;
+        text-decoration: none;
+      }
+      .back-link { display: inline-flex; align-items: center; gap: 10px; }
+      .back-link span { color: #d89a61; font-size: 20px; }
+      .home-link {
+        color: rgba(245, 234, 216, 0.7);
+        text-decoration: underline;
+        text-underline-offset: 5px;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 0.9fr) minmax(360px, 0.62fr);
+        gap: clamp(38px, 7vw, 110px);
+        align-items: center;
+        padding: clamp(58px, 8vw, 108px) 0 64px;
+      }
+      .eyebrow {
+        margin: 0 0 20px;
+        color: #d89a61;
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0.24em;
+      }
+      h1 {
+        max-width: 780px;
+        margin: 0;
+        font-family: Georgia, "Noto Serif SC", serif;
+        font-size: clamp(68px, 10vw, 146px);
+        font-weight: 500;
+        letter-spacing: -0.085em;
+        line-height: 0.82;
+      }
+      h1 span { display: block; margin-left: 0.52em; color: #d9ae87; font-size: 0.47em; letter-spacing: 0.06em; line-height: 1.35; }
+      .intro {
+        max-width: 690px;
+        margin: 34px 0 0;
+        color: rgba(245, 234, 216, 0.6);
+        font-family: Georgia, "Noto Serif SC", serif;
+        font-size: clamp(16px, 1.55vw, 20px);
+        line-height: 1.85;
+      }
+      .hero-stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 28px;
+        margin-top: 34px;
+      }
+      .hero-stat { min-width: 92px; padding-top: 10px; border-top: 1px solid rgba(245, 234, 216, 0.2); }
+      .hero-stat strong, .hero-stat span { display: block; }
+      .hero-stat strong { font-family: Georgia, serif; font-size: 26px; font-weight: 500; }
+      .hero-stat span { margin-top: 4px; color: rgba(245, 234, 216, 0.44); font-size: 10px; letter-spacing: 0.12em; }
+      .hero-cover {
+        position: relative;
+        aspect-ratio: 0.84;
+        overflow: hidden;
+        border: 1px solid rgba(245, 234, 216, 0.18);
+        border-radius: 50% 50% 22px 22px;
+        background: #2b180e;
+        box-shadow: 0 34px 90px rgba(0, 0, 0, 0.38);
+      }
+      .hero-cover::after {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, transparent 58%, rgba(21, 10, 5, 0.58));
+        content: "";
+        pointer-events: none;
+      }
+      .hero-cover img { width: 100%; height: 100%; object-fit: cover; }
+      .cover-note {
+        position: absolute;
+        z-index: 1;
+        right: 24px;
+        bottom: 22px;
+        left: 24px;
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        color: rgba(255, 246, 232, 0.72);
+        font-size: 10px;
+        letter-spacing: 0.12em;
+      }
+
+      .control-bar {
+        position: sticky;
+        z-index: 12;
+        top: 8px;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        gap: 14px 22px;
+        align-items: center;
+        margin-bottom: 50px;
+        padding: 14px 16px;
+        border: 1px solid rgba(245, 234, 216, 0.13);
+        border-radius: 18px;
+        background: rgba(28, 16, 10, 0.91);
+        box-shadow: 0 16px 54px rgba(0, 0, 0, 0.28);
+        backdrop-filter: blur(18px);
+      }
+      .view-toggle { display: flex; gap: 5px; padding: 4px; border-radius: 999px; background: rgba(255, 255, 255, 0.055); }
+      .view-button, .year-button {
+        min-height: 36px;
+        border: 1px solid transparent;
+        border-radius: 999px;
+        background: transparent;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 800;
+      }
+      .view-button { padding: 0 15px; color: rgba(245, 234, 216, 0.56); }
+      .view-button[aria-pressed="true"] { background: #f0d4b7; color: #2a160d; }
+      .year-filters { display: flex; min-width: 0; gap: 7px; overflow-x: auto; scrollbar-width: none; }
+      .year-filters::-webkit-scrollbar { display: none; }
+      .year-button {
+        flex: 0 0 auto;
+        padding: 0 13px;
+        border-color: rgba(245, 234, 216, 0.14);
+        color: rgba(245, 234, 216, 0.64);
+      }
+      .year-button:hover { border-color: rgba(216, 154, 97, 0.66); color: #fff3e1; }
+      .year-button[aria-pressed="true"] { border-color: #d89a61; background: #d89a61; color: #24120a; }
+      .visible-count { color: rgba(245, 234, 216, 0.5); font-size: 12px; white-space: nowrap; }
+
+      [data-view-panel][hidden] { display: none; }
+      .month-section { margin-bottom: clamp(62px, 7vw, 102px); scroll-margin-top: 140px; }
+      .month-section[hidden] { display: none; }
+      .month-heading {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 20px;
+        align-items: end;
+        margin-bottom: 22px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid rgba(245, 234, 216, 0.14);
+      }
+      .month-heading h2 {
+        margin: 0;
+        font-family: Georgia, "Noto Serif SC", serif;
+        font-size: clamp(28px, 4vw, 48px);
+        font-weight: 500;
+      }
+      .month-count { color: rgba(245, 234, 216, 0.44); font-size: 12px; }
+      .gallery { columns: 4; column-gap: 16px; }
+      .photo-card {
+        display: block;
+        width: 100%;
+        margin: 0 0 16px;
+        padding: 0;
+        break-inside: avoid;
+        overflow: hidden;
+        border: 0;
+        border-radius: 13px;
+        background: #2a180f;
+        cursor: zoom-in;
+        content-visibility: auto;
+        contain-intrinsic-size: 320px 260px;
+      }
+      .photo-card[hidden] { display: none; }
+      .photo-card img { display: block; width: 100%; height: auto; transition: filter 360ms ease, transform 480ms ease; }
+      .photo-card:hover img { filter: brightness(1.06) saturate(1.04); transform: scale(1.014); }
+
+      .map-layout { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(280px, 0.55fr); gap: 18px; padding-bottom: 70px; }
+      .coffee-map {
+        position: relative;
+        min-height: min(670px, 60vw);
+        overflow: hidden;
+        border: 1px solid rgba(245, 234, 216, 0.13);
+        border-radius: 24px;
+        background:
+          radial-gradient(circle at 46% 48%, rgba(151, 83, 43, 0.23), transparent 30rem),
+          #120c08;
+      }
+      .coffee-map svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+      .map-grid line { stroke: rgba(242, 210, 177, 0.08); stroke-width: 1; }
+      .map-land { fill: rgba(215, 169, 123, 0.09); stroke: rgba(222, 177, 132, 0.22); stroke-width: 1.2; }
+      .map-caption {
+        position: absolute;
+        top: 20px;
+        left: 22px;
+        margin: 0;
+        color: rgba(245, 234, 216, 0.42);
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 0.18em;
+      }
+      .map-marker {
+        position: absolute;
+        z-index: 2;
+        top: var(--y);
+        left: var(--x);
+        display: grid;
+        width: 28px;
+        height: 28px;
+        place-items: center;
+        padding: 0;
+        border: 2px solid #2a160d;
+        border-radius: 50%;
+        background: #f0d4b7;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.42);
+        color: #29150c;
+        cursor: pointer;
+        font-size: 10px;
+        font-weight: 900;
+        transform: translate(-50%, -50%);
+        transition: z-index 0s, background 150ms ease, transform 150ms ease;
+      }
+      .map-marker:hover, .map-marker[aria-pressed="true"] { z-index: 6; background: #d9894a; transform: translate(-50%, -50%) scale(1.18); }
+      .map-marker[hidden] { display: none; }
+      .map-sidebar {
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 28px;
+        padding: clamp(22px, 3vw, 36px);
+        border: 1px solid rgba(245, 234, 216, 0.13);
+        border-radius: 24px;
+        background: rgba(45, 25, 15, 0.64);
+      }
+      .map-sidebar-label { margin: 0 0 12px; color: #d89a61; font-size: 10px; font-weight: 900; letter-spacing: 0.15em; }
+      .map-sidebar h2 { margin: 0; font-family: Georgia, "Noto Serif SC", serif; font-size: clamp(30px, 4vw, 52px); font-weight: 500; line-height: 1.05; }
+      .map-location-meta { min-height: 1.5em; margin: 12px 0 0; color: rgba(245, 234, 216, 0.5); font-size: 12px; line-height: 1.6; }
+      .map-previews { display: grid; min-width: 0; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+      .map-preview {
+        aspect-ratio: 1;
+        width: 100%;
+        min-width: 0;
+        overflow: hidden;
+        padding: 0;
+        border: 0;
+        border-radius: 9px;
+        background: #2b190f;
+        cursor: zoom-in;
+      }
+      .map-preview img { width: 100%; height: 100%; object-fit: cover; }
+      .preview-remainder { display: grid; place-items: center; color: rgba(245, 234, 216, 0.58); font-size: 12px; }
+      .location-index { display: flex; flex-wrap: wrap; gap: 6px; }
+      .location-button {
+        min-height: 30px;
+        padding: 0 10px;
+        border: 1px solid rgba(245, 234, 216, 0.13);
+        border-radius: 999px;
+        background: transparent;
+        color: rgba(245, 234, 216, 0.56);
+        cursor: pointer;
+        font-size: 10px;
+      }
+      .location-button[aria-pressed="true"] { border-color: #d89a61; color: #f3d8bc; }
+      .location-button[hidden] { display: none; }
+
+      dialog {
+        width: 100vw;
+        max-width: none;
+        height: 100dvh;
+        max-height: none;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: rgba(15, 8, 5, 0.98);
+        color: #fff;
+      }
+      dialog::backdrop { background: rgba(10, 5, 3, 0.98); }
+      dialog[open] { display: grid; grid-template-rows: 1fr auto; }
+      .lightbox-stage { position: relative; display: grid; min-height: 0; place-items: center; padding: 62px 86px 24px; }
+      .lightbox-stage img { width: auto; max-width: 100%; height: auto; max-height: calc(100dvh - 150px); object-fit: contain; border-radius: 8px; box-shadow: 0 28px 90px rgba(0, 0, 0, 0.48); }
+      .lightbox-control {
+        position: absolute;
+        display: grid;
+        width: 48px;
+        height: 48px;
+        place-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.34);
+        cursor: pointer;
+        font-size: 24px;
+      }
+      .lightbox-close { top: 18px; right: 20px; }
+      .lightbox-previous, .lightbox-next { top: 50%; transform: translateY(-50%); }
+      .lightbox-previous { left: 20px; }
+      .lightbox-next { right: 20px; }
+      .lightbox-caption { display: flex; min-width: 0; justify-content: center; gap: 16px; padding: 10px 20px 24px; color: rgba(255, 255, 255, 0.66); font-size: 12px; }
+      #lightbox-file { color: rgba(255, 255, 255, 0.38); white-space: nowrap; }
+      footer { display: flex; justify-content: space-between; gap: 20px; padding: 34px 0 46px; border-top: 1px solid rgba(245, 234, 216, 0.12); color: rgba(245, 234, 216, 0.44); font-size: 12px; }
+
+      .photo-card:focus-visible,
+      .map-preview:focus-visible,
+      .map-marker:focus-visible,
+      .location-button:focus-visible,
+      .year-button:focus-visible,
+      .view-button:focus-visible,
+      .back-link:focus-visible,
+      .home-link:focus-visible,
+      .lightbox-control:focus-visible { outline: 3px solid #d89a61; outline-offset: 4px; }
+
+      @media (max-width: 1080px) {
+        .gallery { columns: 3; }
+        .map-layout { grid-template-columns: 1fr; }
+        .coffee-map { min-height: 58vw; }
+      }
+      @media (max-width: 760px) {
+        .shell { width: min(100% - 24px, 1440px); }
+        .topbar { min-height: 66px; }
+        .hero { grid-template-columns: 1fr; gap: 44px; padding: 52px 0 48px; }
+        h1 { font-size: clamp(68px, 23vw, 98px); }
+        .intro { margin-top: 25px; }
+        .hero-cover { width: min(100%, 430px); aspect-ratio: 1.06; justify-self: center; border-radius: 48% 48% 18px 18px; }
+        .control-bar { grid-template-columns: 1fr; gap: 10px; margin-bottom: 40px; padding: 12px; }
+        .view-toggle { width: fit-content; }
+        .visible-count { padding-left: 3px; }
+        .gallery { columns: 2; column-gap: 10px; }
+        .photo-card { margin-bottom: 10px; border-radius: 8px; }
+        .coffee-map { min-height: 116vw; border-radius: 18px; }
+        .map-layout { gap: 12px; }
+        .map-sidebar { border-radius: 18px; }
+        .location-index { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 3px; scrollbar-width: none; }
+        .location-index::-webkit-scrollbar { display: none; }
+        .location-button { flex: 0 0 auto; }
+        .lightbox-stage { padding: 58px 10px 88px; }
+        .lightbox-stage img { max-height: calc(100dvh - 180px); }
+        .lightbox-previous, .lightbox-next { top: auto; bottom: 18px; transform: none; }
+        .lightbox-previous { left: calc(50% - 58px); }
+        .lightbox-next { right: calc(50% - 58px); }
+        .lightbox-caption { position: absolute; bottom: 77px; display: grid; width: 100%; gap: 3px; padding: 0 14px; text-align: center; }
+        footer { flex-direction: column; padding-bottom: 30px; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        html { scroll-behavior: auto; }
+        .photo-card img, .map-marker { transition: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <nav class="topbar" aria-label="相册导航">
+        <a class="back-link" href={photoWallHref}><span aria-hidden="true">←</span> 返回照片墙</a>
+        <a class="home-link" href={sitePath('/')}>J先生个人空间</a>
+      </nav>
+
+      <main>
+        <header class="hero">
+          <div>
+            <p class="eyebrow">{albumData.album.eyebrow}</p>
+            <h1>咖啡<span>拉花日记</span></h1>
+            <p class="intro">{albumData.album.description}</p>
+            <div class="hero-stats" aria-label="相册信息">
+              <div class="hero-stat"><strong>{albumData.album.count}</strong><span>PHOTOS</span></div>
+              <div class="hero-stat"><strong>{albumData.album.yearOrder.length}</strong><span>YEARS</span></div>
+              <div class="hero-stat"><strong>{albumData.album.locationPhotoCount}</strong><span>GEOTAGGED</span></div>
+            </div>
+          </div>
+          <figure class="hero-cover">
+            <img src={sitePath(albumData.album.cover)} alt="咖啡拉花相册封面" width="1600" height="1200" loading="eager" fetchpriority="high" />
+            <figcaption class="cover-note"><span>LATTE ARCHIVE</span><span>2013—2026</span></figcaption>
+          </figure>
+        </header>
+
+        <div class="control-bar">
+          <div class="view-toggle" aria-label="切换相册视图">
+            <button class="view-button" type="button" data-view="gallery" aria-pressed="true">相册</button>
+            <button class="view-button" type="button" data-view="map" aria-pressed="false">地图 · {albumData.album.locationPhotoCount}</button>
+          </div>
+          <div class="year-filters" aria-label="按年份筛选">
+            <button class="year-button" type="button" data-year="all" aria-pressed="true">全部 · {albumData.album.count}</button>
+            {years.map(({ year, count }) => (
+              <button class="year-button" type="button" data-year={year} aria-pressed="false">{year} · {count}</button>
+            ))}
+          </div>
+          <span class="visible-count" aria-live="polite">显示 {albumData.album.count} 张</span>
+        </div>
+
+        <section data-view-panel="gallery" aria-label="咖啡拉花照片">
+          {months.map((month) => (
+            <section class="month-section" data-year={month.year}>
+              <header class="month-heading">
+                <h2>{month.label}</h2>
+                <span class="month-count">{month.photos.length} 张</span>
+              </header>
+              <div class="gallery">
+                {month.photos.map((photo, index) => {
+                  const place = photo.city || photo.state || photo.country || '';
+                  const dateLabel = new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }).format(new Date(photo.takenAt));
+                  const alt = `咖啡拉花，${dateLabel}${place ? `，${place}` : ''}`;
+                  return (
+                    <button
+                      class="photo-card"
+                      type="button"
+                      data-id={photo.id}
+                      data-year={photo.year}
+                      data-src={sitePath(photo.src)}
+                      data-file={photo.fileName}
+                      data-date={dateLabel}
+                      data-place={place}
+                      data-alt={alt}
+                      aria-label={`查看${alt}`}
+                    >
+                      <img
+                        src={sitePath(photo.src)}
+                        alt={alt}
+                        width={photo.width}
+                        height={photo.height}
+                        loading={index < 4 && month === months[0] ? 'eager' : 'lazy'}
+                        decoding="async"
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
+        </section>
+
+        <section class="map-layout" data-view-panel="map" aria-label="咖啡照片地图" hidden>
+          <div class="coffee-map">
+            <p class="map-caption">COFFEE COORDINATES · ASIA PACIFIC</p>
+            <svg viewBox="0 0 1000 560" preserveAspectRatio="none" aria-hidden="true">
+              <g class="map-grid">
+                <line x1="0" y1="112" x2="1000" y2="112" /><line x1="0" y1="224" x2="1000" y2="224" />
+                <line x1="0" y1="336" x2="1000" y2="336" /><line x1="0" y1="448" x2="1000" y2="448" />
+                <line x1="166" y1="0" x2="166" y2="560" /><line x1="333" y1="0" x2="333" y2="560" />
+                <line x1="500" y1="0" x2="500" y2="560" /><line x1="667" y1="0" x2="667" y2="560" />
+                <line x1="834" y1="0" x2="834" y2="560" />
+              </g>
+              <g class="map-land">
+                <path d="M55 55 C130 22 250 28 338 52 C417 75 493 74 560 112 C534 151 480 173 430 170 C392 211 323 234 247 213 C190 239 117 213 80 169 C47 133 35 92 55 55Z" />
+                <path d="M580 118 C599 104 618 113 625 137 C621 160 610 183 596 203 C581 190 576 164 580 118Z" />
+                <path d="M164 228 C211 211 267 222 304 255 C328 281 353 322 350 357 C319 354 298 334 278 307 C258 340 233 351 209 331 C196 294 177 267 164 228Z" />
+                <path d="M346 324 C401 309 465 322 527 349 C505 373 458 379 417 365 C391 383 360 369 346 324Z" />
+                <path d="M701 375 C773 347 870 355 940 401 C970 440 954 504 896 532 C820 546 739 520 696 474 C671 438 671 403 701 375Z" />
+                <path d="M518 251 C539 240 557 252 558 277 C552 301 536 320 519 316 C507 295 505 271 518 251Z" />
+              </g>
+            </svg>
+            {mapLocations.map((location) => (
+              <button
+                class="map-marker"
+                type="button"
+                style={`--x:${location.x.toFixed(3)}%;--y:${location.y.toFixed(3)}%`}
+                data-location-id={location.id}
+                data-label={location.label}
+                data-area={location.area}
+                data-photo-ids={JSON.stringify(location.photoIds)}
+                aria-label={`${location.label}，${location.count}张照片`}
+                aria-pressed="false"
+              ><span>{location.count}</span></button>
+            ))}
+          </div>
+          <aside class="map-sidebar">
+            <div>
+              <p class="map-sidebar-label">SELECTED PLACE</p>
+              <h2 id="map-location-title">选择地图标记</h2>
+              <p class="map-location-meta" id="map-location-meta">{albumData.album.locationPhotoCount} 张照片保留了拍摄地点</p>
+            </div>
+            <div class="map-previews" id="map-previews" aria-live="polite"></div>
+            <div class="location-index" aria-label="地点索引">
+              {mapLocations.map((location) => (
+                <button class="location-button" type="button" data-location-target={location.id} aria-pressed="false">{location.label} · {location.count}</button>
+              ))}
+            </div>
+          </aside>
+        </section>
+      </main>
+
+      <footer>
+        <span>咖啡拉花 · 从 Immich 静态同步</span>
+        <span>{albumData.album.count} 张照片 · {albumData.album.monthCount} 个月份 · {albumData.album.locationPhotoCount} 张带地点</span>
+      </footer>
+    </div>
+
+    <dialog id="lightbox" aria-label="照片预览">
+      <div class="lightbox-stage">
+        <img id="lightbox-image" src="" alt="" />
+        <button class="lightbox-control lightbox-close" type="button" aria-label="关闭预览">×</button>
+        <button class="lightbox-control lightbox-previous" type="button" aria-label="上一张">‹</button>
+        <button class="lightbox-control lightbox-next" type="button" aria-label="下一张">›</button>
+      </div>
+      <div class="lightbox-caption">
+        <span id="lightbox-date"></span>
+        <span id="lightbox-place"></span>
+        <span id="lightbox-file"></span>
+        <span id="lightbox-position"></span>
+      </div>
+    </dialog>
+
+    <script>
+      const cards = Array.from(document.querySelectorAll<HTMLButtonElement>('.photo-card'));
+      const cardById = new Map(cards.map((card) => [card.dataset.id || '', card]));
+      const monthSections = Array.from(document.querySelectorAll<HTMLElement>('.month-section'));
+      const yearButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('.year-button'));
+      const viewButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('.view-button'));
+      const viewPanels = Array.from(document.querySelectorAll<HTMLElement>('[data-view-panel]'));
+      const mapMarkers = Array.from(document.querySelectorAll<HTMLButtonElement>('.map-marker'));
+      const locationButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('.location-button'));
+      const visibleCount = document.querySelector<HTMLElement>('.visible-count');
+      const mapTitle = document.querySelector<HTMLElement>('#map-location-title');
+      const mapMeta = document.querySelector<HTMLElement>('#map-location-meta');
+      const mapPreviews = document.querySelector<HTMLElement>('#map-previews');
+      const dialog = document.querySelector<HTMLDialogElement>('#lightbox');
+      const lightboxImage = document.querySelector<HTMLImageElement>('#lightbox-image');
+      const lightboxDate = document.querySelector<HTMLElement>('#lightbox-date');
+      const lightboxPlace = document.querySelector<HTMLElement>('#lightbox-place');
+      const lightboxFile = document.querySelector<HTMLElement>('#lightbox-file');
+      const lightboxPosition = document.querySelector<HTMLElement>('#lightbox-position');
+      const closeButton = document.querySelector<HTMLButtonElement>('.lightbox-close');
+      const previousButton = document.querySelector<HTMLButtonElement>('.lightbox-previous');
+      const nextButton = document.querySelector<HTMLButtonElement>('.lightbox-next');
+
+      let activeYear = 'all';
+      let activeView = 'gallery';
+      let visibleCards = [...cards];
+      let currentIndex = 0;
+      let activeMarker: HTMLButtonElement | null = null;
+
+      const markerPhotoIds = (marker: HTMLButtonElement) => {
+        try { return JSON.parse(marker.dataset.photoIds || '[]') as string[]; }
+        catch { return []; }
+      };
+      const visibleIdsForMarker = (marker: HTMLButtonElement) => markerPhotoIds(marker).filter((id) => {
+        const card = cardById.get(id);
+        return card && !card.hidden;
+      });
+
+      const updateLightbox = () => {
+        const card = visibleCards[currentIndex];
+        if (!card || !lightboxImage || !lightboxDate || !lightboxPlace || !lightboxFile || !lightboxPosition) return;
+        lightboxImage.src = card.dataset.src || '';
+        lightboxImage.alt = card.dataset.alt || '咖啡拉花照片';
+        lightboxDate.textContent = card.dataset.date || '';
+        lightboxPlace.textContent = card.dataset.place || '';
+        lightboxPlace.hidden = !card.dataset.place;
+        lightboxFile.textContent = card.dataset.file || '';
+        lightboxPosition.textContent = `${currentIndex + 1} / ${visibleCards.length}`;
+      };
+      const openLightbox = (card: HTMLButtonElement) => {
+        if (!dialog) return;
+        visibleCards = cards.filter((item) => !item.hidden);
+        currentIndex = Math.max(0, visibleCards.indexOf(card));
+        updateLightbox();
+        dialog.showModal();
+      };
+      const moveLightbox = (direction: number) => {
+        if (visibleCards.length === 0) return;
+        currentIndex = (currentIndex + direction + visibleCards.length) % visibleCards.length;
+        updateLightbox();
+      };
+
+      const selectLocation = (marker: HTMLButtonElement) => {
+        const ids = visibleIdsForMarker(marker);
+        if (ids.length === 0 || !mapTitle || !mapMeta || !mapPreviews) return;
+        activeMarker = marker;
+        mapMarkers.forEach((item) => item.setAttribute('aria-pressed', String(item === marker)));
+        locationButtons.forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.locationTarget === marker.dataset.locationId)));
+        mapTitle.textContent = marker.dataset.label || '拍摄地点';
+        mapMeta.textContent = [marker.dataset.area, `${ids.length} 张照片`].filter(Boolean).join(' · ');
+        mapPreviews.replaceChildren();
+        ids.slice(0, 8).forEach((id) => {
+          const card = cardById.get(id);
+          const sourceImage = card?.querySelector('img');
+          if (!card || !sourceImage) return;
+          const button = document.createElement('button');
+          button.className = 'map-preview';
+          button.type = 'button';
+          button.ariaLabel = card.ariaLabel || '查看地点照片';
+          const image = document.createElement('img');
+          image.src = sourceImage.src;
+          image.alt = sourceImage.alt;
+          image.loading = 'lazy';
+          button.append(image);
+          button.addEventListener('click', () => openLightbox(card));
+          mapPreviews.append(button);
+        });
+        if (ids.length > 8) {
+          const remainder = document.createElement('span');
+          remainder.className = 'map-preview preview-remainder';
+          remainder.textContent = `+${ids.length - 8}`;
+          mapPreviews.append(remainder);
+        }
+      };
+
+      const updateMap = () => {
+        mapMarkers.forEach((marker) => {
+          const ids = visibleIdsForMarker(marker);
+          marker.hidden = ids.length === 0;
+          const count = marker.querySelector('span');
+          if (count) count.textContent = String(ids.length);
+          const locationButton = locationButtons.find((button) => button.dataset.locationTarget === marker.dataset.locationId);
+          if (locationButton) {
+            locationButton.hidden = ids.length === 0;
+            locationButton.textContent = `${marker.dataset.label || '地点'} · ${ids.length}`;
+          }
+        });
+        const firstVisibleMarker = mapMarkers.find((marker) => !marker.hidden);
+        if (!activeMarker || activeMarker.hidden) activeMarker = firstVisibleMarker || null;
+        if (activeView === 'map' && activeMarker) selectLocation(activeMarker);
+      };
+
+      const applyYearFilter = () => {
+        cards.forEach((card) => { card.hidden = activeYear !== 'all' && card.dataset.year !== activeYear; });
+        monthSections.forEach((section) => {
+          const sectionCards = Array.from(section.querySelectorAll<HTMLButtonElement>('.photo-card'));
+          const count = sectionCards.filter((card) => !card.hidden).length;
+          section.hidden = count === 0;
+          const label = section.querySelector<HTMLElement>('.month-count');
+          if (label) label.textContent = `${count} 张`;
+        });
+        visibleCards = cards.filter((card) => !card.hidden);
+        if (visibleCount) visibleCount.textContent = `显示 ${visibleCards.length} 张`;
+        updateMap();
+      };
+
+      const switchView = (view: string) => {
+        activeView = view;
+        viewButtons.forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.view === view)));
+        viewPanels.forEach((panel) => { panel.hidden = panel.dataset.viewPanel !== view; });
+        if (view === 'map') {
+          const marker = activeMarker && !activeMarker.hidden ? activeMarker : mapMarkers.find((item) => !item.hidden);
+          if (marker) selectLocation(marker);
+        }
+      };
+
+      cards.forEach((card) => card.addEventListener('click', () => openLightbox(card)));
+      yearButtons.forEach((button) => button.addEventListener('click', () => {
+        activeYear = button.dataset.year || 'all';
+        yearButtons.forEach((item) => item.setAttribute('aria-pressed', String(item === button)));
+        applyYearFilter();
+      }));
+      viewButtons.forEach((button) => button.addEventListener('click', () => switchView(button.dataset.view || 'gallery')));
+      mapMarkers.forEach((marker) => marker.addEventListener('click', () => selectLocation(marker)));
+      locationButtons.forEach((button) => button.addEventListener('click', () => {
+        const marker = mapMarkers.find((item) => item.dataset.locationId === button.dataset.locationTarget);
+        if (marker) selectLocation(marker);
+      }));
+      closeButton?.addEventListener('click', () => dialog?.close());
+      previousButton?.addEventListener('click', () => moveLightbox(-1));
+      nextButton?.addEventListener('click', () => moveLightbox(1));
+      dialog?.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); });
+      dialog?.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowLeft') moveLightbox(-1);
+        if (event.key === 'ArrowRight') moveLightbox(1);
+      });
+
+      applyYearFilter();
+    </script>
+  </body>
+</html>

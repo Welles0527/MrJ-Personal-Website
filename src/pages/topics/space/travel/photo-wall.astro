@@ -1,10 +1,24 @@
 ---
 import albumData from '../../../../data/jamaica-photo-album.json';
+import coffeeAlbumData from '../../../../data/coffee-latte-art-album.json';
 import { sitePath } from '../../../../data/site';
 
-const albumHref = sitePath('/topics/space/travel/photo-wall/jamaica');
-const coverSrc = sitePath(albumData.album.cover);
-const coverPhoto = albumData.photos.find((photo) => photo.id === albumData.album.coverId) ?? albumData.photos[0];
+const albums = [
+  {
+    data: albumData,
+    href: sitePath('/topics/space/travel/photo-wall/jamaica'),
+    coverPhoto: albumData.photos.find((photo) => photo.id === albumData.album.coverId) ?? albumData.photos[0],
+    className: 'album-card--jamaica',
+    coverAlt: '牙买加旅行相册封面',
+  },
+  {
+    data: coffeeAlbumData,
+    href: sitePath('/topics/space/travel/photo-wall/coffee-latte-art'),
+    coverPhoto: coffeeAlbumData.photos.find((photo) => photo.id === coffeeAlbumData.album.coverId) ?? coffeeAlbumData.photos[0],
+    className: 'album-card--coffee',
+    coverAlt: '咖啡拉花生活相册封面',
+  },
+];
 ---
 
 <!doctype html>
@@ -14,8 +28,8 @@ const coverPhoto = albumData.photos.find((photo) => photo.id === albumData.album
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#ebe6da" />
     <meta name="robots" content="noindex" />
-    <meta name="description" content="J先生的旅行照片墙。" />
-    <title>照片墙 · J先生的旅行影集</title>
+    <meta name="description" content="J先生的旅行与生活照片墙。" />
+    <title>照片墙 · J先生的生活影集</title>
     <style>
       :root {
         color-scheme: light;
@@ -137,10 +151,16 @@ const coverPhoto = albumData.photos.find((photo) => photo.id === albumData.album
         font-size: 13px;
       }
 
+      .album-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 24px;
+      }
+
       .album-card {
         display: grid;
-        min-height: min(650px, 68vw);
-        grid-template-columns: 1.45fr 0.55fr;
+        min-height: 650px;
+        grid-template-rows: minmax(360px, 1fr) auto;
         overflow: hidden;
         border-radius: 28px;
         background: #153e38;
@@ -149,8 +169,12 @@ const coverPhoto = albumData.photos.find((photo) => photo.id === albumData.album
         text-decoration: none;
       }
 
+      .album-card--coffee {
+        background: #4a2a1a;
+      }
+
       .album-image {
-        min-height: 430px;
+        min-height: 360px;
         overflow: hidden;
       }
 
@@ -163,9 +187,10 @@ const coverPhoto = albumData.photos.find((photo) => photo.id === albumData.album
 
       .album-copy {
         display: flex;
+        min-height: 276px;
         flex-direction: column;
         justify-content: space-between;
-        padding: clamp(30px, 5vw, 62px);
+        padding: clamp(28px, 4vw, 48px);
       }
 
       .album-kicker {
@@ -175,7 +200,7 @@ const coverPhoto = albumData.photos.find((photo) => photo.id === albumData.album
       .album-copy h3 {
         margin: 0;
         font-family: Georgia, "Noto Serif SC", serif;
-        font-size: clamp(46px, 6vw, 78px);
+        font-size: clamp(42px, 5vw, 66px);
         font-weight: 500;
         letter-spacing: -0.06em;
       }
@@ -255,9 +280,13 @@ const coverPhoto = albumData.photos.find((photo) => photo.id === albumData.album
           font-size: clamp(54px, 21vw, 84px);
         }
 
+        .album-grid {
+          grid-template-columns: 1fr;
+          gap: 18px;
+        }
+
         .album-card {
           min-height: 0;
-          grid-template-columns: 1fr;
           border-radius: 20px;
         }
 
@@ -267,6 +296,7 @@ const coverPhoto = albumData.photos.find((photo) => photo.id === albumData.album
         }
 
         .album-copy {
+          min-height: 260px;
           gap: 38px;
           padding: 28px;
         }
@@ -294,7 +324,7 @@ const coverPhoto = albumData.photos.find((photo) => photo.id === albumData.album
       <header>
         <a class="brand" href={sitePath('/')} aria-label="返回J先生魔法学院首页">
           <span class="brand-mark">MJ</span>
-          <span>J先生 · 旅行影集</span>
+          <span>J先生 · 生活影集</span>
         </a>
         <a class="home-link" href={sitePath('/')}>返回主站</a>
       </header>
@@ -305,37 +335,48 @@ const coverPhoto = albumData.photos.find((photo) => photo.id === albumData.album
             <p class="kicker">TRAVEL ARCHIVE</p>
             <h1 id="page-title">照片墙</h1>
           </div>
-          <p class="hero-copy">把散落在时间里的旅途重新装订。这里保存目的地，也保存同行的人、天气和不经意的瞬间。</p>
+          <p class="hero-copy">把散落在时间里的旅途与日常重新装订。这里保存目的地，也保存咖啡、同行的人和不经意的瞬间。</p>
         </section>
 
         <section aria-labelledby="albums-title">
           <div class="albums-heading">
-            <h2 id="albums-title">旅行相册</h2>
-            <span>共 1 本</span>
+            <h2 id="albums-title">相册</h2>
+            <span>共 {albums.length} 本</span>
           </div>
 
-          <a class="album-card" href={albumHref} aria-label={`打开牙买加相册，共${albumData.album.count}张照片`}>
-            <div class="album-image">
-              <img src={coverSrc} alt="牙买加旅行相册封面" width={coverPhoto.width} height={coverPhoto.height} loading="eager" fetchpriority="high" />
-            </div>
-            <div class="album-copy">
-              <div>
-                <p class="album-kicker">{albumData.album.eyebrow}</p>
-                <h3>{albumData.album.name}</h3>
-                <p>{albumData.album.description}</p>
-              </div>
-              <div class="album-action">
-                <span>{albumData.album.count} 张照片</span>
-                <span class="arrow" aria-hidden="true">→</span>
-              </div>
-            </div>
-          </a>
+          <div class="album-grid">
+            {albums.map((album, index) => (
+              <a class:list={['album-card', album.className]} href={album.href} aria-label={`打开${album.data.album.name}相册，共${album.data.album.count}张照片`}>
+                <div class="album-image">
+                  <img
+                    src={sitePath(album.data.album.cover)}
+                    alt={album.coverAlt}
+                    width={album.coverPhoto.width}
+                    height={album.coverPhoto.height}
+                    loading={index === 0 ? 'eager' : 'lazy'}
+                    fetchpriority={index === 0 ? 'high' : 'auto'}
+                  />
+                </div>
+                <div class="album-copy">
+                  <div>
+                    <p class="album-kicker">{album.data.album.eyebrow}</p>
+                    <h3>{album.data.album.name}</h3>
+                    <p>{album.data.album.description}</p>
+                  </div>
+                  <div class="album-action">
+                    <span>{album.data.album.count} 张照片</span>
+                    <span class="arrow" aria-hidden="true">→</span>
+                  </div>
+                </div>
+              </a>
+            ))}
+          </div>
         </section>
       </main>
 
       <footer>
         <span>© 2026 J先生</span>
-        <span>旅行不是抵达，是把世界带回记忆。</span>
+        <span>把世界与日常，带回记忆。</span>
       </footer>
     </div>
   </body>

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { chromium } from 'playwright';
 
@@ -15,6 +15,9 @@ const expectedEventCounts = {
   其他: 100,
 };
 const expectedCategoryCounts = { people: 1125, scenery: 1029 };
+const expectedCoffeeAlbumCount = 310;
+const coffeeAlbumData = JSON.parse(await readFile(new URL('../src/data/coffee-latte-art-album.json', import.meta.url), 'utf8'));
+const expectedCoffeeYearCounts = coffeeAlbumData.album.countsByYear;
 await mkdir(outputDirectory, { recursive: true });
 
 const browserCandidates = [
@@ -36,13 +39,15 @@ const assertNoHorizontalOverflow = async () => {
 try {
   const indexResponse = await page.goto(`${baseUrl}/topics/space/travel/photo-wall/`, { waitUntil: 'networkidle' });
   assert.equal(indexResponse?.status(), 200);
-  assert.equal(await page.locator('.album-card').count(), 1);
-  assert.match(await page.locator('.album-card').innerText(), /牙买加/);
-  assert.match(await page.locator('.album-card').innerText(), new RegExp(`${expectedAlbumCount} 张照片`));
+  assert.equal(await page.locator('.album-card').count(), 2);
+  assert.match(await page.locator('.album-card--jamaica').innerText(), /牙买加/);
+  assert.match(await page.locator('.album-card--jamaica').innerText(), new RegExp(`${expectedAlbumCount} 张照片`));
+  assert.match(await page.locator('.album-card--coffee').innerText(), /咖啡拉花/);
+  assert.match(await page.locator('.album-card--coffee').innerText(), new RegExp(`${expectedCoffeeAlbumCount} 张照片`));
   await assertNoHorizontalOverflow();
   await page.screenshot({ path: path.join(outputDirectory, 'desktop-index.png'), fullPage: true });
 
-  await page.locator('.album-card').click();
+  await page.locator('.album-card--jamaica').click();
   await page.waitForURL('**/photo-wall/jamaica**');
   assert.equal((await page.locator('.home-link').innerText()).trim(), 'J先生个人空间');
   assert.equal(await page.locator('.home-link').getAttribute('href'), '/officialwebsite/');
@@ -109,6 +114,47 @@ try {
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({ path: path.join(outputDirectory, 'mobile-album.png'), fullPage: false });
 
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(`${baseUrl}/topics/space/travel/photo-wall/coffee-latte-art/`, { waitUntil: 'domcontentloaded' });
+  await page.locator('.photo-card').first().waitFor();
+  assert.equal(await page.locator('.photo-card').count(), expectedCoffeeAlbumCount);
+  assert.equal(await page.locator('.photo-card:not([hidden])').count(), expectedCoffeeAlbumCount);
+  assert.equal(await page.locator('.month-section').count(), coffeeAlbumData.album.monthCount);
+  assert.equal(await page.locator('.map-marker').count(), coffeeAlbumData.album.locationCount);
+  assert.match(await page.locator('.hero h1').innerText(), /咖啡/);
+  assert.equal((await page.locator('.home-link').innerText()).trim(), 'J先生个人空间');
+  await assertNoHorizontalOverflow();
+  await page.screenshot({ path: path.join(outputDirectory, 'desktop-coffee-gallery.png'), fullPage: false });
+
+  for (const [year, count] of Object.entries(expectedCoffeeYearCounts)) {
+    await page.locator(`.year-button[data-year="${year}"]`).click();
+    assert.equal(await page.locator('.photo-card:not([hidden])').count(), count);
+    assert.equal((await page.locator('.visible-count').innerText()).trim(), `显示 ${count} 张`);
+  }
+  await page.locator('.year-button[data-year="all"]').click();
+  await page.locator('.view-button[data-view="map"]').click();
+  assert.equal(await page.locator('[data-view-panel="map"]').isVisible(), true);
+  assert.equal(await page.locator('.map-marker:not([hidden])').count(), coffeeAlbumData.album.locationCount);
+  assert.notEqual((await page.locator('#map-location-title').innerText()).trim(), '选择地图标记');
+  assert.ok(await page.locator('#map-previews .map-preview').count() > 0);
+  await page.screenshot({ path: path.join(outputDirectory, 'desktop-coffee-map.png'), fullPage: false });
+  await page.locator('#map-previews button.map-preview').first().click();
+  await page.waitForFunction(() => document.querySelector('#lightbox')?.open === true);
+  assert.match((await page.locator('#lightbox-position').innerText()).trim(), new RegExp(`/ ${expectedCoffeeAlbumCount}$`));
+  await page.locator('.lightbox-close').click();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${baseUrl}/topics/space/travel/photo-wall/coffee-latte-art/`, { waitUntil: 'domcontentloaded' });
+  await page.locator('.photo-card').first().waitFor();
+  assert.equal(await page.locator('.photo-card').count(), expectedCoffeeAlbumCount);
+  await assertNoHorizontalOverflow();
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.screenshot({ path: path.join(outputDirectory, 'mobile-coffee-gallery.png'), fullPage: false });
+  await page.locator('.view-button[data-view="map"]').click();
+  await page.locator('.coffee-map').scrollIntoViewIfNeeded();
+  await assertNoHorizontalOverflow();
+  await page.screenshot({ path: path.join(outputDirectory, 'mobile-coffee-map.png'), fullPage: false });
+
   console.log(JSON.stringify({
     index: 'ok',
     albumPhotos: expectedAlbumCount,
@@ -116,6 +162,16 @@ try {
     categoryFilters: expectedCategoryCounts,
     combinedFilter: { event: '大事记', category: 'people', count: 828 },
     lightbox: 'ok',
+    coffeeAlbum: {
+      photos: expectedCoffeeAlbumCount,
+      years: Object.keys(expectedCoffeeYearCounts).length,
+      months: coffeeAlbumData.album.monthCount,
+      locationPhotos: coffeeAlbumData.album.locationPhotoCount,
+      mapLocations: coffeeAlbumData.album.locationCount,
+      gallery: 'ok',
+      map: 'ok',
+      lightbox: 'ok',
+    },
     desktopViewport: '1440x900',
     mobileViewport: '390x844',
     horizontalOverflow: 0,
