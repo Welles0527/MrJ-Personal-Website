@@ -45,6 +45,7 @@
     news: "<path d='M5 4h12a2 2 0 012 2v14H7a2 2 0 01-2-2zM8 8h8M8 12h8M8 16h5'/>",
     digest: "<path d='M6 3.5h12v17H6zM9 8h6M9 12h6M9 16h3'/><path d='M4 7h2M4 12h2M4 17h2'/>",
     calendar: "<rect x='4' y='5.5' width='16' height='14.5' rx='2'/><path d='M8 3.5v4M16 3.5v4M4 10h16M8 14h3M8 17h6'/>",
+    matrix: "<rect x='3.5' y='4' width='17' height='16' rx='2'/><path d='M9 4v16M15 4v16M3.5 9.5h17M3.5 15h17'/>",
     ai: "<path d='M12 3.5l1.45 4.05L17.5 9l-4.05 1.45L12 14.5l-1.45-4.05L6.5 9l4.05-1.45z'/><path d='M18.5 14.5l.78 2.22 2.22.78-2.22.78-.78 2.22-.78-2.22-2.22-.78 2.22-.78zM5.5 14l.58 1.67 1.67.58-1.67.58L5.5 18.5l-.58-1.67-1.67-.58 1.67-.58z'/>",
     edit: "<path d='M4 20h4l11-11-4-4L4 16zM13.5 6.5l4 4'/>",
     search: "<circle cx='10.5' cy='10.5' r='6.5'/><path d='M15.5 15.5L21 21'/>",
@@ -71,7 +72,7 @@
     : legacyGroupMap[requestedCategory] || "all";
   const state = {
     selectedStockId: requestedStockId || data?.stocks?.[0]?.id || "",
-    viewMode: ["technical", "daily", "calendar", "ai-selection"].includes(requestedView) ? requestedView : "stock",
+    viewMode: ["technical", "score-matrix", "daily", "calendar", "ai-selection"].includes(requestedView) ? requestedView : "stock",
     activeGroup: requestedGroup,
     query: "",
     dailyStockQuery: "",
@@ -104,6 +105,7 @@
 
   let root;
   let technicalPage;
+  let scoreMatrixPage;
   let aiSelectionPage;
   let completeEmailSignUp;
   let accountSyncPromise = null;
@@ -115,6 +117,9 @@
     restoreWatchlist();
     if (technicalProvider && window.StockTechnicalAnalysisPage) {
       technicalPage = window.StockTechnicalAnalysisPage.create(technicalProvider, render);
+    }
+    if (technicalProvider && window.StockScoreMatrixPage) {
+      scoreMatrixPage = window.StockScoreMatrixPage.create(technicalProvider, render);
     }
     if (window.AIStockSelectionPage) {
       aiSelectionPage = window.AIStockSelectionPage.create(aiSelectionProvider, render);
@@ -205,7 +210,7 @@
   }
 
   function runAutomaticRefresh(sections) {
-    if (document.visibilityState !== "visible" || !liveDataProvider || state.viewMode === "technical") return;
+    if (document.visibilityState !== "visible" || !liveDataProvider || analysisWorkspaceView()) return;
     const feedSections = sections.filter(section => section !== "quote");
     const options = {
       silent: true,
@@ -235,7 +240,7 @@
   }
 
   function handleVisibilityRefresh() {
-    if (document.visibilityState !== "visible" || state.viewMode === "technical") return;
+    if (document.visibilityState !== "visible" || analysisWorkspaceView()) return;
     const feedCodes = watchlistAggregateView()
       ? data.stocks.map(stock => stock.code)
       : [selectedStock().code];
@@ -903,7 +908,7 @@
     } else {
       state.refreshNotice = `刷新失败：${errors[0] || "公开数据源暂不可用"}`;
     }
-    if (!(options.silent && state.viewMode === "technical")) render();
+    if (!(options.silent && analysisWorkspaceView())) render();
     const pendingOptions = state.pendingRefreshOptions;
     state.pendingRefreshOptions = null;
     if (pendingOptions) refreshAllInformation(pendingOptions);
@@ -911,7 +916,10 @@
 
   function render() {
     const stock = selectedStock();
-    document.title = state.viewMode === "technical"
+    const analysisView = analysisWorkspaceView();
+    document.title = state.viewMode === "score-matrix"
+      ? "多周期评分矩阵 - A股个股跟踪"
+      : state.viewMode === "technical"
       ? `${stock.name}技术分析 - A股个股跟踪`
       : state.viewMode === "daily"
         ? "今日必读 - A股个股跟踪"
@@ -924,7 +932,7 @@
       <div class="tracking-layout ${state.viewMode === "ai-selection" ? "ai-selection-layout" : ""}">
         ${renderWorkspaceNav(stock)}
         ${renderSidebar(stock)}
-        <main class="tracking-main ${state.viewMode === "technical" ? "technical-main" : ""}">
+        <main class="tracking-main ${analysisView ? "technical-main" : ""} ${state.viewMode === "score-matrix" ? "score-matrix-main" : ""}">
           ${state.viewMode === "stock" ? renderStockView(stock) : ""}
           ${state.viewMode === "daily" ? renderDailyDigestView() : ""}
           ${state.viewMode === "calendar" ? renderCalendarView() : ""}
@@ -932,15 +940,21 @@
           ${state.viewMode === "market" ? renderMarketTechnicalView() : ""}
           ${state.viewMode === "ai-selection" ? renderAISelectionView() : ""}
           ${state.viewMode === "technical" ? renderTechnicalView(stock) : ""}
+          ${state.viewMode === "score-matrix" ? renderScoreMatrixView() : ""}
         </main>
       </div>
       ${renderAuthModal()}`;
     syncUrl();
     if (state.viewMode === "technical") technicalPage?.mount(root, stock);
+    if (state.viewMode === "score-matrix") scoreMatrixPage?.mount(root, data.stocks);
     if (state.viewMode === "ai-selection") {
       aiSelectionPage?.mount(root);
     }
     keepSelectedWorkspaceTabVisible();
+  }
+
+  function analysisWorkspaceView() {
+    return ["technical", "score-matrix"].includes(state.viewMode);
   }
 
   function keepSelectedWorkspaceTabVisible() {
@@ -963,7 +977,8 @@
       ["macro", "news", "宏观事件"],
       ["market", "pulse", "大盘走势"],
       ["ai-selection", "ai", "AI选股"],
-      ["technical", "chart", "技术分析"]
+      ["technical", "chart", "技术分析"],
+      ["score-matrix", "matrix", "评分矩阵"]
     ];
     return `
       <header class="workspace-nav" aria-label="个股投资主导航">
@@ -1006,6 +1021,13 @@
       trackedStocks: data.stocks.map(item => ({ code: item.code, name: item.name })),
       trackedCodes: new Set(data.stocks.map(item => item.code))
     });
+  }
+
+  function renderScoreMatrixView() {
+    if (!scoreMatrixPage) {
+      return `<section class="matrix-state matrix-state-error" role="alert"><strong>评分矩阵模块未能加载</strong><p>请刷新页面后重试。</p></section>`;
+    }
+    return scoreMatrixPage.render(data.stocks);
   }
 
   function renderAISelectionView() {
@@ -1313,7 +1335,7 @@
 
   function syncUrl() {
     const url = new URL(window.location.href);
-    if (["technical", "daily", "calendar", "ai-selection"].includes(state.viewMode)) {
+    if (["technical", "score-matrix", "daily", "calendar", "ai-selection"].includes(state.viewMode)) {
       url.searchParams.set("view", state.viewMode);
       url.searchParams.set("stock", state.selectedStockId);
       url.searchParams.delete("category");
@@ -2139,6 +2161,10 @@
       const handled = aiSelectionPage.handleAction(target);
       if (handled === "async") return;
       if (!handled) return;
+    } else if (state.viewMode === "score-matrix" && scoreMatrixPage) {
+      const handled = scoreMatrixPage.handleAction(target);
+      if (handled === "async") return;
+      if (!handled) return;
     } else if (state.viewMode === "technical" && technicalPage) {
       const handled = technicalPage.handleAction(target);
       if (handled === "async") return;
@@ -2246,6 +2272,7 @@
   }
 
   function handleInput(event) {
+    if (state.viewMode === "score-matrix" && scoreMatrixPage?.handleInput(event.target)) return;
     if (state.viewMode === "technical" && technicalPage?.handleInput(event.target)) {
       if (event.isComposing || state.technicalSearchComposing) return;
       const cursor = event.target.selectionStart;

@@ -262,9 +262,13 @@
     return { score: normalizedDetails(details), details, values: { bandwidth, bandwidthPercentile, atrPercentile, rvRatio, extremeRatio }, compressionThenExpansion };
   }
 
-  function calculateTotalScore(dimensions) {
-    const available = Object.entries(DIMENSION_WEIGHTS)
-      .filter(([key]) => finite(dimensions[key]?.score));
+  function calculateTotalScore(dimensions, weights = DIMENSION_WEIGHTS) {
+    const resolvedWeights = Object.fromEntries(Object.keys(DIMENSION_WEIGHTS).map(key => {
+      const value = Number(weights?.[key]);
+      return [key, Number.isFinite(value) && value >= 0 ? value : DIMENSION_WEIGHTS[key]];
+    }));
+    const available = Object.entries(resolvedWeights)
+      .filter(([key, weight]) => weight > 0 && finite(dimensions[key]?.score));
     if (!available.length) return null;
     const weighted = available.reduce((sum, [key, weight]) => sum + dimensions[key].score * weight, 0);
     const weightSum = available.reduce((sum, [, weight]) => sum + weight, 0);
