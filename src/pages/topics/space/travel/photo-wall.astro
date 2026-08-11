@@ -1,9 +1,17 @@
 ---
 import albumData from '../../../../data/jamaica-photo-album.json';
 import coffeeAlbumData from '../../../../data/coffee-latte-art-album.json';
+import japanAlbumData from '../../../../data/japan-kanto-2015-album.json';
 import { sitePath } from '../../../../data/site';
 
 const albums = [
+  {
+    data: japanAlbumData,
+    href: sitePath('/topics/space/travel/photo-wall/japan-kanto-2015'),
+    coverPhoto: japanAlbumData.photos.find((photo) => photo.id === japanAlbumData.album.coverId) ?? japanAlbumData.photos[0],
+    className: 'album-card--japan',
+    coverAlt: '2015年日本关东旅行相册封面',
+  },
   {
     data: albumData,
     href: sitePath('/topics/space/travel/photo-wall/jamaica'),
@@ -173,6 +181,35 @@ const albums = [
         background: #4a2a1a;
       }
 
+      .album-card--japan {
+        min-height: 560px;
+        grid-column: 1 / -1;
+        grid-template-columns: minmax(0, 1.25fr) minmax(390px, 0.75fr);
+        grid-template-rows: 1fr;
+        background: #9f352c;
+        color: #fff8ef;
+      }
+
+      .album-card--japan .album-kicker {
+        color: #f4d09f;
+      }
+
+      .album-card--japan .album-copy p {
+        color: rgba(255, 248, 239, 0.72);
+      }
+
+      .album-card--japan .album-action {
+        border-top-color: rgba(255, 248, 239, 0.24);
+      }
+
+      .album-card--japan .arrow {
+        border-color: rgba(255, 248, 239, 0.42);
+      }
+
+      .album-card--japan:hover .arrow {
+        background: rgba(255, 248, 239, 0.12);
+      }
+
       .album-image {
         min-height: 360px;
         overflow: hidden;
@@ -288,6 +325,12 @@ const albums = [
         .album-card {
           min-height: 0;
           border-radius: 20px;
+        }
+
+        .album-card--japan {
+          grid-column: auto;
+          grid-template-columns: 1fr;
+          grid-template-rows: minmax(260px, 1fr) auto;
         }
 
         .album-image {

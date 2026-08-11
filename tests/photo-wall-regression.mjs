@@ -18,6 +18,9 @@ const expectedCategoryCounts = { people: 1125, scenery: 1029 };
 const expectedCoffeeAlbumCount = 310;
 const coffeeAlbumData = JSON.parse(await readFile(new URL('../src/data/coffee-latte-art-album.json', import.meta.url), 'utf8'));
 const expectedCoffeeYearCounts = coffeeAlbumData.album.countsByYear;
+const expectedJapanAlbumCount = 378;
+const japanAlbumData = JSON.parse(await readFile(new URL('../src/data/japan-kanto-2015-album.json', import.meta.url), 'utf8'));
+const expectedJapanDayCounts = japanAlbumData.album.countsByDay;
 await mkdir(outputDirectory, { recursive: true });
 
 const browserCandidates = [
@@ -39,7 +42,9 @@ const assertNoHorizontalOverflow = async () => {
 try {
   const indexResponse = await page.goto(`${baseUrl}/topics/space/travel/photo-wall/`, { waitUntil: 'networkidle' });
   assert.equal(indexResponse?.status(), 200);
-  assert.equal(await page.locator('.album-card').count(), 2);
+  assert.equal(await page.locator('.album-card').count(), 3);
+  assert.match(await page.locator('.album-card--japan').innerText(), /2015年日本/);
+  assert.match(await page.locator('.album-card--japan').innerText(), new RegExp(`${expectedJapanAlbumCount} 张照片`));
   assert.match(await page.locator('.album-card--jamaica').innerText(), /牙买加/);
   assert.match(await page.locator('.album-card--jamaica').innerText(), new RegExp(`${expectedAlbumCount} 张照片`));
   assert.match(await page.locator('.album-card--coffee').innerText(), /咖啡拉花/);
@@ -155,6 +160,52 @@ try {
   await assertNoHorizontalOverflow();
   await page.screenshot({ path: path.join(outputDirectory, 'mobile-coffee-map.png'), fullPage: false });
 
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(`${baseUrl}/topics/space/travel/photo-wall/japan-kanto-2015/`, { waitUntil: 'domcontentloaded' });
+  await page.locator('.photo-card').first().waitFor();
+  assert.equal(await page.locator('.photo-card').count(), expectedJapanAlbumCount);
+  assert.equal(await page.locator('.photo-card:not([hidden])').count(), expectedJapanAlbumCount);
+  assert.equal(await page.locator('.day-section').count(), japanAlbumData.album.dayCount);
+  assert.match(await page.locator('.hero h1').innerText(), /2015年[\s\S]*日本[\s\S]*关东/);
+  assert.equal((await page.locator('.home-link').innerText()).trim(), 'J先生个人空间');
+  await assertNoHorizontalOverflow();
+  await page.screenshot({ path: path.join(outputDirectory, 'desktop-japan-album.png'), fullPage: false });
+
+  for (const [day, count] of Object.entries(expectedJapanDayCounts)) {
+    await page.locator(`.day-button[data-day="${day}"]`).click();
+    assert.equal(await page.locator('.day-section:not([hidden]) .photo-card').count(), count);
+    assert.equal((await page.locator('.visible-count').innerText()).trim(), `显示 ${count} 张`);
+  }
+  await page.locator('.day-button[data-day="all"]').click();
+  await page.locator('.photo-card').first().click();
+  await page.waitForFunction(() => document.querySelector('#lightbox')?.open === true);
+  assert.equal((await page.locator('#lightbox-position').innerText()).trim(), `1 / ${expectedJapanAlbumCount}`);
+  assert.notEqual((await page.locator('#lightbox-date').innerText()).trim(), '');
+  assert.notEqual((await page.locator('#lightbox-file').innerText()).trim(), '');
+  await page.locator('.lightbox-next').click();
+  assert.equal((await page.locator('#lightbox-position').innerText()).trim(), `2 / ${expectedJapanAlbumCount}`);
+  await page.locator('.lightbox-close').click();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${baseUrl}/topics/space/travel/photo-wall/japan-kanto-2015/`, { waitUntil: 'domcontentloaded' });
+  await page.locator('.photo-card').first().waitFor();
+  assert.equal(await page.locator('.photo-card').count(), expectedJapanAlbumCount);
+  await assertNoHorizontalOverflow();
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.screenshot({ path: path.join(outputDirectory, 'mobile-japan-album.png'), fullPage: false });
+  await page.locator('.photo-card').first().click();
+  await page.waitForFunction(() => {
+    const image = document.querySelector('#lightbox-image');
+    return image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0;
+  });
+  for (const selector of ['.lightbox-close', '.lightbox-previous', '.lightbox-next']) {
+    const box = await page.locator(selector).boundingBox();
+    assert.ok(box, `${selector} is not visible`);
+    assert.ok(box.x >= 0 && box.y >= 0 && box.x + box.width <= 390 && box.y + box.height <= 844, `${selector} is outside the viewport`);
+  }
+  await page.screenshot({ path: path.join(outputDirectory, 'mobile-japan-lightbox.png'), fullPage: false });
+  await page.locator('.lightbox-close').click();
+
   console.log(JSON.stringify({
     index: 'ok',
     albumPhotos: expectedAlbumCount,
@@ -170,6 +221,12 @@ try {
       mapLocations: coffeeAlbumData.album.locationCount,
       gallery: 'ok',
       map: 'ok',
+      lightbox: 'ok',
+    },
+    japanAlbum: {
+      photos: expectedJapanAlbumCount,
+      days: japanAlbumData.album.dayCount,
+      dayFilters: expectedJapanDayCounts,
       lightbox: 'ok',
     },
     desktopViewport: '1440x900',
