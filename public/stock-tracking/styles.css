@@ -2797,9 +2797,6 @@ body,
   .tracking-layout:not(:has(.technical-main)) .watchlist { background: linear-gradient(180deg, rgba(8, 9, 11, .99), rgba(3, 4, 5, .985)); }
 }
 
-/* Generated research remains available to the data layer while its page section is paused. */
-.daily-research-section { display: none !important; }
-
 /* Stock identity and the four stock-analysis destinations share one compact control row. */
 .position-header { display: block; }
 .quote-block { width: 100%; }
@@ -3256,7 +3253,7 @@ body,
 @media (max-width: 620px) {
   .daily-research-section { margin-top: 22px; padding-top: 18px; }
   .daily-research-heading strong { font-size: 18px; }
-  .daily-research-stock-nav { margin-right: -16px; padding-right: 16px; }
+  .daily-research-stock-nav { margin-right: 0; padding-right: 0; }
   .daily-research-stock-header { align-items: flex-start; flex-direction: column; gap: 10px; padding: 14px; }
   .daily-research-status { flex-wrap: wrap; }
   .daily-research-headline { padding: 13px 14px; font-size: 14px; }
