@@ -1037,10 +1037,6 @@
             <small><b>今日 ${allSections.today.length} · 补看 ${allSections.catchUp.length}</b><span>已检查 ${checkState.checkedCount}/${data.stocks.length}${checkState.latestAt ? ` · ${formatDateTime(checkState.latestAt)}` : ""}</span></small>
           </div>
         </header>
-        ${renderMessageHeader("daily")}
-        ${renderDailyDigestFilters(true, "今日必读")}
-        ${renderDailyDigestSection("今日发布", "当天发布的信息", visibleSections.today, "today")}
-        ${allSections.catchUp.length ? renderDailyDigestSection("历史未读补看", "今天以前尚未阅读，不含未来事件", visibleSections.catchUp, "catch-up") : ""}
         ${renderDailyResearchSection()}
       </section>`;
   }
