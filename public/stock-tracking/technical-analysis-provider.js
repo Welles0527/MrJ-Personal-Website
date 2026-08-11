@@ -202,7 +202,7 @@
       });
       await Promise.all(workers);
       return {
-        items: items.filter(Boolean).sort((left, right) => Number(right.score) - Number(left.score) || left.code.localeCompare(right.code)),
+        items: items.filter(Boolean),
         errors,
         checkedAt: new Date().toISOString()
       };

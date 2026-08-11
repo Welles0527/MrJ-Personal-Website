@@ -11,7 +11,7 @@
     if (!element || !global.echarts) return null;
     let chart = instances.get(element);
     if (!chart) {
-      chart = global.echarts.init(element, null, { renderer: "canvas", useDirtyRect: true });
+      chart = global.echarts.init(element, null, { renderer: "canvas", useDirtyRect: false });
       instances.set(element, chart);
     }
     return chart;
@@ -56,6 +56,7 @@
     const hide = () => {
       chart.dispatchAction({ type: "hideTip" });
       chart.dispatchAction({ type: "updateAxisPointer", currTrigger: "leave" });
+      chart.getZr().refreshImmediately();
     };
     const zr = chart.getZr();
     zr.on("globalout", hide);

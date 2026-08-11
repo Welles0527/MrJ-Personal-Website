@@ -2800,6 +2800,14 @@ body,
 /* Stock identity and the four stock-analysis destinations share one compact control row. */
 .position-header { display: block; }
 .quote-block { width: 100%; }
+.tracking-layout:not(:has(.technical-main)):has(.position-header) .position-header { padding: 0; }
+.tracking-layout:not(:has(.technical-main)):has(.position-header) .message-header {
+  min-height: 54px;
+  margin-top: 4px;
+}
+.tracking-layout:not(:has(.technical-main)):has(.position-header) .quote-block .negative {
+  color: var(--negative) !important;
+}
 .quote-title {
   min-width: 0;
   flex-wrap: nowrap;
