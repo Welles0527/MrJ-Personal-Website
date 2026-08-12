@@ -287,7 +287,6 @@ window.DailyRadioComponents = (() => {
     return `
       <section class="main-player" aria-label="今日简报主播放器">
         <div class="player-glow" aria-hidden="true"><span></span></div>
-        <img class="player-hero-art" src="./assets/ai-hero-orb-wave.png" alt="" aria-hidden="true">
         <div class="player-copy">
           <span class="player-kicker"><i></i>${escapeHtml(channel.name)} · 今日已更新</span>
           <h1>${escapeHtml(summary.greeting)}</h1>
@@ -491,7 +490,7 @@ window.DailyRadioComponents = (() => {
         <section class="settings-section profile-settings">
           <div class="settings-heading"><h2>收听偏好</h2><button class="text-button" type="button" data-action="restart-onboarding">重新设置</button></div>
           <div class="preference-row"><span>${icon("clock")}</span><div><strong>每日收听时长</strong><small>控制个性化听单长度</small></div><b>${state.listenMinutes} 分钟</b></div>
-          <div class="preference-row"><span>${icon("mic")}</span><div><strong>播报声音</strong><small>Web 会优先匹配可用中文音色</small></div><b>${escapeHtml(state.voice)}</b></div>
+          <div class="preference-row"><span>${icon("mic")}</span><div><strong>播报声音</strong><small>优先播放 Edge TTS 自然语音</small></div><b>${escapeHtml(state.voice)}</b></div>
           <div class="preference-row"><span>${icon("calendarClock")}</span><div><strong>简报更新时间</strong><small>演示提醒设置</small></div><b>${escapeHtml(state.updateTime)}</b></div>
           <div class="preference-row"><span>${icon("appearance")}</span><div><strong>夜间收听模式</strong><small>降低夜间界面亮度</small></div><button class="toggle ${state.theme === "dark" ? "is-on" : ""}" type="button" data-action="theme-toggle" aria-pressed="${state.theme === "dark"}"><i></i></button></div>
         </section>
@@ -546,7 +545,7 @@ window.DailyRadioComponents = (() => {
 
   function onboardingPreferences(state) {
     const durations = [5, 10, 15];
-    const voices = ["清柔女声", "沉稳播报", "清晰快讯"];
+    const voices = ["HsiaoChen｜女声"];
     return `
       <div class="onboarding-heading">
         <span class="onboarding-mark">${icon("sliders")}</span>
@@ -554,7 +553,7 @@ window.DailyRadioComponents = (() => {
         <p>我们会按照时长和声音偏好安排每天的听单。</p>
       </div>
       <fieldset class="choice-field"><legend>希望每日简报的收听时长</legend><div class="segmented-choice">${durations.map(value => `<button class="${state.draftListenMinutes === value ? "is-selected" : ""}" type="button" data-action="duration-choice" data-value="${value}">${value} 分钟</button>`).join("")}</div></fieldset>
-      <fieldset class="choice-field"><legend>播报声音</legend><div class="voice-choice">${voices.map((voice, index) => `<button class="${state.draftVoice === voice ? "is-selected" : ""}" type="button" data-action="voice-choice" data-value="${voice}"><span>${icon(index === 0 ? "feather" : index === 1 ? "radio" : "spark")}</span><strong>${voice}</strong><small>${index === 0 ? "舒缓自然" : index === 1 ? "稳重清楚" : "轻快利落"}</small></button>`).join("")}</div></fieldset>
+      <fieldset class="choice-field"><legend>播报声音</legend><div class="voice-choice">${voices.map(voice => `<button class="${state.draftVoice === voice ? "is-selected" : ""}" type="button" data-action="voice-choice" data-value="${voice}"><span>${icon("feather")}</span><strong>${voice}</strong><small>自然、亲切的中文女声</small></button>`).join("")}</div></fieldset>
       <label class="time-choice"><span><b>每日更新时间</b><small>提醒仅作界面演示</small></span><input type="time" value="${escapeHtml(state.draftUpdateTime)}" data-action="time-choice"></label>`;
   }
 
@@ -617,7 +616,7 @@ window.DailyRadioComponents = (() => {
     const drawerBrief = data.briefings.find(item => item.id === state.drawerId);
     const overlayActive = !state.onboardingComplete || state.drawerOpen;
     return `
-      <div class="app-shell ai-theme theme-${state.theme}">
+      <div class="app-shell theme-${state.theme}">
         <div class="ambient-orb orb-one" aria-hidden="true"></div><div class="ambient-orb orb-two" aria-hidden="true"></div>
         <div class="app-content" ${overlayActive ? "inert aria-hidden=\"true\"" : ""}>
           <div class="page-frame">

@@ -28,7 +28,7 @@
     theme: saved.theme || "light",
     selectedChannels: saved.selectedChannels || [],
     listenMinutes: saved.listenMinutes || 10,
-    voice: saved.voice || "清柔女声",
+    voice: "HsiaoChen｜女声",
     updateTime: saved.updateTime || "07:30",
     watchlist: saved.watchlist || [],
     holdings: saved.holdings || [],
@@ -38,7 +38,7 @@
     onboardingStep: 1,
     draftChannels: saved.selectedChannels || [],
     draftListenMinutes: saved.listenMinutes || 10,
-    draftVoice: saved.voice || "清柔女声",
+    draftVoice: "HsiaoChen｜女声",
     draftUpdateTime: saved.updateTime || "07:30",
     draftWatchlist: saved.watchlist || [],
     draftHoldings: saved.holdings || [],
@@ -58,6 +58,7 @@
   let progressStartValue = 0;
   let toastTimer = 0;
   let activeUtterance = null;
+  let activeAudio = null;
   let lastOverlaySignature = "";
 
   function loadPreferences() {
@@ -156,32 +157,6 @@
     lastOverlaySignature = overlaySignature;
   }
 
-  function updateWaveformProgress(waveformElement, progress) {
-    const bars = waveformElement?.querySelectorAll("i");
-    if (!bars?.length) return;
-    bars.forEach((bar, index) => {
-      bar.classList.toggle("is-active", index / bars.length <= progress);
-    });
-  }
-
-  function updatePlaybackProgress() {
-    const percent = Math.round(state.progress * 100);
-    const playerWave = root.querySelector(".player-wave");
-    if (playerWave) {
-      playerWave.setAttribute("aria-label", `播放进度 ${percent}%`);
-      updateWaveformProgress(playerWave.querySelector(".waveform"), state.progress);
-    }
-    updateWaveformProgress(root.querySelector(".mini-wave .waveform"), state.progress);
-
-    const currentProgress = root.querySelector(".current-line > span:last-child");
-    if (currentProgress) currentProgress.textContent = `${percent}%`;
-
-    const current = currentBriefing();
-    const channel = data.channels.find(item => item.id === current?.channel);
-    const miniProgress = root.querySelector(".mini-copy > span");
-    if (miniProgress && channel) miniProgress.textContent = `${channel.name} · ${percent}%`;
-  }
-
   function showToast(message) {
     state.toast = message;
     window.clearTimeout(toastTimer);
@@ -208,12 +183,17 @@
     const duration = estimatedNarrationSeconds(item);
     progressTimer = window.setInterval(() => {
       if (!state.playing) return;
+      if (activeAudio && Number.isFinite(activeAudio.duration) && activeAudio.duration > 0) {
+        state.progress = Math.min(1, activeAudio.currentTime / activeAudio.duration);
+        render();
+        return;
+      }
       const elapsed = (performance.now() - progressStartedAt) / 1000;
       state.progress = Math.min(1, progressStartValue + elapsed / duration);
       if (state.progress >= 1) {
         playNext();
       } else {
-        updatePlaybackProgress();
+        render();
       }
     }, 360);
   }
@@ -252,11 +232,45 @@
     window.speechSynthesis.speak(utterance);
   }
 
+  function playNaturalAudio(item) {
+    if (!item.audioUrl) {
+      speak(item);
+      return;
+    }
+    const audio = new Audio(item.audioUrl);
+    activeAudio = audio;
+    audio.preload = "auto";
+    audio.playbackRate = state.speed;
+    audio.addEventListener("loadedmetadata", () => {
+      if (activeAudio !== audio || !Number.isFinite(audio.duration)) return;
+      audio.currentTime = Math.min(audio.duration * state.progress, Math.max(0, audio.duration - 0.1));
+    }, { once: true });
+    audio.addEventListener("ended", () => {
+      if (activeAudio !== audio || !state.playing) return;
+      state.progress = 1;
+      playNext();
+    });
+    audio.addEventListener("error", () => {
+      if (activeAudio !== audio) return;
+      activeAudio = null;
+      showToast("自然语音加载失败，已切换到浏览器语音");
+      speak(item);
+      startProgressTimer(item);
+    }, { once: true });
+    audio.play().catch(() => {
+      if (activeAudio !== audio) return;
+      activeAudio = null;
+      showToast("自然语音暂不可用，已切换到浏览器语音");
+      speak(item);
+      startProgressTimer(item);
+    });
+  }
+
   function playCurrent({ restartSpeech = true } = {}) {
     const item = currentBriefing();
     if (!item) return;
     state.playing = true;
-    if (restartSpeech) speak(item);
+    if (restartSpeech) playNaturalAudio(item);
     startProgressTimer(item);
     persist();
     render();
@@ -265,12 +279,20 @@
   function pausePlayback() {
     state.playing = false;
     window.clearInterval(progressTimer);
+    if (activeAudio) activeAudio.pause();
     if (window.speechSynthesis?.speaking) window.speechSynthesis.pause();
     render();
   }
 
   function resumePlayback() {
     state.playing = true;
+    if (activeAudio?.paused) {
+      activeAudio.playbackRate = state.speed;
+      activeAudio.play().catch(() => playCurrent());
+      startProgressTimer(currentBriefing());
+      render();
+      return;
+    }
     if (window.speechSynthesis?.paused) {
       window.speechSynthesis.resume();
       startProgressTimer(currentBriefing());
@@ -284,6 +306,12 @@
     state.playing = false;
     window.clearInterval(progressTimer);
     if (cancelSpeech && window.speechSynthesis) window.speechSynthesis.cancel();
+    if (activeAudio) {
+      activeAudio.pause();
+      activeAudio.removeAttribute("src");
+      activeAudio.load();
+      activeAudio = null;
+    }
     activeUtterance = null;
   }
 
@@ -300,7 +328,7 @@
 
   function togglePlay() {
     if (state.playing) pausePlayback();
-    else if (window.speechSynthesis?.paused) resumePlayback();
+    else if (activeAudio?.paused || window.speechSynthesis?.paused) resumePlayback();
     else playCurrent();
   }
 
@@ -439,8 +467,14 @@
       const currentIndex = speedOptions.indexOf(state.speed);
       state.speed = speedOptions[(currentIndex + 1) % speedOptions.length];
       if (state.playing) {
-        state.progress = 0;
-        playCurrent();
+        if (activeAudio) {
+          activeAudio.playbackRate = state.speed;
+          startProgressTimer(currentBriefing());
+          render();
+        } else {
+          state.progress = 0;
+          playCurrent();
+        }
       } else render();
     } else if (action === "move-item") {
       movePlaylistItem(button.dataset.id, Number(button.dataset.direction));
