@@ -8,14 +8,14 @@ window.DAILY_RADIO_AI_NEWS = {
     "finalUrl": "https://ai-bot.cn/daily-ai-news/",
     "userAgent": "DailyRadioFetcher/1.0 (+personal daily briefing; one request per run)"
   },
-  "fetchedAt": "2026-08-12T16:24:53+08:00",
+  "fetchedAt": "2026-08-12T22:06:59+08:00",
   "contentDate": "8月12·周三",
   "audioMode": "edge-tts",
   "audioVoice": "zh-TW-HsiaoChenNeural",
-  "recordCount": 2,
-  "availableRecordCount": 2,
+  "recordCount": 4,
+  "availableRecordCount": 4,
   "parserVersion": "ai-bot-news-list-v1",
-  "sourceHtmlSha256": "af4bec96ad8c193394faad6ea727dcabd33cfef9097665e8427cf3693bdd035e",
+  "sourceHtmlSha256": "ed70b4743df60be0fddb896bf1678fef1c7bda0878f08cb8d59c465bff98c3f7",
   "briefings": [
     {
       "id": "ai-live-1",
@@ -33,7 +33,7 @@ window.DAILY_RADIO_AI_NEWS = {
       "audioUrl": "./audio/edge-tts/ai-live-1.mp3",
       "audioProvider": "edge-tts",
       "audioVoice": "zh-TW-HsiaoChenNeural",
-      "audioSha256": "7a1cbbdac52bd5cfb19539b2498044f60c48f1d41ec741db355e7547e1686f3f"
+      "audioSha256": "619b39b1e4ead0ce538e5223b13db7d5fee7e11e3395d67a7b044ee086ed764c"
     },
     {
       "id": "ai-live-2",
@@ -51,7 +51,43 @@ window.DAILY_RADIO_AI_NEWS = {
       "audioUrl": "./audio/edge-tts/ai-live-2.mp3",
       "audioProvider": "edge-tts",
       "audioVoice": "zh-TW-HsiaoChenNeural",
-      "audioSha256": "517e3620b91035440ea8dc3324b9295f746885012f7c02bcd7b9362f33f2e6d8"
+      "audioSha256": "1382f5f9d1b77a809530c42df18c875d01d8eded888ec0f658d19d1556363ebf"
+    },
+    {
+      "id": "ai-live-3",
+      "channel": "ai",
+      "channelName": "AI",
+      "updatedAt": "8月12日",
+      "title": "豆包推出学生特惠活动",
+      "summary": "豆包推出学生特惠活动，面向在校大学生提供2.5倍免费额度及专业版特惠价，辅助科研、创作等复杂学习任务。",
+      "duration": "00:35",
+      "durationSeconds": 35,
+      "source": "豆包",
+      "importance": "关注",
+      "transcript": "AI 快讯。豆包推出学生特惠活动。据豆包介绍，豆包推出学生特惠活动，面向在校大学生提供2.5倍免费额度及专业版特惠价，辅助科研、创作等复杂学习任务。用户可通过豆包电脑端发送”我要领取学生优惠”完成认证，或在设置界面通过抖音账号认证获取权益。详情请以原始报道为准。",
+      "sourceUrl": "https://mp.weixin.qq.com/s/pKPnSaV-QmrMAcyi31Eq1A",
+      "audioUrl": "./audio/edge-tts/ai-live-3.mp3",
+      "audioProvider": "edge-tts",
+      "audioVoice": "zh-TW-HsiaoChenNeural",
+      "audioSha256": "dc9a39138fae735c58591ebae68d923afb1935cf2aadd0c26631ebb56e5fb1b3"
+    },
+    {
+      "id": "ai-live-4",
+      "channel": "ai",
+      "channelName": "AI",
+      "updatedAt": "8月12日",
+      "title": "微软推出编程模型 MAI-Code-1.1-Flash",
+      "summary": "微软推出升级版编程模型 MAI-Code-1.1-Flash，代码能力显著提升：模型在 Terminal-Bench 2.1 测试中的表现提升 22%，.NET 任务提升 15%，并…",
+      "duration": "00:57",
+      "durationSeconds": 57,
+      "source": "IT之家",
+      "importance": "关注",
+      "transcript": "AI 快讯。微软推出编程模型 MAI-Code-1.1-Flash。据IT之家介绍，微软推出升级版编程模型 MAI-Code-1.1-Flash，代码能力显著提升：模型在 Terminal-Bench 2.1 测试中的表现提升 22%，.NET 任务提升 15%，并新增原生视觉能力。新模型 Token 生成速度提升 25%、消耗减少 25%，价格降至初代四分之一。目前已陆续登陆 VS Code、JetBrains 等 Copilot 平台，旧版将于 2026 年 9 月 10 日全面停用。详情请以原始报道为准。",
+      "sourceUrl": "https://www.ithome.com/0/988/715.htm",
+      "audioUrl": "./audio/edge-tts/ai-live-4.mp3",
+      "audioProvider": "edge-tts",
+      "audioVoice": "zh-TW-HsiaoChenNeural",
+      "audioSha256": "101fdee2eed6d79e3a51a70fd02d541e7859ed2a0e87df1ddbf59b87a8659164"
     }
   ]
 };
