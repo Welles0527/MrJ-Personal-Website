@@ -1053,32 +1053,120 @@
   }
 
   function renderDailyDigestView() {
-    const account = accountStorage.getAccount();
-    const counts = dailyDigestCounts();
-    const checkState = dailyDigestCheckState();
-    const allSections = dailyDigestSections(false);
-    const visibleSections = dailyDigestSections();
+    const research = window.STOCK_DAILY_RESEARCH;
+    const stockCount = Number(research?.stockCount) || research?.stocks?.length || 0;
+    const materialCount = Number(research?.materialChangeCount) || 0;
     return `
       <section class="global-view daily-digest-view">
         <header class="global-header daily-digest-header">
           <div class="global-title-icon">${icon("digest")}</div>
           <div>
-            <p>${account.signedIn ? "登录账号自选股" : "当前浏览器自选股"} · 上海时间今日</p>
+            <p>固定监控组合 · ${research?.runLabel ? escapeHtml(research.runLabel) : "每日监控"}</p>
             <h2>今日必读</h2>
-            <span>汇总 ${data.stocks.length} 只自选股今天发布的信息，并补充此前未读动态</span>
+            <span>选择一只股票，查看当天量价、相对强弱、公司变化与投资逻辑</span>
           </div>
-          <div class="daily-digest-summary" aria-label="今日消息汇总">
-            <span class="positive"><b>${counts["利好"]}</b>利好</span>
-            <span class="negative"><b>${counts["利空"]}</b>利空</span>
-            <span class="neutral"><b>${counts["中性"]}</b>中性</span>
-            <small><b>今日 ${allSections.today.length} · 补看 ${allSections.catchUp.length}</b><span>已检查 ${checkState.checkedCount}/${data.stocks.length}${checkState.latestAt ? ` · ${formatDateTime(checkState.latestAt)}` : ""}</span></small>
+          <div class="daily-research-overview" aria-label="今日研读覆盖情况">
+            <span><b>${stockCount}</b>只股票覆盖</span>
+            <span><b>${materialCount}</b>只出现变化</span>
+            <small>${research?.generatedAt ? `更新于 ${formatDateTime(research.generatedAt)}` : "等待今日报告"}</small>
           </div>
         </header>
-        ${renderMessageHeader("daily")}
-        ${renderDailyDigestFilters(true, "今日必读")}
-        ${renderDailyDigestSection("今日发布", "当天发布的信息", visibleSections.today, "today")}
-        ${allSections.catchUp.length ? renderDailyDigestSection("历史未读补看", "今天以前尚未阅读，不含未来事件", visibleSections.catchUp, "catch-up") : ""}
+        ${renderDailyResearchSection(selectedStock())}
       </section>`;
+  }
+
+  function renderDailyResearchSection(stock) {
+    const research = window.STOCK_DAILY_RESEARCH;
+    const reports = Array.isArray(research?.stocks) ? research.stocks : [];
+    const report = reports.find(item => item.code === stock.code);
+    return `
+      <section class="daily-research-section" aria-labelledby="daily-research-title">
+        <header class="daily-research-section-header">
+          <div>
+            <h3 id="daily-research-title">今日个股研读</h3>
+            <p>${research?.asOfTradeDate ? `${escapeHtml(research.asOfTradeDate)} 交易日` : "尚无交易日数据"} · 按所选股票展示完整监控结论</p>
+          </div>
+          ${research?.generatedAt ? `<time datetime="${escapeHtml(research.generatedAt)}">${formatDateTime(research.generatedAt)} 更新</time>` : ""}
+        </header>
+        <nav class="daily-research-stock-picker" aria-label="选择研读股票">
+          ${reports.map(item => `
+            <button type="button" class="daily-research-stock ${item.code === stock.code ? "selected" : ""}"
+              data-action="set-research-stock" data-stock-id="${escapeHtml(item.code)}"
+              aria-pressed="${item.code === stock.code}">
+              <b>${escapeHtml(item.name)}</b><span>${escapeHtml(item.code)}</span>
+            </button>`).join("")}
+        </nav>
+        ${report ? renderDailyResearchStock(report) : `
+          <div class="daily-research-empty" role="status">
+            <strong>${escapeHtml(stock.name)}暂无今日研读</strong>
+            <span>请选择上方已有报告的自选股；旧报告仍会保留，不会以数据缺失代替“未发现变化”。</span>
+          </div>`}
+      </section>`;
+  }
+
+  function renderDailyResearchStock(report) {
+    const tone = ({
+      "机会": "opportunity",
+      "风险": "risk",
+      "融资/摊薄": "financing",
+      "融资或摊薄": "financing",
+      "中性": "neutral"
+    })[report.sentiment] || "neutral";
+    const price = report.price || {};
+    const change = Number(price.changePct);
+    const changeTone = Number.isFinite(change) ? (change > 0 ? "up" : change < 0 ? "down" : "flat") : "flat";
+    const keyLevels = report.keyLevels || {};
+    const sourceLinks = (report.sources || []).map(source => ({ ...source, safeUrl: specificSourceUrl(source.url) })).filter(source => source.safeUrl);
+    return `
+      <article class="daily-research-report daily-research-${tone}" data-research-stock="${escapeHtml(report.code)}">
+        <header class="daily-research-lead">
+          <div class="daily-research-identity">
+            <div><h4>${escapeHtml(report.name)}</h4><span>${escapeHtml(report.code)} · ${escapeHtml(report.sector)}</span></div>
+            <div class="daily-research-badges">
+              <span class="daily-research-sentiment">${escapeHtml(report.sentiment || "中性")}</span>
+              <span class="daily-research-change-state">${report.hasMaterialChange ? "有实质变化" : "未发现变化"}</span>
+            </div>
+          </div>
+          <div class="daily-research-price-strip" aria-label="当日行情">
+            <span class="primary"><small>收盘</small><b>${formatNumber(price.close)}</b></span>
+            <span class="${changeTone}"><small>涨跌</small><b>${formatSigned(price.changePct, "%")}</b></span>
+            <span><small>开 / 高 / 低</small><b>${formatNumber(price.open)} / ${formatNumber(price.high)} / ${formatNumber(price.low)}</b></span>
+            <span><small>换手 / 成交额</small><b>${formatNumber(price.turnoverPct)}% / ${formatNumber(price.amountBillion)}亿元</b></span>
+            <span><small>近5日 / 20日</small><b>${formatSigned(price.return5dPct, "%")} / ${formatSigned(price.return20dPct, "%")}</b></span>
+          </div>
+          <div class="daily-research-headline">
+            <h5>${escapeHtml(report.headline)}</h5>
+            <p>${escapeHtml(report.status)}</p>
+            ${report.priceBehavior ? `<span>${escapeHtml(report.priceBehavior)}</span>` : ""}
+          </div>
+        </header>
+        <div class="daily-research-reading-grid">
+          <section>
+            <h5>市场与相对强弱</h5>
+            <p>${escapeHtml(report.marketContext)}</p>
+            <p>${escapeHtml(report.relativeStrength)}</p>
+          </section>
+          <section>
+            <h5>公司变化与投资逻辑</h5>
+            <p>${escapeHtml(report.companyUpdate)}</p>
+            <p>${escapeHtml(report.logicChange)}</p>
+          </section>
+        </div>
+        <section class="daily-research-levels" aria-label="关键价位与验证条件">
+          <h5>关键价位与验证条件</h5>
+          <dl>
+            <div><dt>压力</dt><dd>${escapeHtml(keyLevels.resistance)}</dd></div>
+            <div><dt>支撑</dt><dd>${escapeHtml(keyLevels.support)}</dd></div>
+            <div class="bullish"><dt>转强确认</dt><dd>${escapeHtml(keyLevels.bullish_confirmation)}</dd></div>
+            <div class="bearish"><dt>转弱确认</dt><dd>${escapeHtml(keyLevels.bearish_confirmation)}</dd></div>
+          </dl>
+        </section>
+        ${sourceLinks.length ? `
+          <details class="daily-research-sources">
+            <summary>查看本次研读来源（${sourceLinks.length}）</summary>
+            <ul>${sourceLinks.map(source => `<li><a href="${escapeHtml(source.safeUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(source.title)}</a><span>${escapeHtml(source.publisher || "")} ${escapeHtml(source.date || "")}</span></li>`).join("")}</ul>
+          </details>` : ""}
+      </article>`;
   }
 
   function renderCalendarView() {
@@ -1876,6 +1964,10 @@
       state.activeGroup = "all";
       technicalPage?.clearSearch();
       refreshCodeAfterRender = state.selectedStockId;
+    } else if (action === "set-research-stock") {
+      state.selectedStockId = target.dataset.stockId;
+      state.filters.stock = state.selectedStockId;
+      state.activeGroup = "all";
     } else if (action === "select-group") {
       if (target.dataset.group === "technical") {
         state.viewMode = "technical";
