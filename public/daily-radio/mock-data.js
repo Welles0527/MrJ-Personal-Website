@@ -156,16 +156,26 @@ window.DAILY_RADIO_DATA = (() => {
     }
   ];
 
+  const replaceChannel = (items, channel, anchorId, generated) => generated.length
+    ? items.flatMap(item => item.id === anchorId ? generated : item.channel === channel ? [] : [item])
+    : items;
+  const liveFinanceBriefings = Array.isArray(window.DAILY_RADIO_FINANCE_NEWS?.briefings)
+    ? window.DAILY_RADIO_FINANCE_NEWS.briefings
+    : [];
   const liveAiBriefings = Array.isArray(window.DAILY_RADIO_AI_NEWS?.briefings)
     ? window.DAILY_RADIO_AI_NEWS.briefings
     : [];
-  const resolvedBriefings = liveAiBriefings.length
-    ? briefings.flatMap(item => item.id === "ai-1" ? liveAiBriefings : item.channel === "ai" ? [] : [item])
-    : briefings;
+  const resolvedBriefings = replaceChannel(
+    replaceChannel(briefings, "finance", "finance-1", liveFinanceBriefings),
+    "ai",
+    "ai-1",
+    liveAiBriefings
+  );
 
   return {
     channels,
     briefings: resolvedBriefings,
+    financeNewsMeta: window.DAILY_RADIO_FINANCE_NEWS || null,
     aiNewsMeta: window.DAILY_RADIO_AI_NEWS || null,
     stockSuggestions: [
       { code: "600519", name: "贵州茅台" },
