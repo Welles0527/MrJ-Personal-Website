@@ -63,6 +63,15 @@ try {
   }, briefingId);
   await page.reload({ waitUntil: 'networkidle' });
 
+  const coreAssetVersions = await page.evaluate(() => ({
+    styles: document.querySelector('link[href*="styles.css"]')?.href || '',
+    components: document.querySelector('script[src*="components.js"]')?.src || '',
+    app: document.querySelector('script[src*="app.js"]')?.src || ''
+  }));
+  for (const [asset, url] of Object.entries(coreAssetVersions)) {
+    assert.ok(new URL(url).searchParams.has('v'), `${asset} 核心资源必须带版本号以避免浏览器继续使用旧缓存`);
+  }
+
   const card = page.locator(`[data-brief-id="${briefingId}"]`);
   await card.locator('[data-action="open-brief"]').click();
 
