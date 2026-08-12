@@ -713,9 +713,10 @@ input::placeholder { color: color-mix(in oklch, var(--ink), transparent 42%); }
 .drawer-meta { margin-top: 26px; color: var(--muted); font-size: 10px; }
 .detail-drawer h2 { margin-top: 10px; font-size: 28px; line-height: 1.28; letter-spacing: -0.035em; }
 .drawer-summary { margin-top: 12px; color: var(--ink-2); font-size: 14px; line-height: 1.75; }
-.drawer-progress-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 22px; color: var(--muted); font-size: 10px; }
+.drawer-playback-controls { position: sticky; z-index: 3; top: 0; margin: 18px -5px 0; border: 1px solid color-mix(in oklch, var(--accent), transparent 72%); border-radius: 18px; background: color-mix(in oklch, var(--surface), transparent 3%); padding: 12px; box-shadow: 0 12px 30px color-mix(in oklch, var(--ink), transparent 91%); backdrop-filter: blur(18px); }
+.drawer-progress-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; color: var(--ink-2); font-size: 11px; font-weight: 650; }
 .drawer-progress-row strong { color: var(--accent-ink); font-size: 11px; }
-.drawer-progress { height: 7px; margin-top: 8px; overflow: hidden; border-radius: 999px; background: color-mix(in oklch, var(--accent), transparent 86%); }
+.drawer-progress { height: 12px; margin-top: 8px; overflow: hidden; border: 1px solid color-mix(in oklch, var(--accent), transparent 66%); border-radius: 999px; background: color-mix(in oklch, var(--accent), transparent 78%); box-shadow: inset 0 1px 3px color-mix(in oklch, var(--ink), transparent 88%); }
 .drawer-progress > span { display: block; width: var(--progress); height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--blue), var(--accent), var(--violet)); transition: width 180ms linear; }
 .transcript-block { position: relative; display: grid; grid-template-columns: 28px 1fr; gap: 12px; margin-top: 24px; border-radius: 18px; background: var(--surface-soft); padding: 18px; }
 .transcript-block > svg { color: var(--accent); }
@@ -724,7 +725,7 @@ input::placeholder { color: color-mix(in oklch, var(--ink), transparent 42%); }
 .drawer-source { margin-top: 16px; color: var(--muted); font-size: 10px; }
 .drawer-source a { color: var(--accent); text-decoration: none; font-weight: 650; }
 .drawer-source a:hover { text-decoration: underline; text-underline-offset: 3px; }
-.drawer-actions { display: flex; gap: 10px; margin-top: 24px; }
+.drawer-actions { display: flex; gap: 10px; }
 .drawer-actions .primary-button { flex: 1; }
 .drawer-next-button svg { transform: rotate(0deg); }
 .drawer-tip { margin-top: 18px; color: var(--muted); }

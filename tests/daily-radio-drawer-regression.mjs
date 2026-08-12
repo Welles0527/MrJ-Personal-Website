@@ -68,6 +68,24 @@ try {
 
   const drawer = page.locator('.detail-drawer');
   await drawer.waitFor({ state: 'visible' });
+  const initialControls = await page.evaluate(() => {
+    const drawerElement = document.querySelector('.detail-drawer');
+    const nextButton = document.querySelector('.detail-drawer [data-action="next-brief"]');
+    const progressTrack = document.querySelector('.detail-drawer [data-drawer-progress]');
+    const drawerRect = drawerElement?.getBoundingClientRect();
+    const nextRect = nextButton?.getBoundingClientRect();
+    const progressRect = progressTrack?.getBoundingClientRect();
+    return {
+      nextInInitialView: Boolean(
+        drawerRect && nextRect &&
+        nextRect.top >= drawerRect.top &&
+        nextRect.bottom <= drawerRect.bottom
+      ),
+      progressHeight: progressRect?.height || 0
+    };
+  });
+  assert.equal(initialControls.nextInInitialView, true, '下一条按钮应在详情弹框首屏可见');
+  assert.ok(initialControls.progressHeight >= 10, `进度条轨道应清晰可见，实际高度 ${initialControls.progressHeight}px`);
   await drawer.locator('[data-action="play-item"]').click();
   await drawer.waitFor({ state: 'visible' });
   await drawer.evaluate((element) => { globalThis.__dailyRadioDrawerNode = element; });

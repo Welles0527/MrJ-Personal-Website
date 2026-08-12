@@ -602,20 +602,22 @@ window.DailyRadioComponents = (() => {
           <p class="drawer-meta">${escapeHtml(briefing.updatedAt)} 更新 · ${escapeHtml(briefing.duration)} · ${escapeHtml(briefing.importance)}</p>
           <h2 id="drawer-title">${escapeHtml(briefing.title)}</h2>
           <p class="drawer-summary">${escapeHtml(briefing.summary)}</p>
-          <div class="drawer-progress-row">
-            <span>播放进度</span>
-            <strong data-drawer-progress-percent>${drawerPercent}%</strong>
-          </div>
-          <div class="drawer-progress" data-drawer-progress data-id="${briefing.id}" role="progressbar" aria-label="播放进度 ${drawerPercent}%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${drawerPercent}">
-            <span data-progress-fill style="--progress:${drawerPercent}%"></span>
+          <div class="drawer-playback-controls" aria-label="播放控制">
+            <div class="drawer-actions">
+              <button class="primary-button" type="button" data-action="play-item" data-id="${briefing.id}">${icon(state.currentId === briefing.id && state.playing ? "pause" : "play")}${state.currentId === briefing.id && state.playing ? "暂停" : "播放简讯"}</button>
+              <button class="secondary-button drawer-next-button" type="button" data-action="next-brief" data-id="${briefing.id}">${icon("chevron")}下一条</button>
+              <button class="secondary-button" type="button" data-action="favorite" data-id="${briefing.id}">${icon(favorite ? "bookmark" : "heart")}${favorite ? "已收藏" : "收藏"}</button>
+            </div>
+            <div class="drawer-progress-row">
+              <span>播放进度</span>
+              <strong data-drawer-progress-percent>${drawerPercent}%</strong>
+            </div>
+            <div class="drawer-progress" data-drawer-progress data-id="${briefing.id}" role="progressbar" aria-label="播放进度 ${drawerPercent}%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${drawerPercent}">
+              <span data-progress-fill style="--progress:${drawerPercent}%"></span>
+            </div>
           </div>
           <div class="transcript-block"><span>${icon("quote")}</span><div class="transcript-copy">${transcriptParagraphs.map(paragraph => `<p>${escapeHtml(paragraph)}</p>`).join("")}</div></div>
           <p class="drawer-source">信息来源：${escapeHtml(briefing.source)}${briefing.sourceUrl ? ` · <a href="${escapeHtml(briefing.sourceUrl)}" target="_blank" rel="noopener noreferrer">查看原文</a>` : ""}</p>
-          <div class="drawer-actions">
-            <button class="primary-button" type="button" data-action="play-item" data-id="${briefing.id}">${icon(state.currentId === briefing.id && state.playing ? "pause" : "play")}${state.currentId === briefing.id && state.playing ? "暂停" : "播放简讯"}</button>
-            <button class="secondary-button drawer-next-button" type="button" data-action="next-brief" data-id="${briefing.id}">${icon("chevron")}下一条</button>
-            <button class="secondary-button" type="button" data-action="favorite" data-id="${briefing.id}">${icon(favorite ? "bookmark" : "heart")}${favorite ? "已收藏" : "收藏"}</button>
-          </div>
         </section>
       </div>`;
   }
