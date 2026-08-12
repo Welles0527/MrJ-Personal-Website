@@ -1062,12 +1062,12 @@
           <div class="global-title-icon">${icon("digest")}</div>
           <div>
             <p>固定监控组合 · ${research?.runLabel ? escapeHtml(research.runLabel) : "每日监控"}</p>
-            <h2>今日必读</h2>
-            <span>选择一只股票，查看当天量价、相对强弱、公司变化与投资逻辑</span>
+            <h2>重点变化雷达</h2>
+            <span>先看真正改变股价、盈利、估值或投资逻辑的少数变化</span>
           </div>
           <div class="daily-research-overview" aria-label="今日研读覆盖情况">
-            <span><b>${stockCount}</b>只股票覆盖</span>
-            <span><b>${materialCount}</b>只出现变化</span>
+            <span><b>${materialCount}</b>只重大变化</span>
+            <span><b>${Math.max(0, stockCount - materialCount)}</b>只判断维持</span>
             <small>${research?.generatedAt ? `更新于 ${formatDateTime(research.generatedAt)}` : "等待今日报告"}</small>
           </div>
         </header>
@@ -1079,23 +1079,30 @@
     const research = window.STOCK_DAILY_RESEARCH;
     const reports = Array.isArray(research?.stocks) ? research.stocks : [];
     const report = reports.find(item => item.code === stock.code);
+    const changed = reports.filter(item => item.hasMaterialChange).sort((a, b) => (Number(b.importanceScore) || 0) - (Number(a.importanceScore) || 0));
+    const priorityCodes = Array.isArray(research?.topChangeCodes) ? research.topChangeCodes : changed.slice(0, 5).map(item => item.code);
+    const priority = priorityCodes.map(code => reports.find(item => item.code === code)).filter(Boolean);
+    const steady = reports.filter(item => !item.hasMaterialChange);
     return `
       <section class="daily-research-section" aria-labelledby="daily-research-title">
         <header class="daily-research-section-header">
           <div>
-            <h3 id="daily-research-title">今日个股研读</h3>
-            <p>${research?.asOfTradeDate ? `${escapeHtml(research.asOfTradeDate)} 交易日` : "尚无交易日数据"} · 按所选股票展示完整监控结论</p>
+            <h3 id="daily-research-title">今日最值得看</h3>
+            <p>${research?.asOfTradeDate ? `${escapeHtml(research.asOfTradeDate)} 交易日` : "尚无交易日数据"} · 事实与分析分开呈现</p>
           </div>
           ${research?.generatedAt ? `<time datetime="${escapeHtml(research.generatedAt)}">${formatDateTime(research.generatedAt)} 更新</time>` : ""}
         </header>
-        <nav class="daily-research-stock-picker" aria-label="选择研读股票">
-          ${reports.map(item => `
-            <button type="button" class="daily-research-stock ${item.code === stock.code ? "selected" : ""}"
-              data-action="set-research-stock" data-stock-id="${escapeHtml(item.code)}"
-              aria-pressed="${item.code === stock.code}">
-              <b>${escapeHtml(item.name)}</b><span>${escapeHtml(item.code)}</span>
-            </button>`).join("")}
+        <nav class="daily-radar-priority" aria-label="今日最值得看的股票">
+          ${priority.length ? priority.map((item, index) => `
+            <button type="button" class="daily-radar-item ${item.code === stock.code ? "selected" : ""}"
+              data-action="set-research-stock" data-stock-id="${escapeHtml(item.code)}" aria-pressed="${item.code === stock.code}">
+              <span>${index + 1}</span><b>${escapeHtml(item.name)}</b><strong>${escapeHtml(item.conclusion || item.headline)}</strong><small>${escapeHtml(item.currentJudgment || item.status)}</small>
+            </button>`).join("") : `<p class="daily-radar-clear">本次股票池均无重大变化，原判断维持。</p>`}
         </nav>
+        <details class="daily-radar-steady">
+          <summary>无重大变化 · ${steady.length}只</summary>
+          <div>${steady.map(item => `<button type="button" class="daily-research-stock ${item.code === stock.code ? "selected" : ""}" data-action="set-research-stock" data-stock-id="${escapeHtml(item.code)}"><b>${escapeHtml(item.name)}</b><span>${escapeHtml(item.code)}</span></button>`).join("")}</div>
+        </details>
         ${report ? renderDailyResearchStock(report) : `
           <div class="daily-research-empty" role="status">
             <strong>${escapeHtml(stock.name)}暂无今日研读</strong>
@@ -1112,59 +1119,32 @@
       "融资或摊薄": "financing",
       "中性": "neutral"
     })[report.sentiment] || "neutral";
-    const price = report.price || {};
-    const change = Number(price.changePct);
-    const changeTone = Number.isFinite(change) ? (change > 0 ? "up" : change < 0 ? "down" : "flat") : "flat";
-    const keyLevels = report.keyLevels || {};
     const sourceLinks = (report.sources || []).map(source => ({ ...source, safeUrl: specificSourceUrl(source.url) })).filter(source => source.safeUrl);
+    if (!report.hasMaterialChange) {
+      return `
+        <article class="daily-research-report daily-research-steady" data-research-stock="${escapeHtml(report.code)}">
+          <div class="daily-research-identity"><div><h4>${escapeHtml(report.name)}</h4><span>${escapeHtml(report.code)} · ${escapeHtml(report.sector)}</span></div><span class="daily-research-change-state">判断维持</span></div>
+          <div class="daily-research-no-change"><h5>今日无重大变化，原判断维持。</h5><p>${escapeHtml(report.currentJudgment || report.status)}</p><small>下一验证：${escapeHtml(report.nextValidation || "等待新的重大事实或关键条件触发")}</small></div>
+        </article>`;
+    }
+    const importantChanges = Array.isArray(report.importantChanges) ? report.importantChanges : [];
     return `
       <article class="daily-research-report daily-research-${tone}" data-research-stock="${escapeHtml(report.code)}">
-        <header class="daily-research-lead">
-          <div class="daily-research-identity">
-            <div><h4>${escapeHtml(report.name)}</h4><span>${escapeHtml(report.code)} · ${escapeHtml(report.sector)}</span></div>
-            <div class="daily-research-badges">
-              <span class="daily-research-sentiment">${escapeHtml(report.sentiment || "中性")}</span>
-              <span class="daily-research-change-state">${report.hasMaterialChange ? "有实质变化" : "未发现变化"}</span>
-            </div>
-          </div>
-          <div class="daily-research-price-strip" aria-label="当日行情">
-            <span class="primary"><small>收盘</small><b>${formatNumber(price.close)}</b></span>
-            <span class="${changeTone}"><small>涨跌</small><b>${formatSigned(price.changePct, "%")}</b></span>
-            <span><small>开 / 高 / 低</small><b>${formatNumber(price.open)} / ${formatNumber(price.high)} / ${formatNumber(price.low)}</b></span>
-            <span><small>换手 / 成交额</small><b>${formatNumber(price.turnoverPct)}% / ${formatNumber(price.amountBillion)}亿元</b></span>
-            <span><small>近5日 / 20日</small><b>${formatSigned(price.return5dPct, "%")} / ${formatSigned(price.return20dPct, "%")}</b></span>
-          </div>
-          <div class="daily-research-headline">
-            <h5>${escapeHtml(report.headline)}</h5>
-            <p>${escapeHtml(report.status)}</p>
-            ${report.priceBehavior ? `<span>${escapeHtml(report.priceBehavior)}</span>` : ""}
-          </div>
+        <header class="daily-research-lead daily-radar-lead">
+          <div class="daily-research-identity"><div><h4>${escapeHtml(report.name)}</h4><span>${escapeHtml(report.code)} · ${escapeHtml(report.sector)}</span></div><span class="daily-research-sentiment">${escapeHtml(report.sentiment || "中性")}</span></div>
+          <div class="daily-research-headline"><h5>${escapeHtml(report.conclusion || report.headline)}</h5><p>${escapeHtml(report.currentJudgment || report.status)}</p></div>
         </header>
-        <div class="daily-research-reading-grid">
-          <section>
-            <h5>市场与相对强弱</h5>
-            <p>${escapeHtml(report.marketContext)}</p>
-            <p>${escapeHtml(report.relativeStrength)}</p>
-          </section>
-          <section>
-            <h5>公司变化与投资逻辑</h5>
-            <p>${escapeHtml(report.companyUpdate)}</p>
-            <p>${escapeHtml(report.logicChange)}</p>
-          </section>
+        <section class="daily-radar-facts"><h5>今日重要变化 <span>事实</span></h5><ul>${importantChanges.map(item => `<li><small>${escapeHtml(item.category)} · 事实</small><p>${escapeHtml(item.fact)}</p></li>`).join("")}</ul></section>
+        <div class="daily-research-reading-grid daily-radar-analysis">
+          <section><h5>为什么重要 <span>分析</span></h5><p>${escapeHtml(report.whyImportant)}</p></section>
+          <section><h5>投资判断变化 <span>分析</span></h5><dl><div><dt>昨日</dt><dd>${escapeHtml(report.previousJudgment)}</dd></div><div><dt>今日</dt><dd>${escapeHtml(report.judgmentChange)}</dd></div><div><dt>当前</dt><dd>${escapeHtml(report.currentJudgment || report.status)}</dd></div></dl></section>
         </div>
-        <section class="daily-research-levels" aria-label="关键价位与验证条件">
-          <h5>关键价位与验证条件</h5>
-          <dl>
-            <div><dt>压力</dt><dd>${escapeHtml(keyLevels.resistance)}</dd></div>
-            <div><dt>支撑</dt><dd>${escapeHtml(keyLevels.support)}</dd></div>
-            <div class="bullish"><dt>转强确认</dt><dd>${escapeHtml(keyLevels.bullish_confirmation)}</dd></div>
-            <div class="bearish"><dt>转弱确认</dt><dd>${escapeHtml(keyLevels.bearish_confirmation)}</dd></div>
-          </dl>
-        </section>
+        <section class="daily-radar-next"><h5>下一验证条件</h5><p>${escapeHtml(report.nextValidation)}</p></section>
+        ${report.profitValuationImpact ? `<section class="daily-radar-valuation"><h5>盈利预测 / 估值影响 <span>分析</span></h5><p>${escapeHtml(report.profitValuationImpact)}</p></section>` : ""}
         ${sourceLinks.length ? `
           <details class="daily-research-sources">
-            <summary>查看本次研读来源（${sourceLinks.length}）</summary>
-            <ul>${sourceLinks.map(source => `<li><a href="${escapeHtml(source.safeUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(source.title)}</a><span>${escapeHtml(source.publisher || "")} ${escapeHtml(source.date || "")}</span></li>`).join("")}</ul>
+            <summary>事实来源（${sourceLinks.length}）</summary>
+            <ul>${sourceLinks.map(source => `<li><a href="${escapeHtml(source.safeUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(source.title)}</a><span>${escapeHtml(source.kind || "")} ${escapeHtml(source.publisher || "")} ${escapeHtml(source.date || "")}</span></li>`).join("")}</ul>
           </details>` : ""}
       </article>`;
   }
