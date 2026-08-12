@@ -522,6 +522,7 @@ p { text-wrap: pretty; }
 .mini-copy strong, .mini-copy span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mini-copy strong { font-size: 11px; }
 .mini-copy span { color: var(--muted); font-size: 9px; }
+.mini-copy span b { font: inherit; }
 .mini-wave { height: 24px; }
 .waveform.is-compact { gap: 2px; mask-image: none; }
 .waveform.is-compact i { width: 2px; }
@@ -712,14 +713,20 @@ input::placeholder { color: color-mix(in oklch, var(--ink), transparent 42%); }
 .drawer-meta { margin-top: 26px; color: var(--muted); font-size: 10px; }
 .detail-drawer h2 { margin-top: 10px; font-size: 28px; line-height: 1.28; letter-spacing: -0.035em; }
 .drawer-summary { margin-top: 12px; color: var(--ink-2); font-size: 14px; line-height: 1.75; }
+.drawer-progress-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 22px; color: var(--muted); font-size: 10px; }
+.drawer-progress-row strong { color: var(--accent-ink); font-size: 11px; }
+.drawer-progress { height: 7px; margin-top: 8px; overflow: hidden; border-radius: 999px; background: color-mix(in oklch, var(--accent), transparent 86%); }
+.drawer-progress > span { display: block; width: var(--progress); height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--blue), var(--accent), var(--violet)); transition: width 180ms linear; }
 .transcript-block { position: relative; display: grid; grid-template-columns: 28px 1fr; gap: 12px; margin-top: 24px; border-radius: 18px; background: var(--surface-soft); padding: 18px; }
 .transcript-block > svg { color: var(--accent); }
-.transcript-block p { color: var(--ink-2); line-height: 1.85; }
+.transcript-copy { display: grid; gap: 14px; min-width: 0; }
+.transcript-copy p { color: var(--ink-2); line-height: 1.85; }
 .drawer-source { margin-top: 16px; color: var(--muted); font-size: 10px; }
 .drawer-source a { color: var(--accent); text-decoration: none; font-weight: 650; }
 .drawer-source a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .drawer-actions { display: flex; gap: 10px; margin-top: 24px; }
 .drawer-actions .primary-button { flex: 1; }
+.drawer-next-button svg { transform: rotate(0deg); }
 .drawer-tip { margin-top: 18px; color: var(--muted); }
 @keyframes drawer-in { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
 .toast { position: fixed; z-index: var(--z-toast); bottom: 102px; left: 50%; max-width: min(420px, calc(100vw - 32px)); border-radius: 999px; background: color-mix(in oklch, var(--ink), transparent 5%); color: var(--surface); padding: 10px 16px; font-size: 11px; opacity: 0; pointer-events: none; transform: translate(-50%, 12px); transition: opacity var(--transition), transform var(--transition); }

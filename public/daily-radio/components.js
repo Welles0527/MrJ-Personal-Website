@@ -272,7 +272,7 @@ window.DailyRadioComponents = (() => {
 
   function waveform(progress = 0, count = 52, compact = false) {
     const normalized = Math.max(0, Math.min(1, progress));
-    return `<div class="waveform ${compact ? "is-compact" : ""}" aria-hidden="true">
+    return `<div class="waveform ${compact ? "is-compact" : ""}" aria-hidden="true" data-waveform>
       ${Array.from({ length: count }, (_, index) => {
         const height = 22 + ((index * 17 + index * index * 7) % 74);
         const active = index / count <= normalized;
@@ -293,7 +293,7 @@ window.DailyRadioComponents = (() => {
           <p class="player-lead">你的今日简报已经生成</p>
           <p class="player-meta">${summary.count} 条最新简讯 <b>·</b> 预计 ${summary.duration}</p>
         </div>
-        <div class="player-wave" aria-label="播放进度 ${percent}%">
+        <div class="player-wave" aria-label="播放进度 ${percent}%" data-progress-label>
           ${waveform(state.progress)}
         </div>
         <div class="player-controls">
@@ -304,7 +304,7 @@ window.DailyRadioComponents = (() => {
         </div>
         <div class="current-line">
           <span>${escapeHtml(channel.name)} · ${escapeHtml(current.title)}</span>
-          <span>${percent}%</span>
+          <span data-progress-percent>${percent}%</span>
         </div>
       </section>`;
   }
@@ -372,7 +372,7 @@ window.DailyRadioComponents = (() => {
         <span class="mini-player-icon channel-${current.channel}">${icon("wave")}</span>
         <button class="mini-copy" type="button" data-action="open-transcript">
           <strong>${escapeHtml(current.title)}</strong>
-          <span>${escapeHtml(channel.name)} · ${Math.round(state.progress * 100)}%</span>
+          <span>${escapeHtml(channel.name)} · <b data-progress-percent>${Math.round(state.progress * 100)}%</b></span>
         </button>
         <div class="mini-wave">${waveform(state.progress, 18, true)}</div>
         <button class="icon-button" type="button" data-action="play-toggle" aria-label="${state.playing ? "暂停" : "播放"}">${icon(state.playing ? "pause" : "play")}</button>
@@ -584,9 +584,16 @@ window.DailyRadioComponents = (() => {
     if (!briefing) return "";
     const channel = channelMeta(briefing.channel, channels);
     const favorite = state.favorites.includes(briefing.id);
+    const drawerPercent = state.currentId === briefing.id ? Math.round(state.progress * 100) : 0;
+    const transcriptParagraphs = String(briefing.transcript || "")
+      .replace(/\s+/g, " ")
+      .replace(/\s*(?=(?:核心变化|当前判断|市场表现|公司更新|研读逻辑|压力观察|支撑观察)：|以上内容来自正式网页今日个股研读)/g, "\n")
+      .split(/\n+/)
+      .map(paragraph => paragraph.trim())
+      .filter(Boolean);
     return `
       <div class="drawer-backdrop" data-action="close-drawer">
-        <section class="detail-drawer glass-dialog" role="dialog" aria-modal="true" aria-labelledby="drawer-title" data-drawer-content>
+        <section class="detail-drawer glass-dialog" role="dialog" aria-modal="true" aria-labelledby="drawer-title" data-drawer-content data-drawer-brief-id="${briefing.id}">
           <div class="drawer-handle"></div>
           <div class="drawer-heading">
             <span class="brief-channel channel-${briefing.channel}">${icon(channel.icon)}${escapeHtml(channel.name)}</span>
@@ -595,10 +602,18 @@ window.DailyRadioComponents = (() => {
           <p class="drawer-meta">${escapeHtml(briefing.updatedAt)} 更新 · ${escapeHtml(briefing.duration)} · ${escapeHtml(briefing.importance)}</p>
           <h2 id="drawer-title">${escapeHtml(briefing.title)}</h2>
           <p class="drawer-summary">${escapeHtml(briefing.summary)}</p>
-          <div class="transcript-block"><span>${icon("quote")}</span><p>${escapeHtml(briefing.transcript)}</p></div>
+          <div class="drawer-progress-row">
+            <span>播放进度</span>
+            <strong data-drawer-progress-percent>${drawerPercent}%</strong>
+          </div>
+          <div class="drawer-progress" data-drawer-progress data-id="${briefing.id}" role="progressbar" aria-label="播放进度 ${drawerPercent}%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${drawerPercent}">
+            <span data-progress-fill style="--progress:${drawerPercent}%"></span>
+          </div>
+          <div class="transcript-block"><span>${icon("quote")}</span><div class="transcript-copy">${transcriptParagraphs.map(paragraph => `<p>${escapeHtml(paragraph)}</p>`).join("")}</div></div>
           <p class="drawer-source">信息来源：${escapeHtml(briefing.source)}${briefing.sourceUrl ? ` · <a href="${escapeHtml(briefing.sourceUrl)}" target="_blank" rel="noopener noreferrer">查看原文</a>` : ""}</p>
           <div class="drawer-actions">
             <button class="primary-button" type="button" data-action="play-item" data-id="${briefing.id}">${icon(state.currentId === briefing.id && state.playing ? "pause" : "play")}${state.currentId === briefing.id && state.playing ? "暂停" : "播放简讯"}</button>
+            <button class="secondary-button drawer-next-button" type="button" data-action="next-brief" data-id="${briefing.id}">${icon("chevron")}下一条</button>
             <button class="secondary-button" type="button" data-action="favorite" data-id="${briefing.id}">${icon(favorite ? "bookmark" : "heart")}${favorite ? "已收藏" : "收藏"}</button>
           </div>
         </section>

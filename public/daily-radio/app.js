@@ -157,6 +157,31 @@
     lastOverlaySignature = overlaySignature;
   }
 
+  function updatePlaybackProgress() {
+    const normalized = Math.max(0, Math.min(1, state.progress));
+    const percent = Math.round(normalized * 100);
+    root.querySelectorAll("[data-progress-percent]").forEach(element => {
+      element.textContent = `${percent}%`;
+    });
+    root.querySelectorAll("[data-progress-label]").forEach(element => {
+      element.setAttribute("aria-label", `播放进度 ${percent}%`);
+    });
+    root.querySelectorAll("[data-waveform]").forEach(waveform => {
+      const bars = [...waveform.querySelectorAll("i")];
+      bars.forEach((bar, index) => {
+        bar.classList.toggle("is-active", index / bars.length <= normalized);
+      });
+    });
+    root.querySelectorAll("[data-drawer-progress]").forEach(progress => {
+      const drawerPercent = progress.dataset.id === state.currentId ? percent : 0;
+      progress.setAttribute("aria-label", `播放进度 ${drawerPercent}%`);
+      progress.setAttribute("aria-valuenow", String(drawerPercent));
+      progress.querySelector("[data-progress-fill]")?.style.setProperty("--progress", `${drawerPercent}%`);
+      const label = progress.previousElementSibling?.querySelector("[data-drawer-progress-percent]");
+      if (label) label.textContent = `${drawerPercent}%`;
+    });
+  }
+
   function showToast(message) {
     state.toast = message;
     window.clearTimeout(toastTimer);
@@ -185,7 +210,7 @@
       if (!state.playing) return;
       if (activeAudio && Number.isFinite(activeAudio.duration) && activeAudio.duration > 0) {
         state.progress = Math.min(1, activeAudio.currentTime / activeAudio.duration);
-        render();
+        updatePlaybackProgress();
         return;
       }
       const elapsed = (performance.now() - progressStartedAt) / 1000;
@@ -193,7 +218,7 @@
       if (state.progress >= 1) {
         playNext();
       } else {
-        render();
+        updatePlaybackProgress();
       }
     }, 360);
   }
@@ -434,6 +459,24 @@
     render();
   }
 
+  function openNextBrief(id) {
+    const current = data.briefings.find(item => item.id === id);
+    if (!current) return;
+    const channelBriefings = data.briefings.filter(item => item.channel === current.channel);
+    const currentIndex = channelBriefings.findIndex(item => item.id === id);
+    const next = channelBriefings[(currentIndex + 1) % channelBriefings.length];
+    if (!next) return;
+    const continuePlaying = state.playing;
+    stopPlayback();
+    state.currentId = next.id;
+    state.progress = 0;
+    state.drawerOpen = true;
+    state.drawerId = next.id;
+    persist();
+    if (continuePlaying) playCurrent();
+    else render();
+  }
+
   function handleAction(button) {
     const action = button.dataset.action;
     if (!action) return;
@@ -446,7 +489,7 @@
     } else if (action === "play-toggle") {
       togglePlay();
     } else if (action === "play-item") {
-      state.drawerOpen = false;
+      if (!button.closest(".detail-drawer")) state.drawerOpen = false;
       playItem(button.dataset.id);
     } else if (action === "favorite") {
       const id = button.dataset.id;
@@ -457,6 +500,8 @@
       openBrief(button.dataset.id);
     } else if (action === "open-transcript") {
       openBrief(state.currentId);
+    } else if (action === "next-brief") {
+      openNextBrief(button.dataset.id);
     } else if (action === "focus-toggle") {
       stopPlayback();
       state.focusOnly = !state.focusOnly;
