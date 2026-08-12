@@ -165,6 +165,9 @@ window.DAILY_RADIO_DATA = (() => {
   const liveAiBriefings = Array.isArray(window.DAILY_RADIO_AI_NEWS?.briefings)
     ? window.DAILY_RADIO_AI_NEWS.briefings
     : [];
+  const liveStockBriefings = Array.isArray(window.DAILY_RADIO_STOCK_NEWS?.briefings)
+    ? window.DAILY_RADIO_STOCK_NEWS.briefings
+    : [];
   const resolvedBriefings = replaceChannel(
     replaceChannel(briefings, "finance", "finance-1", liveFinanceBriefings),
     "ai",
@@ -174,9 +177,10 @@ window.DAILY_RADIO_DATA = (() => {
 
   return {
     channels,
-    briefings: resolvedBriefings,
+    briefings: replaceChannel(resolvedBriefings, "stocks", "stocks-1", liveStockBriefings),
     financeNewsMeta: window.DAILY_RADIO_FINANCE_NEWS || null,
     aiNewsMeta: window.DAILY_RADIO_AI_NEWS || null,
+    stockNewsMeta: window.DAILY_RADIO_STOCK_NEWS || null,
     stockSuggestions: [
       { code: "600519", name: "贵州茅台" },
       { code: "300750", name: "宁德时代" },

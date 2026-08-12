@@ -8,7 +8,7 @@ window.DAILY_RADIO_AI_NEWS = {
     "finalUrl": "https://ai-bot.cn/daily-ai-news/",
     "userAgent": "DailyRadioFetcher/1.0 (+personal daily briefing; one request per run)"
   },
-  "fetchedAt": "2026-08-12T22:06:59+08:00",
+  "fetchedAt": "2026-08-12T22:56:52+08:00",
   "contentDate": "8月12·周三",
   "audioMode": "edge-tts",
   "audioVoice": "zh-TW-HsiaoChenNeural",
@@ -33,7 +33,7 @@ window.DAILY_RADIO_AI_NEWS = {
       "audioUrl": "./audio/edge-tts/ai-live-1.mp3",
       "audioProvider": "edge-tts",
       "audioVoice": "zh-TW-HsiaoChenNeural",
-      "audioSha256": "619b39b1e4ead0ce538e5223b13db7d5fee7e11e3395d67a7b044ee086ed764c"
+      "audioSha256": "3dc735dddb4e713e7ecda82ad713829903c84e1c58d951dedc86ca69331bdaa7"
     },
     {
       "id": "ai-live-2",
@@ -51,7 +51,7 @@ window.DAILY_RADIO_AI_NEWS = {
       "audioUrl": "./audio/edge-tts/ai-live-2.mp3",
       "audioProvider": "edge-tts",
       "audioVoice": "zh-TW-HsiaoChenNeural",
-      "audioSha256": "1382f5f9d1b77a809530c42df18c875d01d8eded888ec0f658d19d1556363ebf"
+      "audioSha256": "a662d65a52c8aea24800ee9d371f16c529c43ceac40cc0a0c3bc054109356339"
     },
     {
       "id": "ai-live-3",
@@ -69,7 +69,7 @@ window.DAILY_RADIO_AI_NEWS = {
       "audioUrl": "./audio/edge-tts/ai-live-3.mp3",
       "audioProvider": "edge-tts",
       "audioVoice": "zh-TW-HsiaoChenNeural",
-      "audioSha256": "dc9a39138fae735c58591ebae68d923afb1935cf2aadd0c26631ebb56e5fb1b3"
+      "audioSha256": "094ea08d67ca0840420ff830f0ba23e7391853aca772605b01d9b64ace502445"
     },
     {
       "id": "ai-live-4",
@@ -87,7 +87,7 @@ window.DAILY_RADIO_AI_NEWS = {
       "audioUrl": "./audio/edge-tts/ai-live-4.mp3",
       "audioProvider": "edge-tts",
       "audioVoice": "zh-TW-HsiaoChenNeural",
-      "audioSha256": "101fdee2eed6d79e3a51a70fd02d541e7859ed2a0e87df1ddbf59b87a8659164"
+      "audioSha256": "dca0f0c9bb71e501f828abeb588b0d85fb6fa16487c205b2f2c6e2303f3cf6ec"
     }
   ]
 };
