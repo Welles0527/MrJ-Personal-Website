@@ -1058,8 +1058,8 @@
       <section class="global-view daily-digest-view">
         ${renderMessageHeader("daily")}
         ${renderDailyDigestFilters()}
-        ${renderDailyDigestSection("今日新增", "今天新出现的自选股消息与提示", sections.today, "today")}
-        ${renderDailyDigestSection("未读补看", "此前新增但尚未标记已读的信息", sections.catchUp, "catch-up", { showFullDate: true })}
+        ${renderDailyDigestSection("今日新增", "今天新出现的自选股消息与提示", sections.today, "today", { emptyMessage: "今日无新增信息" })}
+        ${sections.catchUp.length ? renderDailyDigestSection("未读补看", "此前新增但尚未标记已读的信息", sections.catchUp, "catch-up", { showFullDate: true }) : ""}
         ${renderDailyResearchSection(selectedStock())}
       </section>`;
   }
@@ -1265,6 +1265,9 @@
   }
 
   function renderDailyDigestStockGroups(messages, options = {}) {
+    if (!messages.length && options.emptyMessage) {
+      return `<div class="timeline-empty" role="status"><strong>${escapeHtml(options.emptyMessage)}</strong></div>`;
+    }
     if (!messages.length) return renderTimeline([]);
     const grouped = new Map();
     messages.forEach(message => {

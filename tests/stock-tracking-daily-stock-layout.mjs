@@ -24,7 +24,9 @@ const dailyViewSource = appSource.match(/function renderDailyDigestView\([\s\S]*
 assert.match(dailyViewSource, /renderMessageHeader\("daily"\)/);
 assert.match(dailyViewSource, /renderDailyDigestFilters\(\)/);
 assert.match(dailyViewSource, /renderDailyDigestSection\("今日新增"/);
-assert.match(dailyViewSource, /renderDailyDigestSection\("未读补看"/);
+assert.match(dailyViewSource, /emptyMessage:\s*"今日无新增信息"/);
+assert.match(dailyViewSource, /sections\.catchUp\.length\s*\?\s*renderDailyDigestSection\("未读补看"/);
+assert.match(appSource, /if \(!messages\.length && options\.emptyMessage\)/);
 assert.ok(
   dailyViewSource.indexOf('renderMessageHeader("daily")') < dailyViewSource.indexOf("renderDailyResearchSection(selectedStock())"),
   "daily dynamics must render above today's stock research"
