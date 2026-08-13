@@ -1087,12 +1087,12 @@
       <section class="daily-research-section" aria-labelledby="daily-research-title">
         <header class="daily-research-section-header">
           <div>
-            <h3 id="daily-research-title">今日最值得看</h3>
+            <h3 id="daily-research-title">今日要闻</h3>
             <p>${research?.asOfTradeDate ? `${escapeHtml(research.asOfTradeDate)} 交易日` : "尚无交易日数据"} · 事实与分析分开呈现</p>
           </div>
           ${research?.generatedAt ? `<time datetime="${escapeHtml(research.generatedAt)}">${formatDateTime(research.generatedAt)} 更新</time>` : ""}
         </header>
-        <nav class="daily-radar-priority" aria-label="今日最值得看的股票">
+        <nav class="daily-radar-priority" aria-label="今日要闻股票">
           ${priority.length ? priority.map((item, index) => `
             <button type="button" class="daily-radar-item ${item.code === stock.code ? "selected" : ""}"
               data-action="set-research-stock" data-stock-id="${escapeHtml(item.code)}" aria-pressed="${item.code === stock.code}">
