@@ -1053,24 +1053,13 @@
   }
 
   function renderDailyDigestView() {
-    const research = window.STOCK_DAILY_RESEARCH;
-    const stockCount = Number(research?.stockCount) || research?.stocks?.length || 0;
-    const materialCount = Number(research?.materialChangeCount) || 0;
+    const sections = dailyDigestSections();
     return `
       <section class="global-view daily-digest-view">
-        <header class="global-header daily-digest-header">
-          <div class="global-title-icon">${icon("digest")}</div>
-          <div>
-            <p>固定监控组合 · ${research?.runLabel ? escapeHtml(research.runLabel) : "每日监控"}</p>
-            <h2>重点变化雷达</h2>
-            <span>先看真正改变股价、盈利、估值或投资逻辑的少数变化</span>
-          </div>
-          <div class="daily-research-overview" aria-label="今日研读覆盖情况">
-            <span><b>${materialCount}</b>只重大变化</span>
-            <span><b>${Math.max(0, stockCount - materialCount)}</b>只判断维持</span>
-            <small>${research?.generatedAt ? `更新于 ${formatDateTime(research.generatedAt)}` : "等待今日报告"}</small>
-          </div>
-        </header>
+        ${renderMessageHeader("daily")}
+        ${renderDailyDigestFilters()}
+        ${renderDailyDigestSection("今日新增", "今天新出现的自选股消息与提示", sections.today, "today")}
+        ${renderDailyDigestSection("未读补看", "此前新增但尚未标记已读的信息", sections.catchUp, "catch-up", { showFullDate: true })}
         ${renderDailyResearchSection(selectedStock())}
       </section>`;
   }
