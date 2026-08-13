@@ -363,6 +363,32 @@
     </section>`;
   }
 
+  function MarketScoreMatrix(matrix, status) {
+    const rows = Array.isArray(matrix?.rows) ? matrix.rows : [];
+    const scoreDate = rows.map(row => row.scoreDate).filter(Boolean).sort().at(-1) || "--";
+    const scoreCell = (value, emphasized = false) => Number.isFinite(Number(value))
+      ? `<span class="ta-market-matrix-score ${scoreTone(value)}${emphasized ? " total" : ""}">${formatNumber(value, 0)}</span>`
+      : `<span class="ta-market-matrix-empty">--</span>`;
+    const body = status === "loading" && !rows.length
+      ? `<div class="ta-market-matrix-state" role="status"><span class="ta-summary-loader" aria-hidden="true"></span><strong>正在计算五周期评分</strong><small>读取上证指数真实日、周、月行情</small></div>`
+      : `<div class="ta-market-matrix-scroll"><table>
+          <thead><tr><th scope="col">周期</th><th scope="col">总分</th><th scope="col">趋势</th><th scope="col">量价</th><th scope="col">动量</th><th scope="col">结构</th><th scope="col">波动</th></tr></thead>
+          <tbody>${rows.map(row => `<tr${row.error ? ` class="is-error" title="${escapeHtml(row.error)}"` : ""}>
+            <th scope="row"><strong>${escapeHtml(row.label)}</strong></th>
+            <td>${scoreCell(row.total, true)}</td><td>${scoreCell(row.trend)}</td><td>${scoreCell(row.volumePrice)}</td><td>${scoreCell(row.momentum)}</td><td>${scoreCell(row.structure)}</td><td>${scoreCell(row.volatility)}</td>
+          </tr>`).join("")}</tbody>
+        </table></div>`;
+    return `<section class="ta-market-score-matrix" aria-labelledby="ta-market-score-matrix-title">
+      <div class="ta-panel-title ta-market-matrix-heading"><div><h2 id="ta-market-score-matrix-title">大盘评分矩阵</h2><p>上证指数真实行情 · 五周期独立计算</p></div><time datetime="${escapeHtml(scoreDate)}">评分日期 ${escapeHtml(scoreDate)}</time></div>
+      ${body}
+      <footer><span class="strong">≥65 偏多</span><span class="neutral">45～64 中性</span><span class="weak">＜45 偏空</span></footer>
+    </section>`;
+  }
+
+  function MarketOverview(result, matrix, matrixStatus) {
+    return `<div class="ta-market-overview-grid">${MarketPricePanel(result)}${MarketScoreMatrix(matrix, matrixStatus)}</div>`;
+  }
+
   function StockScoreSummary(summary, status, currentCode, period) {
     const profile = timeframes.getProfile(period);
     const items = Array.isArray(summary?.items) ? summary.items : [];
@@ -550,6 +576,8 @@
         summary: null,
         summaryStatus: "idle",
         summaryError: "",
+        marketMatrix: null,
+        marketMatrixStatus: "idle",
         error: "",
         searchQuery: "",
         query: {
@@ -570,6 +598,10 @@
       this.state.summaryError = "";
       this.state.error = "";
       this.state.result = null;
+      if (this.provider.includeDailySeries) {
+        this.state.marketMatrix = null;
+        this.state.marketMatrixStatus = "loading";
+      }
       this.onChange();
       try {
         const result = await this.provider.getTechnicalAnalysis(stockCode, this.state.query, options);
@@ -577,6 +609,17 @@
         this.state.result = result;
         this.state.status = "ready";
         this.onChange();
+        if (this.provider.includeDailySeries && typeof this.provider.getTechnicalTimeframeMatrix === "function") {
+          try {
+            const marketMatrix = await this.provider.getTechnicalTimeframeMatrix(stockCode, options);
+            if (this.currentRequestKey !== requestKey) return;
+            this.state.marketMatrix = marketMatrix;
+            this.state.marketMatrixStatus = "ready";
+            this.onChange();
+          } catch (matrixError) {
+            this.state.marketMatrixStatus = "error";
+          }
+        }
         try {
           const summary = await this.provider.getTechnicalSummary(this.trackedStocks, this.state.query, options);
           if (this.currentRequestKey !== requestKey) return;
@@ -606,7 +649,7 @@
           ${marketMode ? "" : StockScoreSummary(this.state.summary, this.state.summaryStatus, stock.code, this.state.query.period)}
           <main class="ta-stock-detail" aria-label="${escapeHtml(stock.name)}${marketMode ? "大盘" : "个股"}技术分析">
             ${DashboardHeader(this.state.result, this.state, marketMode)}
-            ${marketMode ? MarketPricePanel(this.state.result) : ""}
+            ${marketMode ? MarketOverview(this.state.result, this.state.marketMatrix, this.state.marketMatrixStatus) : ""}
             ${TechnicalNarrative(this.state.result, marketMode)}
             <div class="ta-analysis-workspace">
               <div class="ta-dashboard-grid">${RadarOverview(this.state.result)}${TradePositionPanel(this.state.result)}</div>

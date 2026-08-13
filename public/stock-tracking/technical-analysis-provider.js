@@ -224,6 +224,36 @@
         checkedAt: new Date().toISOString()
       };
     }
+
+    async getTechnicalTimeframeMatrix(stockCode, options = {}) {
+      const profiles = Object.values(timeframes.PROFILES);
+      const settled = await Promise.allSettled(profiles.map(profile => this.getTechnicalAnalysis(
+        stockCode,
+        { period: profile.id, adjustment: "forward" },
+        options
+      )));
+      return {
+        rows: settled.map((entry, index) => {
+          const profile = profiles[index];
+          if (entry.status !== "fulfilled") {
+            return { period: profile.id, label: profile.label, error: entry.reason?.message || "评分失败" };
+          }
+          const result = entry.value;
+          return {
+            period: profile.id,
+            label: profile.label,
+            scoreDate: result.overview.scoreDate,
+            total: result.scores.total,
+            trend: result.scores.dimensions.trend?.score,
+            volumePrice: result.scores.dimensions.volumePrice?.score,
+            momentum: result.scores.dimensions.momentum?.score,
+            structure: result.scores.dimensions.structure?.score,
+            volatility: result.scores.dimensions.volatility?.score
+          };
+        }),
+        checkedAt: new Date().toISOString()
+      };
+    }
   }
 
   global.StockTechnicalAnalysis = {
