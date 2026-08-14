@@ -174,11 +174,35 @@
       }
 
       .brand-mark {
+        position: relative;
         display: block;
-        width: clamp(54px, 4.3vw, 65px);
+        aspect-ratio: 1;
+        width: clamp(72px, 5.7vw, 86px);
         height: auto;
         filter: drop-shadow(0 12px 21px rgba(125, 113, 255, 0.15));
         transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      .logo-theme-art {
+        position: absolute;
+        inset: 0;
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+
+      .logo-theme-art--dark,
+      html[data-theme="dark"] .logo-theme-art--light,
+      html[data-theme="dark-black"] .logo-theme-art--light,
+      html[data-theme="dark-reference"] .logo-theme-art--light {
+        display: none;
+      }
+
+      html[data-theme="dark"] .logo-theme-art--dark,
+      html[data-theme="dark-black"] .logo-theme-art--dark,
+      html[data-theme="dark-reference"] .logo-theme-art--dark {
+        display: block;
       }
 
       .mark-link:hover .brand-mark {
@@ -997,7 +1021,7 @@
         }
 
         .brand-mark {
-          width: 51px;
+          width: 68px;
         }
 
         h1 {
@@ -1194,6 +1218,7 @@
       }
 
       .space-brand__mark {
+        position: relative;
         display: block;
         width: 38px;
         height: 38px;
@@ -1428,20 +1453,22 @@
   </head>
   <body>
     <a class="space-brand" href="/officialwebsite/topics/space/" aria-label="进入 J先生的个人空间">
-      <svg class="space-brand__mark" viewBox="0 0 64 64" aria-hidden="true">
-        <defs>
-          <linearGradient id="space-brand-gradient" x1="0.12" y1="0.98" x2="0.85" y2="0.08">
-            <stop offset="0" stop-color="#6887ff" />
-            <stop offset="0.34" stop-color="#a961ff" />
-            <stop offset="0.61" stop-color="#ff3868" />
-            <stop offset="1" stop-color="#ff7200" />
-          </linearGradient>
-        </defs>
-        <path
-          fill="url(#space-brand-gradient)"
-          d="M0 64V22C0 9.85 9.85 0 22 0s22 9.85 22 22v3h2c9.94 0 18 8.06 18 18s-8.06 18-18 18H21.5C13.9 61 6.56 62.04 0 64Z"
+      <span class="space-brand__mark" aria-hidden="true">
+        <img
+          class="logo-theme-art logo-theme-art--light"
+          src="/officialwebsite/images/home-magic-mark-light.png"
+          width="1044"
+          height="1044"
+          alt=""
         />
-      </svg>
+        <img
+          class="logo-theme-art logo-theme-art--dark"
+          src="/officialwebsite/images/home-magic-mark.png"
+          width="1019"
+          height="1019"
+          alt=""
+        />
+      </span>
       <span class="space-brand__text">J先生的个人空间</span>
     </a>
 
@@ -1464,20 +1491,24 @@
 
     <main class="page">
       <a class="mark-link" href="/" aria-label="返回 J先生 AI 学习网站首页">
-        <svg class="brand-mark" viewBox="0 0 64 64" role="img" aria-label="J先生 AI 学习网站">
-          <defs>
-            <linearGradient id="brand-gradient" x1="0.12" y1="0.98" x2="0.85" y2="0.08">
-              <stop offset="0" stop-color="#6887ff" />
-              <stop offset="0.34" stop-color="#a961ff" />
-              <stop offset="0.61" stop-color="#ff3868" />
-              <stop offset="1" stop-color="#ff7200" />
-            </linearGradient>
-          </defs>
-          <path
-            fill="url(#brand-gradient)"
-            d="M0 64V22C0 9.85 9.85 0 22 0s22 9.85 22 22v3h2c9.94 0 18 8.06 18 18s-8.06 18-18 18H21.5C13.9 61 6.56 62.04 0 64Z"
+        <span class="brand-mark" role="img" aria-label="J先生 AI 学习网站">
+          <img
+            class="logo-theme-art logo-theme-art--light"
+            src="/officialwebsite/images/home-magic-mark-light.png"
+            width="1044"
+            height="1044"
+            alt=""
+            aria-hidden="true"
           />
-        </svg>
+          <img
+            class="logo-theme-art logo-theme-art--dark"
+            src="/officialwebsite/images/home-magic-mark.png"
+            width="1019"
+            height="1019"
+            alt=""
+            aria-hidden="true"
+          />
+        </span>
       </a>
 
       <h1 data-reference-label="Welcome to My Space">Welcome to My Space</h1>
