@@ -117,9 +117,9 @@ const coffeeImagePath = `${basePath}images/coffee-order`;
 
         <section class="barista-login" id="baristaLogin">
           <div class="login-emblem" aria-hidden="true">B</div>
-          <div><span>STAFF ONLY</span><h2>登录店员账号</h2><p>只有指定店员账号可以查看全部订单和更新制作状态。</p></div>
+          <div><span>ADMIN ONLY</span><h2>登录管理员账号</h2><p>指定管理员可以查看全部订单、更新制作状态和删除订单。</p></div>
           <form id="baristaLoginForm">
-            <label><span>店员账号</span><input id="baristaAccount" type="text" autocomplete="username" required placeholder="请输入店员账号" /></label>
+            <label><span>管理员账号</span><input id="baristaAccount" type="text" autocomplete="username" required placeholder="请输入管理员账号或邮箱" /></label>
             <label><span>密码</span><input id="baristaPassword" type="password" autocomplete="current-password" required placeholder="输入密码" /></label>
             <p class="form-message" id="loginMessage" role="alert"></p>
             <button type="submit">进入订单台</button>

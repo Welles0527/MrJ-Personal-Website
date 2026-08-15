@@ -41,6 +41,7 @@ const COLLECTION = 'officialWebsiteCoffeeOrders';
 const SHOP_ID = 'morning-coffee-studio';
 const MERCHANT_UID = '2088473556664164354';
 const MERCHANT_EMAIL = 'coffee-barista@magicj.cn';
+const ADMIN_UIDS = new Set([MERCHANT_UID, '2064712423935315968']);
 const CART_KEY = 'coffee-order:cart:v1';
 const LATEST_ORDER_KEY = 'coffee-order:latest-order:v1';
 const CUSTOMER_NAME_KEY = 'coffee-order:customer-name:v1';
@@ -144,7 +145,7 @@ const ensureCloudSession = async () => {
   return state;
 };
 
-const isMerchant = (state: CloudLoginState) => Boolean(state?.user?.uid && state.user.uid === MERCHANT_UID);
+const isMerchant = (state: CloudLoginState) => Boolean(state?.user?.uid && ADMIN_UIDS.has(state.user.uid));
 
 const pickupNumber = () => {
   const now = new Date();
