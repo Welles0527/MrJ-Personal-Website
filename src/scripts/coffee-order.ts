@@ -42,6 +42,7 @@ const SHOP_ID = 'morning-coffee-studio';
 const MERCHANT_UID = '2088473556664164354';
 const MERCHANT_EMAIL = 'coffee-barista@magicj.cn';
 const ADMIN_UIDS = new Set([MERCHANT_UID, '2064712423935315968']);
+const ADMIN_EMAILS = new Set([MERCHANT_EMAIL, '49001422@qq.com']);
 const CART_KEY = 'coffee-order:cart:v1';
 const LATEST_ORDER_KEY = 'coffee-order:latest-order:v1';
 const CUSTOMER_NAME_KEY = 'coffee-order:customer-name:v1';
@@ -145,7 +146,9 @@ const ensureCloudSession = async () => {
   return state;
 };
 
-const isMerchant = (state: CloudLoginState) => Boolean(state?.user?.uid && ADMIN_UIDS.has(state.user.uid));
+const isMerchant = (state: CloudLoginState) => Boolean(
+  (state?.user?.uid && ADMIN_UIDS.has(state.user.uid)) || (state?.user?.email && ADMIN_EMAILS.has(state.user.email)),
+);
 
 const pickupNumber = () => {
   const now = new Date();
@@ -371,12 +374,14 @@ const initializeBarista = async () => {
     setCount('#cupCount', orders.reduce((total, order) => total + Number(order.itemCount || 0), 0));
     const list = $('#orderList');
     if (!list) return;
-    list.innerHTML = visible.length ? visible.map((order) => `
-      <article class="order-ticket" data-order-id="${safeText(order._id)}">
-        <header><div><strong class="order-customer-name">${safeText(order.customerName)}</strong><h3>${safeText(order.orderNo)}</h3></div><div><span class="status-badge" data-status="${order.status}">${STATUS_LABEL[order.status]}</span><time>${formatTime(order.createdAtIso)}</time></div></header>
-        <ul>${order.items.map((item) => `<li><strong>${safeText(item.nameZh)} · ${temperatureLabel(item.temperature)}</strong><span>× ${item.quantity}</span></li>`).join('')}</ul>
-        <div class="ticket-footer"><small>共 ${order.itemCount} 杯</small><div class="ticket-actions"><button class="delete-action" type="button" data-delete-order>删除</button><button class="status-action" type="button" data-status-action="${order.status}" ${order.status === 'done' ? 'disabled' : ''}>${NEXT_ACTION[order.status]}</button></div></div>
-      </article>`).join('') : '<div class="empty-board">当前筛选下没有订单，来杯咖啡等一等。</div>';
+    list.innerHTML = visible.length ? `<div class="order-table-wrap"><table class="order-table"><thead><tr><th>顾客</th><th>饮品</th><th>下单时间</th><th>状态</th><th>操作</th></tr></thead><tbody>${visible.map((order) => `
+      <tr data-order-id="${safeText(order._id)}">
+        <td><strong class="order-customer-name">${safeText(order.customerName)}</strong><small>${safeText(order.orderNo)} · 共 ${order.itemCount} 杯</small></td>
+        <td class="order-items">${order.items.map((item) => `<span>${safeText(item.nameZh)} · ${temperatureLabel(item.temperature)} × ${item.quantity}</span>`).join('')}</td>
+        <td><time>${formatTime(order.createdAtIso)}</time></td>
+        <td><span class="status-badge" data-status="${order.status}">${STATUS_LABEL[order.status]}</span></td>
+        <td><div class="ticket-actions"><button class="delete-action" type="button" data-delete-order>删除</button><button class="status-action" type="button" data-status-action="${order.status}" ${order.status === 'done' ? 'disabled' : ''}>${NEXT_ACTION[order.status]}</button></div></td>
+      </tr>`).join('')}</tbody></table></div>` : '<div class="empty-board">当前筛选下没有订单，来杯咖啡等一等。</div>';
   };
 
   const showBoard = () => {

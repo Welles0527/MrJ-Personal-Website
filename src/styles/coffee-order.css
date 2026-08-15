@@ -112,6 +112,16 @@ button { color: inherit; }
 .order-toolbar { display: flex; align-items: center; gap: 8px; margin: 25px 0 15px; }.order-toolbar button { padding: 9px 15px; border: 1px solid var(--line); border-radius: 999px; background: transparent; cursor: pointer; }.order-toolbar button.active { background: var(--coffee); color: white; }.order-toolbar span { margin-left: auto; color: var(--muted); font-size: 11px; }
 .order-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }.order-ticket { padding: 22px; border: 1px solid var(--line); border-radius: 23px; background: rgba(255,250,243,.84); box-shadow: 0 12px 28px rgba(65,38,21,.07); }.order-ticket header { display: flex; justify-content: space-between; gap: 16px; }.order-customer-name { display: block; margin-bottom: 4px; color: var(--coffee); font-family: Georgia, 'Noto Serif SC', serif; font-size: 25px; line-height: 1.15; }.order-ticket h3 { margin: 0; font-family: Georgia, serif; font-size: 27px; }.order-ticket time { color: var(--muted); font-size: 11px; }.order-ticket ul { margin: 17px 0; padding: 14px 0; list-style: none; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }.order-ticket li { display: flex; justify-content: space-between; gap: 12px; margin: 8px 0; }.order-ticket li span { color: var(--muted); font-size: 12px; }.ticket-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }.ticket-footer small { color: var(--muted); }.ticket-actions { display: flex; gap: 8px; }.status-action, .delete-action { padding: 10px 13px; border: 0; border-radius: 12px; cursor: pointer; }.status-action { background: var(--coffee); color: white; }.delete-action { background: #f1e4d8; color: #7f3f2e; }.empty-board { grid-column: 1 / -1; padding: 70px 20px; border: 1px dashed var(--line); border-radius: 24px; color: var(--muted); text-align: center; }
 
+.order-list { display: block; }
+.order-table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 22px; background: rgba(255,250,243,.84); box-shadow: 0 12px 28px rgba(65,38,21,.07); }
+.order-table { width: 100%; min-width: 760px; border-collapse: collapse; text-align: left; }
+.order-table th { padding: 13px 16px; color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; background: rgba(103,61,30,.06); }
+.order-table td { padding: 15px 16px; vertical-align: middle; border-top: 1px solid var(--line); font-size: 13px; }
+.order-table .order-customer-name { margin: 0 0 4px; font-size: 22px; white-space: nowrap; }
+.order-table td > small, .order-table time { color: var(--muted); font-size: 11px; }
+.order-items { min-width: 185px; }.order-items span { display: block; line-height: 1.7; white-space: nowrap; }
+.order-table .ticket-actions { justify-content: flex-end; }.order-table .status-action, .order-table .delete-action { white-space: nowrap; }
+
 @media (max-width: 900px) {
   .coffee-shell { width: min(100% - 28px, 760px); }
   .hero { min-height: 470px; padding: 62px 6%; }.hero-copy { width: 61%; }.hero-photo { object-position: 58% center; }
