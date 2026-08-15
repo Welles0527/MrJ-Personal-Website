@@ -40,6 +40,7 @@ const ENV_ID = 'magicj-web-d5g9yvowj6862f7a2';
 const COLLECTION = 'officialWebsiteCoffeeOrders';
 const SHOP_ID = 'morning-coffee-studio';
 const MERCHANT_UID = '2088473556664164354';
+const MERCHANT_EMAIL = 'coffee-barista@magicj.cn';
 const CART_KEY = 'coffee-order:cart:v1';
 const LATEST_ORDER_KEY = 'coffee-order:latest-order:v1';
 const CUSTOMER_NAME_KEY = 'coffee-order:customer-name:v1';
@@ -371,9 +372,9 @@ const initializeBarista = async () => {
     if (!list) return;
     list.innerHTML = visible.length ? visible.map((order) => `
       <article class="order-ticket" data-order-id="${safeText(order._id)}">
-        <header><div><small>顾客 · ${safeText(order.customerName)}</small><h3>${safeText(order.orderNo)}</h3></div><div><span class="status-badge" data-status="${order.status}">${STATUS_LABEL[order.status]}</span><time>${formatTime(order.createdAtIso)}</time></div></header>
+        <header><div><strong class="order-customer-name">${safeText(order.customerName)}</strong><h3>${safeText(order.orderNo)}</h3></div><div><span class="status-badge" data-status="${order.status}">${STATUS_LABEL[order.status]}</span><time>${formatTime(order.createdAtIso)}</time></div></header>
         <ul>${order.items.map((item) => `<li><strong>${safeText(item.nameZh)} · ${temperatureLabel(item.temperature)}</strong><span>× ${item.quantity}</span></li>`).join('')}</ul>
-        <div class="ticket-footer"><small>共 ${order.itemCount} 杯</small><button class="status-action" type="button" data-status-action="${order.status}" ${order.status === 'done' ? 'disabled' : ''}>${NEXT_ACTION[order.status]}</button></div>
+        <div class="ticket-footer"><small>共 ${order.itemCount} 杯</small><div class="ticket-actions"><button class="delete-action" type="button" data-delete-order>删除</button><button class="status-action" type="button" data-status-action="${order.status}" ${order.status === 'done' ? 'disabled' : ''}>${NEXT_ACTION[order.status]}</button></div></div>
       </article>`).join('') : '<div class="empty-board">当前筛选下没有订单，来杯咖啡等一等。</div>';
   };
 
@@ -441,7 +442,8 @@ const initializeBarista = async () => {
     event.preventDefault();
     const submit = form.querySelector<HTMLButtonElement>('button[type="submit"]');
     const message = $('#loginMessage');
-    const email = ($('#baristaEmail') as HTMLInputElement | null)?.value.trim() || '';
+    const account = ($('#baristaAccount') as HTMLInputElement | null)?.value.trim() || '';
+    const email = account === 'J先生' ? MERCHANT_EMAIL : account;
     const password = ($('#baristaPassword') as HTMLInputElement | null)?.value || '';
     if (submit) { submit.disabled = true; submit.textContent = '正在登录…'; }
     if (message) message.textContent = '';
@@ -467,14 +469,26 @@ const initializeBarista = async () => {
   }));
 
   $('#orderList')?.addEventListener('click', async (event) => {
-    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-status-action]');
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-status-action], [data-delete-order]');
     const ticket = button?.closest<HTMLElement>('[data-order-id]');
     if (!button || !ticket || button.disabled) return;
+    const orderId = ticket.dataset.orderId || '';
+    if (button.hasAttribute('data-delete-order')) {
+      if (!window.confirm('确定删除这笔订单吗？此操作无法恢复。')) return;
+      button.disabled = true;
+      try {
+        await db.collection(COLLECTION).doc(orderId).remove();
+      } catch (error) {
+        button.disabled = false;
+        showToast(cloudMessage(error, '订单删除失败。'));
+      }
+      return;
+    }
     const current = button.dataset.statusAction as OrderStatus;
     const next = NEXT_STATUS[current];
     button.disabled = true;
     try {
-      await db.collection(COLLECTION).doc(ticket.dataset.orderId || '').update({ status: next, updatedAtIso: new Date().toISOString() });
+      await db.collection(COLLECTION).doc(orderId).update({ status: next, updatedAtIso: new Date().toISOString() });
     } catch (error) {
       button.disabled = false;
       showToast(cloudMessage(error, '订单状态没有更新成功。'));
