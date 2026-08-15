@@ -85,6 +85,14 @@ const $ = <T extends HTMLElement>(selector: string) => document.querySelector<T>
 const $$ = <T extends HTMLElement>(selector: string) => [...document.querySelectorAll<T>(selector)];
 const temperatureLabel = (temperature: Temperature) => temperature === 'hot' ? '热' : '冷';
 const productById = (productId: string) => PRODUCTS.find((product) => product.id === productId);
+const productImage = (productId: string) => ({
+  americano: 'americano-hot-cold.webp',
+  'flat-white': 'flat-white.webp',
+  latte: 'caffe-latte.webp',
+  'osmanthus-latte': 'osmanthus-latte.webp',
+  dirty: 'dirty.webp',
+  espresso: 'espresso.webp',
+}[productId] || 'hero-morning-coffee.webp');
 
 const parseStored = <T>(key: string, fallback: T): T => {
   try { return JSON.parse(localStorage.getItem(key) || '') as T; } catch { return fallback; }
@@ -354,7 +362,7 @@ const initializeCustomer = async () => {
   window.addEventListener('beforeunload', () => { void orderWatcher?.close(); }, { once: true });
 };
 
-const formatTime = (iso: string) => new Intl.DateTimeFormat('zh-CN', { hour: '2-digit', minute: '2-digit' }).format(new Date(iso));
+const formatTime = (iso: string) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(iso));
 
 const initializeBarista = async () => {
   const loginSection = $('#baristaLogin');
@@ -377,7 +385,7 @@ const initializeBarista = async () => {
     list.innerHTML = visible.length ? `<div class="order-table-wrap"><table class="order-table"><thead><tr><th>顾客</th><th>饮品</th><th>下单时间</th><th>状态</th><th>操作</th></tr></thead><tbody>${visible.map((order) => `
       <tr data-order-id="${safeText(order._id)}">
         <td><strong class="order-customer-name">${safeText(order.customerName)}</strong><small>${safeText(order.orderNo)} · 共 ${order.itemCount} 杯</small></td>
-        <td class="order-items">${order.items.map((item) => `<span>${safeText(item.nameZh)} · ${temperatureLabel(item.temperature)} × ${item.quantity}</span>`).join('')}</td>
+        <td class="order-items">${order.items.map((item) => `<span><img src="/officialwebsite/images/coffee-order/${productImage(item.id)}" alt="" /><b>${safeText(item.nameZh)}</b><em>${temperatureLabel(item.temperature)} × ${item.quantity}</em></span>`).join('')}</td>
         <td><time>${formatTime(order.createdAtIso)}</time></td>
         <td><span class="status-badge" data-status="${order.status}">${STATUS_LABEL[order.status]}</span></td>
         <td><div class="ticket-actions"><button class="delete-action" type="button" data-delete-order>删除</button><button class="status-action" type="button" data-status-action="${order.status}" ${order.status === 'done' ? 'disabled' : ''}>${NEXT_ACTION[order.status]}</button></div></td>

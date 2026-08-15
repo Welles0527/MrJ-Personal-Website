@@ -117,9 +117,9 @@ button { color: inherit; }
 .order-table { width: 100%; min-width: 760px; border-collapse: collapse; text-align: left; }
 .order-table th { padding: 13px 16px; color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; background: rgba(103,61,30,.06); }
 .order-table td { padding: 15px 16px; vertical-align: middle; border-top: 1px solid var(--line); font-size: 13px; }
-.order-table .order-customer-name { margin: 0 0 4px; font-size: 22px; white-space: nowrap; }
+.order-table .order-customer-name { margin: 0 0 4px; font-size: 17px; white-space: nowrap; }
 .order-table td > small, .order-table time { color: var(--muted); font-size: 11px; }
-.order-items { min-width: 185px; }.order-items span { display: block; line-height: 1.7; white-space: nowrap; }
+.order-items { min-width: 210px; }.order-items span { display: flex; align-items: center; gap: 8px; min-height: 38px; white-space: nowrap; }.order-items img { width: 34px; height: 34px; border-radius: 9px; object-fit: cover; box-shadow: 0 3px 8px rgba(65,38,21,.12); }.order-items b { font-weight: 700; }.order-items em { color: var(--muted); font-size: 11px; font-style: normal; }
 .order-table .ticket-actions { justify-content: flex-end; }.order-table .status-action, .order-table .delete-action { white-space: nowrap; }
 
 @media (max-width: 900px) {
