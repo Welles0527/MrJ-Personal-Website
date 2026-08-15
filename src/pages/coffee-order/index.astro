@@ -1,0 +1,176 @@
+---
+import '../../styles/coffee-order.css';
+
+const basePath = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
+const customerHref = `${basePath}coffee-order/`;
+const baristaHref = `${basePath}coffee-order/?mode=barista`;
+const coffeeImagePath = `${basePath}images/coffee-order`;
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#f7f0e6" />
+    <meta name="description" content="J先生咖啡馆免注册点单，订单可实时同步到店员端。" />
+    <title>J先生咖啡馆 · 简易点单</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Noto+Serif+SC:wght@500;600;700;900&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="paper-noise" aria-hidden="true"></div>
+    <main class="coffee-shell" data-customer-href={customerHref} data-barista-href={baristaHref}>
+      <header class="topbar">
+        <a class="store-mark" href={customerHref} aria-label="返回顾客点单页">
+          <span class="pin-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M12 22s7-6.2 7-13a7 7 0 1 0-14 0c0 6.8 7 13 7 13Z"></path><circle cx="12" cy="9" r="2.4"></circle></svg>
+          </span>
+          <span><small>MR. J COFFEE</small><strong>J先生咖啡馆 · 今日营业</strong></span>
+        </a>
+        <div class="live-pill" id="cloudStatus" data-state="connecting"><i></i><span>正在连接门店</span></div>
+      </header>
+
+      <section class="customer-view" id="customerView">
+        <section class="hero" aria-labelledby="heroTitle">
+          <div class="hero-copy">
+            <p class="eyebrow">GOOD COFFEE, EASY MORNING</p>
+            <h1 id="heroTitle">早安，<br />来一杯好咖啡</h1>
+            <p class="hero-note">六款日常咖啡，不加复杂选项。<br />选好冷热，轻松下单。</p>
+          </div>
+          <div class="hero-art" aria-hidden="true">
+            <img class="hero-photo" src={`${coffeeImagePath}/hero-morning-coffee.webp`} alt="" width="1536" height="1024" decoding="async" fetchpriority="high" />
+          </div>
+        </section>
+
+        <div class="section-heading">
+          <div><span>OUR DAILY SIX</span><h2>今天喝什么？</h2></div>
+          <p>无需注册 · 输入姓名后即可点单</p>
+        </div>
+
+        <label class="customer-name-panel" for="customerName">
+          <span><strong>取餐姓名</strong><small>仅用于店员确认订单，无需注册</small></span>
+          <input id="customerName" name="customerName" type="text" maxlength="20" autocomplete="name" placeholder="例如：王先生" required />
+        </label>
+
+        <section class="menu-grid" aria-label="咖啡菜单">
+          <article class="coffee-card featured" data-product="americano">
+            <div class="card-copy">
+              <span class="recommend">本店推荐</span>
+              <p class="product-no">01</p>
+              <h3>美式</h3><strong>Americano</strong>
+              <p>清醒利落，保留咖啡最本真的香气。</p>
+            </div>
+            <div class="product-photo-wrap"><img class="product-photo" src={`${coffeeImagePath}/americano-hot-cold.webp`} alt="热美式与冰美式" width="1200" height="800" decoding="async" /></div>
+            <div class="card-actions">
+              <div class="temperature-picker" role="group" aria-label="美式温度">
+                <button type="button" class="temp-button active" data-temp="hot" aria-pressed="true">热</button>
+                <button type="button" class="temp-button" data-temp="cold" aria-pressed="false">冷</button>
+              </div>
+              <button class="add-button" type="button" data-add="americano" aria-label="添加美式"><span>+</span><b>加入</b></button>
+            </div>
+          </article>
+
+          <article class="coffee-card" data-product="flat-white">
+            <div class="card-copy"><p class="product-no">02</p><h3>澳白</h3><strong>Flat White</strong><p>细腻奶泡与浓郁咖啡，温柔而不失个性。</p></div>
+            <div class="product-photo-wrap"><img class="product-photo" src={`${coffeeImagePath}/flat-white.webp`} alt="热澳白" width="800" height="800" loading="lazy" decoding="async" /></div>
+            <div class="card-actions"><span class="fixed-temp">热饮</span><button class="add-button" type="button" data-add="flat-white" aria-label="添加澳白"><span>+</span><b>加入</b></button></div>
+          </article>
+
+          <article class="coffee-card" data-product="latte">
+            <div class="card-copy"><p class="product-no">03</p><h3>拿铁</h3><strong>Caffè Latte</strong><p>醇厚牛奶包裹浓缩，平衡、顺滑、耐喝。</p></div>
+            <div class="product-photo-wrap"><img class="product-photo" src={`${coffeeImagePath}/caffe-latte.webp`} alt="热拿铁" width="800" height="800" loading="lazy" decoding="async" /></div>
+            <div class="card-actions"><span class="fixed-temp">热饮</span><button class="add-button" type="button" data-add="latte" aria-label="添加拿铁"><span>+</span><b>加入</b></button></div>
+          </article>
+
+          <article class="coffee-card" data-product="osmanthus-latte">
+            <div class="card-copy"><p class="product-no">04</p><h3>桂花拿铁</h3><strong>Osmanthus Latte</strong><p>轻柔花香与奶咖交叠，留下一点暖甜余韵。</p></div>
+            <div class="product-photo-wrap"><img class="product-photo" src={`${coffeeImagePath}/osmanthus-latte.webp`} alt="热桂花拿铁" width="800" height="800" loading="lazy" decoding="async" /></div>
+            <div class="card-actions"><span class="fixed-temp">热饮</span><button class="add-button" type="button" data-add="osmanthus-latte" aria-label="添加桂花拿铁"><span>+</span><b>加入</b></button></div>
+          </article>
+
+          <article class="coffee-card" data-product="dirty">
+            <div class="card-copy"><p class="product-no">05</p><h3>Dirty</h3><strong>Dirty</strong><p>冰凉牛奶承接滚烫浓缩，一口感受双重温差。</p></div>
+            <div class="product-photo-wrap"><img class="product-photo" src={`${coffeeImagePath}/dirty.webp`} alt="冷 Dirty 咖啡" width="800" height="800" loading="lazy" decoding="async" /></div>
+            <div class="card-actions"><span class="fixed-temp cold-label">冷饮</span><button class="add-button" type="button" data-add="dirty" aria-label="添加 Dirty"><span>+</span><b>加入</b></button></div>
+          </article>
+
+          <article class="coffee-card" data-product="espresso">
+            <div class="card-copy"><p class="product-no">06</p><h3>浓缩</h3><strong>Espresso</strong><p>小杯高浓度，焦糖般的油脂与干净回甘。</p></div>
+            <div class="product-photo-wrap"><img class="product-photo" src={`${coffeeImagePath}/espresso.webp`} alt="热浓缩咖啡" width="800" height="800" loading="lazy" decoding="async" /></div>
+            <div class="card-actions"><span class="fixed-temp">热饮</span><button class="add-button" type="button" data-add="espresso" aria-label="添加浓缩"><span>+</span><b>加入</b></button></div>
+          </article>
+        </section>
+
+        <section class="order-history" id="orderHistory" hidden>
+          <div class="section-heading compact"><div><span>MY ORDER</span><h2>我的订单</h2></div></div>
+          <div id="customerOrderCard"></div>
+        </section>
+      </section>
+
+      <section class="barista-view" id="baristaView" hidden>
+        <div class="barista-heading">
+          <div><p class="eyebrow">BARISTA DESK</p><h1>今日订单台</h1><p>手机端会实时接收新订单；完成后可一键导出汇总。</p></div>
+          <div class="barista-actions"><a class="text-link" href={customerHref}>顾客点单页</a><button type="button" class="export-button" id="exportButton">导出今日汇总</button></div>
+        </div>
+
+        <section class="barista-login" id="baristaLogin">
+          <div class="login-emblem" aria-hidden="true">B</div>
+          <div><span>STAFF ONLY</span><h2>登录店员账号</h2><p>只有指定店员账号可以查看全部订单和更新制作状态。</p></div>
+          <form id="baristaLoginForm">
+            <label><span>店员邮箱</span><input id="baristaEmail" type="email" autocomplete="username" required placeholder="name@example.com" /></label>
+            <label><span>密码</span><input id="baristaPassword" type="password" autocomplete="current-password" required placeholder="输入密码" /></label>
+            <p class="form-message" id="loginMessage" role="alert"></p>
+            <button type="submit">进入订单台</button>
+          </form>
+        </section>
+
+        <div class="barista-board" id="baristaBoard" hidden>
+          <div class="summary-strip">
+            <article><span>待接单</span><strong id="newCount">0</strong></article>
+            <article><span>制作中</span><strong id="brewingCount">0</strong></article>
+            <article><span>待取餐</span><strong id="readyCount">0</strong></article>
+            <article><span>今日杯数</span><strong id="cupCount">0</strong></article>
+          </div>
+          <div class="order-toolbar" role="group" aria-label="订单状态筛选">
+            <button class="active" type="button" data-filter="active">进行中</button>
+            <button type="button" data-filter="all">全部</button>
+            <button type="button" data-filter="done">已完成</button>
+            <span id="lastSync">等待首批订单…</span>
+          </div>
+          <div class="order-list" id="orderList"></div>
+        </div>
+      </section>
+    </main>
+
+    <aside class="cart-bar" id="cartBar" aria-live="polite">
+      <button class="cart-summary" id="cartSummary" type="button" aria-expanded="false" aria-controls="cartPopover">
+        <span class="cart-count" id="cartCount">0</span>
+        <span><small>我的点单</small><strong id="cartLabel">还没有选择咖啡</strong></span>
+      </button>
+      <button class="checkout-button" id="checkoutButton" type="button" disabled>确认下单 <span>→</span></button>
+      <div class="cart-popover" id="cartPopover" hidden>
+        <div class="popover-head"><div><span>YOUR ORDER</span><h2>已选咖啡</h2></div><button id="closeCart" type="button" aria-label="关闭点单详情">×</button></div>
+        <div class="cart-lines" id="cartLines"></div>
+        <button class="clear-cart" id="clearCart" type="button">清空已选</button>
+      </div>
+    </aside>
+
+    <dialog class="order-dialog" id="orderDialog">
+      <div class="receipt-mark">✓</div>
+      <p class="eyebrow">ORDER SENT</p>
+      <h2>点单已发送</h2>
+      <p>手机店员端已经收到，请凭取餐号留意制作状态。</p>
+      <strong class="pickup-number" id="pickupNumber">A000</strong>
+      <button type="button" id="closeOrderDialog">查看我的订单</button>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script>
+      import { initializeCoffeeOrder } from '../../scripts/coffee-order';
+      initializeCoffeeOrder();
+    </script>
+  </body>
+</html>
