@@ -14,22 +14,22 @@
     <script is:inline>
       (() => {
         const storageKey = "magicj-home-theme";
+        const themes = ["light", "dark", "black-gold"];
         const requestedTheme = new URLSearchParams(window.location.search).get("theme");
-        const normalizedRequest = ["dark", "dark-black", "dark-reference"].includes(requestedTheme)
-          ? "dark"
-          : requestedTheme === "light"
-            ? "light"
-            : null;
+        const normalizedRequest = themes.includes(requestedTheme) ? requestedTheme : null;
         let storedTheme = null;
         try {
           storedTheme = window.localStorage.getItem(storageKey);
         } catch {}
-        const activeTheme =
-          normalizedRequest || (["light", "dark"].includes(storedTheme) ? storedTheme : "light");
+        const activeTheme = normalizedRequest || (themes.includes(storedTheme) ? storedTheme : "light");
+        const isDarkTheme = ["dark", "black-gold"].includes(activeTheme);
         document.documentElement.dataset.theme = activeTheme;
-        document.documentElement.style.colorScheme = activeTheme;
-        document.querySelector('meta[name="theme-color"]').content =
-          activeTheme === "dark" ? "#1d1d1c" : "#fafafa";
+        document.documentElement.style.colorScheme = isDarkTheme ? "dark" : "light";
+        document.querySelector('meta[name="theme-color"]').content = {
+          light: "#fafafa",
+          dark: "#1d1d1c",
+          "black-gold": "#090909",
+        }[activeTheme];
       })();
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -193,7 +193,9 @@
       }
 
       .logo-theme-art--dark,
+      .logo-theme-art--gold,
       html[data-theme="dark"] .logo-theme-art--light,
+      html[data-theme="black-gold"] .logo-theme-art--light,
       html[data-theme="dark-black"] .logo-theme-art--light,
       html[data-theme="dark-reference"] .logo-theme-art--light {
         display: none;
@@ -202,6 +204,14 @@
       html[data-theme="dark"] .logo-theme-art--dark,
       html[data-theme="dark-black"] .logo-theme-art--dark,
       html[data-theme="dark-reference"] .logo-theme-art--dark {
+        display: block;
+      }
+
+      html[data-theme="black-gold"] .logo-theme-art--dark {
+        display: none;
+      }
+
+      html[data-theme="black-gold"] .logo-theme-art--gold {
         display: block;
       }
 
@@ -364,6 +374,7 @@
       }
 
       html[data-theme="dark"] .choice__icon,
+      html[data-theme="black-gold"] .choice__icon,
       html[data-theme="dark-black"] .choice__icon,
       html[data-theme="dark-reference"] .choice__icon {
         filter: invert(1);
@@ -1160,6 +1171,20 @@
         background: var(--page-surface);
       }
 
+      html[data-theme="black-gold"] {
+        --ink: #f4f0e8;
+        --muted: #b7ad9e;
+        --page-surface: #090909;
+        --card: linear-gradient(145deg, rgba(37, 34, 29, 0.9), rgba(12, 12, 11, 0.92));
+        --card-border: rgba(218, 172, 94, 0.46);
+        --card-hover-border: #f3c979;
+        --control-surface: rgba(14, 14, 13, 0.8);
+        --control-border: rgba(218, 172, 94, 0.42);
+        --focus: #e0b66d;
+        background: var(--page-surface);
+        color-scheme: dark;
+      }
+
       html,
       body,
       html[data-theme="dark"] body {
@@ -1188,9 +1213,23 @@
           linear-gradient(180deg, #1d1d1c 0%, #1d1d1c 27%, #222730 43%, #31559f 66%, #cb4c99 108%);
       }
 
+      html[data-theme="black-gold"] body::before {
+        background-image:
+          linear-gradient(180deg, rgba(3, 3, 3, 0.04), rgba(3, 3, 3, 0.12)),
+          url("/officialwebsite/images/home-theme-black-gold-bg.webp?v=20260814-depth");
+        background-position: center, center bottom;
+        background-repeat: no-repeat;
+        background-size: cover;
+      }
+
       body::after,
       html[data-theme="dark"] body::after {
         opacity: 0;
+      }
+
+      html[data-theme="black-gold"] body::after {
+        opacity: 0.032;
+        mix-blend-mode: soft-light;
       }
 
       .space-brand,
@@ -1274,11 +1313,13 @@
         display: none;
       }
 
-      html[data-theme="dark"] .theme-toggle__moon {
+      html[data-theme="dark"] .theme-toggle__moon,
+      html[data-theme="black-gold"] .theme-toggle__moon {
         display: none;
       }
 
-      html[data-theme="dark"] .theme-toggle__sun {
+      html[data-theme="dark"] .theme-toggle__sun,
+      html[data-theme="black-gold"] .theme-toggle__sun {
         display: block;
       }
 
@@ -1357,6 +1398,98 @@
         font-size: clamp(15px, 1.32vw, 18px);
         line-height: 1.15;
         white-space: nowrap;
+      }
+
+      html[data-theme="black-gold"] h1 {
+        color: #f0ca89;
+        text-shadow:
+          0 1px 0 rgba(255, 249, 225, 0.38),
+          0 0 22px rgba(224, 164, 72, 0.18);
+      }
+
+      html[data-theme="black-gold"] .brand-mark {
+        filter: drop-shadow(0 0 22px rgba(229, 167, 71, 0.14));
+      }
+
+      html[data-theme="black-gold"] .choice {
+        box-shadow:
+          0 1px 0 rgba(255, 237, 199, 0.06) inset,
+          0 16px 44px rgba(0, 0, 0, 0.26);
+      }
+
+      html[data-theme="black-gold"] .choice:hover,
+      html[data-theme="black-gold"] .choice:focus-visible {
+        border-color: var(--card-hover-border);
+        box-shadow:
+          0 1px 0 rgba(255, 241, 209, 0.1) inset,
+          0 18px 48px rgba(0, 0, 0, 0.34),
+          0 0 20px rgba(214, 154, 61, 0.08);
+      }
+
+      html[data-theme="black-gold"] .choice svg {
+        stroke: #e6b86d;
+      }
+
+      html[data-theme="black-gold"] .choice__icon {
+        filter: invert(82%) sepia(35%) saturate(794%) hue-rotate(350deg) brightness(94%) contrast(91%);
+      }
+
+      html[data-theme="black-gold"] .investment-overlay {
+        background: rgba(2, 2, 2, 0.76);
+      }
+
+      html[data-theme="black-gold"] .investment-menu {
+        border-color: rgba(226, 181, 100, 0.42);
+        background:
+          radial-gradient(circle at 10% 0%, rgba(231, 178, 84, 0.15), transparent 38%),
+          radial-gradient(circle at 95% 100%, rgba(130, 78, 20, 0.16), transparent 42%),
+          linear-gradient(145deg, rgba(34, 31, 25, 0.98), rgba(10, 10, 9, 0.99));
+        box-shadow:
+          0 38px 100px rgba(0, 0, 0, 0.72),
+          0 1px 0 rgba(255, 238, 198, 0.1) inset,
+          0 0 34px rgba(210, 145, 45, 0.08);
+        color: #f7f0e4;
+      }
+
+      html[data-theme="black-gold"] .investment-menu__eyebrow {
+        color: #e8bd72;
+      }
+
+      html[data-theme="black-gold"] .investment-menu__hint,
+      html[data-theme="black-gold"] .investment-option small {
+        color: #b9ae9e;
+      }
+
+      html[data-theme="black-gold"] .investment-menu__close {
+        border-color: rgba(226, 181, 100, 0.34);
+        background: rgba(224, 173, 82, 0.08);
+        color: #f0c97f;
+      }
+
+      html[data-theme="black-gold"] .investment-menu__close:hover,
+      html[data-theme="black-gold"] .investment-menu__close:focus-visible {
+        border-color: rgba(243, 201, 121, 0.76);
+        background: rgba(224, 173, 82, 0.16);
+      }
+
+      html[data-theme="black-gold"] .investment-option {
+        border-color: rgba(226, 181, 100, 0.28);
+        background: linear-gradient(145deg, rgba(52, 45, 33, 0.55), rgba(16, 15, 13, 0.76));
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.2);
+      }
+
+      html[data-theme="black-gold"] .investment-option:hover,
+      html[data-theme="black-gold"] .investment-option:focus-visible {
+        border-color: rgba(243, 201, 121, 0.72);
+        background: linear-gradient(145deg, rgba(66, 54, 34, 0.72), rgba(20, 18, 15, 0.86));
+      }
+
+      html[data-theme="black-gold"] .investment-option svg {
+        stroke: #edc477;
+      }
+
+      html[data-theme="black-gold"] .investment-option__arrow {
+        color: rgba(237, 196, 119, 0.82);
       }
 
       .reference-pager,
@@ -1460,6 +1593,13 @@
           height="1019"
           alt=""
         />
+        <img
+          class="logo-theme-art logo-theme-art--gold"
+          src="/officialwebsite/images/home-magic-mark-gold.png"
+          width="1254"
+          height="1254"
+          alt=""
+        />
       </span>
       <span class="space-brand__text">J先生的个人空间</span>
     </a>
@@ -1497,6 +1637,14 @@
             src="/officialwebsite/images/home-magic-mark.png"
             width="1019"
             height="1019"
+            alt=""
+            aria-hidden="true"
+          />
+          <img
+            class="logo-theme-art logo-theme-art--gold"
+            src="/officialwebsite/images/home-magic-mark-gold.png"
+            width="1254"
+            height="1254"
             alt=""
             aria-hidden="true"
           />
@@ -1638,19 +1786,35 @@
       const themeToggle = document.querySelector("[data-theme-toggle]");
       const themeToggleLabel = document.querySelector("[data-theme-toggle-label]");
       const themeColor = document.querySelector('meta[name="theme-color"]');
+      const themes = ["light", "dark", "black-gold"];
+      const themeNames = {
+        light: "浅色",
+        dark: "深色",
+        "black-gold": "黑金",
+      };
+      const themeColors = {
+        light: "#fafafa",
+        dark: "#1d1d1c",
+        "black-gold": "#090909",
+      };
 
       const updateThemeControl = () => {
-        const isDark = document.documentElement.dataset.theme === "dark";
-        themeToggle.setAttribute("aria-pressed", String(isDark));
-        themeToggle.setAttribute("aria-label", isDark ? "切换到浅色主题" : "切换到深色主题");
-        themeToggleLabel.textContent = isDark ? "浅色" : "深色";
+        const activeTheme = document.documentElement.dataset.theme;
+        const activeIndex = Math.max(0, themes.indexOf(activeTheme));
+        const nextTheme = themes[(activeIndex + 1) % themes.length];
+        themeToggle.setAttribute("aria-pressed", String(activeTheme !== "light"));
+        themeToggle.setAttribute("aria-label", `切换到${themeNames[nextTheme]}主题`);
+        themeToggleLabel.textContent = themeNames[nextTheme];
       };
 
       themeToggle.addEventListener("click", () => {
-        const nextTheme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+        const activeTheme = document.documentElement.dataset.theme;
+        const activeIndex = Math.max(0, themes.indexOf(activeTheme));
+        const nextTheme = themes[(activeIndex + 1) % themes.length];
+        const isDarkTheme = ["dark", "black-gold"].includes(nextTheme);
         document.documentElement.dataset.theme = nextTheme;
-        document.documentElement.style.colorScheme = nextTheme;
-        themeColor.content = nextTheme === "dark" ? "#1d1d1c" : "#fafafa";
+        document.documentElement.style.colorScheme = isDarkTheme ? "dark" : "light";
+        themeColor.content = themeColors[nextTheme];
         try {
           window.localStorage.setItem(themeStorageKey, nextTheme);
         } catch {}

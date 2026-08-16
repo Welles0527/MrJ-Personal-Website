@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#1d1d1c" />
+    <meta name="theme-color" content="#080807" />
     <meta
       name="description"
       content="J先生个人空间的实用工具集合，按生活、AI 与运动分类。"
@@ -19,14 +19,15 @@
     <style>
       :root {
         color-scheme: dark;
-        --bg: #1d1d1c;
-        --panel: #252524;
-        --panel-strong: #2c2c2b;
-        --line: rgba(255, 255, 255, 0.11);
-        --ink: #f4f4f3;
-        --muted: #a5a5a0;
-        --blue: #7f96ff;
-        --pink: #ff5d98;
+        --bg: #080807;
+        --panel: rgba(25, 23, 19, 0.9);
+        --panel-strong: rgba(38, 32, 23, 0.96);
+        --line: rgba(219, 172, 91, 0.24);
+        --line-strong: rgba(238, 194, 117, 0.7);
+        --ink: #f5efe4;
+        --muted: #b6ab9b;
+        --gold: #e6b86d;
+        --gold-bright: #f4d28f;
         --font: "Manrope", "Noto Sans SC", "Microsoft YaHei", sans-serif;
       }
 
@@ -43,16 +44,9 @@
         min-height: 100svh;
         margin: 0;
         overflow-x: hidden;
-        background: radial-gradient(
-            ellipse 70% 55% at 96% 0%,
-            rgba(75, 89, 146, 0.22),
-            transparent 68%
-          ),
-          radial-gradient(
-            ellipse 52% 48% at 6% 100%,
-            rgba(169, 55, 109, 0.2),
-            transparent 72%
-          ),
+        background:
+          linear-gradient(180deg, rgba(2, 2, 2, 0.1), rgba(5, 4, 2, 0.34)),
+          url("/officialwebsite/images/home-theme-black-gold-bg.webp?v=20260814-depth") center top / cover fixed no-repeat,
           var(--bg);
         color: var(--ink);
         font-family: var(--font);
@@ -80,9 +74,12 @@
         gap: 11px;
         font-weight: 700;
       }
-      .brand svg {
+      .brand img {
+        display: block;
         width: 34px;
         height: 34px;
+        object-fit: contain;
+        filter: drop-shadow(0 0 12px rgba(230, 184, 109, 0.2));
       }
       .home-link {
         display: inline-flex;
@@ -94,7 +91,7 @@
         transition: color 180ms ease;
       }
       .home-link:hover {
-        color: var(--ink);
+        color: var(--gold-bright);
       }
 
       .hero {
@@ -102,7 +99,7 @@
       }
       .eyebrow {
         margin: 0 0 18px;
-        color: var(--blue);
+        color: var(--gold);
         font-size: 12px;
         font-weight: 800;
         letter-spacing: 0.18em;
@@ -112,6 +109,10 @@
         font-size: clamp(48px, 8vw, 102px);
         letter-spacing: -0.065em;
         line-height: 0.92;
+        color: var(--gold-bright);
+        text-shadow:
+          0 1px 0 rgba(255, 250, 225, 0.25),
+          0 0 30px rgba(221, 157, 60, 0.14);
       }
       .hero-copy {
         max-width: 520px;
@@ -137,7 +138,7 @@
         gap: 12px;
       }
       .category-index {
-        color: #73736f;
+        color: rgba(230, 184, 109, 0.68);
         font-size: 11px;
         font-weight: 700;
         letter-spacing: 0.14em;
@@ -163,7 +164,10 @@
         border: 1px solid var(--line);
         border-radius: 22px;
         padding: 27px;
-        background: rgba(37, 37, 36, 0.88);
+        background: linear-gradient(145deg, rgba(39, 35, 28, 0.92), rgba(12, 12, 11, 0.94));
+        box-shadow:
+          0 1px 0 rgba(255, 239, 204, 0.06) inset,
+          0 18px 46px rgba(0, 0, 0, 0.28);
         transition:
           border-color 220ms ease,
           transform 220ms ease,
@@ -173,18 +177,20 @@
         position: absolute;
         inset: 0;
         opacity: 0;
-        background: radial-gradient(
-          circle at 5% 100%,
-          rgba(255, 93, 152, 0.16),
-          transparent 44%
-        );
+        background:
+          linear-gradient(120deg, rgba(255, 226, 165, 0.08), transparent 38%),
+          radial-gradient(circle at 7% 100%, rgba(214, 145, 42, 0.17), transparent 46%);
         content: "";
         transition: opacity 220ms ease;
       }
       .tool-card:hover {
-        border-color: rgba(127, 150, 255, 0.42);
+        border-color: var(--line-strong);
         background: var(--panel-strong);
         transform: translateY(-3px);
+        box-shadow:
+          0 1px 0 rgba(255, 239, 204, 0.1) inset,
+          0 22px 54px rgba(0, 0, 0, 0.38),
+          0 0 22px rgba(212, 145, 44, 0.08);
       }
       .tool-card:hover::before {
         opacity: 1;
@@ -195,14 +201,14 @@
         width: 52px;
         height: 52px;
         place-items: center;
-        border: 1px solid rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(230, 184, 109, 0.3);
         border-radius: 16px;
-        background: #20201f;
+        background: linear-gradient(145deg, rgba(46, 39, 28, 0.9), rgba(13, 13, 12, 0.95));
       }
       .tool-icon svg {
         width: 27px;
         fill: none;
-        stroke: #f4f4f3;
+        stroke: var(--gold-bright);
         stroke-linecap: round;
         stroke-linejoin: round;
         stroke-width: 1.8;
@@ -228,30 +234,30 @@
         gap: 8px;
       }
       .tag {
-        border: 1px solid rgba(127, 150, 255, 0.3);
+        border: 1px solid rgba(230, 184, 109, 0.34);
         border-radius: 999px;
         padding: 6px 9px;
-        color: #aebcff;
+        color: var(--gold-bright);
         font-size: 10px;
         font-weight: 700;
       }
       .arrow {
-        color: #d8d8d4;
+        color: var(--gold);
         font-size: 21px;
       }
       .empty-card {
         min-height: 126px;
-        border: 1px dashed rgba(255, 255, 255, 0.1);
+        border: 1px dashed rgba(230, 184, 109, 0.22);
         border-radius: 20px;
         padding: 28px;
-        color: #767672;
+        color: #8f8577;
         font-size: 13px;
         line-height: 1.7;
       }
       .empty-card strong {
         display: block;
         margin-bottom: 7px;
-        color: #9a9a95;
+        color: #b8aa94;
         font-size: 15px;
       }
 
@@ -308,28 +314,13 @@
     <main class="shell">
       <nav class="topbar" aria-label="页面导航">
         <a class="brand" href="/officialwebsite/" aria-label="返回个人空间首页">
-          <svg viewBox="0 0 64 64" aria-hidden="true">
-            <defs
-              ><linearGradient
-                id="logo-gradient"
-                x1="0.12"
-                y1="0.98"
-                x2="0.85"
-                y2="0.08"
-                ><stop offset="0" stop-color="#6887ff"></stop><stop
-                  offset="0.34"
-                  stop-color="#a961ff"></stop><stop
-                  offset="0.61"
-                  stop-color="#ff3868"></stop><stop
-                  offset="1"
-                  stop-color="#ff7200"></stop></linearGradient
-              ></defs
-            >
-            <path
-              fill="url(#logo-gradient)"
-              d="M0 64V22C0 9.85 9.85 0 22 0s22 9.85 22 22v3h2c9.94 0 18 8.06 18 18s-8.06 18-18 18H21.5C13.9 61 6.56 62.04 0 64Z"
-            ></path>
-          </svg>
+          <img
+            src="/officialwebsite/images/home-magic-mark-gold.png"
+            width="1254"
+            height="1254"
+            alt=""
+            aria-hidden="true"
+          />
           <span>J先生的个人空间</span>
         </a>
         <a class="home-link" href="/officialwebsite/"
