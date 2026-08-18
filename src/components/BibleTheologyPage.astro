@@ -8,8 +8,24 @@ const groupAlbums = createBibleGroupAlbums(basePath);
 const groupAlbumsHref = `${basePath}topics/applications/inspiration-station/theology/group-albums/`;
 const alternativeKnowledgeHref = `${basePath}topics/applications/inspiration-station/theology/alternative-knowledge/`;
 const bibleLibraryHref = `${basePath}demos/bible-library-demo/index.html`;
+const bibleGuideHref = `${basePath}topics/applications/inspiration-station/theology/bible-guide/`;
 
 const featurePages = [
+  {
+    id: 'guide',
+    title: '圣经导读',
+    eyebrow: 'BIBLE GUIDE',
+    quote: '你的言语一解开，就发出亮光，使愚人通达。',
+    reference: '诗篇 119:130',
+    summary: '用一句话看见每卷书如何启示上帝、人的回应与救赎历史。',
+    action: '进入导读',
+    href: bibleGuideHref,
+    status: '66 卷导读',
+    image: `${basePath}images/bible-theology/feature-videos.webp`,
+    artA: '#7dd3fc',
+    artB: '#a78bfa',
+    artC: '#f9a8d4'
+  },
   {
     id: 'reader',
     title: '微读圣经',
@@ -39,21 +55,6 @@ const featurePages = [
     artA: '#86efac',
     artB: '#fde68a',
     artC: '#60a5fa'
-  },
-  {
-    id: 'videos',
-    title: '圣经视频',
-    eyebrow: 'WATCH',
-    quote: '你们要休息，要知道我是神。',
-    reference: '诗篇 46:10',
-    summary: '整理经卷导读、人物短片和主题视频的观看入口。',
-    action: '进入视频',
-    href: '#bible-videos',
-    status: '导读库',
-    image: `${basePath}images/bible-theology/feature-videos.webp`,
-    artA: '#7dd3fc',
-    artB: '#a78bfa',
-    artC: '#f9a8d4'
   },
   {
     id: 'people',
@@ -211,12 +212,6 @@ const chapterSamples = {
     ]
   }
 };
-
-const videoModules = [
-  { title: '创世记导读', meta: '经卷导读 · 8-12 分钟', text: '从创造、堕落、应许和族长故事建立旧约入口。', href: '?book=gen&chapter=1#bible-reader', guide: '先读创世记 1，标记“神说”“神看为好”“有晚上，有早晨”。' },
-  { title: '诗篇祷告路径', meta: '主题导读 · 6-10 分钟', text: '用赞美、哀歌、信靠和感恩整理诗篇的祷告语言。', href: '?book=psa&chapter=23#bible-reader', guide: '先读诗篇 23，再把“供应、引导、同在、盼望”写成祷告。' },
-  { title: '约翰福音核心', meta: '福音导读 · 10-15 分钟', text: '围绕光、生命、信与爱进入约翰福音的主线。', href: '?book=jhn&chapter=3#bible-reader', guide: '先读约翰福音 3，观察“重生、信、永生、光”的关系。' }
-];
 
 const peopleCards = [
   { name: '亚伯拉罕', role: '信心与应许', text: '从蒙召、等候、失败和信心行动观察应许之路。', refs: '创 12 / 创 15 / 来 11', question: '我正在等候什么应许？', href: '?book=gen&chapter=1#bible-reader' },
@@ -578,25 +573,6 @@ const hymnCards = [
         </div>
         <p class="bible-prayer-source">祷告词按《圣经》和合本主题原创，不摘录受版权限制的祷告书。</p>
       </article>
-    </div>
-  </section>
-
-  <section class="bible-feature-section" id="bible-videos" aria-labelledby="bible-videos-title">
-    <div class="bible-section-shell">
-      <p class="bible-section-kicker">WATCH</p>
-      <h2 id="bible-videos-title">圣经视频</h2>
-      <p class="bible-section-lede">以短课导读的方式整理观看路线；每张卡片都能回到对应经文章节继续阅读。</p>
-      <div class="bible-card-grid">
-        {videoModules.map((item) => (
-          <article class="bible-board-card">
-            <span>{item.meta}</span>
-            <h3>{item.title}</h3>
-            <p>{item.text}</p>
-            <small>{item.guide}</small>
-            <a href={item.href}>关联阅读</a>
-          </article>
-        ))}
-      </div>
     </div>
   </section>
 

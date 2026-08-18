@@ -1,0 +1,1830 @@
+---
+import BaseLayout from '../../../../../../layouts/BaseLayout.astro';
+import bibleGuideData from '../../../../../../data/bible-guide-chapters.json';
+
+const basePath = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
+const theologyHref = `${basePath}topics/applications/inspiration-station/theology/`;
+const pentateuchImageBase = `${basePath}images/bible-guide/pentateuch/`;
+const overviewImageBase = `${basePath}images/bible-guide/overview/`;
+
+const importedBooksBySlug = new Map(bibleGuideData.books.map((book) => [book.slug, book]));
+const categoryIdByWorkbookCategory: Record<string, string> = {
+  '摩西五经': 'pentateuch',
+  '历史书': 'history',
+  '诗歌智慧书': 'wisdom',
+  '大先知书': 'prophets',
+  '小先知书': 'prophets',
+  '福音书': 'gospels',
+  '教会历史': 'gospels',
+  '保罗书信': 'epistles',
+  '普通书信': 'epistles',
+  '启示文学': 'epistles'
+};
+const categoryTitleById: Record<string, string> = {
+  pentateuch: '摩西五经',
+  history: '历史书',
+  wisdom: '诗歌智慧书',
+  prophets: '先知书',
+  gospels: '福音书',
+  epistles: '书信'
+};
+const pentateuchImages: Record<string, string> = {
+  genesis: `${pentateuchImageBase}genesis.webp`,
+  exodus: `${pentateuchImageBase}exodus.webp`,
+  leviticus: `${pentateuchImageBase}leviticus.webp`,
+  numbers: `${pentateuchImageBase}numbers.webp`,
+  deuteronomy: `${pentateuchImageBase}deuteronomy.webp`
+};
+const overviewImageByWorkbookCategory: Record<string, string> = {
+  '历史书': `${overviewImageBase}history-books.webp`,
+  '诗歌智慧书': `${overviewImageBase}poetry-wisdom.webp`,
+  '大先知书': `${overviewImageBase}major-prophets.webp`,
+  '小先知书': `${overviewImageBase}minor-prophets.webp`,
+  '福音书': `${overviewImageBase}gospels-acts.webp`,
+  '教会历史': `${overviewImageBase}gospels-acts.webp`,
+  '保罗书信': `${overviewImageBase}pauline-epistles.webp`,
+  '普通书信': `${overviewImageBase}general-epistles.webp`,
+  '启示文学': `${overviewImageBase}revelation.webp`
+};
+
+const categories = [
+  {
+    id: 'pentateuch',
+    title: '摩西五经',
+    icon: '▱',
+    books: [
+      { slug: 'genesis', title: '创世记', english: 'Genesis', description: '上帝的创造，人的尊严与堕落', reference: '创 1:1–2:25', image: `${pentateuchImageBase}genesis.webp` },
+      { slug: 'exodus', title: '出埃及记', english: 'Exodus', description: '上帝的救赎，带领百姓出奴役进入立约', reference: '出 20:1–17', image: `${pentateuchImageBase}exodus.webp` },
+      { slug: 'leviticus', title: '利未记', english: 'Leviticus', description: '上帝的圣洁，呼召子民分别为圣', reference: '利 11:44–45', image: `${pentateuchImageBase}leviticus.webp` },
+      { slug: 'numbers', title: '民数记', english: 'Numbers', description: '上帝的同在，在旷野中引导与管教', reference: '民 14:18', image: `${pentateuchImageBase}numbers.webp` },
+      { slug: 'deuteronomy', title: '申命记', english: 'Deuteronomy', description: '上帝的立约，呼吁人以爱与顺服回应', reference: '申 6:5', image: `${pentateuchImageBase}deuteronomy.webp` }
+    ]
+  },
+  {
+    id: 'history',
+    title: '历史书',
+    icon: '♔',
+    books: [
+      { slug: 'joshua', title: '约书亚记', english: 'Joshua', description: '上帝信守应许，带领百姓进入应许之地', reference: '书 1:6–9', image: '' },
+      { slug: 'judges', title: '士师记', english: 'Judges', description: '人的反复悖逆与上帝不止息的拯救', reference: '士 2:16–19', image: '' },
+      { slug: 'ruth', title: '路得记', english: 'Ruth', description: '上帝在忠诚与恩慈中成就救赎', reference: '得 1:16–17', image: '' },
+      { slug: 'first-samuel', title: '撒母耳记上', english: '1 Samuel', description: '上帝鉴察人心，兴起合祂心意的王', reference: '撒上 16:7', image: '' },
+      { slug: 'second-samuel', title: '撒母耳记下', english: '2 Samuel', description: '上帝坚定祂的约，也审判王的罪', reference: '撒下 7:12–16', image: '' }
+    ]
+  },
+  {
+    id: 'wisdom',
+    title: '诗歌智慧书',
+    icon: '♩',
+    books: [
+      { slug: 'job', title: '约伯记', english: 'Job', description: '上帝在苦难中显明超越人的智慧', reference: '伯 42:1–6', image: '' },
+      { slug: 'psalms', title: '诗篇', english: 'Psalms', description: '上帝配得敬拜，成为百姓永远的避难所', reference: '诗 23:1–6', image: '' },
+      { slug: 'proverbs', title: '箴言', english: 'Proverbs', description: '敬畏上帝是一切智慧与生活的起点', reference: '箴 1:7', image: '' },
+      { slug: 'ecclesiastes', title: '传道书', english: 'Ecclesiastes', description: '上帝使短暂人生在敬畏中得着意义', reference: '传 12:13–14', image: '' },
+      { slug: 'song-of-songs', title: '雅歌', english: 'Song of Songs', description: '上帝所赐的爱忠贞、美好而有力量', reference: '歌 8:6–7', image: '' }
+    ]
+  },
+  {
+    id: 'prophets',
+    title: '先知书',
+    icon: '♙',
+    books: [
+      { slug: 'isaiah', title: '以赛亚书', english: 'Isaiah', description: '圣洁的上帝审判罪，也应许救赎之仆', reference: '赛 53:4–6', image: '' },
+      { slug: 'jeremiah', title: '耶利米书', english: 'Jeremiah', description: '上帝呼唤悔改，并应许写在人心的新约', reference: '耶 31:31–34', image: '' },
+      { slug: 'ezekiel', title: '以西结书', english: 'Ezekiel', description: '上帝的荣耀离开、归回并更新祂的百姓', reference: '结 36:26–28', image: '' },
+      { slug: 'daniel', title: '但以理书', english: 'Daniel', description: '上帝掌管列国，在异乡保守忠信见证', reference: '但 7:13–14', image: '' },
+      { slug: 'hosea', title: '何西阿书', english: 'Hosea', description: '上帝以不离不弃的爱挽回失信的百姓', reference: '何 11:8–9', image: '' }
+    ]
+  },
+  {
+    id: 'gospels',
+    title: '福音书',
+    icon: '†',
+    books: [
+      { slug: 'matthew', title: '马太福音', english: 'Matthew', description: '耶稣是应许的君王，带来天国的实现', reference: '太 5:1–12', image: '' },
+      { slug: 'mark', title: '马可福音', english: 'Mark', description: '耶稣是服事与舍命的上帝之子', reference: '可 10:45', image: '' },
+      { slug: 'luke', title: '路加福音', english: 'Luke', description: '耶稣寻找失丧者，把救恩带给万民', reference: '路 19:10', image: '' },
+      { slug: 'john', title: '约翰福音', english: 'John', description: '耶稣是道成肉身、赐人永生的上帝之子', reference: '约 20:30–31', image: '' },
+      { slug: 'acts', title: '使徒行传', english: 'Acts', description: '圣灵建立教会，使福音传到地极', reference: '徒 1:8', image: '' }
+    ]
+  },
+  {
+    id: 'epistles',
+    title: '书信',
+    icon: '✉',
+    books: [
+      { slug: 'romans', title: '罗马书', english: 'Romans', description: '上帝的义借着福音临到一切相信的人', reference: '罗 1:16–17', image: '' },
+      { slug: 'first-corinthians', title: '哥林多前书', english: '1 Corinthians', description: '十字架塑造圣洁、相爱与合一的教会', reference: '林前 13:1–13', image: '' },
+      { slug: 'galatians', title: '加拉太书', english: 'Galatians', description: '基督释放人脱离律法主义，靠圣灵而活', reference: '加 5:1, 22–23', image: '' },
+      { slug: 'ephesians', title: '以弗所书', english: 'Ephesians', description: '上帝在基督里使万有同归于一', reference: '弗 1:9–10', image: '' },
+      { slug: 'revelation', title: '启示录', english: 'Revelation', description: '上帝最终更新万有，与祂的百姓永远同住', reference: '启 21:1–5', image: '' }
+    ]
+  }
+];
+
+const overviewCards = [
+  { title: '历史书', description: '上帝在历史中成就应许与管治', category: 'history', image: `${overviewImageBase}history-books.webp` },
+  { title: '诗歌智慧书', description: '上帝赐下智慧与安慰，指引人心', category: 'wisdom', image: `${overviewImageBase}poetry-wisdom.webp` },
+  { title: '大先知书', description: '上帝呼召悔改，宣告审判与盼望', category: 'prophets', image: `${overviewImageBase}major-prophets.webp` },
+  { title: '小先知书', description: '上帝在列国中发声，宣告心意', category: 'prophets', image: `${overviewImageBase}minor-prophets.webp` },
+  { title: '福音书与使徒行传', description: '耶稣基督的生平、教会的诞生与扩展', category: 'gospels', image: `${overviewImageBase}gospels-acts.webp` },
+  { title: '保罗书信', description: '福音的真理与教会的生命实践', category: 'epistles', image: `${overviewImageBase}pauline-epistles.webp` },
+  { title: '普通书信', description: '劝勉与教导，建立信徒的信仰与品格', category: 'epistles', image: `${overviewImageBase}general-epistles.webp` },
+  { title: '启示录', description: '上帝的终极启示、盼望与新天新地', category: 'epistles', image: `${overviewImageBase}revelation.webp` }
+];
+
+categories[0].books = categories[0].books.map((book) => ({
+  ...book,
+  description: importedBooksBySlug.get(book.slug)?.summary ?? book.description
+}));
+
+const guideBooks = bibleGuideData.books.map((book) => {
+  const categoryId = categoryIdByWorkbookCategory[book.category] ?? 'epistles';
+  return {
+    ...book,
+    categoryId,
+    categoryTitle: categoryTitleById[categoryId],
+    image: pentateuchImages[book.slug] ?? overviewImageByWorkbookCategory[book.category] ?? `${overviewImageBase}revelation.webp`
+  };
+});
+---
+
+<BaseLayout title="圣经导读｜微读圣经" activeTheme="applications" bare>
+  <div class="guide-page" data-guide-page style={`--guide-reader-image:url("${pentateuchImageBase}genesis.webp");--guide-videos-image:url("${pentateuchImageBase}exodus.webp");`}>
+    <header class="guide-header">
+      <a class="guide-brand" href={theologyHref} aria-label="返回微读圣经主页">
+        <span class="guide-logo" aria-hidden="true">
+          <svg viewBox="0 0 48 48"><path d="M9 13c6-2 11-.8 15 3v21c-4-3.8-9-4.8-15-2V13Zm30 0c-6-2-11-.8-15 3v21c4-3.8 9-4.8 15-2V13Z"/><path d="M24 11v26M19 9l5 3 5-3"/></svg>
+        </span>
+        <span><strong>圣经关系图谱</strong><small>BIBLE ATLAS</small></span>
+      </a>
+
+      <nav class="guide-main-nav" aria-label="圣经导读导航">
+        <button class="is-active" type="button" data-jump-category="pentateuch">旧约</button>
+        <button type="button" data-jump-category="gospels">新约</button>
+        <a href="#guide-categories">主题索引</a>
+        <button type="button" data-open-about>关于</button>
+        <span class="nav-divider" aria-hidden="true"></span>
+        <button class="guide-search-toggle" type="button" data-search-toggle aria-expanded="false" aria-controls="guide-search-panel" aria-label="打开书卷搜索">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.7"/><path d="m16 16 5 5"/></svg>
+        </button>
+      </nav>
+
+      <div class="guide-search-panel" id="guide-search-panel" data-search-panel hidden>
+        <label for="guide-search">搜索书卷</label>
+        <div class="guide-search-field">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.7"/><path d="m16 16 5 5"/></svg>
+          <input id="guide-search" data-guide-search type="search" placeholder="输入中文、英文书名或分类" autocomplete="off" />
+          <button type="button" data-search-close aria-label="关闭搜索">×</button>
+        </div>
+        <div class="guide-search-results" data-search-results aria-live="polite"></div>
+      </div>
+    </header>
+
+    <section class="guide-hero" aria-labelledby="guide-title">
+      <div class="guide-hero-copy">
+        <h1 id="guide-title">圣经每一卷与上帝的关系</h1>
+        <p>用一句话看见每卷书如何启示上帝、人的回应与救赎历史。</p>
+        <span class="hero-rule" aria-hidden="true"><i></i></span>
+      </div>
+    </section>
+
+    <nav class="guide-tabs" id="guide-categories" aria-label="圣经书卷分类">
+      {categories.map((category, index) => (
+        <button type="button" data-category={category.id} class={index === 0 ? 'is-active' : ''}>
+          <span aria-hidden="true">{category.icon}</span>{category.title}
+        </button>
+      ))}
+    </nav>
+
+    <main class="guide-content">
+      <section class="guide-primary" aria-live="polite" aria-label="当前分类书卷">
+        <div class="guide-book-list" data-primary-list>
+          {categories[0].books.map((book, index) => (
+            <article class="guide-book-card">
+              <span class="guide-book-number">{index + 1}</span>
+              <img src={book.image} alt="" loading={index < 2 ? 'eager' : 'lazy'} />
+              <div class="guide-book-copy">
+                <h2>{book.title}</h2>
+                <p>{book.description}</p>
+                <small>参考经文：{book.reference}</small>
+              </div>
+              <button class="guide-book-detail" type="button" data-open-book={book.slug}>查看详情 <span aria-hidden="true">→</span></button>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <aside class="guide-overview" aria-labelledby="guide-overview-title">
+        <div class="guide-overview-title">
+          <span aria-hidden="true"></span>
+          <h2 id="guide-overview-title">更多圣经书卷概览</h2>
+          <i aria-hidden="true"></i>
+        </div>
+        <div class="guide-overview-grid">
+          {overviewCards.map((card) => (
+            <button type="button" data-explore={card.category}>
+              <span class="guide-overview-thumb" aria-hidden="true"><img src={card.image} alt="" decoding="async" /></span>
+              <span>
+                <strong>{card.title}</strong>
+                <small>{card.description}</small>
+                <em>探索更多 →</em>
+              </span>
+            </button>
+          ))}
+        </div>
+      </aside>
+    </main>
+
+    <section class="guide-banner" id="guide-about" aria-label="圣经整体信息">
+      <div class="guide-banner-cta">
+        <img src={`${pentateuchImageBase}deuteronomy.webp`} alt="摩西在应许之地前教导以色列人" loading="lazy" />
+        <div>
+          <h2>探索圣经的整体信息与上帝的救赎计划</h2>
+          <p>从创世到启示录，一段关于上帝与人同行的故事。</p>
+        </div>
+        <button type="button" data-jump-category="pentateuch">开始探索圣经 →</button>
+      </div>
+      <blockquote>
+        <span aria-hidden="true">“</span>
+        <p>圣经都是神所默示的，于教训、督责、使人归正、教导人学义，都是有益的，叫属神的人得以完全，预备行各样的善事。</p>
+        <cite>— 提摩太后书 3:16–17</cite>
+      </blockquote>
+    </section>
+
+    <dialog class="guide-chapter-dialog" data-chapter-dialog aria-labelledby="chapter-dialog-title">
+      <div class="guide-chapter-shell">
+        <header class="guide-chapter-header">
+          <img data-chapter-image src={`${pentateuchImageBase}genesis.webp`} alt="" />
+          <div>
+            <p>BIBLE ATLAS · CHAPTER GUIDE</p>
+            <h2 id="chapter-dialog-title" data-chapter-title>创世记</h2>
+            <span data-chapter-english>Genesis</span>
+            <small data-chapter-total>共 50 章</small>
+          </div>
+          <button type="button" data-close-chapters aria-label="关闭章节导读">×</button>
+        </header>
+        <div class="guide-chapter-intro">
+          <strong data-chapter-description>上帝的创造，人的尊严与堕落</strong>
+          <span>逐章一句话概览</span>
+        </div>
+        <div class="guide-chapter-scroll" data-chapter-scroll>
+          <ol data-chapter-list></ol>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog class="guide-about-dialog" data-about-dialog aria-labelledby="about-dialog-title">
+      <button type="button" data-close-about aria-label="关闭">×</button>
+      <small>BIBLE ATLAS</small>
+      <h2 id="about-dialog-title">关于圣经导读</h2>
+      <p>本页以圣经六大书卷分类为入口，用一句话建立每卷书与上帝救赎计划的关系。可通过分类、搜索和书卷详情继续探索。</p>
+      <a href={theologyHref}>返回微读圣经主页 →</a>
+    </dialog>
+  </div>
+</BaseLayout>
+
+<script is:inline define:vars={{ categories, guideBooks }}>
+  // @ts-nocheck -- Astro injects the define:vars values at build time.
+  const page = document.querySelector('[data-guide-page]');
+  const list = page?.querySelector('[data-primary-list]');
+  const tabs = [...(page?.querySelectorAll('[data-category]') || [])];
+  const panel = page?.querySelector('[data-search-panel]');
+  const searchInput = page?.querySelector('[data-guide-search]');
+  const searchResults = page?.querySelector('[data-search-results]');
+  const searchToggle = page?.querySelector('[data-search-toggle]');
+  const aboutDialog = page?.querySelector('[data-about-dialog]');
+  const chapterDialog = page?.querySelector('[data-chapter-dialog]');
+  const chapterList = page?.querySelector('[data-chapter-list]');
+  const chapterScroll = page?.querySelector('[data-chapter-scroll]');
+  const allBooks = guideBooks;
+  const pentateuchCards = [...(list?.children || [])].map((card) => card.cloneNode(true));
+
+  const createPendingPanel = (category) => {
+    const article = document.createElement('article');
+    article.className = 'guide-pending-panel';
+    const mark = document.createElement('span');
+    mark.textContent = category.icon;
+    mark.setAttribute('aria-hidden', 'true');
+    const copy = document.createElement('div');
+    const kicker = document.createElement('small');
+    kicker.textContent = 'NEXT COLLECTION';
+    const title = document.createElement('h2');
+    title.textContent = `${category.title}将在下一阶段设计`;
+    const text = document.createElement('p');
+    text.textContent = '本阶段仅完成摩西五经专属配图；其余书卷已可通过右上角搜索打开逐章导读。';
+    copy.append(kicker, title, text);
+    article.append(mark, copy);
+    return article;
+  };
+
+  const openChapterGuide = (slug) => {
+    const book = allBooks.find((item) => item.slug === slug);
+    if (!book || !chapterDialog || !chapterList) return;
+
+    page.querySelector('[data-chapter-image]').src = book.image;
+    page.querySelector('[data-chapter-image]').alt = `${book.title}导读场景`;
+    page.querySelector('[data-chapter-title]').textContent = book.title;
+    page.querySelector('[data-chapter-english]').textContent = book.english;
+    page.querySelector('[data-chapter-total]').textContent = `共 ${book.chapters.length} 章`;
+    page.querySelector('[data-chapter-description]').textContent = book.summary;
+
+    const rows = book.chapters.map((chapter) => {
+      const item = document.createElement('li');
+      const number = document.createElement('span');
+      number.className = 'guide-chapter-number';
+      number.textContent = String(chapter.number).padStart(2, '0');
+      const copy = document.createElement('div');
+      const heading = document.createElement('strong');
+      heading.textContent = `第 ${chapter.number} 章`;
+      const text = document.createElement('p');
+      text.textContent = chapter.summary;
+      copy.append(heading, text);
+      item.append(number, copy);
+      return item;
+    });
+    chapterList.replaceChildren(...rows);
+    if (chapterScroll) chapterScroll.scrollTop = 0;
+    chapterDialog.showModal();
+  };
+
+  const selectCategory = (categoryId, shouldScroll = false) => {
+    const category = categories.find((item) => item.id === categoryId) || categories[0];
+    tabs.forEach((tab) => tab.classList.toggle('is-active', tab.dataset.category === category.id));
+    if (category.id === 'pentateuch') list?.replaceChildren(...pentateuchCards.map((card) => card.cloneNode(true)));
+    else list?.replaceChildren(createPendingPanel(category));
+    if (shouldScroll) document.querySelector('#guide-categories')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const closeSearch = () => {
+    if (!panel) return;
+    panel.hidden = true;
+    searchToggle?.setAttribute('aria-expanded', 'false');
+  };
+
+  tabs.forEach((tab) => tab.addEventListener('click', () => selectCategory(tab.dataset.category)));
+  page?.querySelectorAll('[data-explore], [data-jump-category]').forEach((control) => {
+    control.addEventListener('click', () => selectCategory(control.dataset.explore || control.dataset.jumpCategory, true));
+  });
+
+  searchToggle?.addEventListener('click', () => {
+    if (!panel) return;
+    panel.hidden = !panel.hidden;
+    searchToggle.setAttribute('aria-expanded', String(!panel.hidden));
+    if (!panel.hidden) window.setTimeout(() => searchInput?.focus(), 30);
+  });
+  page?.querySelector('[data-search-close]')?.addEventListener('click', closeSearch);
+  list?.addEventListener('click', (event) => {
+    const trigger = event.target.closest('[data-open-book]');
+    if (trigger) openChapterGuide(trigger.dataset.openBook);
+  });
+  page?.querySelector('[data-close-chapters]')?.addEventListener('click', () => chapterDialog?.close());
+  chapterDialog?.addEventListener('click', (event) => {
+    if (event.target === chapterDialog) chapterDialog.close();
+  });
+
+  searchInput?.addEventListener('input', () => {
+    const query = searchInput.value.trim().toLocaleLowerCase();
+    searchResults?.replaceChildren();
+    if (!query) return;
+    const matches = allBooks.filter((book) => [book.title, book.english, book.categoryTitle].some((value) => value.toLocaleLowerCase().includes(query))).slice(0, 8);
+    if (!matches.length) {
+      const empty = document.createElement('p');
+      empty.textContent = '没有找到匹配的书卷。';
+      searchResults?.append(empty);
+      return;
+    }
+    matches.forEach((book) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      const name = document.createElement('strong');
+      name.textContent = book.title;
+      const meta = document.createElement('span');
+      meta.textContent = `${book.english} · ${book.categoryTitle}`;
+      button.append(name, meta);
+      button.addEventListener('click', () => {
+        selectCategory(book.categoryId);
+        closeSearch();
+        openChapterGuide(book.slug);
+      });
+      searchResults?.append(button);
+    });
+  });
+
+  page?.querySelector('[data-open-about]')?.addEventListener('click', () => aboutDialog?.showModal());
+  page?.querySelector('[data-close-about]')?.addEventListener('click', () => aboutDialog?.close());
+  aboutDialog?.addEventListener('click', (event) => {
+    if (event.target === aboutDialog) aboutDialog.close();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeSearch();
+  });
+</script>
+
+<style>
+  :global(html) {
+    background: #080704;
+    scroll-behavior: smooth;
+  }
+
+  :global(body) {
+    margin: 0;
+    background: #080704;
+  }
+
+  :global(.main-content) {
+    min-width: 0;
+    padding: 0 !important;
+  }
+
+  :global(.bottom-nav) {
+    display: none !important;
+  }
+
+  :global(*) {
+    box-sizing: border-box;
+  }
+
+  .guide-page {
+    --bg-main: #080704;
+    --bg-card: rgba(20, 16, 10, 0.95);
+    --bg-card-hover: #1b140a;
+    --gold-primary: #dba63c;
+    --gold-bright: #f2c75d;
+    --gold-muted: #a47a2c;
+    --text-primary: #f4e5bd;
+    --text-secondary: #b9aa8b;
+    --border-gold: rgba(190, 133, 29, 0.62);
+    --radius-card: 14px;
+    --shadow-gold: 0 0 18px rgba(218, 161, 50, 0.16);
+    min-width: 320px;
+    min-height: 100vh;
+    overflow-x: hidden;
+    background:
+      radial-gradient(circle at 50% -10%, rgba(112, 70, 16, 0.12), transparent 35rem),
+      linear-gradient(180deg, #0a0805 0%, #070705 60%, #090806 100%);
+    color: var(--text-primary);
+    font-family: "Noto Serif SC", "Songti SC", STSong, SimSun, serif;
+  }
+
+  button,
+  input {
+    font: inherit;
+  }
+
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .guide-header {
+    position: relative;
+    z-index: 20;
+    display: flex;
+    height: 78px;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(176, 119, 24, 0.36);
+    padding: 0 clamp(28px, 3.3vw, 64px);
+    background: rgba(8, 7, 4, 0.97);
+  }
+
+  .guide-brand {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    color: var(--gold-bright);
+    text-decoration: none;
+  }
+
+  .guide-logo {
+    display: grid;
+    width: 52px;
+    height: 52px;
+    place-items: center;
+    border: 1px solid rgba(218, 166, 60, 0.55);
+    border-radius: 50%;
+    box-shadow: 0 0 14px rgba(218, 166, 60, 0.12);
+  }
+
+  .guide-logo svg {
+    width: 35px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.6;
+  }
+
+  .guide-brand > span:last-child {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .guide-brand strong {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 0.11em;
+    line-height: 1.1;
+  }
+
+  .guide-brand small {
+    margin-top: 2px;
+    font-family: Georgia, serif;
+    font-size: 11px;
+    letter-spacing: 0.36em;
+  }
+
+  .guide-main-nav {
+    display: flex;
+    height: 100%;
+    align-items: center;
+    gap: clamp(24px, 3vw, 53px);
+  }
+
+  .guide-main-nav > button,
+  .guide-main-nav > a {
+    position: relative;
+    border: 0;
+    padding: 28px 0 24px;
+    background: transparent;
+    color: #d8c8a7;
+    cursor: pointer;
+    font-size: 18px;
+    text-decoration: none;
+  }
+
+  .guide-main-nav > .is-active::after {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    background: var(--gold-bright);
+    box-shadow: 0 0 9px rgba(242, 199, 93, 0.65);
+    content: "";
+  }
+
+  .guide-main-nav > button:hover,
+  .guide-main-nav > a:hover {
+    color: var(--gold-bright);
+  }
+
+  .nav-divider {
+    width: 1px;
+    height: 30px;
+    margin-left: -12px;
+    background: rgba(166, 126, 57, 0.28);
+  }
+
+  .guide-main-nav .guide-search-toggle {
+    display: grid;
+    width: 34px;
+    height: 50px;
+    place-items: center;
+    padding: 0;
+    color: var(--gold-bright);
+  }
+
+  .guide-search-toggle svg,
+  .guide-search-field svg {
+    width: 25px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-width: 1.8;
+  }
+
+  .guide-search-panel {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: clamp(28px, 3.3vw, 64px);
+    width: min(430px, calc(100vw - 32px));
+    border: 1px solid var(--border-gold);
+    border-radius: 12px;
+    padding: 17px;
+    background: rgba(13, 10, 6, 0.98);
+    box-shadow: 0 20px 55px rgba(0, 0, 0, 0.58), var(--shadow-gold);
+  }
+
+  .guide-search-panel[hidden] {
+    display: none;
+  }
+
+  .guide-search-panel > label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--gold-primary);
+    font-size: 13px;
+    letter-spacing: 0.1em;
+  }
+
+  .guide-search-field {
+    display: grid;
+    grid-template-columns: 24px 1fr 30px;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid rgba(207, 157, 54, 0.45);
+    color: var(--gold-primary);
+  }
+
+  .guide-search-field input {
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    padding: 10px 0 11px;
+    background: transparent;
+    color: var(--text-primary);
+  }
+
+  .guide-search-field button {
+    border: 0;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 24px;
+  }
+
+  .guide-search-results {
+    display: grid;
+    gap: 5px;
+    margin-top: 10px;
+  }
+
+  .guide-search-results :global(button) {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 8px 10px;
+    background: transparent;
+    color: var(--text-primary);
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .guide-search-results :global(button:hover) {
+    border-color: rgba(210, 155, 48, 0.34);
+    background: rgba(210, 155, 48, 0.07);
+  }
+
+  .guide-search-results :global(span),
+  .guide-search-results :global(p) {
+    color: var(--text-secondary);
+    font-size: 12px;
+  }
+
+  .guide-hero {
+    position: relative;
+    height: 278px;
+    overflow: hidden;
+    border-bottom: 1px solid rgba(144, 98, 20, 0.3);
+    background:
+      linear-gradient(90deg, rgba(8, 6, 3, 0.2), rgba(8, 6, 3, 0.7) 44%, rgba(8, 6, 3, 0.25)),
+      var(--guide-reader-image) left 42% / 53% auto no-repeat,
+      var(--guide-videos-image) right 48% / 55% auto no-repeat,
+      #171007;
+  }
+
+  .guide-hero::before {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(180deg, rgba(5, 4, 2, 0.15), rgba(5, 4, 2, 0.04) 45%, rgba(5, 4, 2, 0.78)),
+      linear-gradient(90deg, rgba(7, 6, 3, 0.1), rgba(10, 8, 4, 0.69) 39%, rgba(8, 6, 3, 0.25));
+    content: "";
+  }
+
+  .guide-hero-copy {
+    position: relative;
+    z-index: 2;
+    width: min(1000px, 66vw);
+    margin: 0 auto;
+    padding-top: 45px;
+    text-align: center;
+    text-shadow: 0 4px 18px rgba(0, 0, 0, 0.86);
+  }
+
+  .guide-hero h1 {
+    margin: 0;
+    color: #f5dfaa;
+    font-size: clamp(43px, 3.65vw, 70px);
+    font-weight: 600;
+    letter-spacing: 0.045em;
+    line-height: 1.18;
+  }
+
+  .guide-hero p {
+    margin: 9px 0 0;
+    color: #eadab7;
+    font-size: clamp(15px, 1.2vw, 22px);
+    letter-spacing: 0.08em;
+  }
+
+  .hero-rule {
+    display: flex;
+    width: 360px;
+    max-width: 48vw;
+    align-items: center;
+    gap: 7px;
+    margin: 17px auto 0;
+  }
+
+  .hero-rule::before,
+  .hero-rule::after {
+    height: 1px;
+    flex: 1;
+    background: linear-gradient(90deg, transparent, rgba(221, 169, 59, 0.58));
+    content: "";
+  }
+
+  .hero-rule::after {
+    background: linear-gradient(90deg, rgba(221, 169, 59, 0.58), transparent);
+  }
+
+  .hero-rule i {
+    width: 8px;
+    height: 8px;
+    border: 1px solid var(--gold-primary);
+    transform: rotate(45deg);
+  }
+
+  .guide-tabs {
+    position: relative;
+    z-index: 3;
+    display: grid;
+    width: min(1090px, calc(100vw - 60px));
+    grid-template-columns: repeat(6, 1fr);
+    gap: 13px;
+    margin: -53px auto 13px;
+  }
+
+  .guide-tabs button {
+    display: flex;
+    height: 54px;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border: 1px solid rgba(172, 116, 24, 0.54);
+    border-radius: 999px;
+    background: rgba(15, 12, 7, 0.9);
+    color: #e1c993;
+    cursor: pointer;
+    font-size: 17px;
+    transition: border-color 180ms ease, background 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+  }
+
+  .guide-tabs button:hover {
+    border-color: rgba(230, 180, 72, 0.82);
+    color: var(--gold-bright);
+  }
+
+  .guide-tabs button.is-active {
+    border-color: rgba(230, 180, 72, 0.85);
+    background: linear-gradient(180deg, rgba(128, 84, 15, 0.92), rgba(81, 51, 8, 0.92));
+    box-shadow: 0 0 17px rgba(218, 161, 50, 0.36), inset 0 1px rgba(255, 229, 168, 0.18);
+    color: #ffe8ad;
+  }
+
+  .guide-tabs button:active {
+    transform: translateY(1px);
+  }
+
+  .guide-tabs button span {
+    color: var(--gold-bright);
+    font-size: 24px;
+    line-height: 1;
+  }
+
+  .guide-content {
+    display: grid;
+    width: min(1820px, calc(100vw - 104px));
+    grid-template-columns: minmax(0, 1.85fr) minmax(500px, 1fr);
+    gap: 36px;
+    margin: 0 auto;
+  }
+
+  .guide-book-list {
+    display: grid;
+    gap: 5px;
+  }
+
+  .guide-book-card {
+    position: relative;
+    display: grid;
+    height: 104px;
+    grid-template-columns: 31% 1fr auto;
+    align-items: stretch;
+    overflow: hidden;
+    border: 1px solid var(--border-gold);
+    border-radius: var(--radius-card);
+    background: var(--bg-card);
+    box-shadow: inset 0 1px rgba(255, 235, 192, 0.025);
+    transition: border-color 190ms ease, box-shadow 190ms ease, transform 190ms ease;
+  }
+
+  .guide-book-card:hover {
+    border-color: rgba(230, 172, 55, 0.88);
+    box-shadow: var(--shadow-gold);
+    transform: translateY(-1px);
+  }
+
+  .guide-book-card > img {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 100%;
+    height: 100%;
+    max-width: 31%;
+    min-height: 0;
+    object-fit: cover;
+    object-position: center 43%;
+    filter: saturate(0.8) brightness(0.68) contrast(1.1);
+  }
+
+  .guide-book-card::after {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 24%;
+    width: 14%;
+    background: linear-gradient(90deg, transparent, var(--bg-card) 78%);
+    content: "";
+    pointer-events: none;
+  }
+
+  .guide-book-number {
+    position: absolute;
+    z-index: 2;
+    top: 19px;
+    left: 26px;
+    display: grid;
+    width: 41px;
+    height: 41px;
+    place-items: center;
+    border: 1px solid rgba(227, 177, 72, 0.68);
+    border-radius: 50%;
+    background: rgba(15, 11, 5, 0.66);
+    color: #f1c75e;
+    font-family: Georgia, serif;
+    font-size: 22px;
+  }
+
+  .guide-book-copy {
+    position: relative;
+    z-index: 2;
+    grid-column: 2;
+    align-self: center;
+    padding: 8px 24px 8px 33px;
+  }
+
+  .guide-book-copy h2 {
+    margin: 0;
+    color: #f6e6bd;
+    font-size: 26px;
+    font-weight: 600;
+    line-height: 1.15;
+  }
+
+  .guide-book-copy p {
+    margin: 2px 0 1px;
+    color: #e2d2af;
+    font-size: 16px;
+    line-height: 1.35;
+  }
+
+  .guide-book-copy small {
+    color: #968568;
+    font-size: 13px;
+  }
+
+  .guide-book-card > .guide-book-detail {
+    position: relative;
+    z-index: 2;
+    grid-column: 3;
+    align-self: center;
+    border: 0;
+    padding: 28px 27px;
+    background: transparent;
+    color: #d9ad4b;
+    cursor: pointer;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
+  .guide-book-card > .guide-book-detail:hover {
+    color: #f5ce70;
+  }
+
+  :global(.guide-pending-panel) {
+    display: grid;
+    min-height: 540px;
+    grid-template-columns: 108px minmax(0, 470px);
+    place-content: center;
+    align-items: center;
+    gap: 28px;
+    border: 1px solid rgba(174, 119, 26, 0.42);
+    border-radius: 14px;
+    background:
+      radial-gradient(circle at 18% 50%, rgba(205, 146, 36, 0.1), transparent 16rem),
+      linear-gradient(145deg, rgba(24, 18, 10, 0.92), rgba(12, 10, 7, 0.97));
+  }
+
+  :global(.guide-pending-panel > span) {
+    display: grid;
+    width: 96px;
+    height: 96px;
+    place-items: center;
+    border: 1px solid rgba(210, 157, 52, 0.5);
+    border-radius: 50%;
+    color: #d7a642;
+    font-size: 42px;
+    box-shadow: inset 0 0 24px rgba(206, 149, 41, 0.08);
+  }
+
+  :global(.guide-pending-panel small) {
+    color: #a97a2b;
+    font-family: Georgia, serif;
+    letter-spacing: 0.18em;
+  }
+
+  :global(.guide-pending-panel h2) {
+    margin: 8px 0;
+    color: #eed394;
+    font-size: 30px;
+    font-weight: 600;
+  }
+
+  :global(.guide-pending-panel p) {
+    margin: 0;
+    color: #a99b80;
+    line-height: 1.75;
+  }
+
+  .guide-overview-title {
+    display: grid;
+    height: 34px;
+    grid-template-columns: 9px auto 1fr;
+    align-items: center;
+    gap: 13px;
+    margin-bottom: 4px;
+  }
+
+  .guide-overview-title > span {
+    width: 5px;
+    height: 5px;
+    background: var(--gold-primary);
+    transform: rotate(45deg);
+  }
+
+  .guide-overview-title h2 {
+    margin: 0;
+    color: #dfb85d;
+    font-size: 16px;
+    letter-spacing: 0.08em;
+  }
+
+  .guide-overview-title i {
+    height: 1px;
+    background: linear-gradient(90deg, rgba(193, 136, 31, 0.55), transparent);
+  }
+
+  .guide-overview-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px 8px;
+  }
+
+  .guide-overview-grid button {
+    display: grid;
+    min-height: 126px;
+    grid-template-columns: 88px 1fr;
+    align-items: center;
+    gap: 13px;
+    border: 1px solid rgba(165, 111, 23, 0.57);
+    border-radius: 11px;
+    padding: 9px 12px;
+    background: linear-gradient(145deg, rgba(27, 20, 11, 0.95), rgba(17, 14, 9, 0.96));
+    color: inherit;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 180ms ease, transform 180ms ease, background 180ms ease;
+  }
+
+  .guide-overview-grid button:hover {
+    border-color: rgba(224, 168, 57, 0.88);
+    background: var(--bg-card-hover);
+    transform: translateY(-1px);
+  }
+
+  .guide-overview-grid .guide-overview-thumb {
+    position: relative;
+    display: block;
+    width: 78px;
+    height: 78px;
+    overflow: hidden;
+    border: 1px solid rgba(205, 148, 38, 0.52);
+    border-radius: 50%;
+    background: #1b1308;
+    box-shadow: inset 0 0 22px rgba(207, 151, 42, 0.08), 0 8px 20px rgba(0, 0, 0, 0.24);
+  }
+
+  .guide-overview-grid .guide-overview-thumb::after {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(145deg, rgba(255, 220, 142, 0.12), transparent 44%, rgba(22, 12, 4, 0.18));
+    content: "";
+    pointer-events: none;
+  }
+
+  .guide-overview-grid .guide-overview-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: saturate(0.82) brightness(0.82) contrast(1.06);
+    transition: filter 220ms ease, transform 260ms ease;
+  }
+
+  .guide-overview-grid button:hover .guide-overview-thumb img {
+    filter: saturate(0.95) brightness(0.92) contrast(1.04);
+    transform: scale(1.055);
+  }
+
+  .guide-overview-grid span {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+  }
+
+  .guide-overview-grid strong {
+    color: #edc665;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.15;
+  }
+
+  .guide-overview-grid small {
+    display: -webkit-box;
+    margin-top: 5px;
+    overflow: hidden;
+    color: #bcae91;
+    font-size: 12px;
+    line-height: 1.45;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .guide-overview-grid em {
+    margin-top: 5px;
+    color: #d39e35;
+    font-size: 12px;
+    font-style: normal;
+  }
+
+  .guide-banner {
+    display: grid;
+    width: min(1820px, calc(100vw - 104px));
+    min-height: 118px;
+    grid-template-columns: 55% 45%;
+    margin: 26px auto 18px;
+    overflow: hidden;
+    border: 1px solid var(--border-gold);
+    border-radius: 14px;
+    background: linear-gradient(90deg, rgba(31, 21, 9, 0.94), rgba(15, 12, 8, 0.97));
+  }
+
+  .guide-banner-cta {
+    display: grid;
+    grid-template-columns: 145px 1fr auto;
+    align-items: center;
+    gap: 17px;
+    padding: 10px 42px 10px 15px;
+  }
+
+  .guide-banner-cta img {
+    width: 140px;
+    height: 92px;
+    object-fit: cover;
+    opacity: 0.72;
+    filter: saturate(0.72) brightness(0.72) contrast(1.08);
+  }
+
+  .guide-banner-cta h2 {
+    margin: 0;
+    color: #ebce81;
+    font-size: 22px;
+    font-weight: 600;
+  }
+
+  .guide-banner-cta p {
+    margin: 8px 0 0;
+    color: #c1b08e;
+    font-size: 14px;
+  }
+
+  .guide-banner-cta button {
+    border: 1px solid rgba(209, 153, 42, 0.65);
+    border-radius: 999px;
+    padding: 12px 22px;
+    background: linear-gradient(180deg, rgba(91, 58, 9, 0.95), rgba(55, 34, 6, 0.95));
+    color: #e8bf63;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .guide-banner blockquote {
+    position: relative;
+    display: grid;
+    align-content: center;
+    margin: 0;
+    border-left: 1px solid rgba(175, 122, 29, 0.34);
+    padding: 17px 36px 13px 85px;
+  }
+
+  .guide-banner blockquote > span {
+    position: absolute;
+    top: 13px;
+    left: 52px;
+    color: #b77d20;
+    font-family: Georgia, serif;
+    font-size: 53px;
+    line-height: 1;
+  }
+
+  .guide-banner blockquote p {
+    margin: 0;
+    color: #c8b99a;
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  .guide-banner cite {
+    margin-top: 6px;
+    color: #8d7e65;
+    font-size: 12px;
+    font-style: normal;
+  }
+
+  .guide-chapter-dialog {
+    width: min(1050px, calc(100vw - 32px));
+    height: min(830px, calc(100dvh - 32px));
+    max-width: none;
+    max-height: none;
+    overflow: hidden;
+    border: 1px solid rgba(211, 157, 49, 0.7);
+    border-radius: 18px;
+    padding: 0;
+    background: #0e0b07;
+    color: #f2dfb4;
+    box-shadow: 0 34px 100px rgba(0, 0, 0, 0.82), 0 0 28px rgba(212, 157, 48, 0.15);
+  }
+
+  .guide-chapter-dialog::backdrop {
+    background: rgba(3, 3, 2, 0.84);
+    backdrop-filter: blur(7px);
+  }
+
+  .guide-chapter-shell {
+    display: grid;
+    height: 100%;
+    grid-template-rows: 205px auto minmax(0, 1fr);
+  }
+
+  .guide-chapter-header {
+    position: relative;
+    display: grid;
+    grid-template-columns: 44% 1fr;
+    overflow: hidden;
+    border-bottom: 1px solid rgba(189, 130, 27, 0.4);
+    background: #171006;
+  }
+
+  .guide-chapter-header::after {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 28%, rgba(14, 11, 7, 0.96) 47%, rgba(14, 11, 7, 0.98));
+    content: "";
+    pointer-events: none;
+  }
+
+  .guide-chapter-header > img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: saturate(0.82) brightness(0.72) contrast(1.08);
+  }
+
+  .guide-chapter-header > div {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-self: center;
+    flex-direction: column;
+    padding: 24px 70px 22px 36px;
+  }
+
+  .guide-chapter-header p {
+    margin: 0;
+    color: #b98427;
+    font-family: Georgia, serif;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+  }
+
+  .guide-chapter-header h2 {
+    margin: 7px 0 1px;
+    color: #f5d98e;
+    font-size: 46px;
+    font-weight: 600;
+    line-height: 1.12;
+  }
+
+  .guide-chapter-header > div > span {
+    color: #9a896d;
+    font-family: Georgia, serif;
+    font-size: 16px;
+    letter-spacing: 0.08em;
+  }
+
+  .guide-chapter-header small {
+    width: fit-content;
+    margin-top: 12px;
+    border: 1px solid rgba(207, 151, 42, 0.5);
+    border-radius: 999px;
+    padding: 5px 11px;
+    color: #d8ab4b;
+    font-size: 12px;
+  }
+
+  .guide-chapter-header > button {
+    position: absolute;
+    z-index: 3;
+    top: 14px;
+    right: 17px;
+    display: grid;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    border: 1px solid rgba(203, 148, 41, 0.38);
+    border-radius: 50%;
+    background: rgba(11, 9, 6, 0.72);
+    color: #d5bd8e;
+    cursor: pointer;
+    font-size: 25px;
+    line-height: 1;
+  }
+
+  .guide-chapter-intro {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    border-bottom: 1px solid rgba(177, 120, 25, 0.28);
+    padding: 14px 30px;
+    background: rgba(29, 20, 9, 0.78);
+  }
+
+  .guide-chapter-intro strong {
+    color: #ead29a;
+    font-size: 17px;
+    font-weight: 500;
+  }
+
+  .guide-chapter-intro span {
+    flex: 0 0 auto;
+    color: #a77a2c;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+  }
+
+  .guide-chapter-scroll {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-color: #8e6221 #171109;
+    scrollbar-width: thin;
+  }
+
+  .guide-chapter-scroll::-webkit-scrollbar {
+    width: 9px;
+  }
+
+  .guide-chapter-scroll::-webkit-scrollbar-track {
+    background: #171109;
+  }
+
+  .guide-chapter-scroll::-webkit-scrollbar-thumb {
+    border: 2px solid #171109;
+    border-radius: 999px;
+    background: #8e6221;
+  }
+
+  .guide-chapter-scroll ol {
+    display: grid;
+    gap: 0;
+    margin: 0;
+    padding: 8px 28px 28px;
+    list-style: none;
+  }
+
+  .guide-chapter-scroll :global(li) {
+    display: grid;
+    grid-template-columns: 68px 1fr;
+    gap: 18px;
+    border-bottom: 1px solid rgba(165, 111, 22, 0.22);
+    padding: 15px 8px;
+  }
+
+  :global(.guide-chapter-number) {
+    display: grid;
+    width: 48px;
+    height: 48px;
+    place-items: center;
+    border: 1px solid rgba(210, 158, 54, 0.42);
+    border-radius: 50%;
+    color: #d6a43d;
+    font-family: Georgia, serif;
+    font-size: 15px;
+  }
+
+  .guide-chapter-scroll :global(li > div) {
+    align-self: center;
+  }
+
+  .guide-chapter-scroll :global(strong) {
+    color: #e8c979;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .guide-chapter-scroll :global(p) {
+    margin: 4px 0 0;
+    color: #c6b89b;
+    font-size: 15px;
+    line-height: 1.65;
+  }
+
+  .guide-about-dialog {
+    width: min(520px, calc(100vw - 32px));
+    border: 1px solid var(--border-gold);
+    border-radius: 14px;
+    padding: 38px;
+    background: #120e08;
+    color: var(--text-primary);
+    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.72), var(--shadow-gold);
+  }
+
+  .guide-about-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.78);
+    backdrop-filter: blur(4px);
+  }
+
+  .guide-about-dialog > button {
+    position: absolute;
+    top: 11px;
+    right: 15px;
+    border: 0;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 27px;
+  }
+
+  .guide-about-dialog small {
+    color: var(--gold-primary);
+    letter-spacing: 0.24em;
+  }
+
+  .guide-about-dialog h2 {
+    margin: 9px 0 13px;
+    color: #f0d592;
+    font-size: 30px;
+  }
+
+  .guide-about-dialog p {
+    color: var(--text-secondary);
+    line-height: 1.8;
+  }
+
+  .guide-about-dialog a {
+    color: var(--gold-primary);
+    text-decoration: none;
+  }
+
+  @media (max-width: 1500px) {
+    .guide-header {
+      height: 70px;
+    }
+
+    .guide-brand strong {
+      font-size: 20px;
+    }
+
+    .guide-logo {
+      width: 46px;
+      height: 46px;
+    }
+
+    .guide-main-nav > button,
+    .guide-main-nav > a {
+      font-size: 16px;
+    }
+
+    .guide-content,
+    .guide-banner {
+      width: min(1360px, calc(100vw - 60px));
+    }
+
+    .guide-content {
+      grid-template-columns: minmax(0, 1.75fr) minmax(430px, 1fr);
+      gap: 24px;
+    }
+
+    .guide-book-card {
+      height: 108px;
+    }
+
+    .guide-book-number {
+      top: 17px;
+      left: 21px;
+      width: 38px;
+      height: 38px;
+      font-size: 20px;
+    }
+
+    .guide-book-copy h2 {
+      font-size: 23px;
+    }
+
+    .guide-book-copy p {
+      font-size: 14px;
+    }
+
+    .guide-overview-grid button {
+      min-height: 115px;
+      grid-template-columns: 72px 1fr;
+      gap: 10px;
+      padding: 8px 9px;
+    }
+
+    .guide-overview-grid .guide-overview-symbol {
+      width: 66px;
+      height: 66px;
+      font-size: 24px;
+    }
+
+    .guide-overview-grid strong {
+      font-size: 16px;
+    }
+
+    .guide-banner {
+      margin-top: 20px;
+    }
+
+    .guide-banner-cta {
+      grid-template-columns: 105px 1fr auto;
+      padding-right: 22px;
+    }
+
+    .guide-banner-cta img {
+      width: 104px;
+    }
+  }
+
+  @media (max-width: 1050px) {
+    .guide-header {
+      height: auto;
+      min-height: 70px;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding-block: 9px;
+    }
+
+    .guide-main-nav {
+      gap: 22px;
+    }
+
+    .guide-hero {
+      height: 300px;
+    }
+
+    .guide-tabs {
+      grid-template-columns: repeat(3, 1fr);
+      margin-top: -42px;
+    }
+
+    .guide-content {
+      grid-template-columns: 1fr;
+    }
+
+    .guide-overview-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .guide-overview-grid button {
+      grid-template-columns: 64px 1fr;
+    }
+
+    .guide-banner {
+      grid-template-columns: 1fr;
+    }
+
+    .guide-banner blockquote {
+      border-top: 1px solid rgba(175, 122, 29, 0.34);
+      border-left: 0;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .guide-header {
+      align-items: center;
+      padding: 10px 15px;
+    }
+
+    .guide-logo {
+      width: 40px;
+      height: 40px;
+    }
+
+    .guide-logo svg {
+      width: 28px;
+    }
+
+    .guide-brand strong {
+      font-size: 16px;
+    }
+
+    .guide-brand small {
+      font-size: 8px;
+    }
+
+    .guide-main-nav {
+      width: 100%;
+      order: 2;
+      justify-content: space-between;
+      gap: 8px;
+      overflow-x: auto;
+    }
+
+    .guide-main-nav > button,
+    .guide-main-nav > a {
+      flex: 0 0 auto;
+      padding: 9px 0;
+      font-size: 14px;
+    }
+
+    .nav-divider {
+      display: none;
+    }
+
+    .guide-search-panel {
+      top: 100%;
+      right: 16px;
+      left: 16px;
+      width: auto;
+    }
+
+    .guide-hero {
+      height: 350px;
+      background-size: auto 100%, auto 100%;
+      background-position: 18% center, 87% center;
+    }
+
+    .guide-hero-copy {
+      width: calc(100% - 32px);
+      padding-top: 49px;
+    }
+
+    .guide-hero h1 {
+      font-size: clamp(36px, 11vw, 48px);
+      line-height: 1.25;
+    }
+
+    .guide-hero p {
+      max-width: 330px;
+      margin: 14px auto 0;
+      font-size: 15px;
+      line-height: 1.8;
+    }
+
+    .guide-tabs {
+      width: calc(100vw - 24px);
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: -70px;
+    }
+
+    .guide-tabs button {
+      height: 46px;
+      font-size: 15px;
+    }
+
+    .guide-content,
+    .guide-banner {
+      width: calc(100vw - 24px);
+    }
+
+    .guide-book-card {
+      min-height: 178px;
+      height: auto;
+      grid-template-columns: 40% 1fr;
+      grid-template-rows: 1fr auto;
+    }
+
+    .guide-book-card > img {
+      max-width: 40%;
+    }
+
+    .guide-book-card::after {
+      top: 0;
+      bottom: 0;
+      left: 33%;
+      width: 12%;
+    }
+
+    .guide-book-number {
+      top: 13px;
+      left: 13px;
+      width: 34px;
+      height: 34px;
+      font-size: 17px;
+    }
+
+    .guide-book-copy {
+      grid-column: 2;
+      grid-row: 1;
+      align-self: end;
+      padding: 15px 12px 7px 19px;
+    }
+
+    .guide-book-copy h2 {
+      font-size: 22px;
+    }
+
+    .guide-book-copy p {
+      margin: 6px 0;
+      line-height: 1.55;
+    }
+
+    .guide-book-card > .guide-book-detail {
+      grid-column: 2;
+      grid-row: 2;
+      align-self: start;
+      padding: 4px 12px 15px 19px;
+    }
+
+    :global(.guide-pending-panel) {
+      min-height: 330px;
+      grid-template-columns: 1fr;
+      justify-items: center;
+      gap: 18px;
+      padding: 30px 24px;
+      text-align: center;
+    }
+
+    :global(.guide-pending-panel > span) {
+      width: 74px;
+      height: 74px;
+      font-size: 32px;
+    }
+
+    :global(.guide-pending-panel h2) {
+      font-size: 23px;
+    }
+
+    .guide-overview-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .guide-overview-grid button {
+      min-height: 158px;
+      grid-template-columns: 1fr;
+      align-content: start;
+      gap: 8px;
+    }
+
+    .guide-overview-grid .guide-overview-thumb {
+      width: 58px;
+      height: 58px;
+    }
+
+    .guide-banner-cta {
+      grid-template-columns: 74px 1fr;
+      padding: 15px;
+    }
+
+    .guide-banner-cta img {
+      width: 72px;
+      height: 75px;
+    }
+
+    .guide-banner-cta h2 {
+      font-size: 18px;
+      line-height: 1.5;
+    }
+
+    .guide-banner-cta button {
+      grid-column: 1 / -1;
+    }
+
+    .guide-banner blockquote {
+      padding: 27px 22px 22px 55px;
+    }
+
+    .guide-banner blockquote > span {
+      left: 20px;
+    }
+
+    .guide-chapter-dialog {
+      width: calc(100vw - 16px);
+      height: calc(100dvh - 16px);
+      border-radius: 13px;
+    }
+
+    .guide-chapter-shell {
+      grid-template-rows: 176px auto minmax(0, 1fr);
+    }
+
+    .guide-chapter-header {
+      display: block;
+    }
+
+    .guide-chapter-header::after {
+      background: linear-gradient(180deg, rgba(10, 8, 5, 0.05), rgba(10, 8, 5, 0.92) 72%, #0e0b07);
+    }
+
+    .guide-chapter-header > img {
+      position: absolute;
+      inset: 0;
+    }
+
+    .guide-chapter-header > div {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      padding: 22px 58px 14px 19px;
+    }
+
+    .guide-chapter-header h2 {
+      font-size: 32px;
+    }
+
+    .guide-chapter-header > div > span {
+      font-size: 13px;
+    }
+
+    .guide-chapter-header small {
+      position: absolute;
+      right: 17px;
+      bottom: 16px;
+      margin: 0;
+    }
+
+    .guide-chapter-intro {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 5px;
+      padding: 12px 17px;
+    }
+
+    .guide-chapter-intro strong {
+      font-size: 15px;
+      line-height: 1.55;
+    }
+
+    .guide-chapter-scroll ol {
+      padding: 5px 10px 20px;
+    }
+
+    .guide-chapter-scroll :global(li) {
+      grid-template-columns: 45px 1fr;
+      gap: 10px;
+      padding: 12px 4px;
+    }
+
+    :global(.guide-chapter-number) {
+      width: 38px;
+      height: 38px;
+      font-size: 13px;
+    }
+
+    .guide-chapter-scroll :global(p) {
+      font-size: 14px;
+      line-height: 1.55;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(html) {
+      scroll-behavior: auto;
+    }
+
+    .guide-book-card,
+    .guide-overview-grid button,
+    .guide-tabs button {
+      transition: none;
+    }
+  }
+</style>

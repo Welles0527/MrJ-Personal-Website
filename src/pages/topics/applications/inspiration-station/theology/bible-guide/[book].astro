@@ -1,0 +1,211 @@
+---
+import BaseLayout from '../../../../../../layouts/BaseLayout.astro';
+
+export function getStaticPaths() {
+  const books = [
+  ['genesis', '创世记', 'Genesis', '上帝的创造，人的尊严与堕落', '创 1:1–2:25'],
+  ['exodus', '出埃及记', 'Exodus', '上帝的救赎，带领百姓出奴役进入立约', '出 20:1–17'],
+  ['leviticus', '利未记', 'Leviticus', '上帝的圣洁，呼召子民分别为圣', '利 11:44–45'],
+  ['numbers', '民数记', 'Numbers', '上帝的同在，在旷野中引导与管教', '民 14:18'],
+  ['deuteronomy', '申命记', 'Deuteronomy', '上帝的立约，呼吁人以爱与顺服回应', '申 6:5'],
+  ['joshua', '约书亚记', 'Joshua', '上帝信守应许，带领百姓进入应许之地', '书 1:6–9'],
+  ['judges', '士师记', 'Judges', '人的反复悖逆与上帝不止息的拯救', '士 2:16–19'],
+  ['ruth', '路得记', 'Ruth', '上帝在忠诚与恩慈中成就救赎', '得 1:16–17'],
+  ['first-samuel', '撒母耳记上', '1 Samuel', '上帝鉴察人心，兴起合祂心意的王', '撒上 16:7'],
+  ['second-samuel', '撒母耳记下', '2 Samuel', '上帝坚定祂的约，也审判王的罪', '撒下 7:12–16'],
+  ['job', '约伯记', 'Job', '上帝在苦难中显明超越人的智慧', '伯 42:1–6'],
+  ['psalms', '诗篇', 'Psalms', '上帝配得敬拜，成为百姓永远的避难所', '诗 23:1–6'],
+  ['proverbs', '箴言', 'Proverbs', '敬畏上帝是一切智慧与生活的起点', '箴 1:7'],
+  ['ecclesiastes', '传道书', 'Ecclesiastes', '上帝使短暂人生在敬畏中得着意义', '传 12:13–14'],
+  ['song-of-songs', '雅歌', 'Song of Songs', '上帝所赐的爱忠贞、美好而有力量', '歌 8:6–7'],
+  ['isaiah', '以赛亚书', 'Isaiah', '圣洁的上帝审判罪，也应许救赎之仆', '赛 53:4–6'],
+  ['jeremiah', '耶利米书', 'Jeremiah', '上帝呼唤悔改，并应许写在人心的新约', '耶 31:31–34'],
+  ['ezekiel', '以西结书', 'Ezekiel', '上帝的荣耀离开、归回并更新祂的百姓', '结 36:26–28'],
+  ['daniel', '但以理书', 'Daniel', '上帝掌管列国，在异乡保守忠信见证', '但 7:13–14'],
+  ['hosea', '何西阿书', 'Hosea', '上帝以不离不弃的爱挽回失信的百姓', '何 11:8–9'],
+  ['matthew', '马太福音', 'Matthew', '耶稣是应许的君王，带来天国的实现', '太 5:1–12'],
+  ['mark', '马可福音', 'Mark', '耶稣是服事与舍命的上帝之子', '可 10:45'],
+  ['luke', '路加福音', 'Luke', '耶稣寻找失丧者，把救恩带给万民', '路 19:10'],
+  ['john', '约翰福音', 'John', '耶稣是道成肉身、赐人永生的上帝之子', '约 20:30–31'],
+  ['acts', '使徒行传', 'Acts', '圣灵建立教会，使福音传到地极', '徒 1:8'],
+  ['romans', '罗马书', 'Romans', '上帝的义借着福音临到一切相信的人', '罗 1:16–17'],
+  ['first-corinthians', '哥林多前书', '1 Corinthians', '十字架塑造圣洁、相爱与合一的教会', '林前 13:1–13'],
+  ['galatians', '加拉太书', 'Galatians', '基督释放人脱离律法主义，靠圣灵而活', '加 5:1, 22–23'],
+  ['ephesians', '以弗所书', 'Ephesians', '上帝在基督里使万有同归于一', '弗 1:9–10'],
+  ['revelation', '启示录', 'Revelation', '上帝最终更新万有，与祂的百姓永远同住', '启 21:1–5']
+  ];
+  return books.map(([slug, title, english, description, reference]) => ({
+    params: { book: slug },
+    props: { slug, title, english, description, reference }
+  }));
+}
+
+const { title, english, description, reference } = Astro.props;
+const basePath = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
+const guideHref = `${basePath}topics/applications/inspiration-station/theology/bible-guide/`;
+const readerHref = `${basePath}topics/applications/inspiration-station/theology/`;
+const featureVideosImage = `${basePath}images/bible-theology/feature-videos.webp`;
+---
+
+<BaseLayout title={`${title}｜圣经导读`} activeTheme="applications" bare>
+  <main class="book-detail" style={`--book-detail-image:url("${featureVideosImage}");`}>
+    <a class="book-detail-back" href={guideHref}>← 返回圣经导读</a>
+    <article>
+      <p class="book-detail-kicker">BIBLE ATLAS · BOOK GUIDE</p>
+      <h1>{title}</h1>
+      <strong>{english}</strong>
+      <div class="book-detail-rule" aria-hidden="true"><span></span></div>
+      <p class="book-detail-summary">{description}</p>
+      <dl>
+        <div><dt>核心经文</dt><dd>{reference}</dd></div>
+        <div><dt>阅读方向</dt><dd>留意本卷如何启示上帝的属性、人的回应，以及它在整本圣经救赎历史中的位置。</dd></div>
+      </dl>
+      <div class="book-detail-actions">
+        <a href={readerHref}>打开微读圣经 →</a>
+        <a href={guideHref}>浏览其他书卷</a>
+      </div>
+    </article>
+  </main>
+</BaseLayout>
+
+<style>
+  :global(html),
+  :global(body) {
+    margin: 0;
+    background: #080704;
+  }
+
+  :global(.main-content) {
+    padding: 0 !important;
+  }
+
+  :global(.bottom-nav) {
+    display: none !important;
+  }
+
+  .book-detail {
+    min-height: 100vh;
+    padding: clamp(24px, 4vw, 64px);
+    background:
+      radial-gradient(circle at 78% 18%, rgba(160, 105, 21, 0.22), transparent 30rem),
+      linear-gradient(rgba(7, 6, 3, 0.68), rgba(7, 6, 3, 0.94)),
+      var(--book-detail-image) center / cover fixed;
+    color: #f3e2b8;
+    font-family: "Noto Serif SC", "Songti SC", STSong, SimSun, serif;
+  }
+
+  .book-detail-back {
+    color: #c69331;
+    font-size: 14px;
+    text-decoration: none;
+  }
+
+  .book-detail article {
+    width: min(760px, 100%);
+    margin: clamp(70px, 13vh, 140px) auto 0;
+    border: 1px solid rgba(193, 137, 32, 0.62);
+    border-radius: 18px;
+    padding: clamp(32px, 6vw, 72px);
+    background: rgba(15, 11, 6, 0.9);
+    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.62), 0 0 30px rgba(202, 143, 31, 0.11);
+    backdrop-filter: blur(12px);
+  }
+
+  .book-detail-kicker {
+    margin: 0;
+    color: #c69331;
+    font-family: Georgia, serif;
+    font-size: 12px;
+    letter-spacing: 0.22em;
+  }
+
+  h1 {
+    margin: 14px 0 0;
+    color: #f7df9f;
+    font-size: clamp(46px, 7vw, 82px);
+    font-weight: 600;
+    line-height: 1.1;
+  }
+
+  article > strong {
+    display: block;
+    margin-top: 6px;
+    color: #9e8c6d;
+    font-family: Georgia, serif;
+    font-size: 18px;
+    letter-spacing: 0.09em;
+  }
+
+  .book-detail-rule {
+    width: 180px;
+    height: 1px;
+    margin: 30px 0;
+    background: linear-gradient(90deg, #c9912e, transparent);
+  }
+
+  .book-detail-summary {
+    margin: 0;
+    color: #ead5a6;
+    font-size: clamp(22px, 3vw, 31px);
+    line-height: 1.6;
+  }
+
+  dl {
+    display: grid;
+    gap: 16px;
+    margin: 34px 0;
+  }
+
+  dl div {
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    gap: 18px;
+    border-top: 1px solid rgba(182, 128, 29, 0.28);
+    padding-top: 15px;
+  }
+
+  dt {
+    color: #c69331;
+    font-size: 14px;
+  }
+
+  dd {
+    margin: 0;
+    color: #b9aa8d;
+    line-height: 1.7;
+  }
+
+  .book-detail-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .book-detail-actions a {
+    border: 1px solid rgba(198, 147, 49, 0.58);
+    border-radius: 999px;
+    padding: 11px 20px;
+    color: #e7bd61;
+    text-decoration: none;
+  }
+
+  .book-detail-actions a:first-child {
+    background: rgba(113, 72, 10, 0.56);
+  }
+
+  @media (max-width: 560px) {
+    .book-detail {
+      padding: 20px 14px;
+    }
+
+    .book-detail article {
+      margin-top: 44px;
+      padding: 30px 22px;
+    }
+
+    dl div {
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+  }
+</style>
