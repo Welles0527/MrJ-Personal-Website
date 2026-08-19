@@ -272,7 +272,7 @@ const subcollections = [
           <h2>探索圣经的整体信息与上帝的救赎计划</h2>
           <p>从创世到启示录，一段关于上帝与人同行的故事。</p>
         </div>
-        <button type="button" data-jump-category="pentateuch">开始探索圣经 →</button>
+        <a class="guide-banner-link" href={theologyHref}>开始探索圣经 →</a>
       </div>
       <blockquote>
         <span aria-hidden="true">“</span>
@@ -1156,13 +1156,18 @@ const subcollections = [
     font-size: 14px;
   }
 
-  .guide-banner-cta button {
+  .guide-banner-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     border: 1px solid rgba(209, 153, 42, 0.65);
     border-radius: 999px;
     padding: 12px 22px;
     background: linear-gradient(180deg, rgba(91, 58, 9, 0.95), rgba(55, 34, 6, 0.95));
     color: #e8bf63;
     cursor: pointer;
+    font: inherit;
+    text-decoration: none;
     white-space: nowrap;
   }
 
@@ -1738,7 +1743,7 @@ const subcollections = [
       line-height: 1.5;
     }
 
-    .guide-banner-cta button {
+    .guide-banner-link {
       grid-column: 1 / -1;
     }
 
