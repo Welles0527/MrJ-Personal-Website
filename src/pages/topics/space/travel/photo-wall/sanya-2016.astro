@@ -1,0 +1,224 @@
+---
+import albumData from '../../../../../data/sanya-2016-album.json';
+import { sitePath } from '../../../../../data/site';
+
+const photoWallHref = sitePath('/topics/space/travel/photo-wall');
+const coverPhoto = albumData.photos.find((photo) => photo.id === albumData.album.coverId) ?? albumData.photos[0];
+const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+const days = albumData.album.dayOrder.map((dayKey, index) => {
+  const [year, month, day] = dayKey.split('-').map(Number);
+  return {
+    key: dayKey,
+    index: index + 1,
+    label: `${month}月${day}日`,
+    fullLabel: `${year}年${month}月${day}日`,
+    weekday: weekdays[new Date(`${dayKey}T12:00:00Z`).getUTCDay()],
+    photos: albumData.photos.filter((photo) => photo.dayKey === dayKey),
+  };
+});
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#184e57" />
+    <meta name="robots" content="noindex" />
+    <meta name="description" content={`${albumData.album.name}相册，共${albumData.album.count}张照片。`} />
+    <title>{albumData.album.name} · J先生个人空间</title>
+    <style is:global>
+      :root {
+        color-scheme: dark;
+        font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif;
+        background: #123d44;
+        color: #f7eee2;
+      }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        min-width: 320px;
+        min-height: 100svh;
+        margin: 0;
+        overflow-x: hidden;
+        background:
+          radial-gradient(circle at 82% 2%, rgba(111, 167, 168, 0.42), transparent 31rem),
+          radial-gradient(circle at 8% 32%, rgba(139, 95, 67, 0.36), transparent 34rem),
+          linear-gradient(150deg, #173f43 0%, #102d31 54%, #38251e 100%);
+        background-attachment: fixed;
+      }
+      button, a { font: inherit; }
+      button { color: inherit; }
+      .shell { width: min(1480px, calc(100% - 56px)); margin: 0 auto; }
+      .topbar {
+        display: flex;
+        min-height: 76px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        border-bottom: 1px solid rgba(247, 238, 226, 0.16);
+      }
+      .back-link, .home-link { color: #f7eee2; font-size: 13px; font-weight: 800; text-decoration: none; }
+      .back-link { display: inline-flex; align-items: center; gap: 10px; }
+      .back-link span { color: #c8b3a0; font-size: 20px; }
+      .home-link { color: rgba(247, 238, 226, 0.7); text-decoration: underline; text-underline-offset: 5px; }
+      .hero {
+        display: grid;
+        min-height: min(720px, calc(100svh - 76px));
+        grid-template-columns: minmax(320px, 0.78fr) minmax(440px, 1.22fr);
+        gap: clamp(40px, 7vw, 110px);
+        align-items: center;
+        padding: clamp(58px, 7vw, 94px) 0;
+      }
+      .eyebrow { margin: 0 0 24px; color: #9fc9c8; font-size: 11px; font-weight: 900; letter-spacing: 0.24em; }
+      h1 {
+        margin: 0;
+        font-family: Georgia, "Noto Serif SC", serif;
+        font-size: clamp(60px, 8vw, 116px);
+        font-weight: 500;
+        letter-spacing: -0.07em;
+        line-height: 0.9;
+      }
+      h1 span { display: block; margin-bottom: 0.28em; color: #c8b3a0; font-size: 0.32em; font-family: inherit; letter-spacing: 0.1em; }
+      .intro { max-width: 520px; margin: 30px 0 0; color: rgba(247, 238, 226, 0.68); font-family: Georgia, "Noto Serif SC", serif; font-size: 17px; line-height: 1.9; }
+      .stats { display: flex; gap: 38px; margin-top: 38px; }
+      .stat { padding-top: 12px; border-top: 1px solid rgba(247, 238, 226, 0.24); }
+      .stat strong, .stat small { display: block; }
+      .stat strong { font-family: Georgia, serif; font-size: 30px; font-weight: 500; }
+      .stat small { margin-top: 5px; color: rgba(247, 238, 226, 0.48); font-size: 10px; letter-spacing: 0.15em; }
+      .hero-cover { position: relative; aspect-ratio: 1.12; overflow: hidden; border-radius: 22px; background: #2a6e6f; box-shadow: 0 34px 90px rgba(5, 16, 16, 0.35); }
+      .hero-cover img { width: 100%; height: 100%; object-fit: cover; }
+      .cover-note { position: absolute; right: 24px; bottom: 20px; left: 24px; display: flex; justify-content: space-between; color: #fff; font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-shadow: 0 2px 10px rgba(0,0,0,.5); }
+      .day-nav { position: sticky; z-index: 8; top: 8px; display: flex; gap: 8px; margin: 0 0 64px; padding: 12px; overflow-x: auto; border: 1px solid rgba(247, 238, 226, 0.14); border-radius: 16px; background: rgba(13, 36, 39, 0.88); backdrop-filter: blur(18px); scrollbar-width: none; }
+      .day-nav::-webkit-scrollbar { display: none; }
+      .day-link { flex: 0 0 auto; min-height: 38px; padding: 0 15px; border: 1px solid rgba(247, 238, 226, 0.16); border-radius: 999px; color: rgba(247, 238, 226, 0.72); font-size: 12px; font-weight: 800; line-height: 36px; text-decoration: none; }
+      .day-link:hover { border-color: #9fc9c8; color: #fff; }
+      .day-section { margin-bottom: clamp(72px, 9vw, 126px); scroll-margin-top: 100px; }
+      .day-heading { display: grid; grid-template-columns: 90px 1fr auto; gap: 24px; align-items: end; margin-bottom: 24px; padding-bottom: 18px; border-bottom: 1px solid rgba(247, 238, 226, 0.15); }
+      .day-number { color: #9fc9c8; font: 500 44px/1 Georgia, serif; }
+      .day-heading h2 { margin: 0; font: 500 clamp(28px, 4vw, 46px)/1.05 Georgia, "Noto Serif SC", serif; }
+      .day-heading p { margin: 7px 0 0; color: rgba(247, 238, 226, 0.5); font-size: 11px; letter-spacing: 0.11em; }
+      .day-count { color: rgba(247, 238, 226, 0.52); font-size: 12px; }
+      .gallery { columns: 4; column-gap: 15px; }
+      .photo-card { display: block; width: 100%; margin: 0 0 15px; padding: 0; break-inside: avoid; overflow: hidden; border: 0; border-radius: 11px; background: #21494d; cursor: zoom-in; }
+      .photo-card img { display: block; width: 100%; height: auto; transition: filter 360ms ease, transform 420ms ease; }
+      .photo-card:hover img { filter: brightness(1.06); transform: scale(1.014); }
+      .photo-card:focus-visible, .day-link:focus-visible, .back-link:focus-visible, .home-link:focus-visible, .lightbox-control:focus-visible { outline: 3px solid #9fc9c8; outline-offset: 4px; }
+      dialog { width: 100vw; max-width: none; height: 100dvh; max-height: none; margin: 0; padding: 0; border: 0; background: rgba(5, 14, 15, 0.97); color: #fff; }
+      dialog::backdrop { background: rgba(5, 14, 15, 0.98); }
+      dialog[open] { display: grid; grid-template-rows: 1fr auto; }
+      .lightbox-stage { position: relative; display: grid; min-height: 0; place-items: center; padding: 62px 86px 24px; }
+      .lightbox-stage img { width: auto; max-width: 100%; height: auto; max-height: calc(100dvh - 142px); object-fit: contain; border-radius: 8px; box-shadow: 0 28px 90px rgba(0,0,0,.48); }
+      .lightbox-control { position: absolute; display: grid; width: 48px; height: 48px; place-items: center; border: 1px solid rgba(255,255,255,.24); border-radius: 50%; background: rgba(0,0,0,.35); color: #fff; cursor: pointer; font-size: 23px; }
+      .lightbox-close { top: 18px; right: 20px; }
+      .lightbox-previous, .lightbox-next { top: 50%; transform: translateY(-50%); }
+      .lightbox-previous { left: 20px; }
+      .lightbox-next { right: 20px; }
+      .lightbox-caption { display: flex; justify-content: center; gap: 18px; padding: 10px 20px 24px; color: rgba(255,255,255,.65); font-size: 12px; }
+      footer { display: flex; justify-content: space-between; gap: 20px; padding: 34px 0 46px; border-top: 1px solid rgba(247, 238, 226, 0.14); color: rgba(247, 238, 226, 0.48); font-size: 12px; }
+      @media (max-width: 1050px) { .gallery { columns: 3; } }
+      @media (max-width: 760px) {
+        .shell { width: min(100% - 24px, 1480px); }
+        .topbar { min-height: 66px; }
+        .hero { min-height: 0; grid-template-columns: 1fr; gap: 34px; padding: 54px 0 42px; }
+        h1 { font-size: clamp(52px, 18vw, 76px); }
+        .hero-cover { aspect-ratio: 1; border-radius: 16px; }
+        .day-nav { margin-bottom: 48px; }
+        .day-heading { grid-template-columns: 54px 1fr; gap: 12px; }
+        .day-count { grid-column: 2; }
+        .gallery { columns: 2; column-gap: 10px; }
+        .photo-card { margin-bottom: 10px; border-radius: 8px; }
+        .lightbox-stage { padding: 58px 10px 88px; }
+        .lightbox-stage img { max-height: calc(100dvh - 180px); }
+        .lightbox-previous, .lightbox-next { top: auto; bottom: 18px; transform: none; }
+        .lightbox-previous { left: calc(50% - 58px); }
+        .lightbox-next { right: calc(50% - 58px); }
+        footer { flex-direction: column; }
+      }
+      @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .photo-card img { transition: none; } }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <nav class="topbar" aria-label="相册导航">
+        <a class="back-link" href={photoWallHref}><span aria-hidden="true">←</span> 返回照片墙</a>
+        <a class="home-link" href={sitePath('/')}>J先生个人空间</a>
+      </nav>
+
+      <main>
+        <header class="hero">
+          <div>
+            <p class="eyebrow">{albumData.album.eyebrow}</p>
+            <h1><span>2016</span>海南三亚</h1>
+            <p class="intro">{albumData.album.description}</p>
+            <div class="stats" aria-label="相册信息">
+              <div class="stat"><strong>{albumData.album.count}</strong><small>PHOTOS</small></div>
+              <div class="stat"><strong>{albumData.album.dayCount}</strong><small>DAYS</small></div>
+            </div>
+          </div>
+          <div class="hero-cover">
+            <img src={sitePath(coverPhoto.src)} alt="2016海南三亚相册封面" width={coverPhoto.width} height={coverPhoto.height} fetchpriority="high" />
+            <div class="cover-note"><span>{albumData.album.dateRange}</span><span>SANYA, CHINA</span></div>
+          </div>
+        </header>
+
+        <nav class="day-nav" aria-label="按日期浏览">
+          {days.map((day) => <a class="day-link" href={`#day-${day.key}`}>{day.label} · {day.photos.length}</a>)}
+        </nav>
+
+        {days.map((day) => (
+          <section class="day-section" id={`day-${day.key}`}>
+            <header class="day-heading">
+              <span class="day-number">0{day.index}</span>
+              <div><h2>{day.label}</h2><p>{day.fullLabel} · {day.weekday}</p></div>
+              <span class="day-count">{day.photos.length} 张</span>
+            </header>
+            <div class="gallery">
+              {day.photos.map((photo, index) => (
+                <button class="photo-card" type="button" data-src={sitePath(photo.src)} data-day={day.fullLabel} aria-label={`查看${day.fullLabel}第${index + 1}张照片`}>
+                  <img src={sitePath(photo.src)} alt={`${day.fullLabel}旅行照片 ${index + 1}`} width={photo.width} height={photo.height} loading={day.index === 1 && index < 4 ? 'eager' : 'lazy'} decoding="async" />
+                </button>
+              ))}
+            </div>
+          </section>
+        ))}
+      </main>
+
+      <footer><span>2016 海南三亚 · 按拍摄日期编排</span><span>{albumData.album.count} 张照片 · {albumData.album.dayCount} 天</span></footer>
+    </div>
+
+    <dialog id="lightbox" aria-label="照片预览">
+      <div class="lightbox-stage">
+        <img id="lightbox-image" src="" alt="" />
+        <button class="lightbox-control lightbox-close" type="button" aria-label="关闭预览">×</button>
+        <button class="lightbox-control lightbox-previous" type="button" aria-label="上一张">‹</button>
+        <button class="lightbox-control lightbox-next" type="button" aria-label="下一张">›</button>
+      </div>
+      <div class="lightbox-caption"><span id="lightbox-day"></span><span id="lightbox-position"></span></div>
+    </dialog>
+
+    <script>
+      const cards = Array.from(document.querySelectorAll<HTMLButtonElement>('.photo-card'));
+      const dialog = document.querySelector<HTMLDialogElement>('#lightbox');
+      const image = document.querySelector<HTMLImageElement>('#lightbox-image');
+      const day = document.querySelector<HTMLElement>('#lightbox-day');
+      const position = document.querySelector<HTMLElement>('#lightbox-position');
+      let currentIndex = 0;
+      const update = () => {
+        const card = cards[currentIndex];
+        if (!card || !image || !day || !position) return;
+        image.src = card.dataset.src || '';
+        image.alt = card.getAttribute('aria-label') || '三亚旅行照片';
+        day.textContent = card.dataset.day || '';
+        position.textContent = `${currentIndex + 1} / ${cards.length}`;
+      };
+      const move = (direction: number) => { currentIndex = (currentIndex + direction + cards.length) % cards.length; update(); };
+      cards.forEach((card, index) => card.addEventListener('click', () => { currentIndex = index; update(); dialog?.showModal(); }));
+      document.querySelector<HTMLButtonElement>('.lightbox-close')?.addEventListener('click', () => dialog?.close());
+      document.querySelector<HTMLButtonElement>('.lightbox-previous')?.addEventListener('click', () => move(-1));
+      document.querySelector<HTMLButtonElement>('.lightbox-next')?.addEventListener('click', () => move(1));
+      dialog?.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); });
+      dialog?.addEventListener('keydown', (event) => { if (event.key === 'ArrowLeft') move(-1); if (event.key === 'ArrowRight') move(1); });
+    </script>
+  </body>
+</html>

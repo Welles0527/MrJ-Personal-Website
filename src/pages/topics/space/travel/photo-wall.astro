@@ -2,9 +2,19 @@
 import albumData from '../../../../data/jamaica-photo-album.json';
 import coffeeAlbumData from '../../../../data/coffee-latte-art-album.json';
 import japanAlbumData from '../../../../data/japan-kanto-2015-album.json';
+import sanyaAlbumData from '../../../../data/sanya-2016-album.json';
 import { sitePath } from '../../../../data/site';
 
 const albums = [
+  {
+    data: sanyaAlbumData,
+    href: sitePath('/topics/space/travel/photo-wall/sanya-2016'),
+    coverPhoto: sanyaAlbumData.photos.find((photo) => photo.id === sanyaAlbumData.album.coverId) ?? sanyaAlbumData.photos[0],
+    coverAlt: '2016年海南三亚旅行相册封面',
+    displayName: '2016 海南三亚',
+    region: 'domestic',
+    tone: 'teal',
+  },
   {
     data: coffeeAlbumData,
     href: sitePath('/topics/space/travel/photo-wall/coffee-latte-art'),
