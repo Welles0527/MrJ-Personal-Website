@@ -4,6 +4,7 @@ import bibleGuideData from '../../../../../../data/bible-guide-chapters.json';
 
 const basePath = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
 const theologyHref = `${basePath}topics/applications/inspiration-station/theology/`;
+const bookImageBase = `${basePath}images/bible-guide/`;
 const pentateuchImageBase = `${basePath}images/bible-guide/pentateuch/`;
 const overviewImageBase = `${basePath}images/bible-guide/overview/`;
 
@@ -28,25 +29,26 @@ const categoryTitleById: Record<string, string> = {
   gospels: '福音书',
   epistles: '书信'
 };
-const pentateuchImages: Record<string, string> = {
-  genesis: `${pentateuchImageBase}genesis.webp`,
-  exodus: `${pentateuchImageBase}exodus.webp`,
-  leviticus: `${pentateuchImageBase}leviticus.webp`,
-  numbers: `${pentateuchImageBase}numbers.webp`,
-  deuteronomy: `${pentateuchImageBase}deuteronomy.webp`
+const collectionIdByWorkbookCategory: Record<string, string> = {
+  '摩西五经': 'pentateuch',
+  '历史书': 'history',
+  '诗歌智慧书': 'wisdom',
+  '大先知书': 'major-prophets',
+  '小先知书': 'minor-prophets',
+  '福音书': 'gospels',
+  '教会历史': 'gospels',
+  '保罗书信': 'pauline-epistles',
+  '普通书信': 'general-epistles',
+  '启示文学': 'revelation'
 };
-const overviewImageByWorkbookCategory: Record<string, string> = {
-  '历史书': `${overviewImageBase}history-books.webp`,
-  '诗歌智慧书': `${overviewImageBase}poetry-wisdom.webp`,
-  '大先知书': `${overviewImageBase}major-prophets.webp`,
-  '小先知书': `${overviewImageBase}minor-prophets.webp`,
-  '福音书': `${overviewImageBase}gospels-acts.webp`,
-  '教会历史': `${overviewImageBase}gospels-acts.webp`,
-  '保罗书信': `${overviewImageBase}pauline-epistles.webp`,
-  '普通书信': `${overviewImageBase}general-epistles.webp`,
-  '启示文学': `${overviewImageBase}revelation.webp`
+const featuredCategoryImageBase: Record<string, string> = {
+  pentateuch: `${bookImageBase}pentateuch/`,
+  history: `${bookImageBase}history/`,
+  wisdom: `${bookImageBase}wisdom/`,
+  prophets: `${bookImageBase}prophets/`,
+  gospels: `${bookImageBase}gospels/`,
+  epistles: `${bookImageBase}epistles/`
 };
-
 const categories = [
   {
     id: 'pentateuch',
@@ -123,20 +125,27 @@ const categories = [
 ];
 
 const overviewCards = [
-  { title: '历史书', description: '上帝在历史中成就应许与管治', category: 'history', image: `${overviewImageBase}history-books.webp` },
-  { title: '诗歌智慧书', description: '上帝赐下智慧与安慰，指引人心', category: 'wisdom', image: `${overviewImageBase}poetry-wisdom.webp` },
-  { title: '大先知书', description: '上帝呼召悔改，宣告审判与盼望', category: 'prophets', image: `${overviewImageBase}major-prophets.webp` },
-  { title: '小先知书', description: '上帝在列国中发声，宣告心意', category: 'prophets', image: `${overviewImageBase}minor-prophets.webp` },
-  { title: '福音书与使徒行传', description: '耶稣基督的生平、教会的诞生与扩展', category: 'gospels', image: `${overviewImageBase}gospels-acts.webp` },
-  { title: '保罗书信', description: '福音的真理与教会的生命实践', category: 'epistles', image: `${overviewImageBase}pauline-epistles.webp` },
-  { title: '普通书信', description: '劝勉与教导，建立信徒的信仰与品格', category: 'epistles', image: `${overviewImageBase}general-epistles.webp` },
-  { title: '启示录', description: '上帝的终极启示、盼望与新天新地', category: 'epistles', image: `${overviewImageBase}revelation.webp` }
+  { title: '历史书', description: '上帝在历史中成就应许与管治', target: 'history', image: `${overviewImageBase}history-books.webp` },
+  { title: '诗歌智慧书', description: '上帝赐下智慧与安慰，指引人心', target: 'wisdom', image: `${overviewImageBase}poetry-wisdom.webp` },
+  { title: '大先知书', description: '上帝呼召悔改，宣告审判与盼望', target: 'major-prophets', image: `${overviewImageBase}major-prophets.webp` },
+  { title: '小先知书', description: '上帝在列国中发声，宣告心意', target: 'minor-prophets', image: `${overviewImageBase}minor-prophets.webp` },
+  { title: '福音书与使徒行传', description: '耶稣基督的生平、教会的诞生与扩展', target: 'gospels', image: `${overviewImageBase}gospels-acts.webp` },
+  { title: '保罗书信', description: '福音的真理与教会的生命实践', target: 'pauline-epistles', image: `${overviewImageBase}pauline-epistles.webp` },
+  { title: '普通书信', description: '劝勉与教导，建立信徒的信仰与品格', target: 'general-epistles', image: `${overviewImageBase}general-epistles.webp` },
+  { title: '启示录', description: '上帝的终极启示、盼望与新天新地', target: 'revelation', image: `${overviewImageBase}revelation.webp` }
 ];
 
-categories[0].books = categories[0].books.map((book) => ({
-  ...book,
-  description: importedBooksBySlug.get(book.slug)?.summary ?? book.description
-}));
+categories.forEach((category) => {
+  category.books = category.books.map((book) => ({
+    ...book,
+    description: importedBooksBySlug.get(book.slug)?.summary ?? book.description,
+    image: `${featuredCategoryImageBase[category.id]}${book.slug}.webp`
+  }));
+});
+
+const featuredBookReferences = new Map(
+  categories.flatMap((category) => category.books.map((book) => [book.slug, book.reference]))
+);
 
 const guideBooks = bibleGuideData.books.map((book) => {
   const categoryId = categoryIdByWorkbookCategory[book.category] ?? 'epistles';
@@ -144,9 +153,24 @@ const guideBooks = bibleGuideData.books.map((book) => {
     ...book,
     categoryId,
     categoryTitle: categoryTitleById[categoryId],
-    image: pentateuchImages[book.slug] ?? overviewImageByWorkbookCategory[book.category] ?? `${overviewImageBase}revelation.webp`
+    collectionId: collectionIdByWorkbookCategory[book.category] ?? categoryId,
+    description: book.summary,
+    reference: featuredBookReferences.get(book.slug) ?? `全书共 ${book.chapterCount} 章`,
+    image: `${featuredCategoryImageBase[categoryId]}${book.slug}.webp`
   };
 });
+
+categories.forEach((category) => {
+  category.books = guideBooks.filter((book) => book.categoryId === category.id);
+});
+
+const subcollections = [
+  { id: 'major-prophets', parentCategoryId: 'prophets', title: '大先知书', books: guideBooks.filter((book) => book.collectionId === 'major-prophets') },
+  { id: 'minor-prophets', parentCategoryId: 'prophets', title: '小先知书', books: guideBooks.filter((book) => book.collectionId === 'minor-prophets') },
+  { id: 'pauline-epistles', parentCategoryId: 'epistles', title: '保罗书信', books: guideBooks.filter((book) => book.collectionId === 'pauline-epistles') },
+  { id: 'general-epistles', parentCategoryId: 'epistles', title: '普通书信', books: guideBooks.filter((book) => book.collectionId === 'general-epistles') },
+  { id: 'revelation', parentCategoryId: 'epistles', title: '启示录', books: guideBooks.filter((book) => book.collectionId === 'revelation') }
+];
 ---
 
 <BaseLayout title="圣经导读｜微读圣经" activeTheme="applications" bare>
@@ -199,6 +223,11 @@ const guideBooks = bibleGuideData.books.map((book) => {
 
     <main class="guide-content">
       <section class="guide-primary" aria-live="polite" aria-label="当前分类书卷">
+        <header class="guide-collection-status">
+          <span>当前书卷</span>
+          <strong data-collection-title>{categories[0].title}</strong>
+          <small data-collection-count>共 {categories[0].books.length} 卷</small>
+        </header>
         <div class="guide-book-list" data-primary-list>
           {categories[0].books.map((book, index) => (
             <article class="guide-book-card">
@@ -223,7 +252,7 @@ const guideBooks = bibleGuideData.books.map((book) => {
         </div>
         <div class="guide-overview-grid">
           {overviewCards.map((card) => (
-            <button type="button" data-explore={card.category}>
+            <button type="button" data-explore={card.target} aria-pressed="false">
               <span class="guide-overview-thumb" aria-hidden="true"><img src={card.image} alt="" decoding="async" /></span>
               <span>
                 <strong>{card.title}</strong>
@@ -284,11 +313,14 @@ const guideBooks = bibleGuideData.books.map((book) => {
   </div>
 </BaseLayout>
 
-<script is:inline define:vars={{ categories, guideBooks }}>
+<script is:inline define:vars={{ categories, subcollections, guideBooks }}>
   // @ts-nocheck -- Astro injects the define:vars values at build time.
   const page = document.querySelector('[data-guide-page]');
   const list = page?.querySelector('[data-primary-list]');
   const tabs = [...(page?.querySelectorAll('[data-category]') || [])];
+  const overviewButtons = [...(page?.querySelectorAll('[data-explore]') || [])];
+  const collectionTitle = page?.querySelector('[data-collection-title]');
+  const collectionCount = page?.querySelector('[data-collection-count]');
   const panel = page?.querySelector('[data-search-panel]');
   const searchInput = page?.querySelector('[data-guide-search]');
   const searchResults = page?.querySelector('[data-search-results]');
@@ -298,24 +330,21 @@ const guideBooks = bibleGuideData.books.map((book) => {
   const chapterList = page?.querySelector('[data-chapter-list]');
   const chapterScroll = page?.querySelector('[data-chapter-scroll]');
   const allBooks = guideBooks;
-  const pentateuchCards = [...(list?.children || [])].map((card) => card.cloneNode(true));
+  const cardTemplates = [...(list?.children || [])].map((card) => card.cloneNode(true));
 
-  const createPendingPanel = (category) => {
-    const article = document.createElement('article');
-    article.className = 'guide-pending-panel';
-    const mark = document.createElement('span');
-    mark.textContent = category.icon;
-    mark.setAttribute('aria-hidden', 'true');
-    const copy = document.createElement('div');
-    const kicker = document.createElement('small');
-    kicker.textContent = 'NEXT COLLECTION';
-    const title = document.createElement('h2');
-    title.textContent = `${category.title}将在下一阶段设计`;
-    const text = document.createElement('p');
-    text.textContent = '本阶段仅完成摩西五经专属配图；其余书卷已可通过右上角搜索打开逐章导读。';
-    copy.append(kicker, title, text);
-    article.append(mark, copy);
-    return article;
+  const createBookCard = (book, index) => {
+    const card = cardTemplates[index % cardTemplates.length]?.cloneNode(true);
+    if (!card) return null;
+    card.querySelector('.guide-book-number').textContent = String(index + 1);
+    const image = card.querySelector('img');
+    image.src = book.image;
+    image.alt = '';
+    image.loading = index < 2 ? 'eager' : 'lazy';
+    card.querySelector('.guide-book-copy h2').textContent = book.title;
+    card.querySelector('.guide-book-copy p').textContent = book.description;
+    card.querySelector('.guide-book-copy small').textContent = `参考经文：${book.reference}`;
+    card.querySelector('[data-open-book]').dataset.openBook = book.slug;
+    return card;
   };
 
   const openChapterGuide = (slug) => {
@@ -349,10 +378,20 @@ const guideBooks = bibleGuideData.books.map((book) => {
   };
 
   const selectCategory = (categoryId, shouldScroll = false) => {
-    const category = categories.find((item) => item.id === categoryId) || categories[0];
-    tabs.forEach((tab) => tab.classList.toggle('is-active', tab.dataset.category === category.id));
-    if (category.id === 'pentateuch') list?.replaceChildren(...pentateuchCards.map((card) => card.cloneNode(true)));
-    else list?.replaceChildren(createPendingPanel(category));
+    const collection = subcollections.find((item) => item.id === categoryId)
+      || categories.find((item) => item.id === categoryId)
+      || categories[0];
+    const parentCategoryId = collection.parentCategoryId || collection.id;
+    tabs.forEach((tab) => tab.classList.toggle('is-active', tab.dataset.category === parentCategoryId));
+    overviewButtons.forEach((button) => {
+      const isActive = button.dataset.explore === collection.id;
+      button.classList.toggle('is-active', isActive);
+      button.setAttribute('aria-pressed', String(isActive));
+    });
+    if (collectionTitle) collectionTitle.textContent = collection.title;
+    if (collectionCount) collectionCount.textContent = `共 ${collection.books.length} 卷`;
+    const cards = collection.books.map(createBookCard).filter(Boolean);
+    list?.replaceChildren(...cards);
     if (shouldScroll) document.querySelector('#guide-categories')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
@@ -805,6 +844,35 @@ const guideBooks = bibleGuideData.books.map((book) => {
     margin: 0 auto;
   }
 
+  .guide-collection-status {
+    display: flex;
+    min-height: 34px;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+    padding: 0 10px;
+    border-left: 2px solid rgba(218, 164, 55, 0.72);
+    background: linear-gradient(90deg, rgba(118, 76, 14, 0.14), transparent 56%);
+  }
+
+  .guide-collection-status span {
+    color: #8f7955;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+  }
+
+  .guide-collection-status strong {
+    color: #e6c16c;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .guide-collection-status small {
+    margin-left: auto;
+    color: #9c8356;
+    font-size: 12px;
+  }
+
   .guide-book-list {
     display: grid;
     gap: 5px;
@@ -916,51 +984,6 @@ const guideBooks = bibleGuideData.books.map((book) => {
     color: #f5ce70;
   }
 
-  :global(.guide-pending-panel) {
-    display: grid;
-    min-height: 540px;
-    grid-template-columns: 108px minmax(0, 470px);
-    place-content: center;
-    align-items: center;
-    gap: 28px;
-    border: 1px solid rgba(174, 119, 26, 0.42);
-    border-radius: 14px;
-    background:
-      radial-gradient(circle at 18% 50%, rgba(205, 146, 36, 0.1), transparent 16rem),
-      linear-gradient(145deg, rgba(24, 18, 10, 0.92), rgba(12, 10, 7, 0.97));
-  }
-
-  :global(.guide-pending-panel > span) {
-    display: grid;
-    width: 96px;
-    height: 96px;
-    place-items: center;
-    border: 1px solid rgba(210, 157, 52, 0.5);
-    border-radius: 50%;
-    color: #d7a642;
-    font-size: 42px;
-    box-shadow: inset 0 0 24px rgba(206, 149, 41, 0.08);
-  }
-
-  :global(.guide-pending-panel small) {
-    color: #a97a2b;
-    font-family: Georgia, serif;
-    letter-spacing: 0.18em;
-  }
-
-  :global(.guide-pending-panel h2) {
-    margin: 8px 0;
-    color: #eed394;
-    font-size: 30px;
-    font-weight: 600;
-  }
-
-  :global(.guide-pending-panel p) {
-    margin: 0;
-    color: #a99b80;
-    line-height: 1.75;
-  }
-
   .guide-overview-title {
     display: grid;
     height: 34px;
@@ -1015,6 +1038,16 @@ const guideBooks = bibleGuideData.books.map((book) => {
     border-color: rgba(224, 168, 57, 0.88);
     background: var(--bg-card-hover);
     transform: translateY(-1px);
+  }
+
+  .guide-overview-grid button.is-active {
+    border-color: rgba(235, 181, 69, 0.94);
+    background: linear-gradient(145deg, rgba(74, 48, 10, 0.94), rgba(26, 18, 8, 0.98));
+    box-shadow: inset 0 0 0 1px rgba(255, 222, 151, 0.08), 0 0 18px rgba(208, 147, 34, 0.16);
+  }
+
+  .guide-overview-grid button.is-active em::before {
+    content: "已选择 · ";
   }
 
   .guide-overview-grid .guide-overview-thumb {
@@ -1672,25 +1705,6 @@ const guideBooks = bibleGuideData.books.map((book) => {
       grid-row: 2;
       align-self: start;
       padding: 4px 12px 15px 19px;
-    }
-
-    :global(.guide-pending-panel) {
-      min-height: 330px;
-      grid-template-columns: 1fr;
-      justify-items: center;
-      gap: 18px;
-      padding: 30px 24px;
-      text-align: center;
-    }
-
-    :global(.guide-pending-panel > span) {
-      width: 74px;
-      height: 74px;
-      font-size: 32px;
-    }
-
-    :global(.guide-pending-panel h2) {
-      font-size: 23px;
     }
 
     .guide-overview-grid {
