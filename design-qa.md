@@ -61,6 +61,291 @@ The ranking tabs and chart rows were checked in the desktop and mobile captures.
 
 final result: passed
 
+# Travel map glacier theme QA
+
+## Visual comparison
+
+- Source: `D:\UserTemp\huawei\codex-clipboard-238423e4-a62d-4e9a-8aaa-7c6c6317537b.png`
+- Desktop implementation: `C:\Users\huawei\.codex\visualizations\2026\08\23\travel-map-theme-switch\desktop-glacier-final2.png`
+- Mobile implementation: `C:\Users\huawei\.codex\visualizations\2026\08\23\travel-map-theme-switch\mobile-glacier-final2.png`
+- Side-by-side comparison: `C:\Users\huawei\.codex\visualizations\2026\08\23\travel-map-theme-switch\reference-vs-glacier-final2.png`
+- Local preview: `http://127.0.0.1:4342/officialwebsite/topics/space/travel/travel-map/?v=glacier-final2#globe/2.70/28.00/77.09`
+- Reference pixels: 1448 × 1086; normalized implementation viewport: 1440 × 900.
+- Responsive verification viewport: 390 × 844.
+- Compared state: `3D 地球`、`冰川白`、默认亚洲相机。
+
+The full comparison was normalized to the desktop implementation viewport before inspection. It includes the globe material, large bright labels, orange photo-count markers, short place names, and upper-right theme switch. The separate mobile capture was used to inspect the compact control placement and responsive marker labels.
+
+## Required fidelity surfaces
+
+- **Globe material:** The glacier theme uses a dark blue-gray ocean, ice-white land gradient, pale-cyan borders and subtle grid, a bright rim, and a real starfield background. The existing dark vector theme remains unchanged and selectable.
+- **Map typography:** Major continent and country labels are approximately twice the previous size, bright white, and outlined for contrast against both themes.
+- **Photo markers:** Each visible photo-count circle has a concise place name directly above it. Shanghai, Sanya, Tokyo, and Jamaica remain tied to their existing album routes and counts.
+- **Theme control:** `暗夜` and `冰川白` are keyboard buttons in the upper-right, expose `aria-pressed`, and persist the selected theme through reloads.
+- **Responsive layout:** The desktop and mobile captures have zero document overflow, no clipped controls, and no overlapping title or theme switch.
+
+## Findings and comparison history
+
+1. Initial pass: full album titles above markers created a P2 clutter issue and duplicated generic city labels.
+2. Fix: replaced them with short place names and removed the duplicated generic city labels while retaining the major country and continent labels.
+3. Final pass: no actionable P0, P1, or P2 issue remains.
+4. P3 intentional difference: the implementation keeps the current Natural Earth vector geometry and archive panel instead of introducing a satellite texture or removing existing site navigation.
+5. P3 intentional difference: the previously removed route arc remains absent, so the earlier anomalous curved line is not reintroduced.
+
+## Primary interactions tested
+
+- Switched `暗夜` ↔ `冰川白`; colors, markers, starfield, and button states updated.
+- Reloaded after selecting `冰川白`; the theme persisted from local storage.
+- Switched `平面地图` ↔ `3D 地球` and retained the existing flat parchment mode.
+- Dragged, zoomed, and reset the globe without visible stutter or stale marker positions.
+- Verified visible place names above Shanghai, Sanya, and Tokyo markers at the default Asia camera; Jamaica appears after rotating to its hemisphere.
+- Desktop 1440 × 900 and mobile 390 × 844: zero page/console errors and zero horizontal or vertical document overflow.
+
+final result: passed
+
+# Travel map dark atlas reference QA
+
+## Visual comparison
+
+- Source: `D:\UserTemp\huawei\codex-clipboard-db9c133c-46f4-478d-9ca3-b79f3060a654.png`
+- Desktop capture: `C:\Users\huawei\.codex\visualizations\2026\08\08\019fe034-762a-77e0-ba58-7b5af304c309\travel-map-dark-reference\desktop-1440x900-v1.png`
+- Mobile capture: `C:\Users\huawei\.codex\visualizations\2026\08\08\019fe034-762a-77e0-ba58-7b5af304c309\travel-map-dark-reference\mobile-390x844-v1.png`
+- Same-viewport comparison: `C:\Users\huawei\.codex\visualizations\2026\08\08\019fe034-762a-77e0-ba58-7b5af304c309\travel-map-dark-reference\reference-vs-implementation-1440x900.png`
+- Local preview: `http://127.0.0.1:4342/officialwebsite/topics/space/travel/travel-map/`
+
+The 3D view now follows the reference's black canvas, near-black navy ocean, dark moss land, thin desaturated borders, muted place labels, oversized Asia-centered globe, and blue-violet circular statistics. Decorative stars, graticules, glowing route arcs, land sparkles, and the crystal highlight shell were removed. The existing four real albums, counts, cover hover cards, routes, archive list, and flat-map mode were preserved.
+
+## Findings
+
+- P0: none. Album destinations, counts, map data, and route structure are unchanged.
+- P1: none. Globe drag, reset, mode switching, and marker projection work without console or page errors.
+- P2: intentional difference from the reference: marker density reflects the four published personal albums instead of copying unrelated library data; the website's left archive panel remains present.
+- No document-level horizontal overflow, clipping, or unintended overlap was found at 1440 × 900 or 390 × 844.
+
+## Verification
+
+- `npm run build`: passed; 133 pages generated and the alternative-knowledge regression passed.
+- `npm run lint`: the edited `travel-map.astro` has no diagnostics; the repository still reports 12 pre-existing errors in unrelated photo-album and Bible-reader files plus 6 Daily Radio hints.
+- Desktop 1440 × 900: four markers rendered, flat/globe switching passed, reset after drag passed, and console/page errors were empty.
+- Mobile 390 × 844: four markers rendered, controls and archive remain usable, no horizontal overflow, and console/page errors were empty.
+- Same-viewport reference comparison completed; no actionable P0, P1, or P2 fidelity mismatch remains.
+
+final result: passed
+
+# Travel map green globe performance QA
+
+## Scope
+
+- Source color swatch: `D:\UserTemp\huawei\codex-clipboard-26d8f61b-6700-4d68-a1b1-b5f9f250d704.png` (`#8eab72` sampled average).
+- Desktop capture: `C:\Users\huawei\.codex\visualizations\2026\08\08\019fe034-762a-77e0-ba58-7b5af304c309\travel-map-green-performance\desktop-1440x900.png`.
+- Mobile capture: `C:\Users\huawei\.codex\visualizations\2026\08\08\019fe034-762a-77e0-ba58-7b5af304c309\travel-map-green-performance\mobile-390x844.png`.
+- Local preview: `http://127.0.0.1:4342/officialwebsite/topics/space/travel/travel-map/?v=greenperf2#globe/2.70/28.00/77.09`.
+
+## Performance diagnosis and fix
+
+- Baseline automated 120-step drag: average frame interval 50.9 ms, p95 116.7 ms, 15 intervals above 34 ms.
+- Root causes: every pointer event triggered a synchronous full render; starfield, country geometry, glow points, and grid samples were recomputed at drag frequency.
+- Fix: coalesced pointer rendering with `requestAnimationFrame`, cached the starfield, removed duplicate country-path tracing, precomputed glow samples, and temporarily reduced globe-only detail while dragging. Full detail returns immediately on pointer release.
+- Final automated 120-step drag: average 17.0 ms, p95 16.8 ms, only 1 interval above 34 ms (the pointer-release full-detail frame).
+
+## Visual and interaction verification
+
+- Continents use the requested pale green palette centered on `#8eab72`; country borders use deep green `#173f2b`.
+- 1440 × 900 and 390 × 844: no horizontal or vertical document overflow, clipping, or control overlap.
+- Globe drag, reset, markers, labels, and mode state remained functional.
+- Browser console and page errors: none at both viewports.
+- `npm run build`: passed, 133 pages generated and the existing alternative-knowledge regression passed.
+- `npm run lint`: the modified travel map has no diagnostics; the repository-wide command remains blocked by 12 pre-existing errors in unrelated album and Bible-reader files plus 6 Daily Radio hints.
+
+final result: passed
+
+# Travel map indigo ocean and shell-arc correction QA
+
+- Reported arc reference: `D:\UserTemp\huawei\codex-clipboard-eefd5e87-ee91-4d3b-8f63-2998409ca347.png`.
+- Requested color reference: `D:\UserTemp\huawei\codex-clipboard-e15989e2-5830-4c02-93fa-d1957275b14a.png` (`#2300a5`).
+- Root cause: the visible gray curve was a manually drawn partial crystal-shell reflection at 86% of the globe radius, not geography or a projection defect.
+- Fix: removed only that decorative reflection path and retained the globe rim, country boundaries, grid, labels, and marker interaction.
+- Ocean base is now `#2300a5`, with lighter `#4b32d2` illumination and darker `#0d0048` edge shading for spherical depth.
+- Desktop capture: `C:\Users\huawei\.codex\visualizations\2026\08\08\019fe034-762a-77e0-ba58-7b5af304c309\travel-map-indigo\fixed-indigo-1440x900.png`.
+- Mobile capture: `C:\Users\huawei\.codex\visualizations\2026\08\08\019fe034-762a-77e0-ba58-7b5af304c309\travel-map-indigo\fixed-indigo-390x844.png`.
+- 1440 × 900 and 390 × 844: no document overflow, browser console errors, page errors, or control overlap.
+- Globe drag and reset were exercised at both viewports.
+- `npm run build`: passed, 133 pages generated and the existing alternative-knowledge regression passed.
+
+final result: passed
+
+# Travel map parchment flat-mode QA
+
+## Visual comparison
+
+- Source visual truth: `D:\UserTemp\huawei\codex-clipboard-6bd33456-0edf-4b37-b6e4-f82aa853b181.png`
+- Generated parchment texture: `C:\tmp\codex-stock-tracking-release-20260812-014333\public\images\travel\travel-map-parchment.webp`
+- Desktop implementation: `C:\tmp\codex-stock-tracking-release-20260812-014333\tmp\travel-map-parchment-qa\desktop-v2.png`
+- Mobile implementation: `C:\tmp\codex-stock-tracking-release-20260812-014333\tmp\travel-map-parchment-qa\mobile-v2.png`
+- Hover-state implementation: `C:\tmp\codex-stock-tracking-release-20260812-014333\tmp\travel-map-parchment-qa\desktop-hover-v2.png`
+- Side-by-side comparison: `C:\tmp\codex-stock-tracking-release-20260812-014333\tmp\travel-map-parchment-qa\comparison-v2.png`
+- Local preview: `http://127.0.0.1:4342/officialwebsite/topics/space/travel/travel-map/?v=parchment2#flat/1.05/0.00/0.00`
+- Source pixels: 768 × 1280 portrait reference.
+- Desktop implementation/CSS viewport: 1440 × 900 at device scale factor 1.
+- Mobile implementation/CSS viewport: 390 × 844 at device scale factor 1.
+- Comparison normalization: the portrait reference was proportionally normalized to 900 px height beside the uncropped 1440 × 900 desktop implementation; the differing aspect ratio is intentional and documented rather than stretched.
+- State: flat map, default center and zoom, all four published album markers visible.
+
+## Full-view comparison evidence
+
+The implementation reproduces the reference's warm ivory parchment, irregular sepia fiber grain, brown land masses, fine dark country outlines, subdued map grid, restrained engraved-label palette, and archival atlas atmosphere. The actual Natural Earth geometry remains interactive and replaces the reference's decorative fantasy geography. The page chrome changes to walnut, vellum, and oxblood only while flat mode is active; globe mode retains the existing black-and-gold crystal styling.
+
+## Focused comparison evidence
+
+The map/label region and marker hover state were checked separately. Country boundaries remain crisp at 1440 × 900, the generated texture has no text or embedded map artifacts, the oxblood album markers remain distinct from the land layer, and the parchment hover card stays within the viewport. A separate mobile capture confirms the world map, archive list, four markers, statistics, and mode switch fit within 390 × 844.
+
+## Required fidelity surfaces
+
+- **Fonts and typography:** Existing Chinese serif hierarchy is preserved and recolored to dark walnut. Map labels use restrained sepia fills with a pale parchment keyline for legibility.
+- **Spacing and layout rhythm:** Existing controls, heading, country archive, markers, and statistics retain their positions. The desktop flat-mode title is reduced only enough to prevent the Jamaica marker from covering the title.
+- **Colors and visual tokens:** Warm ivory, sand, taupe, walnut, and oxblood match the reference's antique cartographic palette; no cool black/teal globe tokens leak into flat mode.
+- **Image quality and asset fidelity:** A dedicated 1920 × 1080 WebP parchment texture was generated from the reference's paper material only. It contains no map, text, compass, ship, creature, watermark, or repeated seam, and is cover-cropped without stretching.
+- **Copy and content:** Existing title, archive totals, country names, photo counts, navigation copy, and album routes are unchanged.
+
+## Findings and comparison history
+
+- P0: none.
+- P1: none.
+- P2 initial pass: the larger desktop title touched the Jamaica marker. Fixed by narrowing the flat-mode heading and reducing only its desktop display size; the final screenshot shows a clear gap while preserving the hierarchy.
+- P3 intentional difference: decorative compass, ship, anchor, and sea-creature illustrations from the reference are omitted so they do not obstruct real labels, markers, or pan/zoom interaction. The parchment texture and cartographic treatment carry the requested style without turning the functional map into a static poster.
+
+## Primary interactions tested
+
+- Dragging the flat map updates latitude and longitude in the URL hash.
+- Mouse-wheel zoom updates the flat-map zoom state.
+- Switching between flat map and 3D globe preserves each mode's camera state and visual theme.
+- The Jamaica hover card opens inside the desktop viewport.
+- Clicking the Sanya marker opens the existing Sanya album route.
+- Desktop and mobile browser console/page errors: none.
+
+## Flat interaction correction
+
+- Reported artifact references: `D:\UserTemp\huawei\codex-clipboard-069f7d52-f0a0-435c-8872-dd115a4810cb.png` and `D:\UserTemp\huawei\codex-clipboard-bba05383-b1fb-4fa4-9b2b-7eda7cf38076.png`.
+- Reproduction: the fixed 1440 × 900 drag path produced a large brown triangle from a date-line polygon; baseline capture is `C:\Users\huawei\.codex\visualizations\2026\08\08\019fe034-762a-77e0-ba58-7b5af304c309\travel-map-flat-fix\baseline-after-drag.png`.
+- Root cause: wrapped flat projection split a ring at ±180° and the canvas fill closed the separated pieces across the viewport.
+- Fix: flat geometry is unwrapped into continuous longitudes and only adjacent visible world copies are drawn; flat longitude is normalized after each drag.
+- Desktop result: `C:\Users\huawei\.codex\visualizations\2026\08\08\019fe034-762a-77e0-ba58-7b5af304c309\travel-map-flat-fix\fixed-after-drag-1440x900.png`.
+- Mobile result: `C:\Users\huawei\.codex\visualizations\2026\08\08\019fe034-762a-77e0-ba58-7b5af304c309\travel-map-flat-fix\fixed-after-drag-390x844.png`.
+- The flat markers now use pale green `rgba(174, 202, 149, 0.96)` with dark-green text and borders.
+- The title/archive panel uses a 74% white frosted layer, 22 px backdrop blur, and z-index 12. Its bounding position changed by exactly 0 px during desktop and mobile drag checks.
+- Six consecutive full-width drag passes kept longitude normalized between -180° and 180° and produced no console or page errors.
+- Desktop 1440 × 900 and mobile 390 × 844 remained free of document overflow.
+
+final result: passed
+
+# Travel map gold crystal globe QA
+
+## Visual comparison
+
+- Source: `D:\UserTemp\huawei\codex-clipboard-62f416be-5a35-4dec-a992-500770de60a8.png`
+- Desktop implementation: `C:\tmp\codex-stock-tracking-release-20260812-014333\tmp\travel-map-crystal-qa\desktop-v4.png`
+- Mobile implementation: `C:\tmp\codex-stock-tracking-release-20260812-014333\tmp\travel-map-crystal-qa\mobile-v4.png`
+- Focused side-by-side: `C:\tmp\codex-stock-tracking-release-20260812-014333\tmp\travel-map-crystal-qa\comparison-v4.png`
+- Local preview: `http://127.0.0.1:4342/officialwebsite/topics/space/travel/travel-map/?v=crystal4#globe/2.70/28.00/77.09`
+- Desktop viewport: 1440 × 900
+- Mobile viewport: 390 × 844
+
+The implementation keeps the existing Asia-centered Canvas 2D globe, GeoJSON projection, labels, markers, layout, and interaction model. The visual layer now uses a programmatic black star field, black-blue ocean glass, dark amber land fill, brighter gold coastlines, restrained gold country borders and spherical grid lines, land-clipped gold light points and network fragments, a thin icy-blue rim, and partial warm glass reflections. The target image is used only as visual reference and is not included as a page background or globe texture.
+
+## Findings
+
+- P0: none. Album data, coordinates, routes, projection, and marker meaning remain unchanged.
+- P1: initial pass made the continents too uniformly bright and metallic. The final pass darkened the base land layer, reduced glow, increased fine land-clipped points and network fragments, and restored clearer separation between the glass shell and internal map.
+- P2: none after the final desktop/mobile pass.
+- P3 intentional difference: the target faces the Americas, while the implementation retains the required Asia/China default camera. Canvas 2D approximates physical glass refraction with layered gradients and rim highlights rather than WebGL transmission shaders, avoiding a new dependency or rendering-engine rewrite.
+
+## Verification
+
+- `npm run build`: passed; 133 pages generated and the existing alternative-knowledge regression passed.
+- `npm run lint`: the project still reports 12 pre-existing diagnostics in unrelated pages; `travel-map.astro` has no diagnostic.
+- Desktop 1440 × 900: globe, labels, archive list, controls, markers, statistics, and return link remain visible without clipping or overlap.
+- Mobile 390 × 844: the full globe remains visible; title, archive list, markers, statistics, and mode switch fit without horizontal overflow.
+- Drag rotation updates longitude/latitude hash state.
+- Mouse-wheel zoom updates globe zoom.
+- Flat/globe mode switching updates the active state and hash.
+- Mobile two-pointer pinch changes globe zoom while keeping the center coordinates stable.
+- Japan marker click navigates to the existing Japan Kanto album route; all four marker hrefs remain unchanged.
+- Browser console and page errors: none.
+
+final result: passed
+
+# Travel map indigo palette QA
+
+## Visual target
+
+- Color reference: `D:\UserTemp\huawei\codex-clipboard-aec1a9e3-8abf-43eb-929a-a3bf4d69094f.png`
+- Sampled reference blue: `#0A0C66` (average RGB 10, 12, 102).
+- Globe and flat-map oceans use a restrained lighting gradient centered on the sampled indigo.
+- Longitude and latitude grids are removed from both map modes.
+- Continent and country labels use bright ivory/ice-blue fills with a dark indigo outline for contrast over both ocean and land.
+
+## Verification
+
+- Desktop viewport: 1440 × 900.
+- Mobile viewport: 390 × 844.
+- Globe and flat map checked for grid removal and label legibility.
+- Orange visited-location markers remain unchanged.
+
+# Travel map botanical green palette QA
+
+## Visual target
+
+- Color reference: `D:\UserTemp\huawei\codex-clipboard-c875d144-8dff-4515-b6ba-b2e5f5ceef52.png`
+- Dominant sampled greens: deep forest `#18392B` / `#1E483A`, mid leaf `#557153`, pale leaf `#A8B197`.
+- Ocean lighting is built from the deep forest-green range; continents use the low-saturation pale-leaf range.
+- The existing ivory labels, dark outlines and warm orange location markers preserve readable contrast within the botanical palette.
+
+## Verification
+
+- Desktop viewport: 1440 × 900.
+- Mobile viewport: 390 × 844.
+- Globe and flat-map palettes checked independently.
+- Dark-green refinement: ocean tones were deepened while the pale-green continent ramp remained unchanged to preserve clear land/sea separation.
+
+# 旅行影像地图太空地球与国家统计 — Design QA
+
+## Comparison target
+
+- User layout reference: `D:\UserTemp\huawei\codex-clipboard-174a943c-0253-4489-a773-1e1715532782.png`
+- User Earth mood reference: `D:\UserTemp\huawei\codex-clipboard-71826760-f706-4523-92f7-5b76ac63e23a.png`
+- Blue Earth refinement reference: `D:\UserTemp\huawei\codex-clipboard-346888bf-0b9f-465d-a205-0381a0209755.png`
+- Orbit palette reference: `D:\UserTemp\huawei\codex-clipboard-ce99a667-545f-4505-a73f-69ec8ea90ce0.png`
+- Natural Earth palette reference: `D:\UserTemp\huawei\codex-clipboard-85580a20-4b36-4a92-888a-fc05d2e6821f.png`
+- Electric blue Earth palette reference: `D:\UserTemp\huawei\codex-clipboard-851bc2e7-8a37-4ff3-8934-4747895ce0db.png`
+- Desktop implementation: `C:\tmp\codex-stock-tracking-release-20260812-014333\tmp\travel-map-qa\implementation-desktop.png`
+- Side-by-side comparison: `C:\tmp\codex-stock-tracking-release-20260812-014333\tmp\travel-map-qa\comparison-desktop.png`
+- Mobile implementation checked at 390 × 844 in both globe and flat-map states.
+
+## Findings and fixes
+
+- P1 fixed: the former low-contrast globe read as a flat dark map. The final globe now uses a bright azure ocean body, ice-blue land, directional highlight and deep-blue night-side falloff without any external atmospheric halo.
+- P1 fixed: the title previously wrapped a final Chinese character onto a third line. The title is now locked to two intentional lines with a stable left-column width.
+- P1 fixed: the left column now derives country rows from the published location data and displays China, Jamaica and Japan with city and photo totals.
+- P2 fixed: major continent and country names are projected through the same flat/globe coordinate functions, clipped to the visible hemisphere and depth-faded on the globe.
+- P2 checked: desktop 1440 × 900 and mobile 390 × 844 show no horizontal overflow, clipped list rows, broken title wrapping or overlap with the bottom mode control.
+- P3 intentional: the globe remains a live geographic projection rather than copying the watermarked raster Earth reference. The reference is used only for spherical lighting and blue color direction.
+
+## Verification
+
+- `npm run build`: passed; 133 routes generated and the existing alternative-knowledge regression test passed.
+- `npm run lint`: the repository still reports 12 pre-existing diagnostics in unrelated album/reader files; no diagnostic was reported for `travel-map.astro`.
+- Local route returned HTTP 200 and included both `COUNTRY ARCHIVE` and `travel-map-space-v2.png`.
+- Globe screenshot checked at 1440 × 900; globe and flat states checked at 390 × 844.
+- Blue-globe refinement rechecked at 1440 × 900 and 390 × 844: the rim is crisp, the external halo is removed, and the internal highlight/shadow remain clearly spherical.
+- Orbit-palette refinement rechecked at 1440 × 900 and 390 × 844: ocean is deep cobalt/navy, land is ice white-blue, markers are cobalt, and the surrounding space remains near-black.
+- Natural-palette refinement rechecked at 1440 × 900 and 390 × 844: ocean is muted indigo, land blends gray-white, olive and earth brown, and marker colors follow the indigo family.
+- Electric-blue refinement rechecked at 1440 × 900 and 390 × 844: ocean is saturated cobalt/royal blue, land is cool white-blue, and marker colors follow the brighter cobalt family.
+- Deep-blue/orange refinement rechecked at 1440 × 900 and 390 × 844: ocean is deep cobalt/navy, land remains cool white-blue, and all visited-location count markers use warm orange with brighter orange hover feedback.
+- Flat-mode control selected correctly, all four markers remained visible, the country summary remained visible, and the document had no horizontal overflow.
+- Country totals checked: 中国 2 城市 / 436 照片；牙买加 1 城市 / 2,154 照片；日本 1 城市 / 378 照片。
+
+final result: passed
+
 # 旅行影像地图 — Design QA
 
 ## Comparison target
