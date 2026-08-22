@@ -35,7 +35,7 @@
       })
     : null;
   const aiSelectionProvider = window.AIStockSelectionProvider || null;
-  const VIEW_MODES = ["stock", "daily", "calendar", "market", "macro", "technical", "score-matrix", "ai-selection"];
+  const VIEW_MODES = ["stock", "daily", "calendar", "market", "macro", "technical", "score-matrix", "operation-advice", "ai-selection"];
   const stockGroups = [
     { id: "all", title: "全部动态", icon: "all", categories: [MESSAGE_CATEGORY.INDUSTRY, MESSAGE_CATEGORY.COMPANY], size: "primary" },
     { id: "industry", title: "行业大事件", icon: "globe", categories: [MESSAGE_CATEGORY.INDUSTRY], size: "secondary" },
@@ -114,6 +114,7 @@
   let technicalPage;
   let marketTechnicalPage;
   let scoreMatrixPage;
+  let operationAdvicePage;
   let aiSelectionPage;
   let completeEmailSignUp;
   let accountSyncPromise = null;
@@ -131,6 +132,9 @@
     }
     if (technicalProvider && window.StockScoreMatrixPage) {
       scoreMatrixPage = window.StockScoreMatrixPage.create(technicalProvider, render);
+    }
+    if (technicalProvider && window.StockOperationAdvicePage) {
+      operationAdvicePage = window.StockOperationAdvicePage.create(technicalProvider, accountStorage, render);
     }
     if (window.AIStockSelectionPage) {
       aiSelectionPage = window.AIStockSelectionPage.create(aiSelectionProvider, render);
@@ -927,10 +931,11 @@
 
   function render() {
     const stock = selectedStock();
-    const analysisView = analysisWorkspaceView();
-    const fullWidthView = analysisView || state.viewMode === "market";
+    const fullWidthView = ["technical", "score-matrix", "market"].includes(state.viewMode);
     document.title = state.viewMode === "score-matrix"
       ? "多周期评分矩阵 - A股个股跟踪"
+      : state.viewMode === "operation-advice"
+      ? `${stock.name}操作建议 - A股个股跟踪`
       : state.viewMode === "technical"
       ? `${stock.name}技术分析 - A股个股跟踪`
       : state.viewMode === "daily"
@@ -946,7 +951,7 @@
       <div class="tracking-layout ${state.viewMode === "ai-selection" ? "ai-selection-layout" : ""}">
         ${renderWorkspaceNav(stock)}
         ${state.viewMode === "market" ? "" : renderSidebar(stock)}
-        <main class="tracking-main ${fullWidthView ? "technical-main" : ""} ${state.viewMode === "score-matrix" ? "score-matrix-main" : ""}">
+        <main class="tracking-main ${fullWidthView ? "technical-main" : ""} ${state.viewMode === "score-matrix" ? "score-matrix-main" : ""} ${state.viewMode === "operation-advice" ? "operation-advice-main" : ""}">
           ${state.viewMode === "stock" ? renderStockView(stock) : ""}
           ${state.viewMode === "daily" ? renderDailyDigestView() : ""}
           ${state.viewMode === "calendar" ? renderCalendarView() : ""}
@@ -955,6 +960,7 @@
           ${state.viewMode === "ai-selection" ? renderAISelectionView() : ""}
           ${state.viewMode === "technical" ? renderTechnicalView(stock) : ""}
           ${state.viewMode === "score-matrix" ? renderScoreMatrixView() : ""}
+          ${state.viewMode === "operation-advice" ? renderOperationAdviceView(stock) : ""}
         </main>
       </div>
       ${renderAuthModal()}`;
@@ -962,6 +968,7 @@
     if (state.viewMode === "technical") technicalPage?.mount(root, stock);
     if (state.viewMode === "market") marketTechnicalPage?.mount(root, MARKET_INDEX);
     if (state.viewMode === "score-matrix") scoreMatrixPage?.mount(root, data.stocks);
+    if (state.viewMode === "operation-advice") operationAdvicePage?.mount(root, stock);
     if (state.viewMode === "ai-selection") {
       aiSelectionPage?.mount(root);
     }
@@ -969,7 +976,7 @@
   }
 
   function analysisWorkspaceView() {
-    return ["technical", "score-matrix"].includes(state.viewMode);
+    return ["technical", "score-matrix", "operation-advice"].includes(state.viewMode);
   }
 
   function keepSelectedWorkspaceTabVisible() {
@@ -993,6 +1000,7 @@
       ["macro", "news", "宏观事件"],
       ["technical", "chart", "技术分析"],
       ["score-matrix", "matrix", "评分矩阵"],
+      ["operation-advice", "flag", "操作建议"],
       ["ai-selection", "ai", "AI选股"]
     ];
     return `
@@ -1043,6 +1051,13 @@
       return `<section class="matrix-state matrix-state-error" role="alert"><strong>评分矩阵模块未能加载</strong><p>请刷新页面后重试。</p></section>`;
     }
     return scoreMatrixPage.render(data.stocks);
+  }
+
+  function renderOperationAdviceView(stock) {
+    if (!operationAdvicePage) {
+      return `<section class="oa-state-card is-error" role="alert"><strong>操作建议模块未能加载</strong><p>请刷新页面后重试。</p></section>`;
+    }
+    return operationAdvicePage.render(stock);
   }
 
   function renderAISelectionView() {
@@ -1322,6 +1337,7 @@
       url.searchParams.delete("view");
       url.searchParams.set("stock", state.selectedStockId);
     }
+    if (state.viewMode === "operation-advice") url.searchParams.delete("period");
     window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
   }
 
@@ -2023,6 +2039,10 @@
       state.filters.stock = target.dataset.stockId || "all";
       state.dailyStockQuery = "";
     } else if (action === "refresh-all") {
+      if (state.viewMode === "operation-advice" && operationAdvicePage) {
+        void operationAdvicePage.refresh();
+        return;
+      }
       const dailyCodes = watchlistAggregateView() ? data.stocks.map(stock => stock.code) : undefined;
       refreshAllInformation({ force: true, feedCodes: dailyCodes });
       return;
@@ -2032,6 +2052,10 @@
       if (!handled) return;
     } else if (state.viewMode === "score-matrix" && scoreMatrixPage) {
       const handled = scoreMatrixPage.handleAction(target);
+      if (handled === "async") return;
+      if (!handled) return;
+    } else if (state.viewMode === "operation-advice" && operationAdvicePage) {
+      const handled = operationAdvicePage.handleAction(target);
       if (handled === "async") return;
       if (!handled) return;
     } else if (state.viewMode === "market" && marketTechnicalPage) {
