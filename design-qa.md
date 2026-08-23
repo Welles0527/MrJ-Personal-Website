@@ -274,6 +274,119 @@ The implementation keeps the existing Asia-centered Canvas 2D globe, GeoJSON pro
 
 final result: passed
 
+# Travel map scale and typography refinement QA
+
+## Visual comparison
+
+- Source visual truth: `D:\UserTemp\huawei\codex-clipboard-4b6271a7-728e-49a9-b1b2-8da775eed849.png`
+- Desktop implementation: `C:\Users\huawei\.codex\visualizations\2026\08\23\travel-map-scale-typography\desktop-dark.png`
+- Glacier implementation: `C:\Users\huawei\.codex\visualizations\2026\08\23\travel-map-scale-typography\desktop-glacier.png`
+- Mobile implementation: `C:\Users\huawei\.codex\visualizations\2026\08\23\travel-map-scale-typography\mobile-dark.png`
+- Full-view comparison: `C:\Users\huawei\.codex\visualizations\2026\08\23\travel-map-scale-typography\reference-vs-implementation.png`
+- Focused globe/type comparison: `C:\Users\huawei\.codex\visualizations\2026\08\23\travel-map-scale-typography\focused-globe-type-comparison.png`
+- Local preview: `http://127.0.0.1:4342/officialwebsite/topics/space/travel/travel-map/?v=scale-type1#globe/2.70/28.00/77.09`
+- Source pixels: 3403 × 1698. The source was contained on a black 1440 × 900 canvas for the full comparison.
+- Implementation pixels/CSS viewport: 1440 × 900 at device scale factor 1; mobile 390 × 844 at device scale factor 1.
+- State: dark theme, 3D globe, default Asia camera at `#globe/2.70/28.00/77.09`.
+
+## Findings
+
+- No actionable P0, P1, or P2 issue remains.
+- P3 intentional difference: the reference has heavy outlined map labels, while the implementation deliberately uses smaller 400/500-weight square sans-serif labels without a stroke, following the user's requested refinement.
+- P3 intentional difference: the implementation retains the theme switch and existing album archive controls.
+
+## Required fidelity surfaces
+
+- **Fonts and typography:** Globe country labels use a 400 weight and continent labels use 500, with Noto Sans SC / Microsoft YaHei UI fallbacks. Desktop sizes are 12px and 15px respectively; no globe-label `strokeText` or shadow is applied. Marker place names use the same square sans-serif family at 500 weight with no text shadow.
+- **Spacing and layout rhythm:** At 1440 × 900 the globe radius is approximately 302px, centered at 50% of the canvas width and 53% of its height. It retains clear top, right, bottom, and left breathing room.
+- **Colors and visual tokens:** The dark and glacier palettes are unchanged; only type weight, type size, and the globe's default scale/position changed.
+- **Image quality and asset fidelity:** Existing vector land geometry and the real glacier starfield asset remain sharp at desktop and mobile sizes.
+- **Copy and content:** All country, continent, city, archive, count, and control copy is unchanged.
+
+## Comparison history
+
+1. Initial implementation used a desktop radius up to 42% of viewport width / 52% of viewport height and 18–24px bold outlined map labels, producing the oversized, heavy appearance identified by the user.
+2. First refinement reduced the height-based radius but still allowed 29% of viewport width, which remained too large relative to the wide source composition.
+3. Final refinement limits the desktop radius to 21% of viewport width / 40% of viewport height, preserves four-sided space, and replaces the outlined labels with smaller 400/500-weight square sans-serif text. The post-fix full and focused comparisons show no remaining P0/P1/P2 mismatch.
+
+## Primary interactions and responsive checks
+
+- Dark and glacier themes render at the new default globe size.
+- Theme switch state remains functional in all captured views.
+- Visible marker names remain 上海、三亚、东京 at the default Asia camera.
+- Desktop 1440 × 900 and mobile 390 × 844 have zero horizontal and vertical document overflow.
+- Browser page errors: none in all three captured states.
+- Production build and alternative-knowledge regression test passed; 133 pages generated.
+
+final result: passed
+
+# Travel map flat overlay and marker refinement QA
+
+## Visual comparison
+
+- Source visual truth: `D:\UserTemp\huawei\codex-clipboard-4e06ea6c-1115-4448-910e-e95c41d8ea6e.png`
+- Reference-state implementation: `C:\Users\huawei\.codex\visualizations\2026\08\23\travel-map-flat-overlay\reference-state-final.png`
+- Desktop implementation: `C:\Users\huawei\.codex\visualizations\2026\08\23\travel-map-flat-overlay\desktop.png`
+- Mobile implementation: `C:\Users\huawei\.codex\visualizations\2026\08\23\travel-map-flat-overlay\mobile.png`
+- Full-view comparison: `C:\Users\huawei\.codex\visualizations\2026\08\23\travel-map-flat-overlay\reference-vs-flat-overlay.png`
+- Focused panel/marker comparison: `C:\Users\huawei\.codex\visualizations\2026\08\23\travel-map-flat-overlay\focused-panel-marker-comparison.png`
+- Local preview: `http://127.0.0.1:4342/officialwebsite/topics/space/travel/travel-map/?v=flat-overlay-final#flat/1.05/0.00/0.00`
+- Source pixels: 2084 × 1057. Implementation comparison pixels: 2084 × 1058.
+- Reference-state CSS viewport: 1042 × 529 at device scale factor 2. Standard desktop: 1440 × 900 at scale factor 1. Mobile: 390 × 844 at scale factor 1.
+- State: flat parchment map, default camera, Shanghai marker hover for the reference-state comparison.
+
+## Findings
+
+- No actionable P0, P1, or P2 issue remains.
+- P3 intentional difference: the overlay is now visibly smaller than the supplied current-state screenshot, following the user's explicit request rather than cloning its previous dimensions.
+- P3 intentional difference: the green markers keep a soft elevation shadow for separation from the parchment, but no dark-green border or outer ring remains.
+
+## Required fidelity surfaces
+
+- **Fonts and typography:** The overlay hierarchy and copy are preserved while desktop title, lede, archive labels, and values are reduced proportionally. Flat marker count text is 12.48px desktop / 11.2px mobile; marker names are 9.28px desktop / 8.64px mobile.
+- **Spacing and layout rhythm:** The desktop overlay is 260px wide and approximately 351px high, with 20–22px padding and a 22px radius. Mobile remains within its viewport at 298px wide and approximately 252px high.
+- **Colors and visual tokens:** The overlay uses the page's palest parchment yellow as `rgba(255, 244, 217, 0.5)`, with a matching light border and restrained blur. Text and map colors are unchanged.
+- **Image quality and asset fidelity:** The existing parchment texture, Natural Earth geometry, and real album hover cover remain unchanged and sharp.
+- **Copy and content:** Title, instructions, country archive rows, city names, photo counts, and album routes are unchanged.
+
+## Comparison history
+
+1. Initial state used a 300px desktop overlay with 26–28px padding, a 2.95rem title, a 74%-opaque white background, 58px green markers, a dark-green border, and an outer ring.
+2. Final state reduces the overlay and its type hierarchy, applies the requested 50%-opaque pale-yellow surface, removes marker borders/rings, and reduces marker size to 48px desktop / 42px mobile. The post-fix full and focused comparisons show no remaining P0/P1/P2 issue.
+
+## Primary interactions and responsive checks
+
+- Dragged the flat map and confirmed the overlay's viewport position remained unchanged.
+- Computed overlay z-index is 20, above the canvas and marker layers.
+- Computed marker border width is 0px.
+- Shanghai hover card still opens while the marker remains clickable.
+- Reference-state, desktop, and mobile captures have zero horizontal/vertical document overflow and zero browser page errors.
+- Production build and alternative-knowledge regression test passed; 133 pages generated.
+
+final result: passed
+
+# Photo-wall map entry and centered default globe QA
+
+## Captures
+
+- Photo wall desktop: `C:\Users\huawei\.codex\visualizations\2026\08\23\travel-map-centered-entry\photo-wall-desktop.png`
+- Travel map desktop: `C:\Users\huawei\.codex\visualizations\2026\08\23\travel-map-centered-entry\travel-map-desktop.png`
+- Photo wall mobile: `C:\Users\huawei\.codex\visualizations\2026\08\23\travel-map-centered-entry\photo-wall-mobile.png`
+- Travel map mobile: `C:\Users\huawei\.codex\visualizations\2026\08\23\travel-map-centered-entry\travel-map-mobile.png`
+- Local photo wall: `http://127.0.0.1:4342/officialwebsite/topics/space/travel/photo-wall/?v=centered-globe1`
+- Local travel map: `http://127.0.0.1:4342/officialwebsite/topics/space/travel/travel-map/?v=centered-globe1`
+
+## Findings
+
+- The fresh travel-map URL opens in `3D 地球` mode; `平面地图` is not selected.
+- The globe is horizontally centered at 50% of the canvas while retaining its responsive vertical placement and reduced radius.
+- `进入世界地图` appears directly below `把时间装进相册` and opens the existing independent travel-map route without a flat-view hash override.
+- The entry remains visible and centered at 1440 × 900 and 390 × 844.
+- Both destination viewports have no horizontal document overflow and no browser page errors.
+- The production build and alternative-knowledge regression test passed; 133 pages generated.
+
+final result: passed
+
 # Travel map indigo palette QA
 
 ## Visual target

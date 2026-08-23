@@ -197,6 +197,35 @@ const albums = [
         letter-spacing: 0.04em;
       }
 
+      .map-entry {
+        display: inline-flex;
+        min-height: 38px;
+        align-items: center;
+        justify-content: center;
+        margin-top: 20px;
+        padding: 0 18px;
+        border: 1px solid rgba(244, 234, 223, 0.48);
+        border-radius: 999px;
+        background: rgba(10, 18, 17, 0.18);
+        color: #f4eadf;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-decoration: none;
+        transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+      }
+
+      .map-entry:hover {
+        border-color: rgba(244, 234, 223, 0.82);
+        background: rgba(244, 234, 223, 0.12);
+        transform: translateY(-1px);
+      }
+
+      .map-entry:focus-visible {
+        outline: 2px solid #f4eadf;
+        outline-offset: 4px;
+      }
+
       .filters {
         display: flex;
         width: max-content;
@@ -343,6 +372,7 @@ const albums = [
         main { align-content: start; padding: 74px 0 48px; }
         .intro { margin-bottom: 24px; }
         h1 { font-size: 31px; }
+        .map-entry { margin-top: 17px; }
         .filters { margin-bottom: 34px; }
         .album-track {
           width: calc(100vw - 36px);
@@ -368,7 +398,8 @@ const albums = [
         .album-card { animation: none; }
         .album-cover,
         .album-cover img,
-        .filter-button::after { transition: none; }
+        .filter-button::after,
+        .map-entry { transition: none; }
       }
     </style>
   </head>
@@ -391,6 +422,7 @@ const albums = [
         <header class="intro">
           <p class="eyebrow">TRAVEL &amp; LIFE ARCHIVE</p>
           <h1>把时间装进相册</h1>
+          <a class="map-entry" href={sitePath('/topics/space/travel/travel-map/')}>进入世界地图</a>
         </header>
 
         <div class="filters" role="tablist" aria-label="按地区筛选相册">

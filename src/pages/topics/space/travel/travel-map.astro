@@ -208,10 +208,10 @@ const mapPayload = JSON.stringify({
         left: 50%;
         color: #fff;
         font-size: 0.7rem;
-        font-weight: 800;
-        letter-spacing: 0.06em;
+        font-family: "Noto Sans SC", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+        font-weight: 500;
+        letter-spacing: 0.04em;
         line-height: 1;
-        text-shadow: 0 1px 3px #000, 0 0 8px rgba(0, 0, 0, 0.82);
         white-space: nowrap;
         transform: translateX(-50%);
         pointer-events: none;
@@ -624,14 +624,14 @@ const mapPayload = JSON.stringify({
       .map-page[data-view-mode="flat"] .country-summary li { border-color: rgba(91, 52, 29, 0.24); }
 
       .map-page[data-view-mode="flat"] .map-heading {
-        z-index: 12;
-        padding: 26px 28px 24px;
-        border: 1px solid rgba(255, 255, 255, 0.64);
-        border-radius: 26px;
-        background: rgba(255, 255, 255, 0.74);
-        box-shadow: 0 18px 52px rgba(79, 48, 26, 0.16), inset 0 1px rgba(255, 255, 255, 0.76);
-        -webkit-backdrop-filter: blur(22px) saturate(0.82);
-        backdrop-filter: blur(22px) saturate(0.82);
+        z-index: 20;
+        padding: 20px 22px 18px;
+        border: 1px solid rgba(255, 244, 217, 0.62);
+        border-radius: 22px;
+        background: rgba(255, 244, 217, 0.5);
+        box-shadow: 0 14px 38px rgba(79, 48, 26, 0.12), inset 0 1px rgba(255, 250, 235, 0.54);
+        -webkit-backdrop-filter: blur(18px) saturate(0.78);
+        backdrop-filter: blur(18px) saturate(0.78);
       }
 
       .map-page[data-view-mode="flat"] .mode-switch,
@@ -662,20 +662,25 @@ const mapPayload = JSON.stringify({
       .map-page[data-view-mode="flat"] .map-control:hover { background: rgba(118, 70, 38, 0.13); }
 
       .map-page[data-view-mode="flat"] .map-marker {
-        border-color: rgba(42, 82, 52, 0.78);
+        width: 48px;
+        height: 48px;
+        border: 0;
         color: #173f2b;
         background: rgba(174, 202, 149, 0.96);
-        box-shadow: 0 0 0 5px rgba(84, 123, 72, 0.14), 0 10px 24px rgba(52, 78, 42, 0.22);
+        box-shadow: 0 8px 18px rgba(52, 78, 42, 0.2);
       }
 
       .map-page[data-view-mode="flat"] .map-marker:hover,
       .map-page[data-view-mode="flat"] .map-marker:focus-visible {
         background: rgba(151, 187, 122, 0.98);
-        box-shadow: 0 0 0 6px rgba(69, 111, 63, 0.18), 0 12px 28px rgba(45, 70, 39, 0.28);
+        box-shadow: 0 10px 22px rgba(45, 70, 39, 0.26);
       }
+
+      .map-page[data-view-mode="flat"] .marker-count { font-size: 0.78rem; }
 
       .map-page[data-view-mode="flat"] .marker-name {
         color: #173f2b;
+        font-size: 0.58rem;
         text-shadow: 0 1px rgba(255, 244, 217, 0.8), 0 0 8px rgba(255, 244, 217, 0.72);
       }
 
@@ -690,8 +695,15 @@ const mapPayload = JSON.stringify({
       .map-page[data-view-mode="flat"] .corner { border-color: rgba(91, 52, 29, 0.58); }
 
       @media (min-width: 821px) {
-        .map-page[data-view-mode="flat"] .map-heading { width: 300px; }
-        .map-page[data-view-mode="flat"] .map-heading h1 { font-size: 2.95rem; }
+        .map-page[data-view-mode="flat"] .map-heading { width: 260px; }
+        .map-page[data-view-mode="flat"] .map-heading h1 { font-size: 2.45rem; }
+        .map-page[data-view-mode="flat"] .map-lede { margin-top: 13px; font-size: 0.72rem; }
+        .map-page[data-view-mode="flat"] .country-summary { margin-top: 18px; }
+        .map-page[data-view-mode="flat"] .country-summary__heading { padding: 9px 0 6px; }
+        .map-page[data-view-mode="flat"] .country-summary li { padding: 7px 0; }
+        .map-page[data-view-mode="flat"] .country-summary strong { font-size: 0.79rem; }
+        .map-page[data-view-mode="flat"] .country-summary small { font-size: 0.55rem; }
+        .map-page[data-view-mode="flat"] .country-summary b { font-size: 0.72rem; }
       }
 
       @media (max-width: 820px) {
@@ -736,8 +748,8 @@ const mapPayload = JSON.stringify({
         }
 
         .map-page[data-view-mode="flat"] .map-heading {
-          padding: 18px 18px 16px;
-          border-radius: 20px;
+          padding: 14px 15px 13px;
+          border-radius: 18px;
         }
 
         .map-eyebrow { margin-bottom: 7px; font-size: 0.5rem; }
@@ -762,6 +774,9 @@ const mapPayload = JSON.stringify({
         .marker-name { font-size: 0.62rem; }
         .marker-card { width: 190px; grid-template-columns: 54px 1fr; }
         .marker-card img { width: 54px; height: 54px; }
+        .map-page[data-view-mode="flat"] .map-marker { width: 42px; height: 42px; }
+        .map-page[data-view-mode="flat"] .marker-count { font-size: 0.7rem; }
+        .map-page[data-view-mode="flat"] .marker-name { font-size: 0.54rem; }
       }
 
       @media (prefers-reduced-motion: reduce) {
@@ -996,10 +1011,10 @@ const mapPayload = JSON.stringify({
           context.clip();
         }
         context.textBaseline = 'middle';
-        context.lineJoin = 'round';
         const isFlat = state.mode === 'flat';
-        context.shadowColor = isFlat ? 'rgba(255, 236, 194, 0.3)' : 'rgba(0, 0, 0, 0.72)';
-        context.shadowBlur = isFlat ? 1 : 2;
+        context.lineJoin = 'round';
+        context.shadowColor = isFlat ? 'rgba(255, 236, 194, 0.3)' : 'transparent';
+        context.shadowBlur = isFlat ? 1 : 0;
         for (const label of payload.labels || []) {
           const point = project(label.longitude, label.latitude);
           if (!point.visible || (clipFrame && point.depth < 0.16)) continue;
@@ -1007,10 +1022,10 @@ const mapPayload = JSON.stringify({
           const isCity = label.type === 'city';
           const depthOpacity = clipFrame ? clamp((point.depth - 0.08) / 0.72, 0.85, 1) : 1;
           context.font = isCity && !isFlat
-            ? `700 ${state.width <= 820 ? 12 : 16}px "Noto Sans SC", "Microsoft YaHei", sans-serif`
+            ? `500 ${state.width <= 820 ? 10 : 12}px "Noto Sans SC", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif`
             : isContinent
-              ? `700 ${isFlat ? (state.width <= 820 ? 9 : 12) : (state.width <= 820 ? 18 : 24)}px "Noto Sans SC", "Microsoft YaHei", sans-serif`
-              : `${isFlat ? 600 : 700} ${isFlat ? (state.width <= 820 ? 7 : 9) : (state.width <= 820 ? 14 : 18)}px "Noto Sans SC", "Microsoft YaHei", sans-serif`;
+              ? `${isFlat ? 600 : 500} ${isFlat ? (state.width <= 820 ? 9 : 12) : (state.width <= 820 ? 13 : 15)}px "Noto Sans SC", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif`
+              : `${isFlat ? 600 : 400} ${isFlat ? (state.width <= 820 ? 7 : 9) : (state.width <= 820 ? 10 : 12)}px "Noto Sans SC", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif`;
           context.lineWidth = isFlat ? (isContinent ? 3.6 : 3) : (isContinent ? 4.5 : 3.5);
           context.strokeStyle = isFlat
             ? `rgba(225, 199, 151, ${0.72 * depthOpacity})`
@@ -1027,11 +1042,11 @@ const mapPayload = JSON.stringify({
             context.lineWidth = 1.25;
             context.stroke();
             context.textAlign = 'left';
-            context.strokeText(label.name, point.x + 7, point.y + 1);
+            if (isFlat) context.strokeText(label.name, point.x + 7, point.y + 1);
             context.fillText(label.name, point.x + 7, point.y + 1);
           } else {
             context.textAlign = 'center';
-            context.strokeText(label.name, point.x, point.y);
+            if (isFlat) context.strokeText(label.name, point.x, point.y);
             context.fillText(label.name, point.x, point.y);
           }
         }
@@ -1205,11 +1220,11 @@ const mapPayload = JSON.stringify({
       const globeFrame = () => {
         const mobile = state.width <= 820;
         const baseRadius = mobile
-          ? Math.min(state.width * 0.49, state.height * 0.36)
-          : Math.min(state.width * 0.42, state.height * 0.52);
+          ? Math.min(state.width * 0.43, state.height * 0.29)
+          : Math.min(state.width * 0.21, state.height * 0.4);
         return {
           radius: baseRadius * state.globe.zoom,
-          x: mobile ? state.width * 0.55 : state.width * 0.69,
+          x: state.width * 0.5,
           y: mobile ? state.height * 0.62 : state.height * 0.53,
         };
       };
