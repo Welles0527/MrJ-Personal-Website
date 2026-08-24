@@ -1400,6 +1400,24 @@
         white-space: nowrap;
       }
 
+      .choice__badge {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        display: grid;
+        width: 28px;
+        height: 28px;
+        place-items: center;
+        border: 1px solid currentColor;
+        border-radius: 50%;
+        color: var(--muted);
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        line-height: 1;
+        pointer-events: none;
+      }
+
       html[data-theme="black-gold"] h1 {
         color: #f0ca89;
         text-shadow:
@@ -1662,13 +1680,14 @@
           <span class="choice__label" data-reference-label="个人计划">个人计划</span>
         </a>
 
-        <a class="choice" href="/officialwebsite/topics/space/travel/photo-wall/" target="_blank" rel="noopener noreferrer">
+        <a class="choice" href="/officialwebsite/topics/space/travel/photo-wall/" target="_blank" rel="noopener noreferrer" aria-label="旅行相册，包含 3D 世界地图">
+          <span class="choice__badge" aria-hidden="true">3D</span>
           <svg viewBox="0 0 32 32" aria-hidden="true">
             <rect x="4.5" y="5.5" width="23" height="21" rx="3.5" />
             <circle cx="12" cy="12" r="2" />
             <path d="m7.5 23 6.5-7 4.5 4 3.5-4 5.5 6.5" />
           </svg>
-          <span class="choice__label" data-reference-label="生活相册">生活相册</span>
+          <span class="choice__label" data-reference-label="旅行相册">旅行相册</span>
         </a>
 
         <a class="choice" href="/officialwebsite/topics/applications/inspiration-station/theology?book=lev&amp;chapter=7&amp;verse=1" target="_blank" rel="noopener noreferrer">
