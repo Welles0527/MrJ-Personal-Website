@@ -563,9 +563,12 @@
     };
   }
 
-  function dailyDigestMessages(applySentimentFilter = true) {
+  function dailyDigestMessages(applySentimentFilter = false) {
     const sections = dailyDigestSections(applySentimentFilter);
-    return [...sections.today, ...sections.catchUp].sort(sortByNewest);
+    return [
+      ...sections.today.map(message => ({ ...message, dailyDigestKind: "today" })),
+      ...sections.catchUp.map(message => ({ ...message, dailyDigestKind: "catch-up" }))
+    ].sort(sortByNewest);
   }
 
   function calendarReminderMessages() {
@@ -1068,49 +1071,313 @@
   }
 
   function renderDailyDigestView() {
-    const sections = dailyDigestSections();
+    const researchContext = dailyResearchContext(selectedStock());
+    const majorMessages = dailyDigestMessages(false);
     return `
       <section class="global-view daily-digest-view">
-        ${renderMessageHeader("daily")}
-        ${renderDailyDigestFilters()}
-        ${renderDailyDigestSection("今日新增", "今天新出现的自选股消息与提示", sections.today, "today", { emptyMessage: "今日无新增信息" })}
-        ${sections.catchUp.length ? renderDailyDigestSection("未读补看", "此前新增但尚未标记已读的信息", sections.catchUp, "catch-up", { showFullDate: true }) : ""}
-        ${renderDailyResearchSection(selectedStock())}
+        ${renderDailyNewsSection(researchContext)}
+        ${renderDailyMajorNewsSection(majorMessages)}
+        ${renderDailyTrafficLightSection(researchContext)}
       </section>`;
   }
 
-  function renderDailyResearchSection(stock) {
+  function dailyResearchContext(stock) {
     const research = window.STOCK_DAILY_RESEARCH;
     const reports = Array.isArray(research?.stocks) ? research.stocks : [];
     const report = reports.find(item => item.code === stock.code);
-    const changed = reports.filter(item => item.hasMaterialChange).sort((a, b) => (Number(b.importanceScore) || 0) - (Number(a.importanceScore) || 0));
-    const priorityCodes = Array.isArray(research?.topChangeCodes) ? research.topChangeCodes : changed.slice(0, 5).map(item => item.code);
+    const trackedCodes = new Set(data.stocks.map(item => item.code));
+    const changed = reports
+      .filter(item => trackedCodes.has(item.code) && item.hasMaterialChange)
+      .sort((a, b) => (Number(b.importanceScore) || 0) - (Number(a.importanceScore) || 0));
+    const priorityCodes = [...new Set([
+      ...(Array.isArray(research?.topChangeCodes) ? research.topChangeCodes : []),
+      ...changed.map(item => item.code)
+    ])].filter(code => trackedCodes.has(code)).slice(0, 5);
     const priority = priorityCodes.map(code => reports.find(item => item.code === code)).filter(Boolean);
-    const steady = reports.filter(item => !item.hasMaterialChange);
+    return { research, report, priority, stock };
+  }
+
+  function renderDailyNewsSection({ research, priority }) {
     return `
-      <section class="daily-research-section" aria-labelledby="daily-research-title">
-        <header class="daily-research-section-header">
+      <section class="daily-page-section daily-news-section" aria-labelledby="daily-news-title">
+        <header class="daily-page-section-header">
           <div>
-            <h3 id="daily-research-title">今日要闻</h3>
-            <p>${research?.asOfTradeDate ? `${escapeHtml(research.asOfTradeDate)} 交易日` : "尚无交易日数据"} · 事实与分析分开呈现</p>
+            <h2 id="daily-news-title">今日要闻</h2>
+            <p>概括全部自选股中最值得关注的变化</p>
           </div>
           ${research?.generatedAt ? `<time datetime="${escapeHtml(research.generatedAt)}">${formatDateTime(research.generatedAt)} 更新</time>` : ""}
         </header>
-        <nav class="daily-radar-priority" aria-label="今日要闻股票">
+        <div class="daily-radar-priority" role="list" aria-label="今日要闻股票">
           ${priority.length ? priority.map((item, index) => `
-            <button type="button" class="daily-radar-item ${item.code === stock.code ? "selected" : ""}"
-              data-action="set-research-stock" data-stock-id="${escapeHtml(item.code)}" aria-pressed="${item.code === stock.code}">
+            <article class="daily-radar-item" role="listitem">
               <span>${index + 1}</span><b>${escapeHtml(item.name)}</b><strong>${escapeHtml(item.conclusion || item.headline)}</strong><small>${escapeHtml(item.currentJudgment || item.status)}</small>
-            </button>`).join("") : `<p class="daily-radar-clear">本次股票池均无重大变化，原判断维持。</p>`}
-        </nav>
-        <details class="daily-radar-steady">
-          <summary>无重大变化 · ${steady.length}只</summary>
-          <div>${steady.map(item => `<button type="button" class="daily-research-stock ${item.code === stock.code ? "selected" : ""}" data-action="set-research-stock" data-stock-id="${escapeHtml(item.code)}"><b>${escapeHtml(item.name)}</b><span>${escapeHtml(item.code)}</span></button>`).join("")}</div>
-        </details>
-        ${report ? renderDailyResearchStock(report) : `
+            </article>`).join("") : `<p class="daily-radar-clear">今日暂无需要置顶的概括性要闻。</p>`}
+        </div>
+      </section>`;
+  }
+
+  function renderDailyMajorNewsSection(messages) {
+    const unread = messages.filter(messageIsUnread).length;
+    const stockLabel = state.filters.stock === "all" ? "全部自选股" : selectedStock().name;
+    return `
+      <section class="daily-page-section daily-major-news-section" aria-labelledby="daily-major-news-title">
+        <header class="daily-page-section-header">
+          <div>
+            <h2 id="daily-major-news-title">个股重大消息</h2>
+            <p>${escapeHtml(stockLabel)} · 今日新增与未读补看按时间合并展示</p>
+          </div>
+          <div class="daily-page-section-tools">
+            <span>${messages.length} 条${unread ? ` · ${unread} 条未读` : ""}</span>
+            <button class="mark-read" type="button" data-action="mark-read" ${unread ? "" : "disabled"}>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.6 2.6L16.5 9"/></svg>
+              ${unread ? "全部标记已读" : "全部已读"}
+            </button>
+          </div>
+        </header>
+        ${renderTimeline(messages, {
+          showDigestOrigin: true,
+          showFullDate: true,
+          emptyTitle: "暂无重大消息",
+          emptyText: "新消息会在刷新后自动汇总到这里"
+        })}
+      </section>`;
+  }
+
+  const dailyTrafficDimensionConfig = [
+    {
+      id: "fundamentals",
+      label: "基本面",
+      icon: "building",
+      keywords: ["基本面", "经营", "营收", "盈利", "利润", "业绩", "毛利", "订单", "产能", "现金流", "回款", "半年报", "年报", "交割"],
+      noEvidence: "今日无新增经营数据，维持既有基本面判断"
+    },
+    {
+      id: "institution",
+      label: "机构",
+      icon: "user",
+      keywords: ["机构", "基金", "社保", "QFII", "北向", "沪深股通", "调研", "机构持仓"],
+      noEvidence: "今日无新增机构持仓或调研证据"
+    },
+    {
+      id: "chips",
+      label: "筹码",
+      icon: "matrix",
+      keywords: ["筹码", "股东", "持股", "持仓", "增持", "减持", "解禁", "质押", "股本", "集中度"],
+      noEvidence: "今日无新增股东、增减持或解禁证据"
+    },
+    {
+      id: "capital",
+      label: "资金面",
+      icon: "chart",
+      keywords: ["资金", "融资", "融券", "净流", "净买", "主力", "成交", "换手", "量能", "放量", "缩量", "补流", "回款", "价格", "支撑", "收盘", "上涨", "下跌", "突破", "跌破"],
+      noEvidence: "今日量价未形成明确方向，等待资金信号"
+    },
+    {
+      id: "risk",
+      label: "风险事项",
+      icon: "flag",
+      keywords: ["风险", "诉讼", "处罚", "监管", "问询", "债务", "违约", "退市", "减值", "亏损", "质押", "跌破", "失效", "转弱", "弱势", "谨慎", "承压", "失败"],
+      noEvidence: "今日无新增公司级重大风险，继续等待验证"
+    }
+  ];
+
+  const dailyTrafficPositiveWords = ["偏积极", "改善", "上调", "转强", "站稳", "收复", "突破", "有效", "跑赢", "回升", "增长", "增持", "净流入", "净买入", "集中", "兑现", "修复", "完成", "上涨"];
+  const dailyTrafficNegativeWords = ["偏消极", "偏弱", "弱势", "转弱", "下调", "跌破", "失效", "失败", "风险", "谨慎", "回落", "承压", "亏损", "恶化", "减持", "净流出", "未解除", "待证明", "不足", "受阻", "高波动", "下跌"];
+
+  function dailyTrafficSegments(value) {
+    return String(value || "")
+      .replace(/^分析[:：]\s*/, "")
+      .split(/[。；;！？\n，,]+/)
+      .map(item => item.trim())
+      .filter(item => item.length > 1);
+  }
+
+  function dailyTrafficIncludes(text, keywords) {
+    return keywords.some(keyword => text.includes(keyword));
+  }
+
+  function dailyTrafficTone(segments) {
+    const text = [...new Set(segments)].join("；");
+    if (!text) return "neutral";
+    const positivePhrases = ["改善确认", "防守有效", "修复成功", "突破确认", "转强"];
+    const negativePhrases = ["修复失败", "防守失效", "弱势确认", "弱势延续", "转为谨慎", "冲高回落", "风险仍高"];
+    const hasPositivePhrase = positivePhrases.some(phrase => text.includes(phrase));
+    const hasNegativePhrase = negativePhrases.some(phrase => text.includes(phrase));
+    if (hasPositivePhrase !== hasNegativePhrase) return hasPositivePhrase ? "positive" : "negative";
+    const positive = dailyTrafficPositiveWords.filter(word => text.includes(word)).length;
+    const negative = dailyTrafficNegativeWords.filter(word => text.includes(word)).length;
+    if (positive > negative) return "positive";
+    if (negative > positive) return "negative";
+    return "neutral";
+  }
+
+  function dailyTrafficDirection(segments) {
+    const text = segments.join("；");
+    const positivePhrases = ["判断上调", "上调为", "转强", "防守有效", "改善确认", "突破确认", "修复成功"];
+    const negativePhrases = ["判断下调", "下调为", "防守失效", "弱势确认", "弱势延续", "转为谨慎", "修复失败", "风险上升"];
+    const hasPositivePhrase = positivePhrases.some(phrase => text.includes(phrase));
+    const hasNegativePhrase = negativePhrases.some(phrase => text.includes(phrase));
+    if (hasPositivePhrase !== hasNegativePhrase) return hasPositivePhrase ? "improved" : "weakened";
+    const improved = ["改善", "上调", "转强", "收复", "有效", "修复", "回升", "增强"].filter(word => text.includes(word)).length;
+    const weakened = ["下调", "转弱", "失效", "跌破", "失败", "弱势确认", "恶化", "谨慎"].filter(word => text.includes(word)).length;
+    if (improved > weakened) return "improved";
+    if (weakened > improved) return "weakened";
+    return "steady";
+  }
+
+  function compactDailyTrafficEvidence(value, maxLength = 72) {
+    const text = String(value || "").replace(/^分析[:：]\s*/, "").trim();
+    return text.length > maxLength ? `${text.slice(0, maxLength - 1)}…` : text;
+  }
+
+  function dailyTrafficPriceEvidence(report) {
+    const change = Number(report?.price?.changePct);
+    const volume = Number(report?.price?.volumeChangeVsPreviousPct);
+    if (!Number.isFinite(change)) return "";
+    const direction = change > 0.05 ? "上涨" : change < -0.05 ? "下跌" : "平收";
+    const changeText = `${Math.abs(change).toFixed(2)}%`;
+    if (!Number.isFinite(volume)) return `收盘${direction}${changeText}`;
+    const volumeDirection = volume > 0 ? "增加" : volume < 0 ? "减少" : "持平";
+    return `收盘${direction}${changeText}，成交量较前一日${volumeDirection}${Math.abs(volume).toFixed(1)}%`;
+  }
+
+  function dailyTrafficCapitalTone(report, evidenceSegments, hasMarketSource) {
+    if (!hasMarketSource) return "neutral";
+    const change = Number(report?.price?.changePct);
+    const volume = Number(report?.price?.volumeChangeVsPreviousPct);
+    const close = Number(report?.price?.close);
+    const high = Number(report?.price?.high);
+    const low = Number(report?.price?.low);
+    if (![change, volume, close, high, low].every(Number.isFinite) || high <= low || volume < 20) return "neutral";
+    const judgmentTone = dailyTrafficTone(evidenceSegments);
+    if (judgmentTone === "negative") return "negative";
+    const closeLocation = (close - low) / (high - low);
+    if (change > 0 && closeLocation >= 0.65) return "positive";
+    if (change < 0 || closeLocation <= 0.35) return "negative";
+    return "neutral";
+  }
+
+  function buildDailyTrafficRows(report) {
+    const importantChanges = Array.isArray(report.importantChanges) ? report.importantChanges : [];
+    const currentSegments = [
+      report.currentJudgment,
+      report.status,
+      report.conclusion,
+      report.whyImportant,
+      report.profitValuationImpact
+    ].flatMap(dailyTrafficSegments);
+    const judgmentSegments = dailyTrafficSegments(report.judgmentChange);
+    const factSegments = importantChanges
+      .filter(item => Array.isArray(item.source_urls) && item.source_urls.length > 0)
+      .flatMap(item => dailyTrafficSegments(item.fact));
+    const hasReportSources = Array.isArray(report.sources) && report.sources.length > 0;
+    const hasMarketSource = hasReportSources && report.sources.some(source => source.kind === "行情");
+
+    const rows = dailyTrafficDimensionConfig.map(dimension => {
+      const currentEvidence = currentSegments.filter(segment => dailyTrafficIncludes(segment, dimension.keywords));
+      const factEvidence = factSegments.filter(segment => dailyTrafficIncludes(segment, dimension.keywords));
+      const judgmentEvidence = judgmentSegments.filter(segment => dailyTrafficIncludes(segment, dimension.keywords));
+      const priceEvidence = dimension.id === "capital" ? dailyTrafficPriceEvidence(report) : "";
+      const hasPriceEvidence = dimension.id === "capital" && Boolean(priceEvidence) && hasMarketSource;
+      const hasQualifiedFact = factEvidence.length > 0;
+      const ratingEvidence = hasQualifiedFact || hasPriceEvidence
+        ? [...factEvidence, ...currentEvidence, ...judgmentEvidence, ...(hasPriceEvidence ? [priceEvidence] : [])]
+        : [];
+      let tone = dailyTrafficTone(ratingEvidence);
+      if (dimension.id === "capital") tone = dailyTrafficCapitalTone(report, ratingEvidence, hasMarketSource);
+      if (dimension.id === "risk") {
+        tone = report.hasMaterialChange && report.sentiment === "风险" && hasReportSources
+          ? "negative"
+          : hasQualifiedFact
+            ? dailyTrafficTone(ratingEvidence)
+            : "neutral";
+      }
+
+      const freshJudgment = judgmentEvidence.filter(segment => !segment.includes("不变") && !segment.includes("维持"));
+      const hasFreshEvidence = Boolean(report.hasMaterialChange) && (hasQualifiedFact || (hasPriceEvidence && freshJudgment.length > 0));
+      const direction = hasFreshEvidence ? dailyTrafficDirection(freshJudgment) : "steady";
+      const comparison = direction === "improved" ? "边际改善" : direction === "weakened" ? "边际转弱" : hasFreshEvidence ? "出现变化" : "不变";
+      const evidence = hasQualifiedFact || hasPriceEvidence
+        ? currentEvidence[0] || factEvidence[0] || judgmentEvidence[0] || priceEvidence
+        : currentEvidence[0]
+          ? `无新增事实；既有判断：${currentEvidence[0]}`
+          : dimension.noEvidence;
+
+      return {
+        ...dimension,
+        tone,
+        comparison,
+        comparisonTone: direction,
+        evidence: compactDailyTrafficEvidence(evidence)
+      };
+    });
+
+    const riskTone = rows.find(row => row.id === "risk")?.tone || "neutral";
+    const toneValue = { positive: 1, neutral: 0, negative: -1 };
+    const dimensionTotal = rows.reduce((total, row) => total + toneValue[row.tone], 0);
+    let overallTone = report.hasMaterialChange && hasReportSources
+      ? report.sentiment === "机会" ? "positive" : report.sentiment === "风险" ? "negative" : dimensionTotal > 1 ? "positive" : dimensionTotal < -1 ? "negative" : "neutral"
+      : "neutral";
+    if (riskTone === "negative" && overallTone === "positive") overallTone = "neutral";
+    const overallDirection = report.hasMaterialChange ? dailyTrafficDirection(judgmentSegments) : "steady";
+
+    rows.push({
+      id: "overall",
+      label: "综合",
+      icon: "pulse",
+      tone: overallTone,
+      comparison: overallDirection === "improved" ? "边际改善" : overallDirection === "weakened" ? "边际转弱" : "不变",
+      comparisonTone: overallDirection,
+      evidence: compactDailyTrafficEvidence(report.currentJudgment || report.status || report.conclusion || "维持原判断")
+    });
+    return rows;
+  }
+
+  function dailyTrafficRatingLabel(row, riskTone) {
+    if (row.tone === "positive") return "偏积极";
+    if (row.tone === "negative") return "偏消极";
+    if (row.id === "overall" && riskTone === "negative") return "中性偏谨慎";
+    return "中性/待验证";
+  }
+
+  function renderDailyTrafficLightSection({ research, report, stock }) {
+    const rows = report ? buildDailyTrafficRows(report) : [];
+    const riskTone = rows.find(row => row.id === "risk")?.tone || "neutral";
+    const sourceCount = Array.isArray(report?.sources) ? report.sources.length : 0;
+    return `
+      <section class="daily-page-section daily-traffic-section" aria-labelledby="daily-traffic-title">
+        <header class="daily-page-section-header">
+          <div>
+            <h2 id="daily-traffic-title">个股红绿灯</h2>
+            <p>${escapeHtml(stock.name)} ${escapeHtml(stock.code)} · 六维事实信号与边际变化</p>
+          </div>
+          ${research?.asOfTradeDate ? `<time datetime="${escapeHtml(research.asOfTradeDate)}">${escapeHtml(research.asOfTradeDate)} 交易日</time>` : ""}
+        </header>
+        ${report ? `
+          <article class="daily-traffic-report" data-traffic-stock="${escapeHtml(report.code)}">
+            <div class="daily-traffic-table" role="table" aria-label="${escapeHtml(report.name)}个股红绿灯">
+              <div class="daily-traffic-row daily-traffic-head" role="row">
+                <span role="columnheader">维度</span>
+                <span role="columnheader">今日评级</span>
+                <span role="columnheader">较昨日</span>
+                <span role="columnheader">边际变化</span>
+              </div>
+              ${rows.map(row => `
+                <div class="daily-traffic-row daily-traffic-${row.tone} ${row.id === "overall" ? "daily-traffic-overall" : ""}" role="row" data-traffic-dimension="${row.id}">
+                  <div class="daily-traffic-dimension" role="cell"><span>${icon(row.icon)}</span><strong>${row.label}</strong></div>
+                  <div class="daily-traffic-rating" role="cell"><span class="daily-traffic-rating-icon">${icon("pulse")}</span><strong>${dailyTrafficRatingLabel(row, riskTone)}</strong></div>
+                  <div class="daily-traffic-comparison daily-traffic-comparison-${row.comparisonTone}" role="cell"><small>较昨日</small><strong>${row.comparison}</strong></div>
+                  <div class="daily-traffic-evidence" role="cell"><small>边际变化</small><span>${escapeHtml(row.evidence)}</span></div>
+                </div>`).join("")}
+            </div>
+            <footer class="daily-traffic-footer">
+              <div aria-label="红绿灯图例"><span class="positive">偏积极</span><span class="neutral">中性/待验证</span><span class="negative">偏消极</span></div>
+              <small>基于当日研读、${sourceCount} 条事实来源与真实行情自动归类；无对应事实时保持中性/待验证。</small>
+            </footer>
+          </article>` : `
           <div class="daily-research-empty" role="status">
-            <strong>${escapeHtml(stock.name)}暂无今日研读</strong>
-            <span>请选择上方已有报告的自选股；旧报告仍会保留，不会以数据缺失代替“未发现变化”。</span>
+            <strong>${escapeHtml(stock.name)}暂无红绿灯数据</strong>
+            <span>请从左侧自选股导航选择已有报告的股票；数据缺失不会被替代为中性、利好或利空。</span>
           </div>`}
       </section>`;
   }
@@ -1127,24 +1394,24 @@
     if (!report.hasMaterialChange) {
       return `
         <article class="daily-research-report daily-research-steady" data-research-stock="${escapeHtml(report.code)}">
-          <div class="daily-research-identity"><div><h4>${escapeHtml(report.name)}</h4><span>${escapeHtml(report.code)} · ${escapeHtml(report.sector)}</span></div><span class="daily-research-change-state">判断维持</span></div>
-          <div class="daily-research-no-change"><h5>今日无重大变化，原判断维持。</h5><p>${escapeHtml(report.currentJudgment || report.status)}</p><small>下一验证：${escapeHtml(report.nextValidation || "等待新的重大事实或关键条件触发")}</small></div>
+          <div class="daily-research-identity"><div><h3>${escapeHtml(report.name)}</h3><span>${escapeHtml(report.code)} · ${escapeHtml(report.sector)}</span></div><span class="daily-research-change-state">判断维持</span></div>
+          <div class="daily-research-no-change"><h4>今日无重大变化，原判断维持。</h4><p>${escapeHtml(report.currentJudgment || report.status)}</p><small>下一验证：${escapeHtml(report.nextValidation || "等待新的重大事实或关键条件触发")}</small></div>
         </article>`;
     }
     const importantChanges = Array.isArray(report.importantChanges) ? report.importantChanges : [];
     return `
       <article class="daily-research-report daily-research-${tone}" data-research-stock="${escapeHtml(report.code)}">
         <header class="daily-research-lead daily-radar-lead">
-          <div class="daily-research-identity"><div><h4>${escapeHtml(report.name)}</h4><span>${escapeHtml(report.code)} · ${escapeHtml(report.sector)}</span></div><span class="daily-research-sentiment">${escapeHtml(report.sentiment || "中性")}</span></div>
-          <div class="daily-research-headline"><h5>${escapeHtml(report.conclusion || report.headline)}</h5><p>${escapeHtml(report.currentJudgment || report.status)}</p></div>
+          <div class="daily-research-identity"><div><h3>${escapeHtml(report.name)}</h3><span>${escapeHtml(report.code)} · ${escapeHtml(report.sector)}</span></div><span class="daily-research-sentiment">${escapeHtml(report.sentiment || "中性")}</span></div>
+          <div class="daily-research-headline"><h4>${escapeHtml(report.conclusion || report.headline)}</h4><p>${escapeHtml(report.currentJudgment || report.status)}</p></div>
         </header>
-        <section class="daily-radar-facts"><h5>今日重要变化 <span>事实</span></h5><ul>${importantChanges.map(item => `<li><small>${escapeHtml(item.category)} · 事实</small><p>${escapeHtml(item.fact)}</p></li>`).join("")}</ul></section>
+        <section class="daily-radar-facts"><h4>事实变化 <span>事实</span></h4><ul>${importantChanges.map(item => `<li><small>${escapeHtml(item.category)} · 事实</small><p>${escapeHtml(item.fact)}</p></li>`).join("")}</ul></section>
         <div class="daily-research-reading-grid daily-radar-analysis">
-          <section><h5>为什么重要 <span>分析</span></h5><p>${escapeHtml(report.whyImportant)}</p></section>
-          <section><h5>投资判断变化 <span>分析</span></h5><dl><div><dt>昨日</dt><dd>${escapeHtml(report.previousJudgment)}</dd></div><div><dt>今日</dt><dd>${escapeHtml(report.judgmentChange)}</dd></div><div><dt>当前</dt><dd>${escapeHtml(report.currentJudgment || report.status)}</dd></div></dl></section>
+          <section><h4>为什么重要 <span>分析</span></h4><p>${escapeHtml(report.whyImportant)}</p></section>
+          <section><h4>投资判断变化 <span>分析</span></h4><dl><div><dt>昨日</dt><dd>${escapeHtml(report.previousJudgment)}</dd></div><div><dt>今日</dt><dd>${escapeHtml(report.judgmentChange)}</dd></div><div><dt>当前</dt><dd>${escapeHtml(report.currentJudgment || report.status)}</dd></div></dl></section>
         </div>
-        <section class="daily-radar-next"><h5>下一验证条件</h5><p>${escapeHtml(report.nextValidation)}</p></section>
-        ${report.profitValuationImpact ? `<section class="daily-radar-valuation"><h5>盈利预测 / 估值影响 <span>分析</span></h5><p>${escapeHtml(report.profitValuationImpact)}</p></section>` : ""}
+        <section class="daily-radar-next"><h4>下一验证条件</h4><p>${escapeHtml(report.nextValidation)}</p></section>
+        ${report.profitValuationImpact ? `<section class="daily-radar-valuation"><h4>盈利预测 / 估值影响 <span>分析</span></h4><p>${escapeHtml(report.profitValuationImpact)}</p></section>` : ""}
         ${sourceLinks.length ? `
           <details class="daily-research-sources">
             <summary>事实来源（${sourceLinks.length}）</summary>
@@ -1268,65 +1535,6 @@
       </article>`;
   }
 
-  function renderDailyDigestSection(title, description, messages, tone, options = {}) {
-    return `
-      <section class="daily-digest-section daily-digest-section-${tone}" aria-label="${title}">
-        <header class="daily-digest-section-header">
-          <div><strong>${title}</strong><span>${description}</span></div>
-          <b>${messages.length} 条</b>
-        </header>
-        ${renderDailyDigestStockGroups(messages, options)}
-      </section>`;
-  }
-
-  function renderDailyDigestStockGroups(messages, options = {}) {
-    if (!messages.length && options.emptyMessage) {
-      return `<div class="timeline-empty" role="status"><strong>${escapeHtml(options.emptyMessage)}</strong></div>`;
-    }
-    if (!messages.length) return renderTimeline([]);
-    const grouped = new Map();
-    messages.forEach(message => {
-      const stockId = String(message.trackingStockId || message.trackingStockCode || "unknown");
-      if (!grouped.has(stockId)) grouped.set(stockId, []);
-      grouped.get(stockId).push(message);
-    });
-    const stockOrder = new Map(data.stocks.map((stock, index) => [String(stock.id), index]));
-    const groups = [...grouped.entries()].sort(([left, leftMessages], [right, rightMessages]) => (
-      options.groupOrder === "message"
-        ? new Date(leftMessages[0]?.publishedAt) - new Date(rightMessages[0]?.publishedAt)
-        : (stockOrder.get(left) ?? Number.MAX_SAFE_INTEGER) - (stockOrder.get(right) ?? Number.MAX_SAFE_INTEGER)
-    ));
-    return `
-      <div class="daily-stock-groups">
-        ${groups.map(([stockId, stockMessages]) => {
-          const stock = data.stocks.find(item => String(item.id) === stockId);
-          const firstMessage = stockMessages[0];
-          const stockName = stock?.name || firstMessage.trackingStockName || stockId;
-          const stockCode = stock?.code || firstMessage.trackingStockCode || stockId;
-          const counts = stockMessages.reduce((result, message) => {
-            if (Object.hasOwn(result, message.sentiment)) result[message.sentiment] += 1;
-            return result;
-          }, { "利好": 0, "利空": 0, "中性": 0 });
-          return `
-            <section class="daily-stock-group" data-daily-stock-id="${escapeHtml(stockId)}" aria-label="${escapeHtml(stockName)}动态">
-              <header class="daily-stock-group-header">
-                <div class="daily-stock-group-title">
-                  <h4>${escapeHtml(stockName)}</h4>
-                  <span>${escapeHtml(stockCode)}</span>
-                </div>
-                <div class="daily-stock-group-counts" aria-label="${stockMessages.length}条动态">
-                  <b>${stockMessages.length} 条</b>
-                  ${counts["利好"] ? `<span class="positive">利好 ${counts["利好"]}</span>` : ""}
-                  ${counts["利空"] ? `<span class="negative">利空 ${counts["利空"]}</span>` : ""}
-                  ${counts["中性"] ? `<span class="neutral">中性 ${counts["中性"]}</span>` : ""}
-                </div>
-              </header>
-              ${renderTimeline(stockMessages, { showStockBadge: false, showFullDate: Boolean(options.showFullDate) })}
-            </section>`;
-        }).join("")}
-      </div>`;
-  }
-
   function syncUrl() {
     const url = new URL(window.location.href);
     if (state.viewMode !== "stock" && VIEW_MODES.includes(state.viewMode)) {
@@ -1366,6 +1574,7 @@
         </div>
         <div class="watchlist-label">${query ? `搜索股票 · 全量 ${universeCount.toLocaleString("zh-CN")} 只` : `我的自选 · ${data.stocks.length} 只`}</div>
         <div class="watchlist-items">
+          ${watchlistAggregateView() && !query ? renderAllStocksFilter() : ""}
           ${stocks.length ? stocks.map(item => renderStockItem(item, stock)).join("") : `
             <div class="watchlist-empty"><strong>${state.universe.length ? "未找到匹配股票" : "股票库正在载入"}</strong><span>${state.universe.length ? "请输入股票名称或代码" : "请稍候"}</span></div>`}
           ${searchResults.length > stocks.length ? `<div class="search-result-note">显示前 ${stocks.length} 条，共 ${searchResults.length} 条匹配</div>` : ""}
@@ -1379,6 +1588,19 @@
           </span>
         </div>
       </aside>`;
+  }
+
+  function renderAllStocksFilter() {
+    const active = state.filters.stock === "all";
+    const unread = data.stocks.reduce((total, item) => total + unreadCount(item), 0);
+    return `
+      <div class="watchlist-item watchlist-all-filter ${active ? "selected" : ""}">
+        <button class="watchlist-select" type="button" data-action="select-all-stocks" aria-pressed="${active}">
+          <span class="stock-identity"><strong>全部自选股</strong><small>显示全部重大消息</small></span>
+          <span class="stock-change unavailable">${data.stocks.length} 只</span>
+          <span class="stock-unread ${unread ? "" : "zero"}">${unread}</span>
+        </button>
+      </div>`;
   }
 
   function renderSharedAccount() {
@@ -1468,7 +1690,7 @@
   }
 
   function renderStockItem(stock, selected) {
-    const active = stock.id === selected.id;
+    const active = stock.id === selected.id && (!watchlistAggregateView() || state.filters.stock !== "all");
     const unread = unreadCount(stock);
     const hasQuote = Number.isFinite(Number(stock.changePct)) && stock.changePct !== null;
     const manageAction = stock.tracked ? "remove-watchlist" : "add-watchlist";
@@ -1712,10 +1934,12 @@
   }
 
   function renderTimeline(messages, options = {}) {
+    const emptyTitle = options.emptyTitle || "没有符合条件的信息";
+    const emptyText = options.emptyText || "请调整筛选条件后再查看";
     return `
       <section class="message-timeline" aria-label="最新消息时间流">
         ${messages.length ? messages.map(message => renderMessage(message, options)).join("") : `
-          <div class="timeline-empty"><strong>没有符合条件的信息</strong><span>请调整上方筛选项后再查看</span></div>`}
+          <div class="timeline-empty"><strong>${escapeHtml(emptyTitle)}</strong><span>${escapeHtml(emptyText)}</span></div>`}
       </section>`;
   }
 
@@ -1756,6 +1980,12 @@
     const eventBadge = message.eventLabel
       ? `<span class="message-tag event-kind-${escapeHtml(message.eventKind || "reminder")}">${escapeHtml(message.eventLabel)}</span>`
       : "";
+    const digestBadge = options.showDigestOrigin && message.dailyDigestKind
+      ? `<span class="daily-message-origin daily-message-origin-${escapeHtml(message.dailyDigestKind)}">
+          ${icon(message.dailyDigestKind === "today" ? "news" : "digest")}
+          <span>${message.dailyDigestKind === "today" ? "今日新增" : "未读补看"}</span>
+        </span>`
+      : "";
     const sourceLink = sourceUrl
       ? `<a class="message-source-link" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">查看来源
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5M19 5l-8 8M17 13v6H5V7h6"/></svg>
@@ -1778,6 +2008,7 @@
               ${stockBadge}
               <strong>${escapeHtml(message.title)}</strong>
               <span class="message-badges">
+                ${digestBadge}
                 ${eventBadge}
                 <span class="message-tag evidence-${message.evidence}">${message.evidence}</span>
                 <span class="message-tag sentiment-${message.sentiment}">${sentimentLabel(message.sentiment)}</span>
@@ -1952,10 +2183,9 @@
       state.activeGroup = "all";
       technicalPage?.clearSearch();
       refreshCodeAfterRender = state.selectedStockId;
-    } else if (action === "set-research-stock") {
-      state.selectedStockId = target.dataset.stockId;
-      state.filters.stock = state.selectedStockId;
-      state.activeGroup = "all";
+    } else if (action === "select-all-stocks") {
+      state.filters.stock = "all";
+      state.dailyStockQuery = "";
     } else if (action === "select-group") {
       if (target.dataset.group === "technical") {
         state.viewMode = "technical";
@@ -1988,7 +2218,7 @@
       const messages = state.viewMode === "macro"
         ? filteredMacroNews()
         : state.viewMode === "daily"
-          ? dailyDigestMessages()
+          ? dailyDigestMessages(false)
           : state.viewMode === "calendar"
             ? calendarReminderMessages()
             : filteredStockMessages(selectedStock());
@@ -1999,7 +2229,7 @@
         messagesByScope.get(scopeId).push(message);
       });
       const advanceReadThrough = state.viewMode === "daily" && state.filters.sentiment === "all";
-      if (advanceReadThrough) {
+      if (advanceReadThrough && state.filters.stock === "all") {
         data.stocks.forEach(stock => {
           const scopeId = readStorageScope(stock.id);
           if (!messagesByScope.has(scopeId)) messagesByScope.set(scopeId, []);
