@@ -1,381 +1,341 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#07110f" />
-    <meta
-      name="description"
-      content="基于官方公告、Codex 服务状态、用户里程碑和产品发布信号的 Codex 额度重置观察看板。"
-    />
-    <title>Codex Reset Radar</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%2307110f'/%3E%3Cpath d='M12 43h9V28h-9zm16 0h9V14h-9zm16 0h9V22h-9z' fill='%2373f2b4'/%3E%3C/svg%3E" />
-    <link rel="stylesheet" href="./styles.css" />
-  </head>
-  <body>
-    <a class="skip-link" href="#main">跳到主要内容</a>
-
-    <div class="noise" aria-hidden="true"></div>
-    <div class="app-shell">
-      <header class="topbar">
-        <a class="brand" href="#top" aria-label="Codex Reset Radar 首页">
-          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
-          <span>
-            <b>RESET / WATCH</b>
-            <small>CODEX LIMIT INTELLIGENCE</small>
-          </span>
-        </a>
-
-        <div class="top-actions">
-          <p class="last-check">
-            <span class="pulse-dot" aria-hidden="true"></span>
-            上次检查 <time id="lastChecked">尚未检查</time>
-          </p>
-          <button class="button button-ghost" id="openSignals" type="button">更新观察信号</button>
-          <button class="button button-primary" id="refreshSignals" type="button" aria-label="刷新今日信号">
-            <span class="refresh-icon" aria-hidden="true">↻</span>
-            刷新今日信号
-          </button>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Gloria 个人品牌与教练业务网站 Demo" />
+  <title>Gloria · Personal Brand & Coaching</title>
+  <style>
+    :root{
+      --bg:#f5f2eb;
+      --paper:#fbfaf6;
+      --ink:#17211d;
+      --muted:#66706b;
+      --sage:#84998d;
+      --sage-deep:#526b5e;
+      --sage-soft:#dfe7e0;
+      --gold:#b79767;
+      --line:rgba(23,33,29,.12);
+      --shadow:0 24px 70px rgba(24,37,31,.10);
+      --radius:28px;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,"PingFang SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;line-height:1.65}
+    a{color:inherit;text-decoration:none}
+    button{font:inherit}
+    .container{width:min(1180px,calc(100% - 48px));margin:auto}
+    .nav-wrap{position:sticky;top:0;z-index:50;padding:18px 0;background:linear-gradient(to bottom,rgba(245,242,235,.96),rgba(245,242,235,.80),transparent);backdrop-filter:blur(12px)}
+    nav{height:68px;border:1px solid rgba(23,33,29,.10);border-radius:22px;background:rgba(251,250,246,.86);box-shadow:0 12px 38px rgba(23,33,29,.07);display:flex;align-items:center;justify-content:space-between;padding:0 18px 0 22px}
+    .brand{display:flex;align-items:center;gap:12px;font-weight:700;letter-spacing:.04em}
+    .brand-mark{width:38px;height:38px;border-radius:14px;display:grid;place-items:center;background:var(--ink);color:#fff;font-family:Georgia,serif;font-size:21px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.15)}
+    .nav-links{display:flex;align-items:center;gap:28px;font-size:14px;color:#47524c}
+    .nav-links a{transition:.2s}
+    .nav-links a:hover{color:var(--ink)}
+    .nav-cta,.btn-primary{border:0;background:var(--ink);color:#fff;border-radius:999px;padding:13px 20px;cursor:pointer;transition:.25s;box-shadow:0 8px 24px rgba(23,33,29,.16)}
+    .nav-cta:hover,.btn-primary:hover{transform:translateY(-2px);background:#26342e}
+    .hero{padding:72px 0 82px;min-height:720px;display:grid;grid-template-columns:1.05fr .95fr;gap:74px;align-items:center}
+    .eyebrow{display:inline-flex;align-items:center;gap:10px;text-transform:uppercase;letter-spacing:.18em;font-size:12px;color:var(--sage-deep);font-weight:700;margin-bottom:18px}
+    .eyebrow:before{content:"";width:28px;height:1px;background:var(--sage-deep)}
+    h1{font-family:Georgia,"Songti SC","STSong",serif;font-size:clamp(52px,5vw,78px);font-weight:500;line-height:1.07;letter-spacing:-.03em;margin:0 0 28px;max-width:720px}
+    h1 em{font-style:normal;color:var(--sage-deep)}
+    .hero-copy{font-size:18px;color:#5d6862;max-width:620px;margin:0 0 34px}
+    .hero-actions{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+    .btn-primary{padding:15px 24px}
+    .btn-ghost{display:inline-flex;align-items:center;gap:10px;padding:14px 20px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.34);color:#33423b;transition:.2s}
+    .btn-ghost:hover{background:#fff;transform:translateY(-2px)}
+    .hero-note{margin-top:34px;display:flex;align-items:center;gap:14px;color:#758079;font-size:13px}
+    .hero-note .dotline{display:flex}
+    .hero-note .dot{width:30px;height:30px;border-radius:50%;background:var(--sage-soft);border:3px solid var(--bg);margin-left:-8px}
+    .hero-note .dot:first-child{margin-left:0;background:#c6d4cc}
+    .hero-note .dot:nth-child(2){background:#a9bbb0}
+    .hero-note .dot:nth-child(3){background:#879e91}
+    .visual{position:relative;height:600px}
+    .portrait-frame{position:absolute;inset:32px 34px 46px 54px;border-radius:180px 180px 46px 46px;background:linear-gradient(160deg,#d8e0d7 0%,#a8b9ae 38%,#5f7569 100%);box-shadow:var(--shadow);overflow:hidden}
+    .portrait-frame:before{content:"";position:absolute;width:380px;height:380px;border-radius:50%;background:rgba(255,255,255,.18);right:-90px;top:-70px}
+    .portrait-inner{position:absolute;inset:28px;border:1px solid rgba(255,255,255,.45);border-radius:156px 156px 34px 34px;display:flex;align-items:flex-end;justify-content:center;color:#fff;overflow:hidden}
+    .gloria-portrait{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 24%}
+    .portrait-placeholder{text-align:center}
+    .portrait-placeholder .g{font:110px/1 Georgia,serif;opacity:.95}
+    .portrait-placeholder span{display:block;font-size:12px;letter-spacing:.20em;text-transform:uppercase;opacity:.85;margin-top:6px}
+    .orb{position:absolute;border:1px solid rgba(255,255,255,.46);border-radius:999px;backdrop-filter:blur(18px);background:rgba(251,250,246,.56);box-shadow:0 18px 40px rgba(36,50,42,.10);padding:13px 18px;font-size:13px;color:#33463c}
+    .orb.one{top:70px;left:0}.orb.two{top:205px;right:0}.orb.three{bottom:104px;left:10px}
+    .quote-card{position:absolute;right:24px;bottom:8px;width:280px;border-radius:24px;background:var(--paper);box-shadow:var(--shadow);padding:24px;border:1px solid rgba(23,33,29,.08)}
+    .quote-card b{display:block;font-family:Georgia,"Songti SC",serif;font-size:19px;font-weight:500;line-height:1.45}
+    .quote-card small{display:block;margin-top:12px;color:#89918d}
+    .trust{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:rgba(251,250,246,.35)}
+    .trust-inner{display:grid;grid-template-columns:1.4fr repeat(4,1fr);align-items:center;min-height:110px}
+    .trust-title{font-size:13px;color:#7a827e;letter-spacing:.08em;text-transform:uppercase}
+    .trust-item{padding-left:28px;border-left:1px solid var(--line);font-weight:650;font-size:14px}
+    .trust-item small{display:block;font-weight:400;color:#919894;margin-top:2px}
+    section{padding:110px 0}
+    .section-head{display:flex;justify-content:space-between;align-items:flex-end;gap:32px;margin-bottom:54px}
+    .section-kicker{font-size:12px;letter-spacing:.17em;color:var(--sage-deep);text-transform:uppercase;font-weight:700;margin-bottom:10px}
+    h2{font-family:Georgia,"Songti SC",serif;font-weight:500;font-size:clamp(36px,4vw,54px);line-height:1.18;margin:0;letter-spacing:-.025em}
+    .section-desc{max-width:430px;color:#6a746f;margin:0}
+    .about-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:30px}
+    .story-card{min-height:470px;background:var(--ink);color:#f8f6ef;border-radius:var(--radius);padding:48px;position:relative;overflow:hidden}
+    .story-card:after{content:"G";position:absolute;right:-20px;bottom:-100px;font:300px/1 Georgia,serif;color:rgba(255,255,255,.04)}
+    .story-card p{font-family:Georgia,"Songti SC",serif;font-size:25px;line-height:1.65;max-width:650px;margin:44px 0 0;font-weight:400}
+    .story-card .mini{font-family:Inter,"PingFang SC",sans-serif;font-size:13px;color:#acb7b0;letter-spacing:.06em}
+    .mv-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    .value-card{border-radius:24px;background:var(--paper);padding:30px;border:1px solid rgba(23,33,29,.07);min-height:220px;transition:.25s}
+    .value-card:hover{transform:translateY(-4px);box-shadow:0 18px 45px rgba(23,33,29,.07)}
+    .value-card strong{display:block;font-family:Georgia,"Songti SC",serif;font-size:24px;font-weight:500;margin:18px 0 10px}
+    .value-card p{margin:0;color:#6d7772;font-size:14px}
+    .icon{width:42px;height:42px;border-radius:15px;background:var(--sage-soft);display:grid;place-items:center;color:var(--sage-deep);font-weight:700}
+    .journey{background:#ebe9e2}
+    .tabs{display:inline-flex;padding:5px;background:rgba(255,255,255,.52);border-radius:999px;border:1px solid var(--line);margin-bottom:34px}
+    .tab{border:0;background:transparent;border-radius:999px;padding:11px 18px;color:#6c7570;cursor:pointer}
+    .tab.active{background:var(--ink);color:#fff;box-shadow:0 8px 18px rgba(23,33,29,.12)}
+    .timeline{display:grid;grid-template-columns:180px 1fr;gap:42px}
+    .year-side{font-family:Georgia,serif;font-size:52px;color:#a2aaa5;position:relative}
+    .year-side:after{content:"";position:absolute;top:77px;bottom:0;left:16px;width:1px;background:#c7cbc8}
+    .timeline-items{display:grid;gap:16px}
+    .timeline-card{background:var(--paper);border-radius:22px;padding:26px 28px;display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center;border:1px solid rgba(23,33,29,.07)}
+    .timeline-card h3{margin:0 0 5px;font-size:18px}
+    .timeline-card p{margin:0;color:#707a74;font-size:14px}
+    .tag{font-size:12px;border-radius:999px;padding:7px 12px;background:#e5ece7;color:#52675c;white-space:nowrap}
+    .hidden{display:none}
+    .services-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+    .service{min-height:340px;border-radius:26px;padding:28px;display:flex;flex-direction:column;justify-content:space-between;background:var(--paper);border:1px solid rgba(23,33,29,.08);transition:.3s}
+    .service:hover{transform:translateY(-6px);box-shadow:0 20px 50px rgba(23,33,29,.08)}
+    .service:nth-child(2){background:#dfe8e1}.service:nth-child(3){background:#ece4d8}.service:nth-child(4){background:#e7e2e5}
+    .service-no{font-family:Georgia,serif;color:#8b958f;font-size:14px}
+    .service h3{font-family:Georgia,"Songti SC",serif;font-size:27px;font-weight:500;line-height:1.28;margin:0 0 12px}
+    .service p{font-size:14px;color:#637069;margin:0}
+    .arrow{width:44px;height:44px;border-radius:50%;border:1px solid rgba(23,33,29,.12);display:grid;place-items:center;margin-top:26px}
+    .cases{background:var(--ink);color:#f8f5ee}
+    .cases .section-desc{color:#aab4ae}
+    .filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:30px}
+    .filter{border:1px solid rgba(255,255,255,.14);background:transparent;color:#b9c2bd;padding:9px 14px;border-radius:999px;cursor:pointer}
+    .filter.active{background:#f4f0e8;color:var(--ink);border-color:#f4f0e8}
+    .case-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+    .case-card{background:#222f29;border:1px solid rgba(255,255,255,.09);border-radius:26px;padding:30px;min-height:410px;display:flex;flex-direction:column;justify-content:space-between}
+    .case-card .label{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#9daf9f}
+    .case-card h3{font-family:Georgia,"Songti SC",serif;font-size:25px;font-weight:500;margin:18px 0 16px;line-height:1.42}
+    .case-step{display:grid;grid-template-columns:78px 1fr;gap:12px;border-top:1px solid rgba(255,255,255,.09);padding:14px 0;font-size:13px}
+    .case-step span:first-child{color:#819087}.case-step span:last-child{color:#d6ddd9}
+    .privacy{margin-top:26px;color:#8b9992;font-size:12px}
+    .learning-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:20px}
+    .notebook{background:var(--paper);border-radius:28px;border:1px solid rgba(23,33,29,.07);overflow:hidden}
+    .note-row{display:grid;grid-template-columns:140px 1fr auto;gap:24px;align-items:center;padding:25px 28px;border-bottom:1px solid var(--line)}
+    .note-row:last-child{border-bottom:0}.note-meta{font-size:12px;color:#8a938e}.note-row h4{margin:0 0 4px;font-size:16px}.note-row p{margin:0;color:#77817b;font-size:13px}.note-open{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center}
+    .insight-card{background:linear-gradient(155deg,#596f63,#24332c);color:#fff;border-radius:28px;padding:34px;display:flex;flex-direction:column;justify-content:space-between;min-height:100%}
+    .insight-card h3{font-family:Georgia,"Songti SC",serif;font-size:30px;font-weight:500;line-height:1.35;margin:24px 0}
+    .insight-card p{color:#c9d3ce;font-size:14px}.insight-badge{align-self:flex-start;font-size:12px;padding:7px 12px;border:1px solid rgba(255,255,255,.28);border-radius:999px}
+    .cta-section{padding-top:30px}
+    .cta{min-height:420px;border-radius:36px;background:#dce5de;display:grid;grid-template-columns:1fr .72fr;overflow:hidden;position:relative}
+    .cta-copy{padding:62px}.cta-copy h2{max-width:620px}.cta-copy p{color:#627069;max-width:560px;font-size:16px;margin:22px 0 28px}.cta-art{position:relative;background:linear-gradient(155deg,#8aa195,#51685c)}
+    .cta-art:before,.cta-art:after{content:"";position:absolute;border:1px solid rgba(255,255,255,.35);border-radius:50%}.cta-art:before{width:320px;height:320px;left:70px;top:48px}.cta-art:after{width:190px;height:190px;left:135px;top:113px}.cta-word{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font:90px/1 Georgia,serif}
+    footer{padding:54px 0 70px}.footer-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:40px;padding-top:30px;border-top:1px solid var(--line)}
+    footer h4{font-size:13px;margin:0 0 14px}footer p,footer a{font-size:13px;color:#7e8782}footer .links{display:grid;gap:8px}
+    .mobile-menu{display:none}
+    @media(max-width:980px){
+      .nav-links{display:none}.mobile-menu{display:block;border:0;background:transparent;font-size:21px}
+      .hero{grid-template-columns:1fr;gap:20px;padding-top:52px}.visual{height:540px}.portrait-frame{inset:30px 10% 50px}.orb.one{left:4%}.orb.two{right:2%}
+      .trust-inner{grid-template-columns:1fr 1fr 1fr}.trust-title{grid-column:1/-1;padding:22px 0}.trust-item{padding:18px;border-left:0;border-top:1px solid var(--line)}
+      .about-grid,.learning-grid,.cta{grid-template-columns:1fr}.services-grid{grid-template-columns:1fr 1fr}.case-grid{grid-template-columns:1fr}.timeline{grid-template-columns:1fr}.year-side:after{display:none}.cta-art{min-height:280px}
+    }
+    @media(max-width:640px){
+      .container{width:min(100% - 28px,1180px)}nav{height:60px}.brand span:last-child{font-size:14px}.nav-cta{display:none}
+      .hero{min-height:auto;padding:48px 0 58px}h1{font-size:46px}.hero-copy{font-size:16px}.visual{height:465px}.portrait-frame{inset:28px 7% 55px;border-radius:140px 140px 34px 34px}.quote-card{width:238px;padding:19px;right:4px}.orb.two{top:175px}.orb.three{bottom:94px}
+      section{padding:78px 0}.section-head{display:block}.section-desc{margin-top:16px}.mv-grid,.services-grid{grid-template-columns:1fr}.story-card{min-height:410px;padding:34px}.story-card p{font-size:22px}.timeline-card{grid-template-columns:1fr}.timeline-card .tag{justify-self:start}.note-row{grid-template-columns:1fr auto}.note-meta{grid-column:1/-1}.cta-copy{padding:38px 30px}.footer-grid{grid-template-columns:1fr}.trust-inner{grid-template-columns:1fr 1fr}
+    }
+  </style>
+</head>
+<body>
+  <!--
+    THESIS: 完整复刻用户提供的 Gloria 单页品牌与教练网站，仅把肖像占位替换为用户照片。
+    OWN-WORLD: 暖米色纸张、深墨绿、鼠尾草绿、细边线与柔和阴影构成克制的教练品牌世界。
+    STORY: 品牌主张 → 信任与简介 → 经历学习 → 服务 → 案例 → 洞察 → 预约与页脚。
+    FIRST VIEWPORT: 顶部导航、核心主张、双行动按钮及右侧拱形 Gloria 肖像共同建立第一印象。
+    FORM: Exact supplied single-page reference, user-pinned; seed key: pinned-preview-html.
+    FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+  -->
+  <div class="nav-wrap">
+    <div class="container">
+      <nav>
+        <a class="brand" href="#top"><span class="brand-mark">G</span><span>GLORIA · COACHING</span></a>
+        <div class="nav-links">
+          <a href="#about">关于 Gloria</a><a href="#journey">经历与学习</a><a href="#services">教练服务</a><a href="#cases">案例</a><a href="#insights">洞察</a>
         </div>
-      </header>
+        <a class="nav-cta" href="#contact">预约一次对话</a>
+        <button class="mobile-menu" aria-label="菜单">☰</button>
+      </nav>
+    </div>
+  </div>
 
-      <main id="main">
-        <section class="hero" id="top" aria-labelledby="pageTitle">
-          <div class="hero-copy">
-            <p class="eyebrow">CODEx 额度重置观测站 / 非官方</p>
-            <h1 id="pageTitle">下一次重置，<br /><em>现在有信号吗？</em></h1>
-            <p class="lede">
-              把公告、故障、用户里程碑和新品发布压缩成一张每日雷达。结论只反映公开信号，
-              <strong>不代表 OpenAI 承诺。</strong>
-            </p>
-          </div>
-
-          <article class="forecast-card" aria-labelledby="forecastHeading">
-            <div class="score-orbit" id="scoreOrbit" style="--score: 12">
-              <svg viewBox="0 0 120 120" role="img" aria-label="重置信号评分">
-                <circle class="orbit-track" cx="60" cy="60" r="51"></circle>
-                <circle class="orbit-value" cx="60" cy="60" r="51"></circle>
-              </svg>
-              <span class="score-number" id="scoreNumber">12</span>
-              <span class="score-unit">/ 100</span>
-            </div>
-            <div class="forecast-copy">
-              <span class="signal-level low" id="signalLevel">低信号</span>
-              <h2 id="forecastHeading">暂无可验证重置窗口</h2>
-              <p id="forecastReason">未发现 Tibo 的新预告，Codex 当前正常，10M 里程碑尚未确认。</p>
-              <div class="forecast-window">
-                <span>重点观察</span>
-                <strong id="watchWindow">新公告 / 10M / Codex 故障恢复</strong>
-              </div>
-            </div>
-          </article>
-        </section>
-
-        <section class="status-ribbon" aria-label="实时概览">
-          <div>
-            <span class="status-kicker">CODEX STATUS</span>
-            <strong id="codexStatus">正在连接…</strong>
-          </div>
-          <div>
-            <span class="status-kicker">LATEST RESET</span>
-            <strong><time datetime="2026-07-17">2026.07.17</time> · 全量重置</strong>
-          </div>
-          <div>
-            <span class="status-kicker">NEXT MILESTONE</span>
-            <strong><span id="nextMilestone">10M</span> · 尚未公开确认</strong>
-          </div>
-          <div>
-            <span class="status-kicker">DATA CONFIDENCE</span>
-            <strong id="confidenceText">状态实时 · 其余人工核验</strong>
-          </div>
-        </section>
-
-        <section class="official-status-feature" aria-labelledby="officialStatusHeading">
-          <a class="official-status-link" href="https://status.openai.com/" target="_blank" rel="noreferrer">
-            <span class="official-status-mark" aria-hidden="true"><i></i><i></i><i></i></span>
-            <span class="official-status-copy">
-              <span class="status-kicker">OFFICIAL SOURCE · NEXT 24 HOURS</span>
-              <strong id="officialStatusHeading">OpenAI 运行状态</strong>
-              <small>打开官方状态页，继续观察 Codex 与其他 OpenAI 服务的实时运行情况</small>
-            </span>
-            <span class="official-status-arrow" aria-hidden="true">↗</span>
-          </a>
-        </section>
-
-        <section class="section-block" aria-labelledby="signalsHeading">
-          <div class="section-heading">
-            <div>
-              <p class="section-index">01 / SIGNAL BOARD</p>
-              <h2 id="signalsHeading">四个信号，一眼判断</h2>
-            </div>
-            <p>评分是启发式强度，不是概率。官方公告始终拥有最高权重。</p>
-          </div>
-
-          <div class="signal-grid">
-            <article class="signal-card signal-card-primary" id="tiboCard">
-              <header>
-                <span class="signal-code">S-01</span>
-                <span class="source-tag manual">人工核验</span>
-              </header>
-              <div class="signal-icon" aria-hidden="true">⌁</div>
-              <h3>Tibo 官方动态</h3>
-              <strong id="tiboState">暂无新预告</strong>
-              <p id="tiboDetail">最近记录：7 月 17 日已执行周末重置。</p>
-              <footer>
-                <span id="tiboPoints">+0 分</span>
-                <a id="tiboLink" href="https://x.com/thsottiaux" target="_blank" rel="noreferrer">打开动态 ↗</a>
-              </footer>
-            </article>
-
-            <article class="signal-card" id="statusCard">
-              <header>
-                <span class="signal-code">S-02</span>
-                <span class="source-tag live">官方实时</span>
-              </header>
-              <div class="signal-icon" aria-hidden="true">≋</div>
-              <h3>Codex 服务状态</h3>
-              <strong id="statusState">正在获取</strong>
-              <p id="statusDetail">只计算 Codex 组件；GPT 等其他产品的异常不会加分。</p>
-              <footer>
-                <span id="statusPoints">等待数据</span>
-                <a href="https://status.openai.com/" target="_blank" rel="noreferrer">官方状态页 ↗</a>
-              </footer>
-            </article>
-
-            <article class="signal-card" id="milestoneCard">
-              <header>
-                <span class="signal-code">S-03</span>
-                <span class="source-tag verified">来源留档</span>
-              </header>
-              <div class="signal-icon" aria-hidden="true">↗</div>
-              <h3>用户里程碑</h3>
-              <strong><span id="currentUsers">9</span>M / <span id="targetUsers">10</span>M</strong>
-              <p id="milestoneDetail">9M 于 7 月 15 日公开；当前没有连续用户数数据源。</p>
-              <div class="milestone-track" aria-label="已公开用户里程碑进度">
-                <span id="milestoneFill" style="width: 90%"></span>
-              </div>
-              <footer>
-                <span id="milestonePoints">+8 分</span>
-                <a id="milestoneLink" href="https://x.com/thsottiaux/status/2077607697487188198" target="_blank" rel="noreferrer">里程碑来源 ↗</a>
-              </footer>
-            </article>
-
-            <article class="signal-card" id="launchCard">
-              <header>
-                <span class="signal-code">S-04</span>
-                <span class="source-tag manual">人工核验</span>
-              </header>
-              <div class="signal-icon" aria-hidden="true">✦</div>
-              <h3>新品 / 新模型</h3>
-              <strong id="launchState">暂无新信号</strong>
-              <p id="launchDetail">GPT-5.6 Sol 发布期重置已经发生，不重复计入今日信号。</p>
-              <footer>
-                <span id="launchPoints">+0 分</span>
-                <a id="launchLink" href="https://help.openai.com/en/articles/6825453-chatgpt-release-notes" target="_blank" rel="noreferrer">发布说明 ↗</a>
-              </footer>
-            </article>
-          </div>
-        </section>
-
-        <section class="analysis-grid section-block" aria-label="里程碑与每日动作">
-          <article class="growth-panel">
-            <div class="panel-heading">
-              <div>
-                <p class="section-index">02 / MILESTONE VELOCITY</p>
-                <h2>公开用户里程碑</h2>
-              </div>
-              <span class="panel-note">不是实时用户计数</span>
-            </div>
-
-            <div class="growth-chart" aria-label="2026 年 4 月到 7 月 Codex 公开活跃用户里程碑">
-              <div class="chart-rule"><span>10M</span></div>
-              <div class="chart-rule"><span>8M</span></div>
-              <div class="chart-rule"><span>6M</span></div>
-              <div class="chart-rule"><span>4M</span></div>
-              <svg viewBox="0 0 720 260" role="img" aria-labelledby="chartTitle chartDesc">
-                <title id="chartTitle">Codex 公开活跃用户里程碑曲线</title>
-                <desc id="chartDesc">从 2026 年 4 月 7 日的 3M 上升到 7 月 15 日的 9M。</desc>
-                <defs>
-                  <linearGradient id="lineGradient" x1="0" y1="1" x2="1" y2="0">
-                    <stop offset="0" stop-color="#73f2b4" />
-                    <stop offset="1" stop-color="#ffe66a" />
-                  </linearGradient>
-                  <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0" stop-color="#73f2b4" stop-opacity=".26" />
-                    <stop offset="1" stop-color="#73f2b4" stop-opacity="0" />
-                  </linearGradient>
-                </defs>
-                <path class="area" d="M44 208 L156 180 L328 152 L508 124 L552 96 L596 68 L640 40 L640 232 L44 232 Z"></path>
-                <path class="line" d="M44 208 L156 180 L328 152 L508 124 L552 96 L596 68 L640 40"></path>
-                <g class="plot-points">
-                  <circle cx="44" cy="208" r="6"></circle><text x="44" y="194">3M</text>
-                  <circle cx="156" cy="180" r="6"></circle><text x="156" y="166">4M</text>
-                  <circle cx="328" cy="152" r="6"></circle><text x="328" y="138">5M</text>
-                  <circle cx="508" cy="124" r="6"></circle><text x="508" y="110">6M</text>
-                  <circle cx="552" cy="96" r="6"></circle><text x="552" y="82">7M</text>
-                  <circle cx="596" cy="68" r="6"></circle><text x="596" y="54">8M</text>
-                  <circle class="latest-point" cx="640" cy="40" r="8"></circle><text x="640" y="24">9M</text>
-                </g>
-              </svg>
-              <div class="chart-dates" aria-hidden="true"><span>04.07</span><span>04.21</span><span>05.31</span><span>07.12</span><span>07.15</span></div>
-            </div>
-
-            <div class="chart-callout">
-              <strong>接近下一整数里程碑，但无法计算实时百分比。</strong>
-              <p>公开序列在 7 月 12–15 日从 6M 快速升至 9M；截至今日尚无 10M 的可验证公告。</p>
-            </div>
-          </article>
-
-          <aside class="checklist-panel" aria-labelledby="checklistHeading">
-            <div class="panel-heading">
-              <div>
-                <p class="section-index">03 / 60-SECOND CHECK</p>
-                <h2 id="checklistHeading">每日 60 秒</h2>
-              </div>
-            </div>
-            <ol class="daily-list">
-              <li>
-                <span>01</span>
-                <div><strong>点“刷新今日信号”</strong><p>自动读取 Codex 官方组件与近期事件。</p></div>
-              </li>
-              <li>
-                <span>02</span>
-                <div><strong>看 Tibo 最新动态</strong><p>如出现 reset / tomorrow / limits，录入观察信号。</p></div>
-              </li>
-              <li>
-                <span>03</span>
-                <div><strong>确认里程碑或发布</strong><p>只在有来源链接时更新，避免把传闻计分。</p></div>
-              </li>
-            </ol>
-            <button class="button button-ghost button-wide mobile-signal-button" id="openSignalsMobile" type="button">更新观察信号</button>
-            <button class="button button-wide" id="copySummary" type="button">复制今日简报</button>
-            <p class="copy-feedback" id="copyFeedback" aria-live="polite"></p>
-          </aside>
-        </section>
-
-        <section class="section-block" aria-labelledby="historyHeading">
-          <div class="section-heading compact">
-            <div>
-              <p class="section-index">04 / VERIFIED HISTORY</p>
-              <h2 id="historyHeading">最近重置脉冲</h2>
-            </div>
-            <p>“已执行”与“预告”分开记录，避免重复计数。</p>
-          </div>
-
-          <div class="timeline">
-            <article>
-              <time datetime="2026-07-17">07.17</time>
-              <span class="timeline-dot hard"></span>
-              <div><span class="event-tag">全量重置</span><h3>周末再次重置</h3><p>适用于付费 Codex 与 ChatGPT Work 用户。</p><a href="https://x.com/thsottiaux/status/2078320950488297917" target="_blank" rel="noreferrer">来源 ↗</a></div>
-            </article>
-            <article>
-              <time datetime="2026-07-15">07.15</time>
-              <span class="timeline-dot milestone"></span>
-              <div><span class="event-tag">9M 里程碑</span><h3>9M 活跃用户重置</h3><p>9M 公告伴随一次已执行的全量重置。</p><a href="https://x.com/thsottiaux/status/2077607697487188198" target="_blank" rel="noreferrer">来源 ↗</a></div>
-            </article>
-            <article>
-              <time datetime="2026-07-14">07.14</time>
-              <span class="timeline-dot milestone"></span>
-              <div><span class="event-tag">8M 里程碑</span><h3>8M 活跃用户重置</h3><p>整数百万里程碑连续触发。</p><a href="https://x.com/thsottiaux/status/2077114635308986427" target="_blank" rel="noreferrer">来源 ↗</a></div>
-            </article>
-            <article>
-              <time datetime="2026-07-13">07.13</time>
-              <span class="timeline-dot banked"></span>
-              <div><span class="event-tag">7M 里程碑</span><h3>发放可储存重置</h3><p>这是可自行使用的 banked reset，不等于立即全量重置。</p><a href="https://x.com/thsottiaux/status/2076735790567338203" target="_blank" rel="noreferrer">来源 ↗</a></div>
-            </article>
-            <article>
-              <time datetime="2026-07-12">07.12</time>
-              <span class="timeline-dot hard"></span>
-              <div><span class="event-tag">6M 里程碑</span><h3>6M 活跃用户重置</h3><p>全量重置，并伴随短期规则调整。</p><a href="https://x.com/thsottiaux/status/2076365965915467978" target="_blank" rel="noreferrer">来源 ↗</a></div>
-            </article>
-          </div>
-        </section>
-
-        <section class="method-note" aria-labelledby="methodHeading">
-          <div>
-            <p class="section-index">HOW TO READ</p>
-            <h2 id="methodHeading">这是一台信号仪，不是一只水晶球。</h2>
-          </div>
-          <p>
-            Tibo 明确预告权重最高；Codex 自身故障只提供相关性线索；用户数与发布事件必须有公开来源。
-            “24 小时内重置”及“每增加 100 万用户重置”属于历史观察规律，并非 OpenAI 的持续承诺。
-          </p>
-        </section>
-      </main>
-
-      <footer class="site-footer">
-        <span>RESET / WATCH · LOCAL DASHBOARD</span>
-        <nav aria-label="数据来源">
-          <a href="https://status.openai.com/" target="_blank" rel="noreferrer">OpenAI Status</a>
-          <a href="https://x.com/thsottiaux" target="_blank" rel="noreferrer">Tibo / X</a>
-          <a href="https://help.openai.com/en/articles/6825453-chatgpt-release-notes" target="_blank" rel="noreferrer">Release Notes</a>
-        </nav>
-      </footer>
+  <main id="top">
+    <div class="container hero">
+      <div>
+        <div class="eyebrow">Personal Growth · Leadership · Relationship</div>
+        <h1>让改变发生在<br><em>真正看见自己</em>之后。</h1>
+        <p class="hero-copy">我是 Gloria，一名关注个人成长、领导力与关系质量的教练。这里记录我的职业旅程、学习体系与真实实践，也希望成为每一位来到这里的人重新理解自己的起点。</p>
+        <div class="hero-actions">
+          <a class="btn-primary" href="#services">探索教练服务 →</a>
+          <a class="btn-ghost" href="#about">先认识 Gloria <span>↘</span></a>
+        </div>
+        <div class="hero-note"><div class="dotline"><i class="dot"></i><i class="dot"></i><i class="dot"></i></div><span>服务个人 · 管理者 · 团队 · 亲密关系</span></div>
+      </div>
+      <div class="visual">
+        <div class="portrait-frame"><div class="portrait-inner"><img class="gloria-portrait" src="./assets/gloria-profile.png" alt="Gloria 职业肖像" /></div></div>
+        <div class="orb one">Life Transition · 人生转折</div>
+        <div class="orb two">Leadership · 领导力</div>
+        <div class="orb three">Relationship · 关系成长</div>
+        <div class="quote-card"><b>“教练不是给答案，而是帮助一个人重新拥有看见与选择的能力。”</b><small>— Gloria · 品牌核心表达占位</small></div>
+      </div>
     </div>
 
-    <dialog class="signal-dialog" id="signalDialog">
-      <form method="dialog" id="signalForm">
-        <header>
-          <div>
-            <p class="section-index">MANUAL SIGNAL INPUT</p>
-            <h2>更新人工观察信号</h2>
-          </div>
-          <button class="dialog-close" type="button" id="closeSignals" aria-label="关闭">×</button>
-        </header>
+    <div class="trust">
+      <div class="container trust-inner">
+        <div class="trust-title">Professional credibility · 专业信任背书</div>
+        <div class="trust-item">资质证书 01<small>认证机构 / 年份</small></div>
+        <div class="trust-item">资质证书 02<small>认证机构 / 年份</small></div>
+        <div class="trust-item">教练课程 03<small>课程体系 / 学时</small></div>
+        <div class="trust-item">企业经历 04<small>行业 / 职能背景</small></div>
+      </div>
+    </div>
 
-        <p class="dialog-intro">这里的数据只保存在本机浏览器中。请仅录入你已经打开来源确认过的信息。</p>
-
-        <div class="form-grid">
-          <label>
-            <span>Tibo 信号</span>
-            <select id="tiboSignal" name="tiboSignal">
-              <option value="none">暂无新预告</option>
-              <option value="hint">暗示可能重置</option>
-              <option value="tomorrow">明确预告明天重置</option>
-              <option value="immediate">明确说正在 / 已按下重置</option>
-            </select>
-          </label>
-          <label>
-            <span>Tibo 来源链接</span>
-            <input id="tiboUrl" name="tiboUrl" type="url" placeholder="https://x.com/thsottiaux/status/..." />
-          </label>
-          <label>
-            <span>最新公开用户数（百万）</span>
-            <input id="manualUsers" name="manualUsers" type="number" min="1" max="99" step="1" value="9" />
-          </label>
-          <label>
-            <span>里程碑来源链接</span>
-            <input id="milestoneUrl" name="milestoneUrl" type="url" placeholder="公开公告链接" />
-          </label>
-          <label>
-            <span>新品 / 模型信号</span>
-            <select id="launchSignal" name="launchSignal">
-              <option value="none">暂无新发布</option>
-              <option value="announced">已预告、尚未发布</option>
-              <option value="launched">过去 48 小时内已发布</option>
-            </select>
-          </label>
-          <label>
-            <span>发布来源链接</span>
-            <input id="manualLaunchUrl" name="manualLaunchUrl" type="url" placeholder="OpenAI 官方发布说明" />
-          </label>
+    <section id="about">
+      <div class="container">
+        <div class="section-head">
+          <div><div class="section-kicker">01 · About</div><h2>专业之前，先看见<br>Gloria 是怎样的人。</h2></div>
+          <p class="section-desc">使命、愿景与价值观不是写给网站看的口号，而是 Gloria 如何学习、工作、做教练，以及如何与人建立关系的底层选择。</p>
         </div>
-
-        <label class="full-field">
-          <span>观察备注</span>
-          <textarea id="manualNote" name="manualNote" rows="3" placeholder="例如：公告明确写了 tomorrow morning，时间为北京时间……"></textarea>
-        </label>
-
-        <footer>
-          <button class="button button-ghost danger" id="resetManual" type="button">恢复初始记录</button>
-          <div>
-            <button class="button button-ghost" id="cancelSignals" type="button">取消</button>
-            <button class="button button-primary" value="save" type="submit">保存并重算</button>
+        <div class="about-grid">
+          <article class="story-card">
+            <div class="mini">BRAND STORY · 品牌故事</div>
+            <p>我相信，每个人都拥有比自己想象中更多的可能性。教练工作的意义，不是把一个人带到“正确答案”，而是在复杂、失序或停滞的时刻，帮助 TA 找回清晰、力量与行动。</p>
+          </article>
+          <div class="mv-grid">
+            <article class="value-card"><div class="icon">M</div><strong>使命 Mission</strong><p>帮助个体与组织在关键转折点更清晰地看见自己，并做出真正属于自己的选择。</p></article>
+            <article class="value-card"><div class="icon">V</div><strong>愿景 Vision</strong><p>让教练成为一种更成熟的自我认知方式，也成为人与人之间更高质量的连接方式。</p></article>
+            <article class="value-card"><div class="icon">01</div><strong>真实</strong><p>不急于包装答案，先诚实面对真实发生的事情。</p></article>
+            <article class="value-card"><div class="icon">02</div><strong>成长</strong><p>相信改变可以被练习，能力也可以在觉察之后持续形成。</p></article>
           </div>
-        </footer>
-      </form>
-    </dialog>
+        </div>
+      </div>
+    </section>
 
-    <script src="./app.js" defer></script>
-  </body>
+    <section class="journey" id="journey">
+      <div class="container">
+        <div class="section-head">
+          <div><div class="section-kicker">02 · Journey</div><h2>经历塑造视角，<br>学习形成方法。</h2></div>
+          <p class="section-desc">这一页不是简历，而是解释 Gloria 为什么会成为今天这样的教练：她曾经在哪些真实商业环境工作，又经过怎样的系统训练。</p>
+        </div>
+        <div class="tabs"><button class="tab active" data-target="work">工作背景</button><button class="tab" data-target="study">教练学习背景</button></div>
+        <div id="work" class="tab-content">
+          <div class="timeline">
+            <div class="year-side">WORK</div>
+            <div class="timeline-items">
+              <article class="timeline-card"><div><h3>公司 / 组织名称 A · 职位</h3><p>核心成果 + 这段经历如何影响 Gloria 对组织、人和领导力的理解。</p></div><span class="tag">20XX — 20XX</span></article>
+              <article class="timeline-card"><div><h3>公司 / 组织名称 B · 职位</h3><p>建议不要罗列职责，而是强调实际场景、组织复杂度与可迁移的洞察。</p></div><span class="tag">20XX — 20XX</span></article>
+              <article class="timeline-card"><div><h3>职业转折 · 从管理实践走向教练</h3><p>用一个关键故事解释“为什么是教练”，把工作背景自然连接到个人品牌。</p></div><span class="tag">Turning Point</span></article>
+            </div>
+          </div>
+        </div>
+        <div id="study" class="tab-content hidden">
+          <div class="timeline">
+            <div class="year-side">LEARN</div>
+            <div class="timeline-items">
+              <article class="timeline-card"><div><h3>教练课程 / 认证体系 01</h3><p>课程介绍 · 学习时长 · 核心转变：这门课真正改变了我什么？</p></div><span class="tag">课程笔记 →</span></article>
+              <article class="timeline-card"><div><h3>教练课程 / 认证体系 02</h3><p>把“课程大纲”退到第二层，把个人吸收后的方法、洞察与实践放到第一层。</p></div><span class="tag">学习感悟 →</span></article>
+              <article class="timeline-card"><div><h3>持续学习与督导</h3><p>展示 ongoing learning，强化专业长期主义，而不是只展示一次性证书。</p></div><span class="tag">持续更新</span></article>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="services">
+      <div class="container">
+        <div class="section-head">
+          <div><div class="section-kicker">03 · Coaching</div><h2>不同的问题，<br>需要不同层次的对话。</h2></div>
+          <p class="section-desc">让不同访客一眼找到“这是为我准备的”。未来每张卡都可以进入独立服务详情页、适合人群、流程与预约方式。</p>
+        </div>
+        <div class="services-grid">
+          <article class="service"><div><span class="service-no">01 / LIFE</span></div><div><h3>个人成长<br>Life Coaching</h3><p>人生选择 · 情绪与能量 · 自我认知 · 生活转折 · 个人边界。</p><div class="arrow">↗</div></div></article>
+          <article class="service"><div><span class="service-no">02 / EXECUTIVE</span></div><div><h3>领导力与<br>管理者教练</h3><p>角色升级 · 领导风格 · 决策 · 影响力 · 中高层管理者发展。</p><div class="arrow">↗</div></div></article>
+          <article class="service"><div><span class="service-no">03 / TEAM</span></div><div><h3>团队与<br>组织教练</h3><p>团队协作 · 组织关系 · 共识 · 高绩效团队 · 组织变革。</p><div class="arrow">↗</div></div></article>
+          <article class="service"><div><span class="service-no">04 / RELATIONSHIP</span></div><div><h3>亲密关系<br>Relationship</h3><p>沟通模式 · 需求表达 · 冲突 · 信任 · 关系中的自我成长。</p><div class="arrow">↗</div></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="cases" id="cases">
+      <div class="container">
+        <div class="section-head">
+          <div><div class="section-kicker">04 · Cases</div><h2>真实改变，<br>比头衔更有说服力。</h2></div>
+          <p class="section-desc">案例采用匿名与去识别化结构。重点不是“讲故事”，而是让未来客户看懂问题、教练过程与发生了什么变化。</p>
+        </div>
+        <div class="filters"><button class="filter active" data-filter="all">全部案例</button><button class="filter" data-filter="life">个人 C 端</button><button class="filter" data-filter="business">企业端</button><button class="filter" data-filter="relationship">亲密关系</button></div>
+        <div class="case-grid">
+          <article class="case-card" data-type="life"><div><span class="label">Life Coaching · 匿名案例</span><h3>“我好像什么都有，但不知道自己真正想要什么。”</h3><div class="case-step"><span>情境</span><span>长期高压后出现能量下降与方向感缺失。</span></div><div class="case-step"><span>教练焦点</span><span>价值排序、角色期待、边界与行动选择。</span></div><div class="case-step"><span>转变</span><span>从反复内耗，进入可执行的选择与新节奏。</span></div></div><div class="privacy">案例内容需获得客户授权，并进行充分匿名化。</div></article>
+          <article class="case-card" data-type="business"><div><span class="label">Executive Coaching · 企业案例</span><h3>从“优秀业务负责人”到“真正带团队的人”。</h3><div class="case-step"><span>情境</span><span>晋升后仍沿用个人贡献者模式，团队依赖度高。</span></div><div class="case-step"><span>教练焦点</span><span>领导者身份、授权、反馈与关键关系。</span></div><div class="case-step"><span>转变</span><span>从“自己解决”转向“让团队能够解决”。</span></div></div><div class="privacy">B 端案例可增加周期、参与人数与业务结果，但避免泄露组织机密。</div></article>
+          <article class="case-card" data-type="relationship"><div><span class="label">Relationship · 关系案例</span><h3>当每一次沟通，最后都变成“谁对谁错”。</h3><div class="case-step"><span>情境</span><span>高频冲突，双方都感觉自己没有被理解。</span></div><div class="case-step"><span>教练焦点</span><span>冲突循环、真实需求、表达方式与连接。</span></div><div class="case-step"><span>转变</span><span>从立场对抗，逐步转向共同面对关系议题。</span></div></div><div class="privacy">亲密关系类建议以“主题化、方法化”呈现，隐私保护优先。</div></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="insights">
+      <div class="container">
+        <div class="section-head">
+          <div><div class="section-kicker">05 · Learning & Insights</div><h2>把学习留下来，<br>把方法沉淀下来。</h2></div>
+          <p class="section-desc">这部分既服务同行，也构成 Gloria 的长期内容资产：课程笔记、方法反思、教练观察，以及未来的商业教练商业化研究。</p>
+        </div>
+        <div class="learning-grid">
+          <div class="notebook">
+            <div class="note-row"><span class="note-meta">COURSE 01</span><div><h4>课程名称 · 核心学习笔记</h4><p>3 个最重要的模型、一次关键认知变化、实践后的反思。</p></div><span class="note-open">↗</span></div>
+            <div class="note-row"><span class="note-meta">REFLECTION</span><div><h4>做教练之后，我对“倾听”有了什么新的理解？</h4><p>个人方法论型文章 · 可持续积累搜索与品牌价值。</p></div><span class="note-open">↗</span></div>
+            <div class="note-row"><span class="note-meta">FIELD NOTE</span><div><h4>管理者真正需要的，可能不是更多管理工具</h4><p>从企业教练实践中提炼可公开的共性洞察。</p></div><span class="note-open">↗</span></div>
+            <div class="note-row"><span class="note-meta">RELATIONSHIP</span><div><h4>关系中的冲突，为什么常常不是事件本身？</h4><p>弱化个案细节，强化心理安全与关系模式的普适洞察。</p></div><span class="note-open">↗</span></div>
+          </div>
+          <aside class="insight-card">
+            <div><span class="insight-badge">FUTURE FOCUS · 新方向</span><h3>商业教练如何形成一门真正可持续的生意？</h3><p>未来可逐步沉淀：产品结构、定价逻辑、获客方式、复购与转介绍、企业业务开发，以及教练从“专业能力”走向“商业能力”的路径。</p></div>
+            <div>进入「教练商业化」专题 →</div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-section" id="contact">
+      <div class="container">
+        <div class="cta">
+          <div class="cta-copy"><div class="section-kicker">START A CONVERSATION</div><h2>也许你不需要马上找到答案，<br>可以先有一次真正的对话。</h2><p>适用于个人成长、管理者发展、团队与组织议题，以及亲密关系教练。正式网站可在此接入 Calendly / 微信 / 表单预约。</p><a class="btn-primary" href="javascript:void(0)">预约一次探索对话 →</a></div>
+          <div class="cta-art"><div class="cta-word">G.</div></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container footer-grid">
+      <div><a class="brand" href="#top"><span class="brand-mark">G</span><span>GLORIA · COACHING</span></a><p style="max-width:420px;margin-top:18px">个人品牌 · 教练实践 · 学习沉淀 · 长期洞察。<br>让这个网站既是一张名片，也成为 Gloria 持续成长的内容空间。</p></div>
+      <div><h4>EXPLORE</h4><div class="links"><a href="#about">关于 Gloria</a><a href="#journey">经历与学习</a><a href="#services">教练服务</a><a href="#cases">案例</a></div></div>
+      <div><h4>CONNECT</h4><div class="links"><a href="#contact">预约对话</a><a href="javascript:void(0)">微信公众号</a><a href="javascript:void(0)">小红书 / LinkedIn</a><a href="javascript:void(0)">Email</a></div></div>
+    </div>
+  </footer>
+
+  <script>
+    document.querySelectorAll('.tab').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c=>c.classList.add('hidden'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.target).classList.remove('hidden');
+      })
+    });
+    document.querySelectorAll('.filter').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        document.querySelectorAll('.filter').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.case-card').forEach(card=>{
+          const show = btn.dataset.filter==='all' || card.dataset.type===btn.dataset.filter;
+          card.style.display = show ? 'flex' : 'none';
+        })
+      })
+    });
+  </script>
+</body>
 </html>
