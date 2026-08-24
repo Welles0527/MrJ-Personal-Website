@@ -1,0 +1,2161 @@
+---
+const basePath = import.meta.env.BASE_URL;
+
+const experiences = [
+  {
+    periodZh: '2022/05 - 至今',
+    periodEn: 'May 2022 - Present',
+    company: 'IHG China',
+    logo: 'resume/logos/ihg.png',
+    logoAlt: 'IHG Hotels & Resorts',
+    role: 'Sr. Manager Finance & Business Support',
+    metaZh: '酒店业 · 外企 · 10,000+ 人',
+    metaEn: 'Hospitality · Global company · 10,000+ people',
+    summaryZh: '以财务洞察推动加盟酒店效率提升，并识别 KPI 相关问题与机会。',
+    summaryEn: 'Drive financial efficiency and surface KPI-led opportunities across franchised hotels.',
+    detailsZh: [
+      '与 FPS 团队协作提升酒店效率，识别并解决加盟酒店的财务相关问题。',
+      '提供财务洞察，识别酒店经营挑战与机会，并支持关键 KPI 监控。',
+      '发起新项目与改进举措，提升酒店财务回报并优化运营模式。',
+      '推动并支持 CI 与 Franchise 项目，将新的业务需求纳入项目方案。',
+      '与 COE、IDT、OPS 支持团队及业务专家协作，推进流程再造和系统升级以支持增长。',
+    ],
+    detailsEn: [
+      'Partner with the FPS team to improve hotel efficiency and resolve finance-related issues for franchised hotels.',
+      'Provide financial insights that identify hotel challenges and opportunity areas for KPI monitoring.',
+      'Launch projects and initiatives that improve financial returns and strengthen the hotel operating model.',
+      'Drive and support CI and Franchise projects to incorporate new business requirements.',
+      'Partner with COE, IDT, OPS support teams and business experts on process re-engineering and system enhancement.',
+    ],
+  },
+  {
+    periodZh: '2019/10 - 2020/06',
+    periodEn: 'Oct 2019 - Jun 2020',
+    company: 'OYO China',
+    logo: 'resume/logos/oyo.png',
+    logoAlt: 'OYO',
+    role: 'Senior Analytical Manager · CXO Office',
+    metaZh: '酒店业 · 中国业务覆盖约 8,000 家酒店 · 带领 2 人',
+    metaEn: 'Hospitality · China scope of about 8,000 hotels · Led 2 people',
+    summaryZh: '负责全国业务分析与 CXO Office PMO，覆盖 8 个区域和约 8,000 家酒店。',
+    summaryEn: 'Led nationwide business analysis and CXO-office PMO support across eight regions and about 8,000 hotels.',
+    detailsZh: [
+      '负责中国区约 8,000 家酒店的业务与商业分析。',
+      '承担 CEO/CXO 项目管理，优化跨公司的沟通、流程与执行效率。',
+      '建立并分析 8 个区域的 Regional GM KPI。',
+      '开展 G&A 成本控制，覆盖人力、咨询费与办公租赁。',
+      '负责全球汇报与跨区域沟通。',
+    ],
+    detailsEn: [
+      'Delivered business and commercial analysis for the China entity covering about 8,000 hotels.',
+      'Ran CEO/CXO project management to improve communication, process and execution efficiency.',
+      'Built and analyzed Regional GM KPI frameworks across eight regions.',
+      'Managed G&A cost control across people, consulting and office rental.',
+      'Owned global reporting and cross-region communication.',
+    ],
+  },
+  {
+    periodZh: '2018/01 - 2019/10',
+    periodEn: 'Jan 2018 - Oct 2019',
+    company: 'WeWork China',
+    logo: 'resume/logos/wework.png',
+    logoAlt: 'WeWork',
+    role: 'Senior FP&A Manager',
+    metaZh: '联合办公 · 外企 · 覆盖 100+ 中国项目 · 带领 2 人',
+    metaEn: 'Co-working · Global company · 100+ China locations · Led 2 people',
+    summaryZh: '负责中国区预算、预测与 100+ 项目的 P&L 分析，支持管理层经营决策。',
+    summaryEn: 'Led budgeting, forecasting and P&L analysis for more than 100 China locations.',
+    detailsZh: [
+      '使用 Anaplan 主导中国区年度预算与季度预测。',
+      '支持管理层和区域 GM 改善入住率、收入质量、定价及折扣。',
+      '负责 100+ 中国项目的 P&L 分析和管理层月度报告。',
+      '分析收入与成本 KPI，包括租金、人力、Opex 与 Capex。',
+      '搭建五年规划模型与预测。',
+      '开展房地产投资模型与 pro-forma 分析。',
+      '为多职能团队提供 Anaplan、Workday 与 Looker 数据支持及培训。',
+    ],
+    detailsEn: [
+      'Led annual budgeting and quarterly forecasting for the China entity using Anaplan.',
+      'Supported senior management and regional GMs on occupancy, quality of revenue, pricing and discount decisions.',
+      'Owned P&L analysis and monthly management reporting for more than 100 China locations.',
+      'Analyzed revenue and cost KPIs including rent, labor, opex and capex.',
+      'Built a five-year planning model and forecast.',
+      'Delivered real-estate pro-forma and investment-model analysis.',
+      'Provided Anaplan, Workday and Looker data support and training across functions.',
+    ],
+  },
+  {
+    periodZh: '2014/06 - 2017/12',
+    periodEn: 'Jun 2014 - Dec 2017',
+    company: 'C&A China',
+    logo: 'resume/logos/c-and-a.png',
+    logoAlt: 'C&A',
+    role: 'Financial Analysis Manager',
+    metaZh: '服装零售 · 外企 · 约 80 家门店 · 带领 1 人',
+    metaEn: 'Apparel retail · Global company · About 80 stores · Led 1 person',
+    summaryZh: '主导约 80 家门店的预算预测、经营复盘与门店投资决策分析。',
+    summaryEn: 'Led budgeting, forecasting, business reviews and store-investment analysis for about 80 stores.',
+    detailsZh: [
+      '主导公司年度预算与季度预测。',
+      '编制月度经营复盘材料。',
+      '完成营销活动的前、中、后评估。',
+      '开展新店投资分析与模型控制。',
+      '搭建续租、盈亏平衡和关店财务模型。',
+      '通过 Capex、租金与人力结构分析支持风险管理。',
+    ],
+    detailsEn: [
+      'Led annual budgeting and quarterly forecasting for the company.',
+      'Prepared the monthly business review package.',
+      'Evaluated marketing events and campaigns before, during and after launch.',
+      'Owned new-store investment analysis and model control.',
+      'Built models for lease extensions, store breakeven and closure decisions.',
+      'Supported risk management through capex, rent and labor-structure analysis.',
+    ],
+  },
+  {
+    periodZh: '2011/11 - 2014/06',
+    periodEn: 'Nov 2011 - Jun 2014',
+    company: 'Costa Coffee China',
+    logo: 'resume/logos/costa-coffee.png',
+    logoAlt: 'Costa Coffee',
+    role: 'Senior FP&A',
+    metaZh: '餐饮连锁 · 外企 · 约 300 家门店',
+    metaEn: 'Food & beverage retail · Global company · About 300 stores',
+    summaryZh: '负责约 300 家门店的预算与战略规划，并支持新店投资可行性决策。',
+    summaryEn: 'Owned budgeting and strategic planning for about 300 stores and supported investment feasibility decisions.',
+    detailsZh: [
+      '主导年度预算与战略规划流程。',
+      '建立新投资项目可行性研究模型并参与投资决策委员会。',
+      '编制周度与月度经营复盘，分析 FCR、ADT、LFL 等核心指标。',
+      '开展营销活动分析与新品预测。',
+      '完成 Starbucks、Pacific Coffee 等竞争对手分析。',
+    ],
+    detailsEn: [
+      'Led the annual budgeting and strategic-planning process.',
+      'Built feasibility-study models for new investments and participated in opening decisions.',
+      'Prepared weekly and monthly business reviews covering FCR, ADT, LFL and other core metrics.',
+      'Analyzed marketing campaigns and forecast new products.',
+      'Completed competitor analysis covering Starbucks, Pacific Coffee and other peers.',
+    ],
+  },
+  {
+    periodZh: '2010/09 - 2011/10',
+    periodEn: 'Sep 2010 - Oct 2011',
+    company: 'China Lodging Group',
+    logo: 'resume/logos/h-world.png',
+    logoAlt: 'H World Group',
+    role: 'Financial Analyst',
+    metaZh: '酒店业 · 民营企业 · 覆盖约 800 家酒店',
+    metaEn: 'Hospitality · Private company · About 800 hotels',
+    summaryZh: '支持约 800 家酒店的区域预算、销售差异、核心经营指标与成本分析。',
+    summaryEn: 'Supported regional budgeting, sales variance, KPI and cost analysis across about 800 hotels.',
+    detailsZh: [
+      '支持各区域年度预算。',
+      '编制周度与月度销售报告，分析目标与实际差异。',
+      '分析入住率、RevPAR 与 ADR 等核心指标。',
+      '分析能源、客房、办公及维修等成本。',
+      '分析新酒店开业前成本。',
+      '开展如家、7 天与锦江等竞争对手分析。',
+    ],
+    detailsEn: [
+      'Supported annual budgeting across all regions.',
+      'Prepared weekly and monthly sales reporting with target-versus-actual variance analysis.',
+      'Analyzed occupancy, RevPAR and ADR metrics.',
+      'Reviewed utility, room, office and maintenance costs.',
+      'Analyzed pre-opening costs for new hotels.',
+      'Completed competitor analysis covering Home Inns, 7 Days and Jinjiang.',
+    ],
+  },
+  {
+    periodZh: '2005/03 - 2009/08',
+    periodEn: 'Mar 2005 - Aug 2009',
+    company: 'HP China',
+    logo: 'resume/logos/hp.png',
+    logoAlt: 'HP',
+    role: 'Intercompany / Fixed Assets Team Leader',
+    metaZh: '科技硬件 · 合资企业 · 带领 3 人',
+    metaEn: 'Technology hardware · Joint venture · Led 3 people',
+    summaryZh: '负责关联公司结算与对账，并带领中国区固定资产盘点及内控培训。',
+    summaryEn: 'Managed intercompany settlement and reconciliation while leading China fixed-asset controls and training.',
+    detailsZh: [
+      '依照 SAFE 与公司政策处理月度关联公司贸易及非贸易结算。',
+      '监控关联公司对账并分析长期未清余额。',
+      '带领 3 人完成中国区年度固定资产盘点。',
+      '为业务财务与资产协调员提供固定资产管理培训。',
+    ],
+    detailsEn: [
+      'Processed monthly trade and non-trade intercompany settlements in line with SAFE and company policy.',
+      'Monitored intercompany reconciliation and resolved ageing balances.',
+      'Led a three-person team for the China annual physical count.',
+      'Trained business finance and asset coordinators on fixed-asset management.',
+    ],
+  },
+];
+
+const aiSkills: Array<[string, number]> = [
+  ['ChatGPT (Codex)', 95],
+  ['Claude Code', 85],
+  ['Workbuddy', 85],
+];
+
+const ventures = [
+  {
+    theme: 'finance',
+    periodZh: '2020/06 - 2022/05',
+    periodEn: 'Jun 2020 - May 2022',
+    nameZh: 'J先生财商学院',
+    nameEn: 'Mr. J Financial Intelligence Academy',
+    logo: 'resume/ventures/j-finance-logo-theme.png',
+    logoAlt: 'J先生财商学院 Logo',
+    metaZh: '创始人 · 1,000+ 学员 · 40+ 节原创课程',
+    metaEn: 'Founder · 1,000+ learners · 40+ original lessons',
+    summaryZh: '围绕投资理财科普与实战，自主设计并交付系统化课程。',
+    summaryEn: 'Designed and delivered a structured curriculum spanning financial literacy and practical investing.',
+    courses: [
+      ['投资理财基础理论课程（10 节）', 'Investment & Financial Planning Fundamentals (10 lessons)'],
+      ['投资理财实战课程（10 节）', 'Practical Investment & Financial Planning (10 lessons)'],
+      ['A 股投研社（A 股理论 + 实战，10 节）', 'A-share Research Club: Theory & Practice (10 lessons)'],
+      ['神基投资营（基金实战课程，5 节）', 'Fund Investment Camp (5 practical lessons)'],
+      ['港股打新（5 节）', 'Hong Kong IPO Subscription (5 lessons)'],
+    ],
+    gallery: [
+      'resume/ventures/j-finance-courses-01.png',
+      'resume/ventures/j-finance-courses-02.png',
+      'resume/ventures/j-finance-courses-03.png',
+    ],
+  },
+  {
+    theme: 'ai',
+    periodZh: '2026/04 - 2026/08',
+    periodEn: 'Apr 2026 - Aug 2026',
+    nameZh: 'J先生AI魔法学院',
+    nameEn: 'Mr. J AI Magic Academy',
+    logo: 'resume/ventures/j-ai-logo-theme.png',
+    logoAlt: 'J先生AI魔法学院 Logo',
+    metaZh: '创始人 · 100+ 学员 · 6 节原创 AI 入门课程',
+    metaEn: 'Founder · 100+ learners · 6 original introductory AI lessons',
+    summaryZh: '以生活、工作与投资场景为切口，帮助初学者建立可实践的 AI 应用能力。',
+    summaryEn: 'Helped beginners build practical AI skills for everyday life, work and investing.',
+    courses: [
+      ['第 1 课｜AI魔法理论', 'Lesson 1 | AI Magic Theory'],
+      ['第 2 课｜魔法工具 - 灵宠篇', 'Lesson 2 | AI Tools - Companion Agents'],
+      ['第 3 课｜魔法工具 - 龙虾篇', 'Lesson 3 | AI Tools - Lobster'],
+      ['第 4 课｜OPC 一人公司', 'Lesson 4 | OPC: One-Person Company'],
+      ['第 5 课｜AI 基金投资', 'Lesson 5 | AI for Fund Investing'],
+      ['第 6 课｜AI 股票投资', 'Lesson 6 | AI for Stock Investing'],
+    ],
+    gallery: ['resume/ventures/j-ai-courses.png'],
+  },
+];
+
+const workSkills = [
+  { name: 'Business Analysis & Reporting', labelLinesEn: ['Business Analysis', '& Reporting'], labelLinesZh: ['业务分析', '与报告'], level: 95 },
+  { name: 'Budgeting & Strategic Planning', labelLinesEn: ['Budgeting &', 'Strategic Planning'], labelLinesZh: ['预算与', '战略规划'], level: 90 },
+  { name: 'Financial Modeling', labelLinesEn: ['Financial Modeling'], labelLinesZh: ['财务建模'], level: 90 },
+  { name: 'Leadership', labelLinesEn: ['Leadership'], labelLinesZh: ['领导力'], level: 80 },
+  { name: 'Work Efficiency', labelLinesEn: ['Efficiency'], labelLinesZh: ['工作效率'], level: 90 },
+];
+
+const personalCapabilities = [
+  {
+    nameEn: 'Family Asset Allocation & Management',
+    nameZh: '家庭资产分配与管理',
+  },
+  {
+    nameEn: 'Financial Statement Review & Analysis',
+    nameZh: '财报研读与分析',
+  },
+  {
+    nameEn: 'Personal Investment Strategy Development',
+    nameZh: '投资策略制定',
+  },
+];
+
+const radarCenterX = 150;
+const radarCenterY = 126;
+const radarRadius = 68;
+const radarPoint = (index: number, level: number, radius = radarRadius) => {
+  const angle = -Math.PI / 2 + (index * Math.PI * 2) / workSkills.length;
+  const scaledRadius = radius * (level / 100);
+  return `${(radarCenterX + Math.cos(angle) * scaledRadius).toFixed(2)},${(radarCenterY + Math.sin(angle) * scaledRadius).toFixed(2)}`;
+};
+const radarGrid = Array.from({ length: 5 }, (_, index) =>
+  workSkills.map((_, skillIndex) => radarPoint(skillIndex, (index + 1) * 20)).join(' ')
+);
+const radarAxes = workSkills.map((skill, index) => {
+  const angle = -Math.PI / 2 + (index * Math.PI * 2) / workSkills.length;
+  const labelRadius = radarRadius + 39;
+  const horizontalDirection = Math.cos(angle);
+  const labelX = horizontalDirection > 0.15 ? 292 : horizontalDirection < -0.15 ? 8 : radarCenterX;
+  const labelY = radarCenterY + Math.sin(angle) * labelRadius;
+  return {
+    ...skill,
+    point: radarPoint(index, 100),
+    labelX: labelX.toFixed(2),
+    labelY: labelY.toFixed(2),
+    anchor: horizontalDirection > 0.15 ? 'end' : horizontalDirection < -0.15 ? 'start' : 'middle',
+  };
+});
+const radarShape = workSkills.map((skill, index) => radarPoint(index, skill.level)).join(' ');
+
+const tools = [
+  { name: 'Excel', endorsed: true },
+  { name: 'PPT', endorsed: true },
+  { name: 'Tableau', endorsed: false },
+  { name: 'SAP', endorsed: false },
+  { name: 'Anaplan', endorsed: false },
+];
+---
+
+<!doctype html>
+<html lang="zh-CN" data-theme="dark" data-language="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#ef9b73" />
+    <link rel="icon" type="image/png" href={`${basePath}/favicon.png?v=20260813-circle`} />
+    <meta
+      name="description"
+      content="Welles Gu 的双语个人简历，聚焦投资分析、财务分析、理财规划与个人 AI 应用。"
+      data-description
+    />
+    <title>Welles Gu｜投资分析师、财务分析师与个人 AI 应用导师</title>
+    <script is:inline>
+      (() => {
+        let theme = "dark";
+        let language = "zh";
+        try {
+          theme = window.localStorage.getItem("welles-resume-theme") === "light" ? "light" : "dark";
+          language = window.localStorage.getItem("welles-resume-language") === "en" ? "en" : "zh";
+        } catch {}
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.dataset.language = language;
+        document.documentElement.lang = language === "en" ? "en" : "zh-CN";
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style is:inline>
+      :root {
+        --page: #ef9b73;
+        --page-deep: #d87755;
+        --shell: #1d1e1e;
+        --profile: #3c3d3d;
+        --surface: #242525;
+        --surface-raised: #2b2c2c;
+        --text: #fffaf7;
+        --muted: #b9b5b1;
+        --subtle: #85817f;
+        --accent: #f29a72;
+        --accent-soft: #ffc4a7;
+        --line: rgba(255, 255, 255, 0.11);
+        --focus: #ffd0b8;
+        --shadow: rgba(67, 21, 8, 0.28);
+        --body-font: "Manrope", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+      }
+
+      html[data-theme="light"] {
+        --page: #f2b18f;
+        --page-deep: #dc815f;
+        --shell: #fffaf6;
+        --profile: #e9ded7;
+        --surface: #fffdfb;
+        --surface-raised: #f6ece6;
+        --text: #292625;
+        --muted: #6d6561;
+        --subtle: #8d817a;
+        --accent: #b85f40;
+        --accent-soft: #8f452f;
+        --line: rgba(63, 37, 26, 0.13);
+        --focus: #8e3d27;
+        --shadow: rgba(105, 45, 25, 0.18);
+        color-scheme: light;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        min-width: 320px;
+        min-height: 100%;
+        background: var(--page);
+        color-scheme: dark;
+        scroll-behavior: smooth;
+      }
+
+      body {
+        min-width: 320px;
+        min-height: 100svh;
+        margin: 0;
+        overflow-x: hidden;
+        background:
+          radial-gradient(circle at 82% 0%, rgba(255, 223, 205, 0.5), transparent 28rem),
+          linear-gradient(135deg, var(--page-deep), var(--page) 42%, #f4b08b 100%);
+        color: var(--text);
+        font-family: var(--body-font);
+        text-rendering: optimizeLegibility;
+      }
+
+      button,
+      a {
+        font: inherit;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      button {
+        color: inherit;
+      }
+
+      :focus-visible {
+        outline: 2px solid var(--focus);
+        outline-offset: 4px;
+      }
+
+      .page-frame {
+        width: min(1480px, calc(100% - 32px));
+        margin: 16px auto;
+      }
+
+      .utility-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        margin: 0 8px 12px;
+      }
+
+      .home-link,
+      .control-button {
+        display: inline-flex;
+        min-height: 42px;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        border: 1px solid rgba(40, 20, 13, 0.2);
+        border-radius: 999px;
+        padding: 0 15px;
+        background: rgba(255, 244, 237, 0.76);
+        color: #3a2118;
+        box-shadow: 0 10px 30px rgba(106, 39, 18, 0.08);
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        backdrop-filter: blur(12px);
+        transition: transform 180ms ease, background 180ms ease;
+      }
+
+      .home-link:hover,
+      .control-button:hover {
+        background: rgba(255, 250, 247, 0.94);
+        transform: translateY(-2px);
+      }
+
+      .home-link svg,
+      .control-button svg {
+        width: 17px;
+        height: 17px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .controls {
+        display: flex;
+        gap: 8px;
+      }
+
+      .resume-shell {
+        position: relative;
+        display: grid;
+        overflow: clip;
+        min-height: calc(100svh - 86px);
+        grid-template-areas:
+          "profile experience skills"
+          "profile experience education"
+          "profile experience tools";
+        grid-template-columns: minmax(250px, 0.82fr) minmax(460px, 1.45fr) minmax(290px, 1fr);
+        grid-template-rows: auto auto 1fr;
+        border: 1px solid rgba(255, 255, 255, 0.34);
+        border-radius: 34px;
+        background: var(--shell);
+        box-shadow: 0 28px 80px var(--shadow);
+      }
+
+      .resume-shell::before,
+      .resume-shell::after {
+        position: absolute;
+        z-index: 4;
+        width: 110px;
+        height: 110px;
+        opacity: 0.24;
+        background-image: radial-gradient(circle, var(--accent) 1.2px, transparent 1.5px);
+        background-size: 8px 8px;
+        content: "";
+        pointer-events: none;
+      }
+
+      .resume-shell::before {
+        top: 26px;
+        left: 26%;
+      }
+
+      .resume-shell::after {
+        right: 20px;
+        bottom: 20px;
+      }
+
+      .profile-column {
+        position: relative;
+        z-index: 1;
+        grid-area: profile;
+        min-width: 0;
+        padding: clamp(28px, 4vw, 64px) clamp(22px, 3vw, 46px);
+        background:
+          radial-gradient(circle at 50% 3%, rgba(255, 255, 255, 0.08), transparent 20rem),
+          var(--profile);
+      }
+
+      .profile-sticky {
+        position: sticky;
+        top: 24px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+
+      .portrait-wrap {
+        position: relative;
+        width: min(210px, 78%);
+        aspect-ratio: 1 / 1;
+        margin-top: 10px;
+      }
+
+      .portrait-wrap::before {
+        position: absolute;
+        inset: -13px;
+        border: 1px solid rgba(255, 255, 255, 0.42);
+        border-radius: 50%;
+        content: "";
+      }
+
+      .portrait-wrap::after {
+        position: absolute;
+        z-index: -1;
+        right: -28px;
+        bottom: -24px;
+        width: 92px;
+        height: 92px;
+        opacity: 0.44;
+        background-image: radial-gradient(circle, var(--accent) 1.2px, transparent 1.5px);
+        background-size: 7px 7px;
+        content: "";
+      }
+
+      .portrait {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border: 5px solid rgba(255, 255, 255, 0.84);
+        border-radius: 50%;
+        object-fit: cover;
+        object-position: center 20%;
+        filter: saturate(0.86) contrast(1.02);
+      }
+
+      .profile-kicker {
+        margin: 39px 0 0;
+        color: var(--accent-soft);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+
+      .profile-name {
+        margin: 10px 0 0;
+        font-size: clamp(32px, 3vw, 47px);
+        font-weight: 800;
+        letter-spacing: -0.045em;
+        line-height: 1;
+      }
+
+      .profile-role {
+        width: 100%;
+        max-width: 300px;
+        margin: 15px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.75;
+        text-align: left;
+      }
+
+      .profile-role span {
+        display: block;
+      }
+
+      .profile-facts {
+        display: grid;
+        width: 100%;
+        gap: 10px;
+        margin-top: 30px;
+      }
+
+      .fact {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        gap: 11px;
+        border-top: 1px solid var(--line);
+        padding-top: 11px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+        text-align: left;
+      }
+
+      .fact svg {
+        width: 17px;
+        height: 17px;
+        flex: 0 0 auto;
+        fill: none;
+        stroke: var(--accent);
+        stroke-width: 1.9;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .fact span,
+      .fact a {
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
+
+      .profile-actions {
+        display: grid;
+        width: 100%;
+        gap: 10px;
+        margin-top: 25px;
+      }
+
+      .download-action {
+        display: flex;
+        min-height: 48px;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 800;
+        transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+      }
+
+      .download-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .download-action {
+        min-height: 43px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.045);
+        color: var(--text);
+      }
+
+      .download-action:hover {
+        transform: translateY(-2px);
+      }
+
+      .download-action:hover {
+        border-color: var(--accent);
+        background: rgba(242, 154, 114, 0.09);
+      }
+
+      .download-action svg {
+        width: 15px;
+        height: 15px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .find-me {
+        width: 100%;
+        margin-top: 12px;
+        border-top: 1px solid var(--line);
+        padding-top: 17px;
+        text-align: left;
+      }
+
+      .find-me-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0 0 10px;
+        color: var(--text);
+        font-size: 18px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+      }
+
+      .find-me-title::after {
+        height: 1px;
+        flex: 1;
+        background: linear-gradient(90deg, var(--accent), transparent);
+        content: '';
+        opacity: 0.65;
+      }
+
+      .find-me-actions {
+        display: grid;
+        gap: 7px;
+      }
+
+      .find-me-action {
+        display: grid;
+        min-height: 38px;
+        grid-template-columns: 28px minmax(0, 1fr) auto;
+        gap: 9px;
+        align-items: center;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 6px 10px 6px 7px;
+        background: rgba(255, 255, 255, 0.035);
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 750;
+        transition: border-color 180ms ease, background 180ms ease, color 180ms ease, transform 180ms ease;
+      }
+
+      .find-me-action-index {
+        display: grid;
+        width: 28px;
+        height: 28px;
+        place-items: center;
+        border-radius: 50%;
+        background: rgba(242, 154, 114, 0.14);
+        color: var(--accent-soft);
+        font-size: 9px;
+        font-weight: 850;
+      }
+
+      .find-me-action::after {
+        color: var(--accent);
+        content: '↗';
+        font-size: 14px;
+      }
+
+      .find-me-action:hover {
+        transform: translateX(2px);
+        border-color: rgba(242, 154, 114, 0.55);
+        background: rgba(242, 154, 114, 0.09);
+        color: var(--text);
+      }
+
+      .find-me-action:focus-visible,
+      .course-gallery-disclosure summary:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 3px;
+      }
+
+      .experience-column {
+        position: relative;
+        z-index: 2;
+        grid-area: experience;
+        min-width: 0;
+        padding: clamp(36px, 4vw, 66px) clamp(26px, 3.6vw, 58px);
+        background: var(--shell);
+      }
+
+      .panel {
+        position: relative;
+        z-index: 2;
+        min-width: 0;
+        border-left: 1px solid var(--line);
+        padding: 38px clamp(22px, 2.8vw, 42px);
+        background: var(--surface);
+      }
+
+      .skills-panel {
+        grid-area: skills;
+        padding-top: clamp(38px, 4vw, 66px);
+      }
+
+      .education-panel {
+        grid-area: education;
+      }
+
+      .tools-panel {
+        grid-area: tools;
+        padding-bottom: clamp(42px, 5vw, 72px);
+      }
+
+      .section-eyebrow {
+        margin: 0 0 8px;
+        color: var(--accent);
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+
+      .section-title {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        margin: 0;
+        font-size: clamp(24px, 2.1vw, 34px);
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        line-height: 1.12;
+      }
+
+      .section-title::after {
+        width: 52px;
+        height: 12px;
+        opacity: 0.5;
+        background-image: radial-gradient(circle, var(--accent) 1.2px, transparent 1.5px);
+        background-size: 6px 6px;
+        content: "";
+      }
+
+      .section-intro {
+        max-width: 630px;
+        margin: 14px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.75;
+      }
+
+      .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
+
+      .experience-tabs {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 17px;
+      }
+
+      .experience-tab {
+        display: flex;
+        min-width: 0;
+        min-height: 58px;
+        align-items: center;
+        gap: 11px;
+        border: 1px solid var(--line);
+        border-radius: 15px;
+        padding: 12px 15px;
+        background: var(--surface);
+        color: var(--muted);
+        cursor: pointer;
+        text-align: left;
+        transition: border-color 180ms ease, background 180ms ease, color 180ms ease, transform 180ms ease;
+      }
+
+      .experience-tab:hover {
+        transform: translateY(-1px);
+        border-color: rgba(242, 154, 114, 0.48);
+      }
+
+      .experience-tab[aria-selected="true"] {
+        border-color: rgba(242, 154, 114, 0.64);
+        background: rgba(242, 154, 114, 0.1);
+        color: var(--text);
+      }
+
+      .experience-tab-index {
+        display: grid;
+        width: 30px;
+        height: 30px;
+        flex: 0 0 auto;
+        place-items: center;
+        border-radius: 50%;
+        background: rgba(242, 154, 114, 0.14);
+        color: var(--accent-soft);
+        font-size: 9px;
+        font-weight: 800;
+      }
+
+      .experience-tab[aria-selected="true"] .experience-tab-index {
+        background: var(--accent);
+        color: #2c160f;
+      }
+
+      .experience-tab-label {
+        min-width: 0;
+        font-size: 15px;
+        font-weight: 800;
+        line-height: 1.25;
+      }
+
+      .experience-panel {
+        animation: reveal-panel 260ms ease both;
+      }
+
+      .experience-panel[hidden] {
+        display: none;
+      }
+
+      .timeline {
+        position: relative;
+        display: grid;
+        gap: 18px;
+        margin-top: 34px;
+        padding-left: 24px;
+      }
+
+      .timeline::before {
+        position: absolute;
+        top: 11px;
+        bottom: 11px;
+        left: 5px;
+        width: 1px;
+        background: linear-gradient(var(--accent), rgba(242, 154, 114, 0.1));
+        content: "";
+      }
+
+      .experience-card {
+        position: relative;
+        min-width: 0;
+        border: 1px solid var(--line);
+        border-radius: 17px;
+        background: var(--surface);
+        transition: border-color 180ms ease, background 180ms ease;
+      }
+
+      .experience-card::before {
+        position: absolute;
+        top: 23px;
+        left: -26px;
+        width: 9px;
+        height: 9px;
+        border: 2px solid var(--shell);
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 0 3px rgba(242, 154, 114, 0.18);
+        content: "";
+      }
+
+      .experience-card[open] {
+        border-color: rgba(242, 154, 114, 0.44);
+        background: var(--surface-raised);
+      }
+
+      .experience-card summary {
+        display: grid;
+        min-width: 0;
+        grid-template-columns: 118px minmax(0, 1fr) auto;
+        gap: 15px;
+        padding: 19px 20px;
+        cursor: pointer;
+        list-style: none;
+      }
+
+      .experience-card summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .experience-card summary:focus-visible {
+        border-radius: 15px;
+      }
+
+      .experience-period {
+        color: var(--accent-soft);
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        line-height: 1.45;
+        text-transform: uppercase;
+      }
+
+      .experience-main {
+        display: grid;
+        min-width: 0;
+        grid-template-columns: 56px minmax(0, 1fr);
+        gap: 12px;
+        align-items: start;
+      }
+
+      .experience-brand {
+        display: grid;
+        width: 56px;
+        height: 40px;
+        place-items: center;
+        overflow: hidden;
+        border: 1px solid rgba(37, 31, 28, 0.1);
+        border-radius: 9px;
+        padding: 6px;
+        background: #ffffff;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+      }
+
+      .experience-brand img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+
+      .experience-brand img[alt="HP"] {
+        transform: translateY(-3px) scale(0.94);
+      }
+
+      .experience-copy {
+        min-width: 0;
+      }
+
+      .experience-company {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 7px;
+        font-size: 15px;
+        font-weight: 800;
+        line-height: 1.35;
+      }
+
+      .experience-role {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .experience-meta {
+        margin-top: 5px;
+        color: var(--subtle);
+        font-size: 10px;
+        font-weight: 600;
+        line-height: 1.5;
+      }
+
+      .experience-summary {
+        margin: 9px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.65;
+      }
+
+      .detail-toggle {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: var(--accent-soft);
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+      }
+
+      .detail-toggle svg {
+        width: 14px;
+        height: 14px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        transition: transform 180ms ease;
+      }
+
+      .experience-card[open] .detail-toggle svg {
+        transform: rotate(180deg);
+      }
+
+      .experience-details {
+        margin: 0;
+        border-top: 1px solid var(--line);
+        padding: 16px 22px 21px 155px;
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.75;
+      }
+
+      .experience-details li + li {
+        margin-top: 7px;
+      }
+
+      .venture-list {
+        display: grid;
+        gap: 20px;
+        margin-top: 26px;
+      }
+
+      .venture-card {
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 19px;
+        background: var(--surface);
+      }
+
+      .venture-card-header {
+        display: grid;
+        grid-template-columns: 74px minmax(0, 1fr);
+        gap: 15px;
+        align-items: center;
+        border-bottom: 1px solid var(--line);
+        padding: 18px 20px;
+        background:
+          radial-gradient(circle at 92% 16%, rgba(242, 154, 114, 0.13), transparent 12rem),
+          var(--surface-raised);
+      }
+
+      .venture-logo {
+        display: block;
+        width: 74px;
+        height: 74px;
+        overflow: hidden;
+        border: 2px solid rgba(242, 154, 114, 0.72);
+        border-radius: 50%;
+        background: radial-gradient(circle at 40% 34%, #332820, #171514 72%);
+        box-shadow:
+          0 10px 25px rgba(0, 0, 0, 0.23),
+          0 0 0 4px rgba(242, 154, 114, 0.08);
+      }
+
+      .venture-logo img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .venture-logo--finance img {
+        transform: scale(1.08);
+      }
+
+      .venture-logo--ai img {
+        transform: scale(1.23);
+      }
+
+      .venture-period {
+        display: block;
+        color: var(--accent-soft);
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      .venture-name {
+        margin: 5px 0 0;
+        font-size: 18px;
+        font-weight: 800;
+        line-height: 1.35;
+      }
+
+      .venture-meta {
+        margin: 5px 0 0;
+        color: var(--subtle);
+        font-size: 10px;
+        font-weight: 700;
+        line-height: 1.5;
+      }
+
+      .venture-body {
+        padding: 18px 20px 21px;
+      }
+
+      .venture-summary {
+        margin: 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.7;
+      }
+
+      .venture-course-list {
+        display: grid;
+        gap: 8px;
+        margin: 17px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .venture-course {
+        display: grid;
+        grid-template-columns: 28px minmax(0, 1fr);
+        gap: 10px;
+        align-items: center;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 9px 11px;
+        background: rgba(255, 255, 255, 0.022);
+        color: var(--text);
+        font-size: 10px;
+        font-weight: 700;
+        line-height: 1.5;
+      }
+
+      .venture-course-index {
+        display: grid;
+        width: 28px;
+        height: 28px;
+        place-items: center;
+        border-radius: 50%;
+        background: rgba(242, 154, 114, 0.14);
+        color: var(--accent-soft);
+        font-size: 9px;
+        font-weight: 800;
+      }
+
+      .venture-gallery {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 17px;
+      }
+
+      .course-gallery-disclosure {
+        margin-top: 17px;
+      }
+
+      .course-gallery-disclosure summary {
+        display: flex;
+        min-height: 40px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        border: 1px solid rgba(242, 154, 114, 0.28);
+        border-radius: 12px;
+        padding: 8px 12px;
+        background: rgba(242, 154, 114, 0.055);
+        color: var(--accent-soft);
+        cursor: pointer;
+        font-size: 11px;
+        font-weight: 800;
+        list-style: none;
+        transition: border-color 180ms ease, background 180ms ease;
+      }
+
+      .course-gallery-disclosure summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .course-gallery-disclosure summary:hover,
+      .course-gallery-disclosure[open] summary {
+        border-color: rgba(242, 154, 114, 0.58);
+        background: rgba(242, 154, 114, 0.1);
+      }
+
+      .course-gallery-disclosure summary svg {
+        width: 15px;
+        height: 15px;
+        flex: 0 0 auto;
+        fill: none;
+        stroke: currentColor;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 1.8;
+        transition: transform 180ms ease;
+      }
+
+      .course-gallery-disclosure[open] summary svg {
+        transform: rotate(180deg);
+      }
+
+      .course-gallery-disclosure:not([open]) .gallery-label-open,
+      .course-gallery-disclosure[open] .gallery-label-closed {
+        display: none;
+      }
+
+      .course-gallery-disclosure .venture-gallery {
+        margin-top: 10px;
+      }
+
+      .venture-gallery--single {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .venture-gallery a {
+        position: relative;
+        display: block;
+        overflow: hidden;
+        border: 1px solid rgba(242, 154, 114, 0.28);
+        border-radius: 11px;
+        background: #181514;
+        isolation: isolate;
+        box-shadow: inset 0 0 0 1px rgba(255, 246, 240, 0.025);
+      }
+
+      .venture-gallery a::after {
+        position: absolute;
+        z-index: 1;
+        inset: 0;
+        background: linear-gradient(145deg, rgba(242, 154, 114, 0.42), rgba(52, 35, 27, 0.24));
+        content: '';
+        mix-blend-mode: color;
+        opacity: 0.82;
+        pointer-events: none;
+      }
+
+      .venture-gallery img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        object-fit: cover;
+        object-position: top center;
+        filter: grayscale(0.62) sepia(0.34) saturate(0.82) brightness(0.7) contrast(1.28);
+        transition: filter 220ms ease, transform 220ms ease;
+      }
+
+      .venture-gallery--ai img {
+        filter: grayscale(0.7) sepia(0.3) saturate(0.76) brightness(0.68) contrast(1.32);
+      }
+
+      .venture-gallery a:hover img {
+        filter: grayscale(0.46) sepia(0.28) saturate(0.9) brightness(0.78) contrast(1.22);
+        transform: scale(1.03);
+      }
+
+      .skill-group-title {
+        margin: 0 0 12px;
+        color: var(--accent-soft);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .capability-title--emphasis {
+        font-size: 13px;
+        letter-spacing: 0.075em;
+      }
+
+      .skill-groups {
+        display: grid;
+        gap: 30px;
+        margin-top: 23px;
+      }
+
+      .skill-list {
+        display: grid;
+        gap: 14px;
+      }
+
+      .ai-practice-note {
+        margin: 15px 0 0;
+        border-left: 2px solid var(--accent);
+        padding: 2px 0 2px 11px;
+        color: var(--muted);
+        font-size: 10px;
+        line-height: 1.7;
+      }
+
+      .skill-row {
+        min-width: 0;
+      }
+
+      .skill-meta {
+        display: flex;
+        min-width: 0;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 6px;
+        font-size: 10px;
+        font-weight: 700;
+        line-height: 1.35;
+      }
+
+      .skill-meta span:first-child {
+        min-width: 0;
+      }
+
+      .skill-value {
+        flex: 0 0 auto;
+        color: var(--muted);
+        font-size: 9px;
+      }
+
+      .skill-track {
+        height: 7px;
+        overflow: hidden;
+        border: 1px solid rgba(242, 154, 114, 0.45);
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.16);
+      }
+
+      .skill-fill {
+        width: var(--skill-level);
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--accent), var(--accent-soft));
+        transform-origin: left;
+        animation: fill-skill 900ms 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+
+      .radar-card {
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 8px 4px 2px;
+        background:
+          radial-gradient(circle at 50% 44%, rgba(242, 154, 114, 0.08), transparent 64%),
+          rgba(255, 255, 255, 0.018);
+      }
+
+      .radar-chart {
+        display: block;
+        width: 100%;
+        max-width: 320px;
+        height: auto;
+        margin: 0 auto;
+        overflow: visible;
+      }
+
+      .radar-grid {
+        fill: none;
+        stroke: var(--line);
+        stroke-width: 1;
+      }
+
+      .radar-axis {
+        stroke: rgba(242, 154, 114, 0.24);
+        stroke-width: 1;
+      }
+
+      .radar-shape {
+        fill: rgba(242, 154, 114, 0.24);
+        stroke: var(--accent);
+        stroke-linejoin: round;
+        stroke-width: 2.2;
+      }
+
+      .radar-point {
+        fill: var(--accent-soft);
+        stroke: var(--surface);
+        stroke-width: 2;
+      }
+
+      .radar-label {
+        fill: var(--muted);
+        font-family: var(--body-font);
+        font-size: 8.5px;
+        font-weight: 800;
+      }
+
+      .radar-value {
+        fill: var(--accent-soft);
+        font-size: 7px;
+      }
+
+      .personal-list {
+        display: grid;
+        gap: 0;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.025);
+      }
+
+      .personal-skill {
+        display: grid;
+        grid-template-columns: 35px minmax(0, 1fr);
+        align-items: center;
+        gap: 11px;
+        padding: 12px;
+      }
+
+      .personal-skill + .personal-skill {
+        border-top: 1px solid var(--line);
+      }
+
+      .personal-index {
+        display: grid;
+        width: 34px;
+        height: 34px;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--accent);
+        color: #2c160f;
+        font-size: 9px;
+        font-weight: 800;
+      }
+
+      .personal-content {
+        min-width: 0;
+      }
+
+      .star-rating {
+        display: block;
+        margin-bottom: 5px;
+        color: var(--accent);
+        font-size: 9px;
+        letter-spacing: 0.08em;
+        line-height: 1;
+      }
+
+      .personal-name {
+        display: block;
+        color: var(--text);
+        font-size: 10px;
+        font-weight: 800;
+        line-height: 1.45;
+      }
+
+      .education-grid {
+        display: grid;
+        gap: 18px;
+        margin-top: 22px;
+      }
+
+      .education-item {
+        border-top: 1px solid var(--line);
+        padding-top: 14px;
+      }
+
+      .education-item strong {
+        display: block;
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .education-item p {
+        margin: 5px 0 0;
+        color: var(--muted);
+        font-size: 10px;
+        line-height: 1.6;
+      }
+
+      .tool-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 13px;
+      }
+
+      .tool-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        border: 1px solid rgba(242, 154, 114, 0.48);
+        border-radius: 7px;
+        padding: 7px 9px;
+        background: rgba(242, 154, 114, 0.08);
+        color: var(--accent-soft);
+        font-size: 9px;
+        font-weight: 800;
+      }
+
+      .thumb-icon {
+        width: 12px;
+        height: 12px;
+        fill: none;
+        stroke: currentColor;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 1.8;
+      }
+
+      .privacy-note {
+        margin: 28px 0 0;
+        color: var(--subtle);
+        font-size: 9px;
+        line-height: 1.65;
+      }
+
+      @keyframes fill-skill {
+        from {
+          transform: scaleX(0);
+        }
+        to {
+          transform: scaleX(1);
+        }
+      }
+
+      @keyframes reveal-panel {
+        from {
+          opacity: 0;
+          transform: translateY(5px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @media (max-width: 1120px) {
+        .resume-shell {
+          grid-template-areas:
+            "profile skills"
+            "experience experience"
+            "education tools";
+          grid-template-columns: minmax(260px, 0.8fr) minmax(0, 1.2fr);
+        }
+
+        .profile-column {
+          border-bottom: 1px solid var(--line);
+        }
+
+        .experience-column {
+          border-top: 1px solid var(--line);
+        }
+
+        .education-panel,
+        .tools-panel {
+          border-top: 1px solid var(--line);
+        }
+      }
+
+      @media (max-width: 720px) {
+        .page-frame {
+          width: min(100% - 16px, 560px);
+          margin: 8px auto;
+        }
+
+        .utility-bar {
+          margin: 0 2px 8px;
+        }
+
+        .home-link,
+        .control-button {
+          min-height: 38px;
+          padding-inline: 12px;
+          font-size: 11px;
+        }
+
+        .home-link .home-label {
+          display: none;
+        }
+
+        .resume-shell {
+          grid-template-areas:
+            "profile"
+            "skills"
+            "experience"
+            "education"
+            "tools";
+          grid-template-columns: minmax(0, 1fr);
+          grid-template-rows: auto;
+          border-radius: 24px;
+        }
+
+        .resume-shell::before {
+          left: 64%;
+        }
+
+        .profile-column,
+        .experience-column,
+        .panel {
+          padding: 32px 22px;
+        }
+
+        .profile-column {
+          border-bottom: 1px solid var(--line);
+        }
+
+        .profile-sticky {
+          position: static;
+        }
+
+        .portrait-wrap {
+          width: 174px;
+        }
+
+        .panel {
+          border-top: 1px solid var(--line);
+          border-left: 0;
+        }
+
+        .skills-panel {
+          padding-top: 32px;
+        }
+
+        .timeline {
+          margin-top: 27px;
+          padding-left: 18px;
+        }
+
+        .timeline::before {
+          left: 3px;
+        }
+
+        .experience-card::before {
+          left: -20px;
+        }
+
+        .experience-card summary {
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 10px;
+          padding: 17px;
+        }
+
+        .experience-period {
+          grid-column: 1 / -1;
+        }
+
+        .detail-toggle .details-label {
+          display: none;
+        }
+
+        .experience-details {
+          padding: 15px 19px 20px 34px;
+        }
+
+        .experience-tab {
+          min-height: 54px;
+          padding: 10px 12px;
+        }
+
+        .experience-tab-label {
+          font-size: 13px;
+        }
+
+        .venture-card-header {
+          grid-template-columns: 62px minmax(0, 1fr);
+          padding: 16px;
+        }
+
+        .venture-logo {
+          width: 62px;
+          height: 62px;
+        }
+
+        .venture-name {
+          font-size: 16px;
+        }
+
+        .venture-body {
+          padding: 16px;
+        }
+
+        .venture-gallery {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-frame">
+      <header class="utility-bar">
+        <a class="home-link" href={basePath} aria-label="返回 J先生的个人空间">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+          <span class="home-label i18n" data-zh="返回个人空间" data-en="Back to My Space">返回个人空间</span>
+        </a>
+        <div class="controls" aria-label="页面显示设置">
+          <button class="control-button" type="button" data-language-toggle aria-label="Switch to English">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18" /></svg>
+            <span data-language-label>EN</span>
+          </button>
+          <button class="control-button" type="button" data-theme-toggle aria-label="切换到浅色主题" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.5" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg>
+            <span data-theme-label>浅色</span>
+          </button>
+        </div>
+      </header>
+
+      <main class="resume-shell">
+        <aside class="profile-column" aria-labelledby="profile-name">
+          <div class="profile-sticky">
+            <div class="portrait-wrap">
+              <img
+                class="portrait"
+                src={`${basePath}/resume/welles-gu-portrait.png`}
+                width="1122"
+                height="1402"
+                alt="Welles Gu 职业照"
+              />
+            </div>
+            <p class="profile-kicker i18n" data-zh="双语简历 · 2026" data-en="Bilingual Resume · 2026">双语简历 · 2026</p>
+            <h1 class="profile-name" id="profile-name">Welles Gu</h1>
+            <p class="profile-role">
+              <span class="i18n" data-zh="投资分析师" data-en="Investment Analyst">投资分析师</span>
+              <span class="i18n" data-zh="财务分析师" data-en="Financial Analyst">财务分析师</span>
+              <span class="i18n" data-zh="理财规划师" data-en="FA (Licensed Financial Advisor)">理财规划师</span>
+              <span class="i18n" data-zh="个人AI应用导师" data-en="Personal AI Application Mentor">个人AI应用导师</span>
+            </p>
+
+            <div class="profile-facts">
+              <div class="fact">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" /><circle cx="12" cy="10" r="2.5" /></svg>
+                <span class="i18n" data-zh="中国 · 上海" data-en="Shanghai · China">中国 · 上海</span>
+              </div>
+              <div class="fact">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m4 7 8 6 8-6" /></svg>
+                <a href="mailto:welles.gu@gmail.com">welles.gu@gmail.com</a>
+              </div>
+              <div class="fact">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 5C6.9 5 4 7.3 4 10.2c0 1.6.9 3.1 2.4 4l-.6 2.1 2.4-1.2c.7.2 1.5.3 2.3.3 3.6 0 6.5-2.3 6.5-5.2S14.1 5 10.5 5Z" /><path d="M14 9.1c3.3 0 6 2.1 6 4.8 0 1.5-.8 2.8-2.2 3.7l.5 1.9-2.2-1.1c-.7.2-1.4.3-2.1.3-2.2 0-4.1-.9-5.1-2.3" /></svg>
+                <span>WeChat · MrJ-0527</span>
+              </div>
+            </div>
+
+            <div class="profile-actions">
+              <div class="download-actions">
+                <a class="download-action" href={`${basePath}/resume/welles-gu-resume-zh.pdf`} download>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 20h14" /></svg>
+                  中文 PDF
+                </a>
+                <a class="download-action" href={`${basePath}/resume/welles-gu-resume-en.pdf`} download>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 20h14" /></svg>
+                  EN PDF
+                </a>
+              </div>
+              <section class="find-me" aria-labelledby="find-me-title">
+                <h2 class="find-me-title i18n" id="find-me-title" data-zh="找我" data-en="Find Me">找我</h2>
+                <div class="find-me-actions">
+                  <a class="find-me-action" href="mailto:welles.gu@gmail.com?subject=%E5%8A%A0%E5%85%A5%E6%82%A8%E7%9A%84%E5%85%AC%E5%8F%B8">
+                    <span class="find-me-action-index">01</span>
+                    <span class="i18n" data-zh="加入您的公司" data-en="Invite Me to Join Your Company">加入您的公司</span>
+                  </a>
+                  <a class="find-me-action" href="mailto:welles.gu@gmail.com?subject=%E5%AD%A6%E4%B9%A0%E7%90%86%E8%B4%A2">
+                    <span class="find-me-action-index">02</span>
+                    <span class="i18n" data-zh="学习理财" data-en="Learn Personal Finance">学习理财</span>
+                  </a>
+                  <a class="find-me-action" href="mailto:welles.gu@gmail.com?subject=%E5%AD%A6%E4%B9%A0AI">
+                    <span class="find-me-action-index">03</span>
+                    <span class="i18n" data-zh="学习AI" data-en="Learn AI">学习AI</span>
+                  </a>
+                </div>
+              </section>
+            </div>
+          </div>
+        </aside>
+
+        <section class="experience-column" aria-labelledby="experience-title">
+          <p class="section-eyebrow">Career & Ventures</p>
+          <h2 class="visually-hidden i18n" id="experience-title" data-zh="经历" data-en="Experience">经历</h2>
+          <div class="experience-tabs" role="tablist" aria-labelledby="experience-title">
+            <button class="experience-tab" id="work-tab" type="button" role="tab" aria-selected="true" aria-controls="work-experience-panel" data-experience-tab="work">
+              <span class="experience-tab-index">01</span>
+              <span class="experience-tab-label i18n" data-zh="工作经历" data-en="Work Experience">工作经历</span>
+            </button>
+            <button class="experience-tab" id="venture-tab" type="button" role="tab" aria-selected="false" aria-controls="venture-experience-panel" tabindex="-1" data-experience-tab="venture">
+              <span class="experience-tab-index">02</span>
+              <span class="experience-tab-label i18n" data-zh="创业经历" data-en="Entrepreneurship">创业经历</span>
+            </button>
+          </div>
+
+          <section class="experience-panel" id="work-experience-panel" role="tabpanel" aria-labelledby="work-tab" data-experience-panel="work">
+            <p class="section-intro i18n" data-zh="二十余年财务与商业分析经验，横跨酒店、联合办公、零售、餐饮与科技行业。点击每段经历可查看职责详情。" data-en="More than two decades across finance and business analysis in hospitality, co-working, retail, food and technology. Open each role for details.">
+              二十余年财务与商业分析经验，横跨酒店、联合办公、零售、餐饮与科技行业。点击每段经历可查看职责详情。
+            </p>
+            <div class="timeline">
+              {experiences.map((experience) => (
+                <details class="experience-card">
+                  <summary>
+                    <time class="experience-period i18n" data-zh={experience.periodZh} data-en={experience.periodEn}>{experience.periodZh}</time>
+                    <div class="experience-main">
+                      <span class="experience-brand">
+                        <img src={`${basePath}/${experience.logo}`} alt={experience.logoAlt} loading="lazy" />
+                      </span>
+                      <div class="experience-copy">
+                        <div class="experience-company">
+                          <span>{experience.company}</span>
+                          <span class="experience-role">{experience.role}</span>
+                        </div>
+                        <div class="experience-meta i18n" data-zh={experience.metaZh} data-en={experience.metaEn}>{experience.metaZh}</div>
+                        <p class="experience-summary i18n" data-zh={experience.summaryZh} data-en={experience.summaryEn}>{experience.summaryZh}</p>
+                      </div>
+                    </div>
+                    <span class="detail-toggle" aria-hidden="true">
+                      <span class="details-label" data-closed-zh="展开" data-closed-en="View" data-open-zh="收起" data-open-en="Close">展开</span>
+                      <svg viewBox="0 0 20 20"><path d="m5 7 5 5 5-5" /></svg>
+                    </span>
+                  </summary>
+                  <ul class="experience-details">
+                    {experience.detailsZh.map((detail, index) => (
+                      <li class="i18n" data-zh={detail} data-en={experience.detailsEn[index]}>{detail}</li>
+                    ))}
+                  </ul>
+                </details>
+              ))}
+            </div>
+          </section>
+
+          <section class="experience-panel" id="venture-experience-panel" role="tabpanel" aria-labelledby="venture-tab" data-experience-panel="venture" hidden>
+            <p class="section-intro i18n" data-zh="以投资理财科普与 AI 普及为主题，完成两段从课程设计、内容制作到学员交付的创业实践。" data-en="Two founder-led learning communities spanning financial literacy and accessible, practical AI education.">
+              以投资理财科普与 AI 普及为主题，完成两段从课程设计、内容制作到学员交付的创业实践。
+            </p>
+            <div class="venture-list">
+              {ventures.map((venture) => (
+                <article class="venture-card">
+                  <header class="venture-card-header">
+                    <span class:list={['venture-logo', `venture-logo--${venture.theme}`]}><img src={`${basePath}/${venture.logo}`} alt={venture.logoAlt} loading="lazy" /></span>
+                    <div>
+                      <time class="venture-period i18n" data-zh={venture.periodZh} data-en={venture.periodEn}>{venture.periodZh}</time>
+                      <h3 class="venture-name i18n" data-zh={venture.nameZh} data-en={venture.nameEn}>{venture.nameZh}</h3>
+                      <p class="venture-meta i18n" data-zh={venture.metaZh} data-en={venture.metaEn}>{venture.metaZh}</p>
+                    </div>
+                  </header>
+                  <div class="venture-body">
+                    <p class="venture-summary i18n" data-zh={venture.summaryZh} data-en={venture.summaryEn}>{venture.summaryZh}</p>
+                    <ol class="venture-course-list">
+                      {venture.courses.map(([zh, en], index) => (
+                        <li class="venture-course">
+                          <span class="venture-course-index">{String(index + 1).padStart(2, '0')}</span>
+                          <span class="i18n" data-zh={zh} data-en={en}>{zh}</span>
+                        </li>
+                      ))}
+                    </ol>
+                    <details class="course-gallery-disclosure">
+                      <summary>
+                        <span class="gallery-label-closed i18n" data-zh="展开课程截图" data-en="Show Course Screenshots">展开课程截图</span>
+                        <span class="gallery-label-open i18n" data-zh="收起课程截图" data-en="Hide Course Screenshots">收起课程截图</span>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
+                      </summary>
+                      <div class:list={['venture-gallery', `venture-gallery--${venture.theme}`, { 'venture-gallery--single': venture.gallery.length === 1 }]}>
+                        {venture.gallery.map((image, index) => (
+                          <a href={`${basePath}/${image}`} target="_blank" rel="noreferrer">
+                            <img src={`${basePath}/${image}`} alt={`${venture.nameZh}课程展示 ${index + 1}`} loading="lazy" />
+                          </a>
+                        ))}
+                      </div>
+                    </details>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        </section>
+
+        <section class="panel skills-panel" aria-labelledby="skills-title">
+          <p class="section-eyebrow">Self Assessment</p>
+          <h2 class="section-title" id="skills-title">
+            <span class="i18n" data-zh="能力图谱" data-en="Capabilities">能力图谱</span>
+          </h2>
+          <div class="skill-groups">
+            <section>
+              <h3 class="skill-group-title capability-title--emphasis i18n" data-zh="AI 技能（熟练度）" data-en="AI Skills (Proficiency)">AI 技能（熟练度）</h3>
+              <div class="skill-list">
+                {aiSkills.map(([name, level]) => (
+                  <div class="skill-row">
+                    <div class="skill-meta"><span>{name}</span><span class="skill-value">{level}%</span></div>
+                    <div class="skill-track" role="progressbar" aria-label={name} aria-valuemin="0" aria-valuemax="100" aria-valuenow={level}>
+                      <div class="skill-fill" style={`--skill-level: ${level}%;`}></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p class="ai-practice-note i18n" data-zh="能利用 AI 工具生成专业 PPT 与 AI 简历，制作个人网站、3D 旅行相册 App、投资理财策略、音乐播放器及挂号提醒系统等。" data-en="Uses AI tools to create professional presentations and AI-enhanced résumés, build personal websites, 3D travel-album apps, investment-planning strategies, music players, appointment reminder systems and more.">
+                能利用 AI 工具生成专业 PPT 与 AI 简历，制作个人网站、3D 旅行相册 App、投资理财策略、音乐播放器及挂号提醒系统等。
+              </p>
+            </section>
+
+            <section>
+              <h3 class="skill-group-title capability-title--emphasis i18n" data-zh="工作技能" data-en="Work">工作技能</h3>
+              <div class="radar-card">
+                <svg class="radar-chart" viewBox="0 0 300 252" role="img" aria-labelledby="work-radar-title work-radar-description">
+                  <title id="work-radar-title" class="i18n" data-zh="工作技能雷达图" data-en="Work capabilities radar chart">工作技能雷达图</title>
+                  <desc id="work-radar-description" class="i18n" data-zh="业务分析与报告 95，预算与战略规划 90，财务建模 90，领导力 80，工作效率 90。" data-en="Business analysis 95, budgeting and planning 90, financial modeling 90, leadership 80, work efficiency 90.">业务分析与报告 95，预算与战略规划 90，财务建模 90，领导力 80，工作效率 90。</desc>
+                  {radarGrid.map((points) => <polygon class="radar-grid" points={points} />)}
+                  {radarAxes.map((axis) => (
+                    <line class="radar-axis" x1={radarCenterX} y1={radarCenterY} x2={axis.point.split(',')[0]} y2={axis.point.split(',')[1]} />
+                  ))}
+                  <polygon class="radar-shape" points={radarShape} />
+                  {workSkills.map((skill, index) => {
+                    const [x, y] = radarPoint(index, skill.level).split(',');
+                    return <circle class="radar-point" cx={x} cy={y} r="3.2" />;
+                  })}
+                  {radarAxes.map((axis) => (
+                    <text class="radar-label" x={axis.labelX} y={axis.labelY} text-anchor={axis.anchor} dominant-baseline="middle">
+                      {axis.labelLinesZh.map((line, lineIndex) => (
+                        <tspan class="i18n" data-zh={line} data-en={axis.labelLinesEn[lineIndex]} x={axis.labelX} dy={lineIndex === 0 ? 0 : 10}>{line}</tspan>
+                      ))}
+                      <tspan class="radar-value" x={axis.labelX} dy="10">{axis.level}%</tspan>
+                    </text>
+                  ))}
+                </svg>
+              </div>
+            </section>
+
+            <section>
+              <h3 class="skill-group-title i18n" data-zh="投资理财技能" data-en="Personal Investment">投资理财技能</h3>
+              <div class="personal-list" role="list">
+                {personalCapabilities.map((capability, index) => (
+                  <div class="personal-skill" role="listitem">
+                    <span class="personal-index">0{index + 1}</span>
+                    <div class="personal-content">
+                      <span class="star-rating" role="img" aria-label="5 out of 5"><span aria-hidden="true">★★★★★</span></span>
+                      <strong class="personal-name i18n" data-zh={capability.nameZh} data-en={capability.nameEn}>{capability.nameZh}</strong>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="panel education-panel" aria-labelledby="education-title">
+          <p class="section-eyebrow">Foundation</p>
+          <h2 class="section-title" id="education-title">
+            <span class="i18n" data-zh="教育背景" data-en="Education">教育背景</span>
+          </h2>
+          <div class="education-grid">
+            <article class="education-item">
+              <strong class="i18n" data-zh="上海财经大学" data-en="Shanghai University of Finance and Economics">上海财经大学</strong>
+              <p class="i18n" data-zh="2000/09 - 2004/06 · Bachelor / Economics" data-en="Sep 2000 - Jun 2004 · Bachelor / Economics">2000/09 - 2004/06 · Bachelor / Economics</p>
+            </article>
+            <article class="education-item">
+              <strong>CET-6</strong>
+              <p class="i18n" data-zh="英语能力认证" data-en="English language certification">英语能力认证</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel tools-panel" aria-labelledby="tools-title">
+          <p class="section-eyebrow">Toolkit</p>
+          <h2 class="section-title" id="tools-title">
+            <span class="i18n" data-zh="工具与系统" data-en="Tools & Systems">工具与系统</span>
+          </h2>
+          <div class="tool-tags">
+            {tools.map((tool) => (
+              <span class="tool-tag">
+                {tool.endorsed && (
+                  <svg class="thumb-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 7.1 8.1 2.8c.5-.8 1.8-.4 1.7.6l-.3 2.8h2.8c1.1 0 1.8 1 1.4 2l-1.3 4c-.2.7-.9 1.2-1.7 1.2H5.5M2.3 7.1h3.2v6.3H2.3z" /></svg>
+                )}
+                {tool.name}
+              </span>
+            ))}
+          </div>
+          <p class="privacy-note i18n" data-zh="本页面仅展示经确认的职业信息；不公开电话、生日、详细住址及其他私人资料。" data-en="This page contains confirmed professional information only. Phone number, date of birth, street address and other private data are not published.">
+            本页面仅展示经确认的职业信息；不公开电话、生日、详细住址及其他私人资料。
+          </p>
+        </section>
+      </main>
+    </div>
+
+    <script is:inline>
+      const root = document.documentElement;
+      const languageButton = document.querySelector("[data-language-toggle]");
+      const languageLabel = document.querySelector("[data-language-label]");
+      const themeButton = document.querySelector("[data-theme-toggle]");
+      const themeLabel = document.querySelector("[data-theme-label]");
+      const description = document.querySelector("[data-description]");
+      const details = [...document.querySelectorAll(".experience-card")];
+      const experienceTabs = [...document.querySelectorAll("[data-experience-tab]")];
+      const experiencePanels = [...document.querySelectorAll("[data-experience-panel]")];
+
+      const copy = {
+        zh: {
+          title: "Welles Gu｜投资分析师、财务分析师与个人 AI 应用导师",
+          description: "Welles Gu 的双语个人简历，聚焦投资分析、财务分析、理财规划与个人 AI 应用。",
+        },
+        en: {
+          title: "Welles Gu | Investment Analyst, Financial Analyst & Personal AI Application Mentor",
+          description: "The bilingual resume of Welles Gu, focused on investment analysis, financial analysis, financial planning and practical AI applications.",
+        },
+      };
+
+      const selectExperiencePanel = (panelName, moveFocus = false) => {
+        experienceTabs.forEach((tab) => {
+          const isSelected = tab.dataset.experienceTab === panelName;
+          tab.setAttribute("aria-selected", String(isSelected));
+          tab.tabIndex = isSelected ? 0 : -1;
+          if (isSelected && moveFocus) tab.focus();
+        });
+        experiencePanels.forEach((panel) => {
+          panel.hidden = panel.dataset.experiencePanel !== panelName;
+        });
+      };
+
+      const updateDetailLabels = () => {
+        const language = root.dataset.language;
+        details.forEach((detail) => {
+          const label = detail.querySelector(".details-label");
+          label.textContent = detail.open
+            ? label.dataset[language === "en" ? "openEn" : "openZh"]
+            : label.dataset[language === "en" ? "closedEn" : "closedZh"];
+        });
+      };
+
+      const applyLanguage = (language) => {
+        root.dataset.language = language;
+        root.lang = language === "en" ? "en" : "zh-CN";
+        document.querySelectorAll(".i18n").forEach((node) => {
+          node.textContent = node.dataset[language];
+        });
+        languageLabel.textContent = language === "en" ? "中文" : "EN";
+        languageButton.setAttribute("aria-label", language === "en" ? "切换到中文" : "Switch to English");
+        document.title = copy[language].title;
+        description.content = copy[language].description;
+        updateDetailLabels();
+        try {
+          window.localStorage.setItem("welles-resume-language", language);
+        } catch {}
+      };
+
+      const applyTheme = (theme) => {
+        const isLight = theme === "light";
+        root.dataset.theme = isLight ? "light" : "dark";
+        themeLabel.textContent = isLight
+          ? (root.dataset.language === "en" ? "Dark" : "深色")
+          : (root.dataset.language === "en" ? "Light" : "浅色");
+        themeButton.setAttribute("aria-pressed", String(isLight));
+        themeButton.setAttribute(
+          "aria-label",
+          isLight
+            ? (root.dataset.language === "en" ? "Switch to dark theme" : "切换到深色主题")
+            : (root.dataset.language === "en" ? "Switch to light theme" : "切换到浅色主题")
+        );
+        try {
+          window.localStorage.setItem("welles-resume-theme", isLight ? "light" : "dark");
+        } catch {}
+      };
+
+      languageButton.addEventListener("click", () => {
+        const nextLanguage = root.dataset.language === "en" ? "zh" : "en";
+        applyLanguage(nextLanguage);
+        applyTheme(root.dataset.theme);
+      });
+
+      themeButton.addEventListener("click", () => {
+        applyTheme(root.dataset.theme === "light" ? "dark" : "light");
+      });
+
+      experienceTabs.forEach((tab, index) => {
+        tab.addEventListener("click", () => selectExperiencePanel(tab.dataset.experienceTab));
+        tab.addEventListener("keydown", (event) => {
+          if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+          event.preventDefault();
+          let nextIndex = index;
+          if (event.key === "ArrowLeft") nextIndex = (index - 1 + experienceTabs.length) % experienceTabs.length;
+          if (event.key === "ArrowRight") nextIndex = (index + 1) % experienceTabs.length;
+          if (event.key === "Home") nextIndex = 0;
+          if (event.key === "End") nextIndex = experienceTabs.length - 1;
+          selectExperiencePanel(experienceTabs[nextIndex].dataset.experienceTab, true);
+        });
+      });
+
+      details.forEach((detail) => detail.addEventListener("toggle", updateDetailLabels));
+      selectExperiencePanel("work");
+      applyLanguage(root.dataset.language === "en" ? "en" : "zh");
+      applyTheme(root.dataset.theme === "light" ? "light" : "dark");
+    </script>
+  </body>
+</html>

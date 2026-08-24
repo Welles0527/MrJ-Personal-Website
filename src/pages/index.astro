@@ -1510,6 +1510,52 @@
         color: rgba(237, 196, 119, 0.82);
       }
 
+      .meet-owner,
+      html[data-theme="dark"] .meet-owner {
+        position: relative;
+        display: inline-flex;
+        min-height: 50px;
+        align-items: center;
+        justify-content: center;
+        gap: 11px;
+        margin-top: 24px;
+        overflow: hidden;
+        border: 1px solid transparent;
+        border-radius: 999px;
+        padding: 0 22px 0 11px;
+        background:
+          linear-gradient(var(--card), var(--card)) padding-box,
+          linear-gradient(120deg, #6887ff, #a961ff 34%, #ff3868 66%, #ff7200) border-box;
+        box-shadow: 0 10px 28px rgba(99, 79, 213, 0.11);
+        color: var(--ink);
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: 0.03em;
+        text-decoration: none;
+        transition: box-shadow 0.22s ease, transform 0.22s ease;
+      }
+
+      .meet-owner:hover,
+      .meet-owner:focus-visible,
+      html[data-theme="dark"] .meet-owner:hover,
+      html[data-theme="dark"] .meet-owner:focus-visible {
+        box-shadow: 0 14px 34px rgba(99, 79, 213, 0.18);
+        transform: translateY(-2px);
+      }
+
+      .meet-owner:focus-visible,
+      html[data-theme="dark"] .meet-owner:focus-visible {
+        outline: 2px solid var(--focus);
+        outline-offset: 3px;
+      }
+
+      .meet-owner__mark {
+        display: block;
+        width: 32px;
+        height: 32px;
+        flex: 0 0 auto;
+      }
+
       .reference-pager,
       html[data-theme="dark"] .reference-pager {
         display: none;
@@ -1580,6 +1626,14 @@
         .choice__label,
         html[data-theme="dark"] .choice__label {
           font-size: 14px;
+        }
+
+        .meet-owner,
+        html[data-theme="dark"] .meet-owner {
+          min-height: 46px;
+          margin-top: 18px;
+          padding-right: 18px;
+          font-size: 13px;
         }
       }
 
@@ -1748,6 +1802,21 @@
           <span class="choice__label" data-reference-label="实用工具">实用工具</span>
         </a>
       </nav>
+
+      <a class="meet-owner" href="/officialwebsite/resume/" aria-label="认识 J先生，查看个人简历">
+        <svg class="meet-owner__mark" viewBox="0 0 64 64" aria-hidden="true">
+          <defs>
+            <linearGradient id="meet-owner-gradient" x1="0.12" y1="0.98" x2="0.85" y2="0.08">
+              <stop offset="0" stop-color="#6887ff" />
+              <stop offset="0.34" stop-color="#a961ff" />
+              <stop offset="0.61" stop-color="#ff3868" />
+              <stop offset="1" stop-color="#ff7200" />
+            </linearGradient>
+          </defs>
+          <path fill="url(#meet-owner-gradient)" d="M0 64V22C0 9.85 9.85 0 22 0s22 9.85 22 22v3h2c9.94 0 18 8.06 18 18s-8.06 18-18 18H21.5C13.9 61 6.56 62.04 0 64Z" />
+        </svg>
+        <span>认识 J先生</span>
+      </a>
     </main>
 
     <div class="investment-overlay" id="investment-menu" data-investment-menu hidden>
