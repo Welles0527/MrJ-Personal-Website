@@ -1,0 +1,1028 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="圣经节期一览：从旧约节期、教会纪念与救恩时间线认识神的救赎计划。"
+    />
+    <meta name="theme-color" content="#080805" />
+    <title>圣经节期一览｜微读圣经</title>
+    <link rel="icon" type="image/png" href="/officialwebsite/favicon.png" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #070706;
+        --bg-deep: #030403;
+        --surface: #0d0d0a;
+        --surface-soft: #131109;
+        --surface-hover: #18150d;
+        --gold: #c9942a;
+        --gold-bright: #f1c65b;
+        --gold-pale: #e3cb91;
+        --gold-dark: #644817;
+        --line: rgba(209, 158, 48, 0.34);
+        --line-soft: rgba(209, 158, 48, 0.18);
+        --text: #e4d8b8;
+        --muted: #a89b7b;
+        --red: #ef5744;
+        --blue: #5795ef;
+        --header-height: 66px;
+        --serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", STSong, SimSun, serif;
+        --sans: "Noto Sans SC", "Microsoft YaHei", "PingFang SC", sans-serif;
+      }
+
+      html[data-theme="light"] {
+        color-scheme: light;
+        --bg: #f5efdf;
+        --bg-deep: #e8ddc4;
+        --surface: #fffaf0;
+        --surface-soft: #eee3ca;
+        --surface-hover: #f4e7c8;
+        --gold: #926419;
+        --gold-bright: #6f470e;
+        --gold-pale: #594014;
+        --gold-dark: #c3a260;
+        --line: rgba(120, 78, 14, 0.34);
+        --line-soft: rgba(120, 78, 14, 0.17);
+        --text: #302717;
+        --muted: #6f6046;
+        --red: #b9382d;
+        --blue: #2468ba;
+      }
+
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        min-width: 320px;
+        background:
+          radial-gradient(circle at 65% 8%, rgba(183, 124, 20, 0.09), transparent 32rem),
+          var(--bg);
+        color: var(--text);
+        font-family: var(--sans);
+        -webkit-font-smoothing: antialiased;
+      }
+      button, a { font: inherit; }
+      button { color: inherit; }
+      a { color: inherit; }
+      svg { display: block; }
+      [hidden] { display: none !important; }
+
+      .skip-link {
+        position: fixed;
+        z-index: 1000;
+        top: 8px;
+        left: 8px;
+        transform: translateY(-140%);
+        border: 1px solid var(--gold);
+        padding: 8px 12px;
+        background: var(--surface);
+        color: var(--gold-bright);
+        text-decoration: none;
+      }
+      .skip-link:focus { transform: none; }
+
+      .site-header {
+        position: sticky;
+        z-index: 50;
+        top: 0;
+        display: grid;
+        grid-template-columns: minmax(280px, 1fr) auto auto;
+        align-items: center;
+        min-height: var(--header-height);
+        border-bottom: 1px solid var(--line);
+        padding: 0 3.2vw;
+        background: color-mix(in srgb, var(--bg-deep) 92%, transparent);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        backdrop-filter: blur(12px);
+      }
+      .brand {
+        display: inline-flex;
+        width: fit-content;
+        align-items: center;
+        gap: 13px;
+        text-decoration: none;
+      }
+      .brand-mark {
+        width: 49px;
+        color: var(--gold-bright);
+        filter: drop-shadow(0 0 8px rgba(221, 161, 36, 0.26));
+      }
+      .brand-mark svg { width: 100%; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.7; }
+      .brand-copy strong {
+        display: block;
+        color: var(--gold-bright);
+        font-family: var(--serif);
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        line-height: 1.12;
+      }
+      .brand-copy small {
+        display: block;
+        margin-top: 3px;
+        color: var(--muted);
+        font-family: var(--serif);
+        font-size: 10px;
+        letter-spacing: 0.22em;
+      }
+      .primary-nav {
+        display: flex;
+        align-self: stretch;
+        align-items: center;
+        gap: clamp(18px, 2.8vw, 40px);
+      }
+      .nav-link {
+        position: relative;
+        display: grid;
+        height: 100%;
+        place-items: center;
+        border: 0;
+        padding: 0;
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        font-family: var(--serif);
+        font-size: 13px;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+      .nav-link::after {
+        position: absolute;
+        right: 0;
+        bottom: -1px;
+        left: 0;
+        height: 2px;
+        transform: scaleX(0);
+        background: var(--gold-bright);
+        box-shadow: 0 0 12px rgba(230, 174, 48, 0.48);
+        content: "";
+        transition: transform 180ms ease;
+      }
+      .nav-link:hover, .nav-link.is-active { color: var(--gold-bright); }
+      .nav-link.is-active::after { transform: scaleX(1); }
+      .header-actions { display: flex; align-items: center; gap: 8px; margin-left: 34px; }
+      .theme-toggle {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        width: 66px;
+        height: 35px;
+        overflow: hidden;
+        border: 1px solid var(--gold);
+        border-radius: 999px;
+        padding: 3px;
+        background: var(--bg-deep);
+        cursor: pointer;
+      }
+      .theme-toggle span {
+        display: grid;
+        border-radius: 50%;
+        color: var(--muted);
+        place-items: center;
+      }
+      .theme-toggle span:first-child,
+      html[data-theme="light"] .theme-toggle span:last-child {
+        background: linear-gradient(145deg, #5e3a08, #1b1204);
+        color: var(--gold-bright);
+      }
+      html[data-theme="light"] .theme-toggle span:first-child { background: transparent; color: var(--muted); }
+      .theme-toggle svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.7; }
+      .menu-toggle {
+        display: none;
+        width: 38px;
+        height: 36px;
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        background: transparent;
+        cursor: pointer;
+        place-items: center;
+      }
+      .menu-toggle svg { width: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; }
+
+      .hero {
+        position: relative;
+        min-height: 160px;
+        overflow: hidden;
+        border-bottom: 1px solid var(--line);
+        background:
+          linear-gradient(90deg, var(--bg-deep) 0%, color-mix(in srgb, var(--bg-deep) 91%, #6d4109) 48%, var(--bg-deep) 100%);
+      }
+      .hero::before {
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(rgba(231, 182, 74, 0.36) 0.6px, transparent 0.7px);
+        background-size: 31px 31px;
+        content: "";
+        opacity: 0.2;
+      }
+      .hero-inner {
+        position: relative;
+        display: grid;
+        width: min(1440px, 100%);
+        min-height: 160px;
+        margin: 0 auto;
+        grid-template-columns: 39% 61%;
+        align-items: center;
+      }
+      .hero-copy { z-index: 2; padding: 23px 0 22px clamp(36px, 5.7vw, 82px); }
+      .hero-copy h1 {
+        margin: 0;
+        background: linear-gradient(180deg, #ffe49a 4%, #c58b21 86%);
+        background-clip: text;
+        color: transparent;
+        font-family: var(--serif);
+        font-size: clamp(34px, 3.3vw, 48px);
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        line-height: 1.15;
+        text-shadow: 0 8px 28px rgba(143, 84, 6, 0.12);
+      }
+      .hero-copy p {
+        max-width: 520px;
+        margin: 10px 0 0;
+        color: var(--text);
+        font-family: var(--serif);
+        font-size: 13.5px;
+        letter-spacing: 0.04em;
+        line-height: 1.75;
+      }
+      .hero-art { align-self: stretch; width: 100%; height: 160px; }
+      .hero-art .line { fill: none; stroke: #c48d28; stroke-linecap: round; stroke-linejoin: round; }
+      .hero-art .warm-fill { fill: url(#heroGold); }
+      .hero-art .soft-fill { fill: #9e6b20; }
+      .hero-art .dark-fill { fill: #090804; }
+      .hero-art .glow { filter: url(#goldGlow); }
+
+      .page-shell { width: min(1346px, calc(100% - 48px)); margin: 0 auto; }
+      .controls {
+        display: flex;
+        min-height: 62px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+      }
+      .tabs {
+        display: flex;
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        scrollbar-width: none;
+      }
+      .tabs::-webkit-scrollbar { display: none; }
+      .tab {
+        flex: 0 0 auto;
+        min-height: 42px;
+        border: 0;
+        border-right: 1px solid var(--line-soft);
+        padding: 0 21px;
+        background: var(--bg-deep);
+        color: var(--muted);
+        cursor: pointer;
+        font-family: var(--serif);
+        font-size: 13px;
+        transition: color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+      }
+      .tab:last-child { border-right: 0; }
+      .tab:hover { color: var(--gold-pale); }
+      .tab.is-active {
+        background: linear-gradient(135deg, color-mix(in srgb, var(--gold-dark) 76%, var(--surface)), var(--surface));
+        box-shadow: inset 0 0 24px rgba(217, 159, 40, 0.15);
+        color: var(--gold-bright);
+      }
+      .legend { display: flex; align-items: center; gap: 19px; color: var(--muted); font-family: var(--serif); font-size: 12px; white-space: nowrap; }
+      .legend-title { color: var(--gold-pale); }
+      .legend-item { display: inline-flex; align-items: center; gap: 6px; }
+      .legend-item svg, .celebrant svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.7; }
+      .legend-item[data-type="jewish"], .celebrant[data-type="jewish"] { color: var(--blue); }
+      .legend-item[data-type="christian"], .celebrant[data-type="christian"] { color: var(--red); }
+      .legend-item[data-type="partial"], .celebrant[data-type="partial"],
+      .legend-item[data-type="church"], .celebrant[data-type="church"] { color: var(--gold-pale); }
+
+      .festival-view { transition: opacity 190ms ease, transform 190ms ease; }
+      .festival-view.is-switching { opacity: 0; transform: translateY(4px); }
+      .table-wrap { overflow: hidden; border: 1px solid var(--line); border-radius: 6px; background: color-mix(in srgb, var(--surface) 84%, transparent); }
+      .festival-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+      .festival-table col:nth-child(1) { width: 18.2%; }
+      .festival-table col:nth-child(2) { width: 10.9%; }
+      .festival-table col:nth-child(3) { width: 11.4%; }
+      .festival-table col:nth-child(4) { width: 16.4%; }
+      .festival-table col:nth-child(5) { width: 22.3%; }
+      .festival-table col:nth-child(6) { width: 20.8%; }
+      .festival-table th {
+        height: 34px;
+        border-bottom: 1px solid var(--line);
+        background: linear-gradient(180deg, color-mix(in srgb, var(--surface-soft) 94%, #8a5a0a), var(--surface));
+        color: var(--gold-bright);
+        font-family: var(--serif);
+        font-size: 12.5px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-align: center;
+      }
+      .festival-table td {
+        height: 55px;
+        border-right: 1px solid var(--line-soft);
+        border-bottom: 1px solid var(--line-soft);
+        padding: 6px 13px;
+        color: var(--text);
+        font-family: var(--serif);
+        font-size: 12.2px;
+        line-height: 1.48;
+        vertical-align: middle;
+      }
+      .festival-table td:last-child { border-right: 0; }
+      .festival-row { outline: none; cursor: pointer; transition: background 160ms ease; }
+      .festival-row:hover, .festival-row:focus-visible { background: var(--surface-hover); }
+      .festival-row:hover td { border-bottom-color: var(--line); }
+      .festival-name { display: flex; align-items: center; gap: 11px; }
+      .festival-icon {
+        display: grid;
+        flex: 0 0 44px;
+        width: 44px;
+        height: 44px;
+        border: 1px solid var(--line);
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(224, 165, 47, 0.14), transparent 68%);
+        color: var(--gold-bright);
+        place-items: center;
+      }
+      .festival-icon svg { width: 33px; height: 33px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.55; }
+      .festival-name strong { display: block; color: var(--gold-pale); font-size: 14.5px; line-height: 1.2; }
+      .festival-name small { display: block; margin-top: 3px; color: var(--text); font-family: Georgia, "Times New Roman", serif; font-size: 11px; line-height: 1.15; }
+      .cell-lines span { display: block; }
+      .meaning { position: relative; padding-right: 30px !important; }
+      .meaning-cross { position: absolute; top: 50%; right: 15px; color: var(--red); font-family: Georgia, serif; font-size: 29px; font-weight: 300; line-height: 1; transform: translateY(-52%); }
+      .celebrants { display: grid; gap: 2px; padding-right: 28px; }
+      .celebrant { display: flex; align-items: center; gap: 6px; line-height: 1.3; }
+      .celebrant span { color: var(--text); }
+      .celebrant svg { flex: 0 0 16px; width: 16px; height: 16px; }
+      .row-action {
+        position: absolute;
+        top: 50%;
+        right: 8px;
+        display: grid;
+        width: 24px;
+        height: 30px;
+        border: 0;
+        background: transparent;
+        color: var(--gold-bright);
+        cursor: pointer;
+        font-size: 24px;
+        transform: translateY(-50%);
+        transition: transform 170ms ease;
+        place-items: center;
+      }
+      .festival-row:hover .row-action { transform: translate(4px, -50%); }
+      .who-cell { position: relative; }
+      .group-row td {
+        height: 26px;
+        border: 0;
+        padding: 3px 16px 2px;
+        background: var(--bg);
+        color: var(--gold-pale);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+      }
+
+      .festival-cards { display: none; }
+
+      .timeline-section { padding: 48px 0 10px; scroll-margin-top: 86px; }
+      .section-heading { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 20px; }
+      .section-heading p { margin: 0 0 5px; color: var(--gold); font-size: 10px; font-weight: 800; letter-spacing: 0.2em; }
+      .section-heading h2 { margin: 0; color: var(--gold-bright); font-family: var(--serif); font-size: 28px; font-weight: 700; letter-spacing: 0.08em; }
+      .section-heading small { max-width: 440px; color: var(--muted); line-height: 1.7; text-align: right; }
+      .timeline-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: linear-gradient(180deg, var(--surface-soft), var(--surface)); }
+      .timeline { display: grid; min-width: 1080px; grid-template-columns: repeat(7, 1fr); padding: 26px 24px 24px; }
+      .timeline-item { position: relative; padding: 0 14px; text-align: center; }
+      .timeline-item::before { position: absolute; top: 39px; right: 50%; left: -50%; height: 1px; background: var(--line); content: ""; }
+      .timeline-item:first-child::before { display: none; }
+      .timeline-dot { position: relative; z-index: 1; display: grid; width: 30px; height: 30px; margin: 24px auto 13px; border: 1px solid var(--gold); border-radius: 50%; background: var(--surface); color: var(--gold-bright); font-size: 10px; place-items: center; }
+      .timeline-item h3 { margin: 0; color: var(--gold-pale); font-family: var(--serif); font-size: 14px; }
+      .timeline-item p { margin: 8px 0 0; color: var(--muted); font-family: var(--serif); font-size: 11px; line-height: 1.55; }
+
+      .info-section { display: grid; grid-template-columns: 1.35fr 0.95fr; gap: 10px; padding: 34px 0 42px; scroll-margin-top: 86px; }
+      .info-card { display: grid; grid-template-columns: 32px 1fr; gap: 12px; border: 1px solid var(--line); border-radius: 6px; padding: 17px 20px; background: linear-gradient(135deg, color-mix(in srgb, var(--surface-soft) 90%, #6e4307), var(--surface)); }
+      .info-card > svg { width: 25px; height: 25px; fill: none; stroke: var(--gold-bright); stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.7; }
+      .info-card h2 { margin: 0 0 6px; color: var(--gold-bright); font-family: var(--serif); font-size: 14px; letter-spacing: 0.08em; }
+      .info-card p { margin: 2px 0; color: var(--muted); font-family: var(--serif); font-size: 11.5px; line-height: 1.6; }
+      .back-link { display: inline-flex; align-items: center; gap: 7px; margin-top: 8px; color: var(--gold-pale); font-size: 11px; text-decoration: none; }
+      .back-link:hover { color: var(--gold-bright); }
+
+      .modal {
+        position: fixed;
+        z-index: 100;
+        inset: 0;
+        display: grid;
+        padding: 30px;
+        background: rgba(0, 0, 0, 0.76);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 170ms ease;
+        place-items: center;
+      }
+      .modal.is-open { opacity: 1; pointer-events: auto; }
+      .modal-panel {
+        position: relative;
+        width: min(830px, 100%);
+        max-height: min(820px, calc(100vh - 60px));
+        overflow: auto;
+        border: 1px solid var(--gold-dark);
+        border-radius: 8px;
+        background:
+          radial-gradient(circle at 85% 0, rgba(185, 125, 22, 0.12), transparent 24rem),
+          var(--surface);
+        box-shadow: 0 35px 100px rgba(0, 0, 0, 0.55);
+        opacity: 0;
+        transform: scale(0.965) translateY(8px);
+        transition: opacity 190ms ease, transform 190ms ease;
+      }
+      .modal.is-open .modal-panel { opacity: 1; transform: none; }
+      .modal-close { position: sticky; z-index: 2; top: 14px; float: right; width: 34px; height: 34px; margin: 14px 14px 0 0; border: 1px solid var(--line); border-radius: 50%; background: var(--surface); color: var(--gold-pale); cursor: pointer; font-size: 24px; line-height: 1; }
+      .modal-content { padding: 34px clamp(24px, 5vw, 52px) 44px; }
+      .modal-title-row { display: flex; align-items: center; gap: 16px; padding-right: 42px; }
+      .modal-title-row .festival-icon { width: 58px; height: 58px; flex-basis: 58px; }
+      .modal-title-row .festival-icon svg { width: 42px; height: 42px; }
+      .modal-title-row h2 { margin: 0; color: var(--gold-bright); font-family: var(--serif); font-size: 28px; letter-spacing: 0.06em; }
+      .modal-title-row p { margin: 3px 0 0; color: var(--muted); font-family: Georgia, serif; }
+      .modal-tags { display: flex; flex-wrap: wrap; gap: 7px; margin: 16px 0 24px; }
+      .modal-tags span { border: 1px solid var(--line); border-radius: 999px; padding: 4px 9px; color: var(--gold-pale); font-size: 10px; }
+      .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      .modal-section { border: 1px solid var(--line-soft); border-radius: 5px; padding: 15px 17px; background: color-mix(in srgb, var(--surface-soft) 70%, transparent); }
+      .modal-section.is-wide { grid-column: 1 / -1; }
+      .modal-section h3 { margin: 0 0 8px; color: var(--gold-bright); font-family: var(--serif); font-size: 13px; letter-spacing: 0.06em; }
+      .modal-section p { margin: 6px 0; color: var(--text); font-family: var(--serif); font-size: 12px; line-height: 1.75; }
+      .scripture-detail { border-top: 1px solid var(--line-soft); }
+      .scripture-detail:first-of-type { border-top: 0; }
+      .scripture-detail summary { padding: 8px 0; color: var(--gold-pale); cursor: pointer; font-family: var(--serif); font-size: 12px; }
+      .scripture-detail p { margin: 0 0 10px; color: var(--muted); }
+      .modal-celebrants { display: flex; flex-wrap: wrap; gap: 8px; }
+      .modal-celebrants .celebrant { border: 1px solid var(--line-soft); border-radius: 999px; padding: 5px 9px; }
+      .requirement { border-left: 2px solid var(--gold); padding-left: 12px !important; color: var(--gold-pale) !important; }
+
+      @media (max-width: 1120px) {
+        .site-header { grid-template-columns: 250px auto auto; padding-inline: 22px; }
+        .brand-copy strong { font-size: 17px; }
+        .primary-nav { gap: 18px; }
+        .header-actions { margin-left: 18px; }
+        .legend { gap: 11px; }
+        .controls { align-items: flex-start; flex-direction: column; gap: 12px; padding: 14px 0; }
+        .festival-table td { padding-inline: 9px; font-size: 11.4px; }
+        .festival-icon { width: 38px; height: 38px; flex-basis: 38px; }
+        .festival-icon svg { width: 29px; height: 29px; }
+      }
+
+      @media (max-width: 820px) {
+        :root { --header-height: 58px; }
+        .site-header { grid-template-columns: 1fr auto; min-height: 58px; padding: 0 14px; }
+        .brand-mark { width: 39px; }
+        .brand-copy strong { font-size: 15px; letter-spacing: 0.12em; }
+        .brand-copy small { display: none; }
+        .menu-toggle { display: grid; }
+        .header-actions { margin-left: 7px; }
+        .theme-toggle { width: 58px; height: 33px; }
+        .primary-nav {
+          position: absolute;
+          top: 58px;
+          right: 0;
+          left: 0;
+          display: none;
+          height: auto;
+          align-items: stretch;
+          flex-direction: column;
+          gap: 0;
+          border-bottom: 1px solid var(--line);
+          padding: 8px 14px 14px;
+          background: var(--bg-deep);
+          box-shadow: 0 18px 30px rgba(0, 0, 0, 0.35);
+        }
+        .site-header.menu-open .primary-nav { display: flex; }
+        .nav-link { height: 42px; justify-content: flex-start; border-bottom: 1px solid var(--line-soft); }
+        .nav-link::after { display: none; }
+        .hero { min-height: 340px; }
+        .hero-inner { min-height: 340px; grid-template-columns: 1fr; grid-template-rows: auto 168px; }
+        .hero-copy { padding: 28px 22px 6px; }
+        .hero-copy h1 { font-size: clamp(31px, 10vw, 42px); letter-spacing: 0.08em; }
+        .hero-copy p { font-size: 12.5px; }
+        .hero-art { height: 168px; }
+        .page-shell { width: min(100% - 24px, 680px); }
+        .controls { gap: 14px; padding: 14px 0; }
+        .tabs { width: 100%; }
+        .tab { padding: 0 16px; }
+        .legend { display: grid; width: 100%; grid-template-columns: auto 1fr 1fr; white-space: normal; }
+        .legend-title { grid-row: 1 / 3; }
+        .table-wrap { display: none; }
+        .festival-cards { display: grid; gap: 9px; }
+        .mobile-group-title { margin: 11px 2px 0; color: var(--gold-bright); font-family: var(--serif); font-size: 13px; letter-spacing: 0.1em; }
+        .festival-card { position: relative; border: 1px solid var(--line); border-radius: 6px; padding: 14px; background: linear-gradient(135deg, var(--surface-soft), var(--surface)); }
+        .card-head { display: flex; align-items: center; gap: 12px; padding-right: 20px; }
+        .card-head .festival-icon { width: 48px; height: 48px; flex-basis: 48px; }
+        .card-head strong { display: block; color: var(--gold-pale); font-family: var(--serif); font-size: 16px; }
+        .card-head small { color: var(--muted); font-family: Georgia, serif; }
+        .card-time { margin: 11px 0 0; color: var(--gold-pale); font-family: var(--serif); font-size: 12px; }
+        .card-meaning { margin: 8px 0 0; color: var(--text); font-family: var(--serif); font-size: 12.5px; line-height: 1.65; }
+        .card-footer { display: flex; align-items: end; justify-content: space-between; gap: 10px; margin-top: 12px; }
+        .card-celebrants { display: grid; gap: 3px; }
+        .card-open { flex: 0 0 auto; border: 1px solid var(--line); border-radius: 4px; padding: 7px 10px; background: transparent; color: var(--gold-bright); cursor: pointer; font-size: 11px; }
+        .timeline-section { padding-top: 38px; }
+        .section-heading { align-items: flex-start; flex-direction: column; }
+        .section-heading h2 { font-size: 24px; }
+        .section-heading small { text-align: left; }
+        .timeline-scroll { overflow: visible; }
+        .timeline { min-width: 0; grid-template-columns: 1fr; padding: 20px 18px; }
+        .timeline-item { display: grid; min-height: 82px; grid-template-columns: 46px 1fr; padding: 0; text-align: left; }
+        .timeline-item::before { top: 0; bottom: 0; left: 15px; width: 1px; height: auto; }
+        .timeline-item:first-child::before { display: block; top: 30px; }
+        .timeline-item:last-child::before { bottom: 50%; }
+        .timeline-dot { grid-row: 1 / 3; margin: 0; }
+        .timeline-item h3 { padding-top: 3px; }
+        .timeline-item p { margin-top: 4px; }
+        .info-section { grid-template-columns: 1fr; }
+        .modal { padding: 12px; }
+        .modal-panel { max-height: calc(100vh - 24px); }
+        .modal-content { padding: 24px 18px 30px; }
+        .modal-title-row h2 { font-size: 23px; }
+        .modal-grid { grid-template-columns: 1fr; }
+        .modal-section.is-wide { grid-column: auto; }
+      }
+
+      @media (max-width: 420px) {
+        .brand { gap: 8px; }
+        .brand-copy strong { font-size: 13px; }
+        .header-actions { gap: 5px; }
+        .theme-toggle { width: 54px; }
+        .hero-copy { padding-inline: 18px; }
+        .legend { grid-template-columns: 1fr 1fr; }
+        .legend-title { grid-row: auto; grid-column: 1 / -1; }
+        .modal-title-row { align-items: flex-start; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html { scroll-behavior: auto; }
+        *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#festival-list">跳到节期列表</a>
+
+    <svg width="0" height="0" aria-hidden="true" style="position:absolute">
+      <defs>
+        <symbol id="icon-book" viewBox="0 0 48 48">
+          <path d="M5 10.5h13c4.5 0 7 2.3 7 6.3V40c0-4-2.5-6.3-7-6.3H5zM43 10.5H30c-4.5 0-7 2.3-7 6.3V40c0-4 2.5-6.3 7-6.3h13zM24 16v21" />
+        </symbol>
+        <symbol id="icon-lamb" viewBox="0 0 48 48">
+          <path d="M13 20c-4-7 7-10 10-5 4-4 11-1 10 4 7-1 9 9 3 12l-4 2H17c-8 1-11-9-4-13Z" /><circle cx="37" cy="22" r="4" /><path d="M40 19l4-3M18 32v7M30 32v7M11 24H6M36 24h2" />
+        </symbol>
+        <symbol id="icon-bread" viewBox="0 0 48 48">
+          <path d="M7 28c0-7 7-13 17-13s17 6 17 13-7 9-17 9S7 35 7 28Z" /><path d="M17 18c-2 4-2 8 1 12M25 16c-2 4-1 8 2 12M33 19c-2 3-1 6 1 9" />
+        </symbol>
+        <symbol id="icon-wheat" viewBox="0 0 48 48">
+          <path d="M11 42 34 6M17 33c-7-1-8-6-8-10 5 1 9 3 10 7M23 25c-6-1-7-5-7-9 5 1 8 3 9 6M28 18c-5-2-5-6-4-9 4 2 6 4 6 7M22 35c7 0 10-4 12-8-5-1-9 1-12 5M28 27c6 0 9-4 10-8-5 0-8 2-10 5M33 19c5-1 7-4 8-8-4 0-7 2-9 5" />
+        </symbol>
+        <symbol id="icon-flame" viewBox="0 0 48 48">
+          <path d="M26 5c3 10-5 11-2 19 2-3 5-5 8-8 6 8 7 17 2 23-6 7-18 5-22-2-5-10 3-17 8-24 0 8 4 9 6 12" />
+        </symbol>
+        <symbol id="icon-horn" viewBox="0 0 48 48">
+          <path d="M8 31c8 0 15-6 20-18 3 9 6 14 12 17-8 7-19 8-29 5Z" /><path d="M30 13c-1-3 1-6 4-6 3 0 5 3 4 6M11 35l-2 6" />
+        </symbol>
+        <symbol id="icon-scales" viewBox="0 0 48 48">
+          <path d="M24 7v34M12 11h24M24 11 10 18M24 11l14 7M5 18h10l-5 11Zm28 0h10l-5 11ZM16 41h16" />
+        </symbol>
+        <symbol id="icon-tent" viewBox="0 0 48 48">
+          <path d="M6 39 14 12h20l8 27ZM14 12l10 7 10-7M24 19v20M10 27h28M19 39v-9h10v9" />
+        </symbol>
+        <symbol id="icon-menorah" viewBox="0 0 48 48">
+          <path d="M24 8v29M24 19c-7 0-10-5-10-11M24 26c-12 0-17-8-17-17M24 19c7 0 10-5 10-11M24 26c12 0 17-8 17-17M14 37h20M18 42h12" /><path d="M5 7h4M12 6h4M22 6h4M32 6h4M39 7h4" />
+        </symbol>
+        <symbol id="icon-gift" viewBox="0 0 48 48">
+          <path d="M7 20h34v22H7zM5 14h38v8H5zM24 14v28M11 14c-2-6 3-10 7-7 3 2 5 7 6 7M37 14c2-6-3-10-7-7-3 2-5 7-6 7" />
+        </symbol>
+        <symbol id="icon-star" viewBox="0 0 48 48">
+          <path d="m24 5 5.5 12 13 1.3-9.7 8.8 2.8 12.7L24 33.3l-11.6 6.5 2.8-12.7-9.7-8.8 13-1.3Z" />
+        </symbol>
+        <symbol id="icon-cross" viewBox="0 0 48 48">
+          <path d="M20 5h8v12h10v8H28v18h-8V25H10v-8h10z" />
+        </symbol>
+        <symbol id="icon-palm" viewBox="0 0 48 48">
+          <path d="M13 42C22 30 29 19 35 6M29 15c-7-1-11 2-14 7 6 1 10 0 14-4M34 9c-4-4-9-3-13-1 4 4 8 5 12 4M25 22c-7 0-11 3-14 8 6 1 10-1 14-5M21 29c-6 1-9 5-11 10 6 0 9-3 12-7M31 17c5 2 8 6 9 11-5-1-8-4-10-8" />
+        </symbol>
+        <symbol id="icon-cloud" viewBox="0 0 48 48">
+          <path d="M10 33h27c8 0 8-12 0-12-2-9-16-10-20-2-9-3-13 10-7 14ZM24 29V9M18 15l6-6 6 6" />
+        </symbol>
+        <symbol id="icon-candles" viewBox="0 0 48 48">
+          <path d="M11 43h26M15 40V21h7v19M27 40V16h7v24M18.5 18c-4-5 1-8 1-11 4 4 4 8-1 11ZM30.5 13c-4-5 1-8 1-11 4 4 4 8-1 11Z" />
+        </symbol>
+        <symbol id="icon-mask" viewBox="0 0 48 48">
+          <path d="M7 11c9 4 25 4 34 0l-3 19c-2 9-11 13-14 13S12 39 10 30ZM14 23c3-2 6-2 8 1M26 24c2-3 5-3 8-1M19 33c3 2 7 2 10 0" />
+        </symbol>
+        <symbol id="icon-star-david" viewBox="0 0 24 24">
+          <path d="m12 2 8.7 15H3.3ZM12 22 3.3 7h17.4Z" />
+        </symbol>
+        <symbol id="icon-people" viewBox="0 0 24 24">
+          <circle cx="9" cy="7" r="3" /><path d="M3 20c0-5 2-8 6-8s6 3 6 8M16 5a3 3 0 0 1 0 6M17 13c3 .5 4 3 4 7" />
+        </symbol>
+        <symbol id="icon-church" viewBox="0 0 24 24">
+          <path d="M5 21V10l7-5 7 5v11M2 21h20M9 21v-6h6v6M12 5V1M9.5 3h5M7 10h10" />
+        </symbol>
+      </defs>
+    </svg>
+
+    <header class="site-header" data-header>
+      <a class="brand" href="../" aria-label="返回另类知识">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><use href="#icon-book"></use></svg></span>
+        <span class="brand-copy"><strong>圣经节期一览</strong><small>在节期中认识神的救赎计划</small></span>
+      </a>
+
+      <nav class="primary-nav" aria-label="节期页面导航" data-nav>
+        <button class="nav-link is-active" type="button" data-filter-nav="all">节期总览</button>
+        <button class="nav-link" type="button" data-filter-nav="old">旧约节期</button>
+        <button class="nav-link" type="button" data-filter-nav="new">新约教会节期</button>
+        <a class="nav-link" href="#timeline">对比时间线</a>
+        <a class="nav-link" href="#about">关于我们</a>
+      </nav>
+
+      <div class="header-actions">
+        <button class="theme-toggle" type="button" aria-label="切换深色或浅色主题" aria-pressed="false" data-theme-toggle>
+          <span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2" /></svg></span>
+          <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15a8 8 0 0 1-11-11 9 9 0 1 0 11 11Z" /></svg></span>
+        </button>
+        <button class="menu-toggle" type="button" aria-label="打开导航菜单" aria-expanded="false" data-menu-toggle>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+        </button>
+      </div>
+    </header>
+
+    <section class="hero" id="overview" aria-labelledby="hero-title">
+      <div class="hero-inner">
+        <div class="hero-copy">
+          <h1 id="hero-title">节期中的救恩故事</h1>
+          <p>神在历史中设立节期，指向祂的救恩计划。耶稣基督成就了这一切，我们借着纪念这些节期，更深入认识祂。</p>
+        </div>
+        <svg class="hero-art" viewBox="0 0 900 220" preserveAspectRatio="xMidYMid slice" role="img" aria-label="山顶十字架、羔羊、马槽、鸽子、麦穗与住棚组成的救恩故事插画">
+          <defs>
+            <linearGradient id="heroSky" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#21170a" /><stop offset="1" stop-color="#050503" /></linearGradient>
+            <linearGradient id="heroGold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f4cf67" /><stop offset="1" stop-color="#7b4a0c" /></linearGradient>
+            <radialGradient id="heroHalo"><stop stop-color="#f7c955" stop-opacity=".62" /><stop offset=".4" stop-color="#c98317" stop-opacity=".18" /><stop offset="1" stop-color="#000" stop-opacity="0" /></radialGradient>
+            <filter id="goldGlow"><feGaussianBlur stdDeviation="4" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+          </defs>
+          <rect width="900" height="220" fill="url(#heroSky)" />
+          <circle cx="330" cy="95" r="115" fill="url(#heroHalo)" />
+          <g opacity=".75" fill="#bd7e1a">
+            <circle cx="210" cy="36" r="1" /><circle cx="275" cy="19" r="1.2" /><circle cx="387" cy="24" r=".8" /><circle cx="425" cy="55" r="1.3" /><circle cx="520" cy="25" r=".8" /><circle cx="632" cy="48" r="1" /><circle cx="734" cy="20" r="1.2" /><circle cx="835" cy="58" r=".8" />
+          </g>
+          <path d="M0 164 83 120l63 38 97-65 82 49 55-32 75 50 90-45 76 49 83-31 91 42 85-46v81H0Z" fill="#0d0b06" />
+          <path d="M0 181 95 148l68 26 113-51 87 44 67-20 94 37 105-42 87 34 99-28 105 38v34H0Z" fill="#171105" />
+          <path d="m261 151 66-43 61 45" fill="none" stroke="#7d4f0f" stroke-width="1.4" />
+          <g class="glow" stroke="#efbe4e" stroke-linecap="round"><path d="M327 57v75" stroke-width="5" /><path d="M303 81h48" stroke-width="5" /></g>
+          <g transform="translate(418 137)" class="line" stroke-width="2">
+            <path d="M8 29c-9-8-1-24 11-20 6-8 22-4 21 7 9-2 15 11 8 18H18c-5 0-8-2-10-5Z" fill="#b88432" fill-opacity=".8" /><circle cx="49" cy="18" r="7" fill="#d4a34d" /><path d="m53 13 7-5M20 34v15M39 34v15" />
+          </g>
+          <g transform="translate(523 94)" class="line" stroke-width="2.2">
+            <path d="m0 69 50-39 50 39M11 69V44h78v25M32 69V51h36v18M50 31v38" />
+            <path d="M20 44h60M43 61h14" />
+          </g>
+          <g transform="translate(650 47)" fill="url(#heroGold)"><path d="M4 38c24 0 34-14 40-30-15 9-24 8-37 5 9 9 14 12 26 12C20 25 12 29 4 38Z" /><path d="M43 8c8 1 15-2 21-8-2 9-9 15-20 17Z" /></g>
+          <g transform="translate(735 44)" class="line" stroke-width="2"><path d="M5 105 45 5M16 77C5 76 1 68 0 58c10 2 16 6 20 13M25 56c-10-2-13-9-13-17 9 2 14 6 16 12M35 34c-8-2-10-8-9-14 7 2 10 6 11 11M23 83c11 0 19-6 24-15-10-1-17 2-22 10M32 61c10 0 17-6 21-14-8 0-15 3-19 9M41 39c9-1 14-6 17-13-8 0-13 3-17 8" /></g>
+          <g transform="translate(795 91)" class="line" stroke-width="2"><path d="M0 78h95M8 78V29h79v49M8 29l15-17h51l13 17M20 29v49M75 29v49M37 78V43h27v35M22 12c14 10 38 10 52 0" /><path d="M8 29h79" /></g>
+          <path d="M0 208c190-14 319-4 453 2 143 7 274-8 447-5" fill="none" stroke="#a36d16" stroke-width="2" opacity=".65" />
+        </svg>
+      </div>
+    </section>
+
+    <main id="festival-list" class="page-shell">
+      <section class="controls" aria-label="节期筛选和庆祝群体图例">
+        <div class="tabs" role="tablist" aria-label="节期分类">
+          <button class="tab is-active" type="button" role="tab" aria-selected="true" data-filter="all">全部节期</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-filter="old">旧约节期（以色列）</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-filter="new">新约教会节期</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-filter="other">其他纪念节日</button>
+        </div>
+        <div class="legend" aria-label="谁在庆祝的图例">
+          <span class="legend-title">谁在过：</span>
+          <span class="legend-item" data-type="jewish"><svg><use href="#icon-star-david"></use></svg>犹太人</span>
+          <span class="legend-item" data-type="christian"><svg><use href="#icon-cross"></use></svg>基督徒普遍</span>
+          <span class="legend-item" data-type="partial"><svg><use href="#icon-people"></use></svg>部分基督徒</span>
+          <span class="legend-item" data-type="church"><svg><use href="#icon-church"></use></svg>教会传统</span>
+        </div>
+      </section>
+
+      <section class="festival-view" aria-live="polite" data-festival-view>
+        <div class="table-wrap">
+          <table class="festival-table">
+            <colgroup><col /><col /><col /><col /><col /><col /></colgroup>
+            <thead><tr><th>节期名称</th><th>时间（参考）</th><th>圣经出处</th><th>原本纪念</th><th>在基督里的意义</th><th>今天主要由谁庆祝</th></tr></thead>
+            <tbody data-festival-rows></tbody>
+          </table>
+        </div>
+        <div class="festival-cards" data-festival-cards></div>
+      </section>
+
+      <section class="timeline-section" id="timeline" aria-labelledby="timeline-title">
+        <div class="section-heading">
+          <div><p>SALVATION TIMELINE</p><h2 id="timeline-title">救恩时间线</h2></div>
+          <small>旧约的节期次序，像一条贯穿圣经的救恩叙事。横向对照节期与它所预表的成就。</small>
+        </div>
+        <div class="timeline-scroll">
+          <div class="timeline">
+            <article class="timeline-item"><span class="timeline-dot">01</span><h3>逾越节</h3><p>基督受死<br />羔羊的血带来拯救</p></article>
+            <article class="timeline-item"><span class="timeline-dot">02</span><h3>无酵节</h3><p>除去罪<br />过真诚圣洁的生活</p></article>
+            <article class="timeline-item"><span class="timeline-dot">03</span><h3>初熟节</h3><p>基督复活<br />成为初熟的果子</p></article>
+            <article class="timeline-item"><span class="timeline-dot">04</span><h3>七七节</h3><p>圣灵降临<br />教会诞生</p></article>
+            <article class="timeline-item"><span class="timeline-dot">05</span><h3>吹角节</h3><p>警醒等候<br />末后的号角</p></article>
+            <article class="timeline-item"><span class="timeline-dot">06</span><h3>赎罪日</h3><p>完全赎罪<br />最终审判</p></article>
+            <article class="timeline-item"><span class="timeline-dot">07</span><h3>住棚节</h3><p>新天新地<br />神与人永远同住</p></article>
+          </div>
+        </div>
+      </section>
+
+      <section class="info-section" id="about" aria-label="重要说明">
+        <article class="info-card">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 22h4M8 15c-2-2-3-4-3-7a7 7 0 0 1 14 0c0 3-1 5-3 7-1 1-1 2-1 3H9c0-1 0-2-1-3Z" /></svg>
+          <div><h2>重要说明</h2><p>旧约节期是神给以色列民族的律法，并预表基督。新约教会不再受律法节期约束，但可以自由纪念，因为这些节期都指向耶稣。</p><p>基督徒最明确被命令持续纪念的是主的晚餐／圣餐（哥林多前书 11:26）。</p><a class="back-link" href="../">← 返回“另类知识”</a></div>
+        </article>
+        <article class="info-card">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v15H4zM8 3v6M16 3v6M4 11h16M8 15h2M12 15h2M16 15h2M8 18h2M12 18h2" /></svg>
+          <div><h2>节期时间说明</h2><p>旧约节期按照犹太历计算。犹太历与公历不同，因此每年的公历日期都会变化。</p><p>页面上的日期只作为大致参考。</p></div>
+        </article>
+      </section>
+    </main>
+
+    <div class="modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="modal-title" data-modal>
+      <div class="modal-panel" data-modal-panel>
+        <button class="modal-close" type="button" aria-label="关闭节期详情" data-modal-close>×</button>
+        <div class="modal-content" data-modal-content></div>
+      </div>
+    </div>
+
+    <script>
+      const festivals = [
+        {
+          id: "passover", name: "逾越节", english: "Passover", icon: "lamb", category: "old", section: "core",
+          time: ["尼散月14日", "春季"], scriptureShort: ["出埃及记 12章", "利未记 23:5"],
+          original: "神救以色列出埃及，羔羊的血使死亡越过。", christ: "耶稣是逾越节的羔羊，为我们的罪被杀。",
+          celebrants: [{ type: "jewish", label: "犹太人" }, { type: "partial", label: "基督徒（圣餐／受难日纪念）" }],
+          tags: ["旧约节期", "犹太节日"], calendar: "犹太历尼散月十四日；约在公历三至四月。",
+          scriptures: [{ ref: "出埃及记 12:13", text: "血要在你们所住的房屋上作记号；我一见这血，就越过你们去。" }, { ref: "哥林多前书 5:7", text: "我们逾越节的羔羊基督已经被杀献祭了。" }],
+          history: ["逾越节起源于以色列人离开埃及的那一夜。各家宰杀无残疾的羊羔，把血涂在门框上，并在急迫中吃羊羔、无酵饼和苦菜。", "这节期后来成为以色列民族记忆救赎、身份与立约关系的核心时刻。"],
+          requirement: "新约没有要求所有基督徒必须守逾越节；基督徒借主餐持续记念基督的救赎。"
+        },
+        {
+          id: "unleavened-bread", name: "无酵节", english: "Feast of Unleavened Bread", icon: "bread", category: "old", section: "core",
+          time: ["尼散月15–21日", "春季"], scriptureShort: ["利未记 23:6–8", "出埃及记 12章"], original: "离开埃及，七天不吃有酵饼。", christ: "除去罪恶与旧我，过圣洁的生活。",
+          celebrants: [{ type: "jewish", label: "犹太人" }], tags: ["旧约节期", "犹太节日"], calendar: "紧接逾越节，共七日；约在公历三至四月。",
+          scriptures: [{ ref: "出埃及记 12:17", text: "你们要守无酵节，因为我正当这日把你们的军队从埃及地领出来。" }, { ref: "哥林多前书 5:8", text: "只用诚实真正的无酵饼守这节。" }],
+          history: ["以色列人离开埃及时没有时间让面发起来，因此带着未发酵的面团上路。", "七日除酵使每一代人以日常饮食重新进入出埃及的急迫与顺服。"], requirement: "新约没有要求所有基督徒按犹太历守无酵节；除去罪与虚假是持续的属灵呼召。"
+        },
+        {
+          id: "firstfruits", name: "初熟节", english: "Firstfruits", icon: "wheat", category: "old", section: "core",
+          time: ["尼散月16日", "春季"], scriptureShort: ["利未记 23:9–14", "哥林多前书 15:20"], original: "把初熟的庄稼献给神。", christ: "耶稣复活，是睡了之人初熟的果子。",
+          celebrants: [{ type: "jewish", label: "犹太人（传统保留）" }, { type: "christian", label: "基督徒（复活意义）" }], tags: ["旧约节期", "新约关联"], calendar: "逾越节期内献初熟禾捆；约在公历三至四月。",
+          scriptures: [{ ref: "利未记 23:10–11", text: "要将初熟的庄稼一捆带给祭司；祭司要在耶和华面前摇一摇。" }, { ref: "哥林多前书 15:20", text: "基督已经从死里复活，成为睡了之人初熟的果子。" }],
+          history: ["进入应许之地后，以色列人在收割开始时先把初熟的一捆献给神。", "这表示土地、季节与全部收成都是恩赐，也表达对其余收成的信靠。"], requirement: "新约没有要求教会举行初熟节，但基督复活被明确称为将来复活的初熟果子。"
+        },
+        {
+          id: "shavuot", name: "七七节／五旬节", english: "Shavuot / Pentecost", icon: "flame", category: "old", section: "core",
+          time: ["逾越节后第50日", "春季"], scriptureShort: ["利未记 23:15–22", "使徒行传 2章"], original: "收割感恩，七个七日后守节。", christ: "圣灵降临，教会诞生。",
+          celebrants: [{ type: "jewish", label: "犹太人（Shavuot）" }, { type: "christian", label: "基督徒（五旬节）" }], tags: ["旧约节期", "新约成就"], calendar: "从初熟献禾捆之日数算七个七日；约在公历五月至六月。",
+          scriptures: [{ ref: "利未记 23:16", text: "到第七个安息日的次日，共计五十天，又要将新素祭献给耶和华。" }, { ref: "使徒行传 2:4", text: "他们就都被圣灵充满，按着圣灵所赐的口才说起别国的话来。" }],
+          history: ["七七节是小麦收割的感恩节期，名称来自七个完整星期的数算。", "犹太传统也把它与西奈山领受律法联系；使徒行传则记载圣灵在五旬节浇灌。"], requirement: "教会纪念五旬节是合宜的，但新约没有规定所有基督徒必须遵守一套年度节期礼仪。"
+        },
+        {
+          id: "trumpets", name: "吹角节", english: "Rosh Hashanah", icon: "horn", category: "old", section: "core",
+          time: ["提斯利月1日", "秋季"], scriptureShort: ["利未记 23:23–25", "民数记 29:1–2"], original: "吹角、圣会、预备审判。", christ: "警醒、悔改，预备迎见神的审判与国度。",
+          celebrants: [{ type: "jewish", label: "犹太人（Rosh Hashanah）" }], tags: ["旧约节期", "犹太节日"], calendar: "犹太历提斯利月一日；约在公历九至十月。",
+          scriptures: [{ ref: "利未记 23:24", text: "七月初一，你们要守为圣安息日，要吹角作记念，当有圣会。" }, { ref: "哥林多前书 15:52", text: "号筒末次吹响的时候，死人要复活成为不朽坏的。" }],
+          history: ["律法称这一天为吹角作记念的圣会。羊角声召聚百姓，也唤起警醒、记念与敬畏。", "后来的犹太传统把它发展为民事新年，并进入赎罪日前的悔改日程。"], requirement: "新约没有要求基督徒守犹太新年；号角所表达的警醒与主再来盼望仍有属灵意义。"
+        },
+        {
+          id: "atonement", name: "赎罪日", english: "Yom Kippur", icon: "scales", category: "old", section: "core",
+          time: ["提斯利月10日", "秋季"], scriptureShort: ["利未记 16章", "利未记 23:26–32"], original: "大祭司一年一次为百姓赎罪。", christ: "耶稣一次献上自己，完成永远的赎罪。",
+          celebrants: [{ type: "jewish", label: "犹太人（Yom Kippur）" }], tags: ["旧约节期", "犹太节日"], calendar: "犹太历提斯利月十日；约在公历九至十月。",
+          scriptures: [{ ref: "利未记 16:30", text: "因在这日要为你们赎罪，使你们洁净。" }, { ref: "希伯来书 9:12", text: "只一次进入圣所，成了永远赎罪的事。" }],
+          history: ["这是以色列礼仪年中最庄严的一日。大祭司先为自己、再为百姓献祭，并带血进入至圣所。", "两只公山羊分别呈现赎罪与罪被带走，百姓则刻苦己心、停止工作。"], requirement: "基督徒不需要重复旧约赎罪日的祭礼；希伯来书宣告基督一次献上已经成全赎罪。"
+        },
+        {
+          id: "tabernacles", name: "住棚节", english: "Sukkot", icon: "tent", category: "old", section: "core",
+          time: ["提斯利月15–21日", "秋季"], scriptureShort: ["利未记 23:33–43", "申命记 16:13–15"], original: "纪念旷野住帐棚，神与百姓同住。", christ: "神与人同住，预表将来的新天新地。",
+          celebrants: [{ type: "jewish", label: "犹太人（Sukkot）" }, { type: "partial", label: "部分教会纪念" }], tags: ["旧约节期", "犹太节日"], calendar: "犹太历提斯利月十五日起七日；约在公历九至十月。",
+          scriptures: [{ ref: "利未记 23:42–43", text: "你们要住在棚里七日……好叫你们世世代代知道我领以色列人出埃及地的时候，曾使他们住在棚里。" }, { ref: "约翰福音 1:14", text: "道成了肉身，住在我们中间，充充满满地有恩典有真理。" }],
+          history: ["住棚节在收藏土产后举行，是充满喜乐与感恩的节期。百姓搭建临时棚屋，记念旷野漂流时神的保护。", "圣殿时期的水礼与灯光传统，使这节期也承载生命、水与光的盼望。"], requirement: "新约没有要求所有基督徒搭棚守节；神与人同住的主题在基督与新天新地中达到高峰。"
+        },
+        {
+          id: "sabbath", name: "安息日", english: "Sabbath", icon: "menorah", category: "old", section: "core",
+          time: ["每周第七日", "周六"], scriptureShort: ["出埃及记 20:8–11", "利未记 23:3"], original: "神在第七日安息，设立安息日。", christ: "在基督里得真正的安息，也是创造与救赎的记号。",
+          celebrants: [{ type: "jewish", label: "犹太人（周六）" }, { type: "partial", label: "部分基督徒／安息日教会" }], tags: ["旧约圣日", "每周记念"], calendar: "每周从周五日落至周六日落。",
+          scriptures: [{ ref: "出埃及记 20:8", text: "当记念安息日，守为圣日。" }, { ref: "希伯来书 4:9–10", text: "这样看来，必另有一安息日的安息为神的子民存留。" }],
+          history: ["安息日根植于创造的第七日，并在十诫中成为以色列与神立约的记号。", "它让家庭、仆婢、寄居者和牲畜一同停止劳作，宣告生命不由无休止的生产维系。"], requirement: "基督徒对安息日诫命的应用有不同理解；不可把守某日当作称义条件，也应尊重各人的良心。"
+        },
+        {
+          id: "christmas", name: "圣诞节", english: "Christmas", icon: "gift", category: "new", section: "other",
+          time: ["12月25日", "冬季"], scriptureShort: ["马太福音 1–2章", "路加福音 1–2章"], original: "纪念耶稣基督的降生。", christ: "道成肉身，神进入人的世界。",
+          celebrants: [{ type: "christian", label: "基督徒普遍" }], tags: ["新约纪念", "教会传统"], calendar: "多数西方教会为十二月二十五日；部分东方教会采用不同历法日期。",
+          scriptures: [{ ref: "路加福音 2:11", text: "因今天在大卫的城里，为你们生了救主，就是主基督。" }, { ref: "约翰福音 1:14", text: "道成了肉身，住在我们中间。" }],
+          history: ["新约没有记录耶稣出生的确切日期。教会在数世纪中逐渐形成年度降生纪念，并以礼拜、诗歌与慈惠表达庆贺。", "不同文化的习俗并不等同于经文本身，纪念的中心应当是道成肉身。"], requirement: "这是教会传统纪念，并非圣经明确规定的年度节日。"
+        },
+        {
+          id: "easter", name: "复活节", english: "Easter", icon: "star", category: "new", section: "other",
+          time: ["春分月圆后首个主日", "日期每年不同"], scriptureShort: ["马太福音 28章", "哥林多前书 15章"], original: "纪念耶稣从死里复活。", christ: "耶稣战胜死亡，带来新生命。",
+          celebrants: [{ type: "christian", label: "基督徒普遍" }], tags: ["新约纪念", "教会传统"], calendar: "西方教会通常在春分后第一次满月之后的主日；东方教会算法可能不同。",
+          scriptures: [{ ref: "马太福音 28:6", text: "他不在这里，照他所说的，已经复活了。" }, { ref: "哥林多前书 15:20", text: "基督已经从死里复活，成为睡了之人初熟的果子。" }],
+          history: ["最早的教会从每周第一日聚会就持续见证复活，也很早形成年度逾越奥迹的纪念。", "复活节日期的计算在教会历史中逐渐制度化，并形成复活守夜、洗礼与欢庆传统。"], requirement: "纪念基督复活符合福音核心；年度复活节的日期与礼仪属于教会传统。"
+        },
+        {
+          id: "good-friday", name: "受难日", english: "Good Friday", icon: "cross", category: "new", section: "other",
+          time: ["复活节前的周五", "日期每年不同"], scriptureShort: ["马太福音 27章", "约翰福音 18–19章"], original: "纪念耶稣被钉十字架并受死。", christ: "神的羔羊担当世人的罪，成全救赎。",
+          celebrants: [{ type: "christian", label: "基督徒普遍" }, { type: "church", label: "教会传统" }], tags: ["新约纪念", "教会传统"], calendar: "圣周星期五，紧接复活主日前两日。",
+          scriptures: [{ ref: "约翰福音 19:30", text: "耶稣尝了那醋，就说：成了！便低下头，将灵魂交付神了。" }, { ref: "彼得前书 2:24", text: "他被挂在木头上，亲身担当了我们的罪。" }],
+          history: ["受难日属于教会圣周传统，集中默想耶稣受审、被钉与埋葬。", "各传统以读经、祷告、静默、禁食或十架崇敬表达纪念，形式并不完全相同。"], requirement: "这是教会传统纪念，并非圣经明确规定必须守的年度节日。"
+        },
+        {
+          id: "palm-sunday", name: "棕枝主日", english: "Palm Sunday", icon: "palm", category: "new", section: "other",
+          time: ["复活节前一主日", "圣周开始"], scriptureShort: ["马太福音 21:1–11", "约翰福音 12:12–19"], original: "纪念耶稣荣入耶路撒冷。", christ: "谦和的君王来到，走向十字架。",
+          celebrants: [{ type: "christian", label: "基督徒普遍" }, { type: "church", label: "教会传统" }], tags: ["新约纪念", "教会传统"], calendar: "复活主日前一周的主日。",
+          scriptures: [{ ref: "约翰福音 12:13", text: "就拿着棕树枝出去迎接他，喊着说：和散那！" }, { ref: "撒迦利亚书 9:9", text: "看哪，你的王来到你这里；他是公义的，并且施行拯救，谦谦和和地骑着驴。" }],
+          history: ["四福音都记载耶稣进入耶路撒冷时受到群众欢迎，棕枝成为王权与得胜的象征。", "教会把这一天作为圣周入口，让欢呼与即将来临的受难形成强烈对照。"], requirement: "这是教会传统纪念，并非圣经命令所有基督徒每年举行。"
+        },
+        {
+          id: "ascension", name: "升天日", english: "Ascension Day", icon: "cloud", category: "new", section: "other",
+          time: ["复活节后第40日", "通常为周四"], scriptureShort: ["路加福音 24:50–53", "使徒行传 1:6–11"], original: "纪念复活的耶稣升天。", christ: "基督掌权，为教会代求，并应许再来。",
+          celebrants: [{ type: "church", label: "教会传统" }, { type: "partial", label: "部分基督徒" }], tags: ["新约纪念", "教会传统"], calendar: "复活主日后第四十日；部分教会移至邻近主日。",
+          scriptures: [{ ref: "使徒行传 1:9", text: "说了这话，他们正看的时候，他就被取上升，有一朵云彩把他接去。" }, { ref: "希伯来书 7:25", text: "他是长远活着，替他们祈求。" }],
+          history: ["使徒行传把升天置于复活显现四十日之后。早期教会逐渐形成独立的升天纪念。", "这不是耶稣离开世界的失败，而是复活主进入荣耀、差遣见证人并预告再来的时刻。"], requirement: "这是以新约事件为内容的教会传统纪念，圣经没有命令所有教会按年度日期遵守。"
+        },
+        {
+          id: "pentecost", name: "五旬节", english: "Pentecost", icon: "flame", category: "new", section: "other",
+          time: ["复活节后第50日", "主日"], scriptureShort: ["使徒行传 2章", "约翰福音 14:16–17"], original: "纪念圣灵降临与福音向万民展开。", christ: "复活升天的基督赐下圣灵，建立教会。",
+          celebrants: [{ type: "christian", label: "基督徒普遍" }], tags: ["新约纪念", "教会传统"], calendar: "复活主日后第五十日，对应犹太七七节。",
+          scriptures: [{ ref: "使徒行传 2:1–4", text: "五旬节到了，门徒都聚集在一处……他们就都被圣灵充满。" }, { ref: "使徒行传 2:41", text: "于是领受他话的人就受了洗。那一天，门徒约添了三千人。" }],
+          history: ["耶路撒冷的五旬节聚集了来自各地的犹太人，圣灵使门徒以众人的乡谈宣讲神的大作为。", "教会因此把这一天视为宣教群体公开诞生的重要节点。"], requirement: "五旬节事件是新约历史事实；年度礼仪纪念的具体方式由各教会传统决定。"
+        },
+        {
+          id: "advent", name: "将临期", english: "Advent", icon: "candles", category: "new", section: "other",
+          time: ["圣诞节前四个主日", "十一至十二月"], scriptureShort: ["以赛亚书 9:6", "马可福音 13:33–37"], original: "预备纪念基督降生，并等候祂再来。", christ: "第一次降临已经成就，教会警醒盼望第二次降临。",
+          celebrants: [{ type: "church", label: "教会传统" }, { type: "partial", label: "部分基督徒" }], tags: ["教会传统", "新约主题"], calendar: "圣诞节前四个主日开始，西方教会礼仪年的起点。",
+          scriptures: [{ ref: "以赛亚书 9:6", text: "因有一婴孩为我们而生；有一子赐给我们。" }, { ref: "马可福音 13:35", text: "所以，你们要警醒；因为你们不知道家主什么时候来。" }],
+          history: ["将临期在教会历史中逐渐形成，兼具预备圣诞与操练等候的双重方向。", "紫色、蓝色与四支蜡烛等象征因传统而异，核心则是盼望、悔改、喜乐与平安。"], requirement: "这是教会传统季节，并非圣经明确规定的年度节期。"
+        },
+        {
+          id: "purim", name: "普珥节", english: "Purim", icon: "mask", category: "other", section: "other",
+          time: ["亚达月14–15日", "冬末春初"], scriptureShort: ["以斯帖记 9:20–32"], original: "纪念犹太人在波斯帝国中获拯救。", christ: "神在隐而未显中保守祂的百姓与应许。",
+          celebrants: [{ type: "jewish", label: "犹太人" }], tags: ["犹太节日", "历史纪念"], calendar: "犹太历亚达月十四日，书珊等地传统为十五日；约在公历二至三月。",
+          scriptures: [{ ref: "以斯帖记 9:22", text: "以这月的两日为犹大人脱离仇敌得平安、转忧为喜、转悲为乐的吉日。" }],
+          history: ["哈曼掣签（普珥）选择灭绝犹太人的日期，但以斯帖与末底改的行动使局势翻转。", "节期以诵读以斯帖记、互赠食物、周济穷人和欢宴记念拯救。"], requirement: "普珥节是以斯帖记设立的犹太民族纪念，新约没有要求基督徒遵守。"
+        },
+        {
+          id: "hanukkah", name: "修殿节／光明节", english: "Hanukkah", icon: "menorah", category: "other", section: "other",
+          time: ["基斯流月25日起八日", "冬季"], scriptureShort: ["约翰福音 10:22–23", "但以理书 8章（背景关联）"], original: "纪念圣殿重新奉献与信仰得以保存。", christ: "耶稣在修殿节宣告祂与父的关系，真光来到世间。",
+          celebrants: [{ type: "jewish", label: "犹太人" }], tags: ["犹太节日", "历史纪念"], calendar: "犹太历基斯流月二十五日起八日；约在公历十一至十二月。",
+          scriptures: [{ ref: "约翰福音 10:22–23", text: "在耶路撒冷有修殿节，是冬天的时候。耶稣在殿里所罗门的廊下行走。" }, { ref: "约翰福音 8:12", text: "我是世界的光。跟从我的，就不在黑暗里走，必要得着生命的光。" }],
+          history: ["修殿节纪念主前二世纪马加比时期圣殿被洁净并重新奉献。相关历史主要见于次经马加比书，而约翰福音明确提到耶稣在此节期进入圣殿。", "八日点灯的传统使它也被称为光明节，表达忠贞、盼望与身份记忆。"], requirement: "这是犹太历史节日，新约没有要求基督徒遵守；对其历史来源应与摩西律法节期作区分。"
+        }
+      ];
+
+      const categoryLabels = { old: "旧约节期", new: "新约教会节期", other: "其他纪念节日" };
+      const icon = (name, className = "") => `<svg class="${className}" viewBox="0 0 48 48" aria-hidden="true"><use href="#icon-${name}"></use></svg>`;
+      const celebrantIcon = (type) => {
+        const symbol = type === "jewish" ? "star-david" : type === "christian" ? "cross" : type === "church" ? "church" : "people";
+        return `<svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-${symbol}"></use></svg>`;
+      };
+      const celebrantMarkup = (item) => `<span class="celebrant" data-type="${item.type}">${celebrantIcon(item.type)}<span>${item.label}</span></span>`;
+      const rows = document.querySelector("[data-festival-rows]");
+      const cards = document.querySelector("[data-festival-cards]");
+      const view = document.querySelector("[data-festival-view]");
+      const tabs = [...document.querySelectorAll("[data-filter]")];
+      const navFilterButtons = [...document.querySelectorAll("[data-filter-nav]")];
+
+      function render(filter = "all") {
+        const visible = festivals.filter((festival) => filter === "all" || festival.category === filter);
+        let lastSection = "";
+        rows.innerHTML = visible.map((festival) => {
+          const sectionTitle = festival.section === "other" && lastSection !== "other" ? `<tr class="group-row"><td colspan="6">其他纪念节日</td></tr>` : "";
+          lastSection = festival.section;
+          return `${sectionTitle}<tr class="festival-row" tabindex="0" data-festival="${festival.id}" aria-label="查看${festival.name}详情">
+            <td><div class="festival-name"><span class="festival-icon">${icon(festival.icon)}</span><span><strong>${festival.name}</strong><small>${festival.english}</small></span></div></td>
+            <td><span class="cell-lines">${festival.time.map((line) => `<span>${line}</span>`).join("")}</span></td>
+            <td><span class="cell-lines">${festival.scriptureShort.map((line) => `<span>${line}</span>`).join("")}</span></td>
+            <td>${festival.original}</td>
+            <td class="meaning">${festival.christ}<span class="meaning-cross" aria-hidden="true">†</span></td>
+            <td class="who-cell"><div class="celebrants">${festival.celebrants.map(celebrantMarkup).join("")}</div><button class="row-action" type="button" aria-label="查看${festival.name}详情">›</button></td>
+          </tr>`;
+        }).join("");
+
+        lastSection = "";
+        cards.innerHTML = visible.map((festival) => {
+          const sectionTitle = festival.section === "other" && lastSection !== "other" ? `<h2 class="mobile-group-title">其他纪念节日</h2>` : "";
+          lastSection = festival.section;
+          return `${sectionTitle}<article class="festival-card" data-festival="${festival.id}">
+            <div class="card-head"><span class="festival-icon">${icon(festival.icon)}</span><span><strong>${festival.name}</strong><small>${festival.english}</small></span></div>
+            <p class="card-time">${festival.time.join(" · ")}</p><p class="card-meaning">${festival.christ}</p>
+            <div class="card-footer"><div class="card-celebrants">${festival.celebrants.map(celebrantMarkup).join("")}</div><button class="card-open" type="button">查看详情</button></div>
+          </article>`;
+        }).join("");
+      }
+
+      function applyFilter(filter, shouldScroll = false) {
+        view.classList.add("is-switching");
+        window.setTimeout(() => {
+          render(filter);
+          tabs.forEach((tab) => {
+            const selected = tab.dataset.filter === filter;
+            tab.classList.toggle("is-active", selected);
+            tab.setAttribute("aria-selected", String(selected));
+          });
+          navFilterButtons.forEach((button) => button.classList.toggle("is-active", button.dataset.filterNav === filter));
+          view.classList.remove("is-switching");
+          if (shouldScroll) document.querySelector("#festival-list")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 170);
+      }
+
+      tabs.forEach((tab) => tab.addEventListener("click", () => applyFilter(tab.dataset.filter || "all")));
+      navFilterButtons.forEach((button) => button.addEventListener("click", () => {
+        applyFilter(button.dataset.filterNav || "all", true);
+        closeMenu();
+      }));
+
+      const modal = document.querySelector("[data-modal]");
+      const modalPanel = document.querySelector("[data-modal-panel]");
+      const modalContent = document.querySelector("[data-modal-content]");
+      const modalClose = document.querySelector("[data-modal-close]");
+      let lastFocused = null;
+
+      function openFestival(id) {
+        const festival = festivals.find((item) => item.id === id);
+        if (!festival) return;
+        lastFocused = document.activeElement;
+        modalContent.innerHTML = `
+          <div class="modal-title-row"><span class="festival-icon">${icon(festival.icon)}</span><div><h2 id="modal-title">${festival.name}</h2><p>${festival.english}</p></div></div>
+          <div class="modal-tags">${[...festival.tags, categoryLabels[festival.category]].map((tag) => `<span>${tag}</span>`).join("")}</div>
+          <div class="modal-grid">
+            <section class="modal-section"><h3>节期时间</h3><p>${festival.calendar}</p></section>
+            <section class="modal-section"><h3>今天谁在过</h3><div class="modal-celebrants">${festival.celebrants.map(celebrantMarkup).join("")}</div></section>
+            <section class="modal-section is-wide"><h3>圣经出处</h3>${festival.scriptures.map((scripture) => `<details class="scripture-detail"><summary>${scripture.ref}</summary><p>${scripture.text}</p></details>`).join("")}</section>
+            <section class="modal-section is-wide"><h3>历史背景</h3>${festival.history.map((paragraph) => `<p>${paragraph}</p>`).join("")}</section>
+            <section class="modal-section"><h3>原本意义</h3><p>${festival.original}</p></section>
+            <section class="modal-section"><h3>在基督里的意义</h3><p>${festival.christ}</p></section>
+            <section class="modal-section is-wide"><h3>是否要求今天基督徒必须遵守</h3><p class="requirement">${festival.requirement}</p></section>
+          </div>`;
+        modal.classList.add("is-open");
+        modal.setAttribute("aria-hidden", "false");
+        document.body.style.overflow = "hidden";
+        modalClose.focus();
+      }
+
+      function closeModal() {
+        modal.classList.remove("is-open");
+        modal.setAttribute("aria-hidden", "true");
+        document.body.style.overflow = "";
+        if (lastFocused instanceof HTMLElement) lastFocused.focus();
+      }
+
+      document.addEventListener("click", (event) => {
+        const target = event.target instanceof Element ? event.target.closest("[data-festival]") : null;
+        if (target) openFestival(target.dataset.festival);
+      });
+      document.addEventListener("keydown", (event) => {
+        if ((event.key === "Enter" || event.key === " ") && event.target instanceof Element && event.target.matches(".festival-row")) {
+          event.preventDefault(); openFestival(event.target.dataset.festival);
+        }
+        if (event.key === "Escape" && modal.classList.contains("is-open")) closeModal();
+        if (event.key === "Tab" && modal.classList.contains("is-open")) {
+          const focusable = [...modalPanel.querySelectorAll("button, summary, a[href], [tabindex]:not([tabindex='-1'])")];
+          if (!focusable.length) return;
+          const first = focusable[0]; const last = focusable[focusable.length - 1];
+          if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+          else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+        }
+      });
+      modalClose.addEventListener("click", closeModal);
+      modal.addEventListener("click", (event) => { if (event.target === modal) closeModal(); });
+
+      const root = document.documentElement;
+      const themeToggle = document.querySelector("[data-theme-toggle]");
+      function setTheme(theme) {
+        root.dataset.theme = theme;
+        themeToggle.setAttribute("aria-pressed", String(theme === "light"));
+        document.querySelector('meta[name="theme-color"]')?.setAttribute("content", theme === "light" ? "#f5efdf" : "#080805");
+        try { localStorage.setItem("biblical-festivals-theme", theme); } catch {}
+      }
+      let savedTheme = "dark";
+      try { savedTheme = localStorage.getItem("biblical-festivals-theme") || "dark"; } catch {}
+      setTheme(savedTheme === "light" ? "light" : "dark");
+      themeToggle.addEventListener("click", () => setTheme(root.dataset.theme === "dark" ? "light" : "dark"));
+
+      const header = document.querySelector("[data-header]");
+      const menuToggle = document.querySelector("[data-menu-toggle]");
+      function closeMenu() { header.classList.remove("menu-open"); menuToggle.setAttribute("aria-expanded", "false"); }
+      menuToggle.addEventListener("click", () => {
+        const open = header.classList.toggle("menu-open");
+        menuToggle.setAttribute("aria-expanded", String(open));
+      });
+      document.querySelectorAll('.primary-nav a').forEach((link) => link.addEventListener("click", closeMenu));
+
+      render();
+    </script>
+  </body>
+</html>
