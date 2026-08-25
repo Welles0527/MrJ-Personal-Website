@@ -1329,10 +1329,12 @@
       }
 
       .choices,
-      html[data-theme="dark"] .choices {
+      html[data-theme="dark"] .choices,
+      html[data-theme="black-gold"] .choices {
         width: min(800px, calc(100vw - 48px));
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 16px;
+        margin-top: clamp(24px, 3vh, 32px);
       }
 
       .choice,
@@ -1511,14 +1513,15 @@
       }
 
       .meet-owner,
-      html[data-theme="dark"] .meet-owner {
+      html[data-theme="dark"] .meet-owner,
+      html[data-theme="black-gold"] .meet-owner {
         position: relative;
         display: inline-flex;
         min-height: 50px;
         align-items: center;
         justify-content: center;
         gap: 11px;
-        margin-top: 24px;
+        margin-top: 40px;
         overflow: hidden;
         border: 1px solid transparent;
         border-radius: 999px;
@@ -1538,22 +1541,60 @@
       .meet-owner:hover,
       .meet-owner:focus-visible,
       html[data-theme="dark"] .meet-owner:hover,
-      html[data-theme="dark"] .meet-owner:focus-visible {
+      html[data-theme="dark"] .meet-owner:focus-visible,
+      html[data-theme="black-gold"] .meet-owner:hover,
+      html[data-theme="black-gold"] .meet-owner:focus-visible {
         box-shadow: 0 14px 34px rgba(99, 79, 213, 0.18);
         transform: translateY(-2px);
       }
 
       .meet-owner:focus-visible,
-      html[data-theme="dark"] .meet-owner:focus-visible {
+      html[data-theme="dark"] .meet-owner:focus-visible,
+      html[data-theme="black-gold"] .meet-owner:focus-visible {
         outline: 2px solid var(--focus);
         outline-offset: 3px;
       }
 
       .meet-owner__mark {
         display: block;
-        width: 32px;
-        height: 32px;
+        width: 34px;
+        height: 34px;
+        box-sizing: border-box;
         flex: 0 0 auto;
+        border: 1px solid rgba(100, 112, 239, 0.22);
+        border-radius: 11px;
+        padding: 6px;
+        background: linear-gradient(145deg, rgba(104, 135, 255, 0.16), rgba(255, 92, 152, 0.1));
+        color: #635fe5;
+        fill: none;
+        filter: drop-shadow(0 5px 9px rgba(90, 91, 218, 0.14));
+        stroke: currentColor;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 1.8;
+      }
+
+      html[data-theme="dark"] .meet-owner__mark {
+        border-color: rgba(184, 194, 255, 0.28);
+        background: linear-gradient(145deg, rgba(145, 164, 255, 0.2), rgba(255, 118, 169, 0.1));
+        color: #d6dcff;
+        filter: drop-shadow(0 5px 12px rgba(123, 139, 255, 0.22));
+      }
+
+      html[data-theme="black-gold"] .meet-owner {
+        background:
+          linear-gradient(var(--card), var(--card)) padding-box,
+          linear-gradient(125deg, #795022, #efc674 48%, #9a6327) border-box;
+        box-shadow: 0 12px 30px rgba(187, 126, 39, 0.15);
+      }
+
+      html[data-theme="black-gold"] .meet-owner__mark {
+        border-color: rgba(239, 198, 116, 0.46);
+        background:
+          radial-gradient(circle at 35% 28%, rgba(255, 222, 151, 0.2), transparent 42%),
+          linear-gradient(145deg, rgba(91, 60, 24, 0.5), rgba(12, 12, 11, 0.92));
+        color: #efc674;
+        filter: drop-shadow(0 5px 12px rgba(211, 151, 58, 0.22));
       }
 
       .reference-pager,
@@ -1599,10 +1640,12 @@
         }
 
         .choices,
-        html[data-theme="dark"] .choices {
+        html[data-theme="dark"] .choices,
+        html[data-theme="black-gold"] .choices {
           width: min(100%, 480px);
           grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 11px;
+          margin-top: 26px;
         }
 
         .choice,
@@ -1629,9 +1672,10 @@
         }
 
         .meet-owner,
-        html[data-theme="dark"] .meet-owner {
+        html[data-theme="dark"] .meet-owner,
+        html[data-theme="black-gold"] .meet-owner {
           min-height: 46px;
-          margin-top: 18px;
+          margin-top: 30px;
           padding-right: 18px;
           font-size: 13px;
         }
@@ -1804,16 +1848,11 @@
       </nav>
 
       <a class="meet-owner" href="/officialwebsite/resume/" aria-label="认识 J先生，查看个人简历">
-        <svg class="meet-owner__mark" viewBox="0 0 64 64" aria-hidden="true">
-          <defs>
-            <linearGradient id="meet-owner-gradient" x1="0.12" y1="0.98" x2="0.85" y2="0.08">
-              <stop offset="0" stop-color="#6887ff" />
-              <stop offset="0.34" stop-color="#a961ff" />
-              <stop offset="0.61" stop-color="#ff3868" />
-              <stop offset="1" stop-color="#ff7200" />
-            </linearGradient>
-          </defs>
-          <path fill="url(#meet-owner-gradient)" d="M0 64V22C0 9.85 9.85 0 22 0s22 9.85 22 22v3h2c9.94 0 18 8.06 18 18s-8.06 18-18 18H21.5C13.9 61 6.56 62.04 0 64Z" />
+        <svg class="meet-owner__mark" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m11 17 2 2a1.4 1.4 0 0 0 2-2l-3-3" />
+          <path d="m14 14 2.5 2.5a1.4 1.4 0 0 0 2-2l-3.9-3.9a3 3 0 0 0-4.2 0l-.9.9a1.4 1.4 0 0 1-2-2l2.8-2.8a5.8 5.8 0 0 1 7.1-.9l.5.3a2 2 0 0 0 1.4.2L21 6" />
+          <path d="m21 5 1 11h-2M3 5 2 16l5.5 5.5a1.4 1.4 0 0 0 2-2M3 6h8" />
+          <path d="m7 18 1.5 1.5a1.4 1.4 0 0 0 2-2" />
         </svg>
         <span>认识 J先生</span>
       </a>
