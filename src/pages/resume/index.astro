@@ -249,7 +249,7 @@ const ventures = [
 ];
 
 const workSkills = [
-  { name: 'Business Analysis & Reporting', labelLinesEn: ['Business Analysis', '& Reporting'], labelLinesZh: ['业务分析', '与报告'], level: 95 },
+  { name: 'Business Analysis & Reporting', labelLinesEn: ['Business Analysis', '& Reporting'], labelLinesZh: ['分析与', '汇报能力'], level: 95 },
   { name: 'Budgeting & Strategic Planning', labelLinesEn: ['Budgeting &', 'Strategic Planning'], labelLinesZh: ['预算与', '战略规划'], level: 90 },
   { name: 'Financial Modeling', labelLinesEn: ['Financial Modeling'], labelLinesZh: ['财务建模'], level: 90 },
   { name: 'Leadership', labelLinesEn: ['Leadership'], labelLinesZh: ['领导力'], level: 80 },
@@ -1972,7 +1972,7 @@ const tools = [
               <div class="radar-card">
                 <svg class="radar-chart" viewBox="0 0 300 252" role="img" aria-labelledby="work-radar-title work-radar-description">
                   <title id="work-radar-title" class="i18n" data-zh="工作技能雷达图" data-en="Work capabilities radar chart">工作技能雷达图</title>
-                  <desc id="work-radar-description" class="i18n" data-zh="业务分析与报告 95，预算与战略规划 90，财务建模 90，领导力 80，工作效率 90。" data-en="Business analysis 95, budgeting and planning 90, financial modeling 90, leadership 80, work efficiency 90.">业务分析与报告 95，预算与战略规划 90，财务建模 90，领导力 80，工作效率 90。</desc>
+                  <desc id="work-radar-description" class="i18n" data-zh="分析与汇报能力 95，预算与战略规划 90，财务建模 90，领导力 80，工作效率 90。" data-en="Business analysis 95, budgeting and planning 90, financial modeling 90, leadership 80, work efficiency 90.">分析与汇报能力 95，预算与战略规划 90，财务建模 90，领导力 80，工作效率 90。</desc>
                   {radarGrid.map((points) => <polygon class="radar-grid" points={points} />)}
                   {radarAxes.map((axis) => (
                     <line class="radar-axis" x1={radarCenterX} y1={radarCenterY} x2={axis.point.split(',')[0]} y2={axis.point.split(',')[1]} />
