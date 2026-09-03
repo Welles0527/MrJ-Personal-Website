@@ -175,22 +175,49 @@ const worshipAssets = {
     <script>
       import { getCloudDb, getCloudSession, getRememberedSession } from '../scripts/site-auth';
       import { initializeWorshipApp } from '../scripts/worship-app';
-      import { createWorshipCloudStore } from '../scripts/worship-cloud-store';
 
       let identity = getRememberedSession();
       try { identity = await getCloudSession() || identity; } catch { /* 本地回退由共享存储处理。 */ }
 
+      const localStore = {
+        async load(key: string, fallback: unknown) {
+          try { return JSON.parse(localStorage.getItem(`worship:${key}`) || 'null') ?? fallback; } catch { return fallback; }
+        },
+        async save(key: string, value: unknown) { localStorage.setItem(`worship:${key}`, JSON.stringify(value)); },
+      };
+      const readDocument = (result: any) => result?.data?.[0] || result?.data || {};
       const getIdentity = async () => {
         if (identity?.uid) return identity;
         try { identity = await getCloudSession(); } catch { identity = null; }
         return identity;
       };
-      const cloudStore = createWorshipCloudStore({
-        getIdentity,
-        getIdentitySnapshot: () => identity,
-        getDocumentRef: (userId: string) => getCloudDb().collection('officialWebsiteWorshipMusic').doc(userId),
-        storage: window.localStorage,
-      });
+      const cloudStore = {
+        get userId() { return identity?.uid || null; },
+        get account() { return identity?.account || null; },
+        async load(key: string, fallback: unknown) {
+          const account = await getIdentity();
+          const localValue = await localStore.load(key, fallback);
+          if (!account?.uid) return localValue;
+          try {
+            const ref = getCloudDb().collection('officialWebsiteWorshipMusic').doc(account.uid);
+            const current = readDocument(await ref.get());
+            if (current[key] !== undefined) return current[key];
+            if (Array.isArray(localValue) && localValue.length) {
+              await ref.set({ ...current, ownerId: account.uid, account: account.account, [key]: localValue, updatedAt: new Date().toISOString() });
+            }
+            return localValue;
+          } catch { return localValue; }
+        },
+        async save(key: string, value: unknown) {
+          const account = await getIdentity();
+          if (!account?.uid) return localStore.save(key, value);
+          try {
+            const ref = getCloudDb().collection('officialWebsiteWorshipMusic').doc(account.uid);
+            const current = readDocument(await ref.get());
+            await ref.set({ ...current, ownerId: account.uid, account: account.account, [key]: value, updatedAt: new Date().toISOString() });
+          } catch { await localStore.save(key, value); }
+        },
+      };
       (window as any).worshipCloudStore = cloudStore;
       window.addEventListener('site-auth-change', (event) => { identity = (event as CustomEvent).detail || null; });
       initializeWorshipApp(cloudStore);

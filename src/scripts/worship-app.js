@@ -56,6 +56,7 @@ let youtubeLoadGeneration = 0;
 let youtubeReadyGeneration = 0;
 let requestedYoutubeId = "";
 let requestedYoutubeConfirmed = false;
+let youtubeFallbackActive = false;
 const $ = selector => document.querySelector(selector);
 const coverClass = song => `cover-${song.cover || "sun"}`;
 const isCurrent = song => state.current?.title === song.title && state.current?.artist === song.artist;
@@ -439,6 +440,15 @@ function sendYouTubeListening() {
   sendYouTubeCommand("getVideoData");
 }
 
+function fallbackToYouTube(song, message = "B站暂时无法播放，已切换到 YouTube") {
+  const source = resolveSongSource(song);
+  if (!source.youtubeId) return false;
+  youtubeFallbackActive = true;
+  playSong(song.title, song.artist, { preserveBatch: true, sourceOverride: "youtube" });
+  announceQueue(`${message} · ${song.title}`);
+  return true;
+}
+
 function readPlayerState(payload) {
   if (payload?.event === "onStateChange" && typeof payload.info === "number") return payload.info;
   if (payload?.event === "infoDelivery" && typeof payload.info?.playerState === "number") return payload.info.playerState;
@@ -505,13 +515,13 @@ function syncSongFromEmbeddedPlaylist(videoId, playerState) {
 
 let autoAdvanceLocked = false;
 
-function playNextQueuedSong() {
+function playNextQueuedSong({ sourceOverride = "" } = {}) {
   const playbackQueue = getPlaybackQueue();
   const currentIndex = playbackQueue.findIndex(song => songKey(song) === songKey(state.current));
   const next = currentIndex >= 0 ? playbackQueue[currentIndex + 1] : playbackQueue[0];
   if (!next && batchPlaybackKeys.length) batchPlaybackKeys = [];
   if (!next) return false;
-  playSong(next.title, next.artist, { preserveBatch: true });
+  playSong(next.title, next.artist, { preserveBatch: true, sourceOverride });
   announceQueue(`连续播放 · ${next.title}`);
   return true;
 }
@@ -519,6 +529,16 @@ function playNextQueuedSong() {
 window.addEventListener("message", event => {
   const player = $("#mediaPlayer");
   if (!player?.contentWindow || event.source !== player.contentWindow) return;
+  if (event.origin === "https://player.bilibili.com") {
+    if (player.src.includes("player.bilibili.com")) {
+      if (event.data === "bilibili:player:ended" || event.data?.event === "ended") {
+        if (!playNextQueuedSong({ sourceOverride: "bilibili" })) setPlaybackState(false);
+      } else if (event.data === "bilibili:player:error" || event.data?.event === "error" || event.data?.type === "error") {
+        fallbackToYouTube(state.current, "B站播放受限，已切换到 YouTube");
+      }
+    }
+    return;
+  }
   if (!/^https:\/\/(www\.)?(youtube(?:-nocookie)?\.com)$/.test(event.origin)) return;
   let payload = event.data;
   if (typeof payload === "string") {
@@ -556,16 +576,25 @@ $("#mediaPlayer").addEventListener("load", () => {
   youtubeReadyGeneration = Number($("#mediaPlayer").dataset.loadGeneration || 0);
   [0, 250, 800].forEach(delay => window.setTimeout(sendYouTubeListening, delay));
 });
+$("#mediaPlayer").addEventListener("error", () => {
+  const player = $("#mediaPlayer");
+  if (player.src.includes("player.bilibili.com")) fallbackToYouTube(state.current);
+});
 window.addEventListener("pageshow", () => window.setTimeout(sendYouTubeListening, 100));
 document.addEventListener("visibilitychange", sendYouTubeListening);
 
-function playSong(title, artist, { preserveBatch = false } = {}) {
+function playSong(title, artist, { preserveBatch = false, sourceOverride = "" } = {}) {
   const song = songs.find(item => item.title === title && (!artist || item.artist === artist)) || songs.find(item => item.title === title) || state.current;
   if (!preserveBatch) batchPlaybackKeys = [];
   window.clearTimeout(youtubeAdvanceFallbackTimer);
   const activeSong = { ...song, artist: artist || song.artist };
   updateCurrentSong(activeSong, { render: false });
-  const source = resolveSongSource(activeSong);
+  const resolvedSource = resolveSongSource(activeSong);
+  const source = sourceOverride === "youtube" || (youtubeFallbackActive && resolvedSource.youtubeId && sourceOverride !== "bilibili")
+    ? { youtubeId: resolvedSource.youtubeId }
+    : resolvedSource.bvid
+      ? { bvid: resolvedSource.bvid }
+      : resolvedSource;
   const mediaPlayer = $("#mediaPlayer");
   const playerShell = mediaPlayer.closest(".media-player-shell");
   youtubeLoadGeneration += 1;
