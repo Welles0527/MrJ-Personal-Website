@@ -4,45 +4,57 @@ import coffeeAlbumData from '../../../../data/coffee-latte-art-album.json';
 import japanAlbumData from '../../../../data/japan-kanto-2015-album.json';
 import sanyaAlbumData from '../../../../data/sanya-2016-album.json';
 import { sitePath } from '../../../../data/site';
+import { IconWorld } from '@tabler/icons-react';
 
 const albums = [
   {
     data: sanyaAlbumData,
-    href: sitePath('/topics/space/travel/photo-wall/sanya-2016'),
-    coverPhoto: sanyaAlbumData.photos.find((photo) => photo.id === sanyaAlbumData.album.coverId) ?? sanyaAlbumData.photos[0],
-    coverAlt: '2016年海南三亚旅行相册封面',
     displayName: '2016 海南三亚',
     region: 'domestic',
-    tone: 'teal',
-  },
-  {
-    data: coffeeAlbumData,
-    href: sitePath('/topics/space/travel/photo-wall/coffee-latte-art'),
-    coverPhoto: coffeeAlbumData.photos.find((photo) => photo.id === coffeeAlbumData.album.coverId) ?? coffeeAlbumData.photos[0],
-    coverAlt: '上海生活相册封面',
-    displayName: '上海',
-    region: 'domestic',
-    tone: 'clay',
-  },
-  {
-    data: albumData,
-    href: sitePath('/topics/space/travel/photo-wall/jamaica'),
-    coverPhoto: albumData.photos.find((photo) => photo.id === albumData.album.coverId) ?? albumData.photos[0],
-    coverAlt: '2004至2005年牙买加旅行相册封面',
-    displayName: '(2004-2005)牙买加',
-    region: 'overseas',
-    tone: 'teal',
+    title: '海南三亚',
+    date: '2016',
+    note: '海湾、椰影与冬日的阳光。沿着海岸慢慢走，把五天的片刻留在这一册里。',
+    caption: '海风经过的地方',
+    insetIds: ['99d81330-267b-4c88-9f9b-796a61782168', '69003c96-09ac-432f-9211-8520f16c4dc8'],
   },
   {
     data: japanAlbumData,
-    href: sitePath('/topics/space/travel/photo-wall/japan-kanto-2015'),
-    coverPhoto: japanAlbumData.photos.find((photo) => photo.id === japanAlbumData.album.coverId) ?? japanAlbumData.photos[0],
-    coverAlt: '2015年日本关东旅行相册封面',
     displayName: '2015年日本（关东）',
     region: 'overseas',
-    tone: 'sand',
+    title: '日本关东',
+    date: '2015',
+    note: '一段八日的春日旅程。街道、车站、餐桌与古老建筑，组成了记忆里的日本。',
+    caption: '在街巷之间漫游',
+    insetIds: ['d92e67e3-476a-42f4-a4eb-67242bbb756a', '6ffda5ac-893b-4efb-a7da-3daf0a1bd945'],
   },
-];
+  {
+    data: albumData,
+    displayName: '(2004-2005)牙买加',
+    region: 'overseas',
+    title: '牙买加',
+    date: '2004–2005',
+    note: '加勒比海的蓝，竹筏划过的水面。关于牙买加的风景、生活，以及值得记住的人。',
+    caption: '远方，也成为日常',
+    insetIds: ['389ba8f246ec6399401778072e384e94f0483f3d', '4d50b87f485f64b1d38ef71c043fdf5ce276d8fe'],
+  },
+  {
+    data: coffeeAlbumData,
+    displayName: '上海',
+    region: 'domestic',
+    title: '上海',
+    date: '2013–2026',
+    note: '一杯咖啡，一段日常。心形、叶片与细密的纹理，记录着城市里温柔的停顿。',
+    caption: '把日常酿成风景',
+    insetIds: ['b55629f5-e011-43b2-b391-9ee1a6ea93a5', '5d2cc5a8-233c-4890-bc6c-d56e523a3b86'],
+  },
+].map((album, index) => ({
+  ...album,
+  number: String(index + 1).padStart(2, '0'),
+  href: sitePath(`/topics/space/travel/photo-wall/${album.data.album.slug}/`),
+  coverPhoto: album.data.photos.find((photo) => photo.id === album.data.album.coverId) ?? album.data.photos[0],
+  insets: album.insetIds.map((id) => album.data.photos.find((photo) => photo.id === id) ?? album.data.photos[0]),
+}));
+const photoCount = albums.reduce((total, album) => total + album.data.album.count, 0);
 ---
 
 <!doctype html>
@@ -50,433 +62,184 @@ const albums = [
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#2a6e6f" />
+    <meta name="theme-color" content="#cfd0d2" />
     <meta name="robots" content="noindex" />
-    <meta name="description" content="J先生的国内与国外旅行相册。" />
-    <title>影像志 · J先生的生活相册</title>
+    <meta name="description" content="翻开J先生的旅行画册，在三亚、上海、日本与牙买加的真实影像间漫游。" />
+    <title>旅行相册 · J先生的影像志</title>
     <style>
+      @font-face {
+        font-family: 'Bebas Neue';
+        src: url('/officialwebsite/images/photo-wall/editorial/BebasNeue-Regular.ttf') format('truetype');
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
       :root {
-        color-scheme: dark;
-        font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif;
-        background: #6f422d;
-        color: #f4eadf;
-        --mineral-teal: #2a6e6f;
-        --dusty-aqua: #6fa7a8;
-        --warm-clay: #8b5f43;
-        --dark-umber: #6f422d;
-        --sandstone: #c8b3a0;
+        color-scheme: light;
+        font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+        color: #283c40;
+        background: #cfd0d2;
+        --desk: #cfd0d2;
+        --ink: #263d42;
+        --teal: #2d7887;
       }
-
       * { box-sizing: border-box; }
-
-      html { min-width: 320px; background: #6f422d; }
-
-      body {
-        position: relative;
-        min-width: 320px;
-        min-height: 100svh;
-        margin: 0;
-        overflow-x: hidden;
-        background:
-          radial-gradient(ellipse 80% 62% at 82% 4%, rgba(111, 167, 168, 0.88) 0 18%, transparent 54%),
-          radial-gradient(ellipse 58% 68% at 10% 48%, rgba(111, 66, 45, 0.96) 0 24%, transparent 70%),
-          radial-gradient(ellipse 70% 44% at 78% 92%, rgba(200, 179, 160, 0.8) 0 17%, transparent 66%),
-          radial-gradient(ellipse 32% 48% at 47% 34%, rgba(42, 110, 111, 0.65), transparent 70%),
-          linear-gradient(128deg, #8b5f43 0%, #6f422d 34%, #2a6e6f 68%, #c8b3a0 100%);
-      }
-
-      body::before,
-      body::after {
-        position: fixed;
-        z-index: 0;
-        inset: 0;
-        pointer-events: none;
-        content: "";
-      }
-
-      body::before {
-        opacity: 0.24;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.035 .085' numOctaves='4' seed='17'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
-        mix-blend-mode: soft-light;
-      }
-
-      body::after {
-        background:
-          linear-gradient(104deg, transparent 0 28%, rgba(36, 21, 14, 0.15) 28.2% 28.55%, transparent 28.8% 64%, rgba(207, 188, 170, 0.15) 64.2% 64.45%, transparent 64.8%),
-          radial-gradient(circle at 50% 50%, transparent 50%, rgba(25, 16, 13, 0.24) 100%);
-      }
-
-      a, button { font: inherit; }
-
-      .page {
-        position: relative;
-        z-index: 1;
-        display: grid;
-        width: 100%;
-        min-height: 100svh;
-        grid-template-rows: auto 1fr auto;
-        padding: 28px clamp(24px, 3vw, 48px) 24px;
-      }
-
-      .corner {
-        position: fixed;
-        z-index: 2;
-        width: 44px;
-        height: 44px;
-        border-color: rgba(244, 234, 223, 0.5);
-        pointer-events: none;
-      }
-
-      .corner--tl { top: 18px; left: 18px; border-top: 1px solid; border-left: 1px solid; }
-      .corner--tr { top: 18px; right: 18px; border-top: 1px solid; border-right: 1px solid; }
-      .corner--bl { bottom: 18px; left: 18px; border-bottom: 1px solid; border-left: 1px solid; }
-      .corner--br { right: 18px; bottom: 18px; border-right: 1px solid; border-bottom: 1px solid; }
-
-      .topbar,
-      .footer {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 24px;
-        color: rgba(244, 234, 223, 0.76);
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.18em;
-        text-transform: uppercase;
-      }
-
-      .brand,
-      .home-link {
-        color: inherit;
-        text-decoration: none;
-      }
-
-      .brand { display: inline-flex; align-items: center; gap: 10px; }
-
-      .brand-mark {
-        width: 12px;
-        height: 12px;
-        border: 1px solid currentColor;
-        border-radius: 50%;
-      }
-
-      .status { display: inline-flex; align-items: center; gap: 9px; }
-
-      .status-dot {
-        width: 7px;
-        height: 7px;
-        border-radius: 50%;
-        background: #c8b3a0;
-        box-shadow: 0 0 0 4px rgba(200, 179, 160, 0.12);
-      }
-
-      main {
-        display: grid;
-        width: min(1180px, 100%);
-        align-content: center;
-        justify-self: center;
-        padding: clamp(42px, 6vh, 68px) 0 clamp(28px, 4vh, 46px);
-      }
-
-      .intro { margin: 0 auto clamp(26px, 4vh, 42px); text-align: center; }
-
-      .eyebrow {
-        margin: 0 0 10px;
-        color: rgba(244, 234, 223, 0.7);
-        font-size: 10px;
-        font-weight: 800;
-        letter-spacing: 0.32em;
-      }
-
-      h1 {
-        margin: 0;
-        color: #f4eadf;
-        font-family: Georgia, "Noto Serif SC", serif;
-        font-size: clamp(28px, 4vw, 48px);
-        font-weight: 500;
-        letter-spacing: 0.04em;
-      }
-
+      html { min-width: 320px; scroll-behavior: smooth; }
+      body { min-width: 320px; margin: 0; overflow-x: clip; background: var(--desk); }
+      a { color: inherit; text-decoration: none; }
+      button { font: inherit; }
+      img { display: block; max-width: 100%; }
+      :focus-visible { outline: 2px solid #256271; outline-offset: 6px; }
+      .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+      .skip-link { position: absolute; top: -80px; left: 24px; z-index: 10; padding: 12px; background: #fff; }
+      .skip-link:focus { top: 16px; }
+      .topbar { position: relative; z-index: 2; display: flex; min-height: 68px; align-items: center; justify-content: space-between; gap: 20px; padding: 0 clamp(24px, 4vw, 64px); font-size: 11px; letter-spacing: .14em; }
+      .brand { display: inline-flex; min-height: 44px; align-items: center; font-weight: 600; }
       .map-entry {
-        display: inline-flex;
-        min-height: 38px;
-        align-items: center;
-        justify-content: center;
-        margin-top: 20px;
-        padding: 0 18px;
-        border: 1px solid rgba(244, 234, 223, 0.48);
-        border-radius: 999px;
-        background: rgba(10, 18, 17, 0.18);
-        color: #f4eadf;
-        font-size: 12px;
-        font-weight: 700;
-        letter-spacing: 0.16em;
-        text-decoration: none;
-        transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+        display: inline-grid; width: 48px; height: 48px; min-height: 48px; place-items: center;
+        border: 1px solid rgba(74, 118, 125, .62); border-radius: 50%;
+        background: rgba(220, 241, 241, .52); color: #315f68;
+        box-shadow: 0 8px 22px rgba(63, 82, 88, .16), inset 0 0 0 1px rgba(255, 255, 255, .48);
+        backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+        transition: color .2s ease, background-color .2s ease, transform .2s ease, box-shadow .2s ease;
       }
-
-      .map-entry:hover {
-        border-color: rgba(244, 234, 223, 0.82);
-        background: rgba(244, 234, 223, 0.12);
-        transform: translateY(-1px);
+      .map-icon { width: 29px; height: 29px; }
+      .map-entry:hover { color: #194e59; background: rgba(225, 247, 246, .74); transform: translateY(-2px); box-shadow: 0 10px 25px rgba(45, 83, 89, .2), inset 0 0 0 1px rgba(255, 255, 255, .56); }
+      .map-entry:focus-visible { outline: 2px solid #2d7887; outline-offset: 4px; }
+      .brand:hover { color: var(--teal); }
+      main { width: min(960px, calc(100% - 76px)); margin: -68px auto 0; }
+      .cover-intro { position: relative; margin: 0 auto; }
+      .cover-link { display: block; width: 51.5%; margin: 0 auto; }
+      .cover-art {
+        width: 100%; height: auto;
+        mask-image: linear-gradient(to right, transparent, #000 8% 94%, transparent), linear-gradient(to bottom, transparent, #000 6% 94%, transparent);
+        mask-composite: intersect;
       }
-
-      .map-entry:focus-visible {
-        outline: 2px solid #f4eadf;
-        outline-offset: 4px;
-      }
-
-      .filters {
-        display: flex;
-        width: max-content;
-        align-items: center;
-        justify-content: center;
-        gap: 30px;
-        margin: 0 auto clamp(28px, 4vh, 42px);
-        border-bottom: 1px solid rgba(244, 234, 223, 0.28);
-      }
-
-      .filter-button {
-        position: relative;
-        min-height: 42px;
-        padding: 0 2px;
-        border: 0;
-        background: transparent;
-        color: rgba(244, 234, 223, 0.56);
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: 800;
-        letter-spacing: 0.18em;
-      }
-
-      .filter-button::after {
-        position: absolute;
-        right: 0;
-        bottom: -1px;
-        left: 0;
-        height: 2px;
-        background: #f4eadf;
-        content: "";
-        transform: scaleX(0);
-        transition: transform 220ms ease;
-      }
-
-      .filter-button[aria-selected="true"] { color: #f4eadf; }
-      .filter-button[aria-selected="true"]::after { transform: scaleX(1); }
-
-      .album-track {
-        display: flex;
-        min-height: 390px;
-        align-items: flex-start;
-        justify-content: center;
-        gap: clamp(28px, 5vw, 72px);
-      }
-
-      .album-card {
-        display: grid;
-        width: clamp(220px, 20vw, 258px);
-        color: #f4eadf;
-        text-decoration: none;
-        animation: reveal 560ms both cubic-bezier(0.2, 0.75, 0.22, 1);
-      }
-
-      .album-card:nth-child(2) { animation-delay: 80ms; }
-      .album-card:nth-child(3) { animation-delay: 160ms; }
+      .collection-toolbar { position: relative; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: -82px 0 24px; scroll-margin-top: 24px; }
+      .collection-label { margin: 0; color: #5b6669; font-size: 10px; font-weight: 400; letter-spacing: .18em; }
+      .filters { display: flex; gap: 24px; }
+      .filter-button { min-height: 44px; padding: 0 2px; border: 0; border-bottom: 1px solid transparent; background: transparent; color: #626d70; cursor: pointer; font-size: 11px; letter-spacing: .12em; }
+      .filter-button[aria-pressed="true"] { border-bottom-color: var(--teal); color: #245b66; }
+      .filter-button:hover { color: #194a56; }
+      .album-track { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: clamp(34px, 4.6vw, 52px); row-gap: clamp(56px, 6.5vw, 76px); }
+      .album-card { position: relative; display: block; aspect-ratio: 1.263; isolation: isolate; container-type: inline-size; transition: transform 250ms ease; }
       .album-card[hidden] { display: none; }
-
-      .album-cover {
-        position: relative;
-        aspect-ratio: 0.72;
-        overflow: hidden;
-        border: 1px solid rgba(244, 234, 223, 0.26);
-        border-radius: 12px;
-        background: var(--dark-umber);
-        box-shadow: 0 14px 30px rgba(43, 24, 17, 0.16);
-        transition: border-color 200ms ease, transform 260ms ease;
+      .album-card:hover { transform: translateY(-5px); }
+      .paper {
+        position: absolute; z-index: -1; top: -8.475%; left: -9.31%; width: 118.205%; height: 118.325%; max-width: none; pointer-events: none;
+        mask-image: linear-gradient(to right, transparent, #000 6% 96%, transparent), linear-gradient(to bottom, transparent, #000 5% 97%, transparent);
+        mask-composite: intersect;
       }
-
-      .album-cover img {
-        display: block;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transform: scale(1.002);
-        transition: transform 420ms ease;
-      }
-
-      .album-meta {
-        position: relative;
-        padding-top: 60px;
-        text-align: center;
-      }
-
-      .album-meta::before {
-        position: absolute;
-        top: 0;
-        left: 50%;
-        width: 1px;
-        height: 40px;
-        background: repeating-linear-gradient(to bottom, rgba(244, 234, 223, 0.5) 0 3px, transparent 3px 7px);
-        content: "";
-      }
-
-      .album-name {
-        display: block;
-        overflow: hidden;
-        color: #f4eadf;
-        font-family: Georgia, "Noto Serif SC", serif;
-        font-size: clamp(15px, 1.6vw, 19px);
-        font-weight: 700;
-        letter-spacing: 0.04em;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      .album-count {
-        display: block;
-        margin-top: 8px;
-        color: rgba(244, 234, 223, 0.56);
-        font-size: 10px;
-        font-weight: 700;
-        letter-spacing: 0.16em;
-        text-transform: uppercase;
-      }
-
-      .album-card:hover .album-cover {
-        border-color: rgba(244, 234, 223, 0.7);
-        transform: translateY(-4px);
-      }
-
-      .album-card:hover .album-cover img { transform: scale(1.018); }
-
-      .brand:focus-visible,
-      .home-link:focus-visible,
-      .filter-button:focus-visible,
-      .album-card:focus-visible {
-        outline: 2px solid #f4eadf;
-        outline-offset: 6px;
-      }
-
-      .footer { align-self: end; color: rgba(244, 234, 223, 0.5); }
-      .footer-rule { width: min(460px, 34vw); height: 1px; background: rgba(244, 234, 223, 0.3); }
-
-      @keyframes reveal {
-        from { opacity: 0; transform: translateY(18px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-
+      .photo-page { position: absolute; inset: .65% 50% .8% .2%; overflow: hidden; border-radius: 1% 0 .6% 1%; }
+      .main-photo { width: 100%; height: 100%; object-fit: cover; mix-blend-mode: multiply; filter: saturate(.72) contrast(.96); }
+      .photo-kicker { position: absolute; top: 5%; left: 6%; padding: 3px 6px; border-radius: 10px; background: rgba(255,255,255,.86); color: #356674; font-size: 1.4cqw; letter-spacing: .1em; }
+      .folio { position: absolute; bottom: 4.6%; left: 7%; color: white; font-size: 2cqw; font-family: Georgia, serif; text-shadow: 0 1px 3px #253637; }
+      .editorial-page { position: absolute; inset: 0 0 0 50%; display: flex; flex-direction: column; padding: 5% 4.6% 3.2%; }
+      .page-running { display: flex; justify-content: space-between; gap: 5px; margin: 0 0 8%; color: #4b7a84; font-size: 1.5cqw; letter-spacing: .03em; }
+      h2 { margin: 0 0 6%; color: var(--teal); font-family: "Microsoft YaHei", "PingFang SC", sans-serif; line-height: 1.1; }
+      h2 span { display: block; }
+      .album-title { font-size: 5.4cqw; font-weight: 700; letter-spacing: .04em; }
+      .album-date { margin-top: 3%; color: #315d67; font-family: Georgia, "Times New Roman", serif; font-size: 2.65cqw; font-weight: 500; letter-spacing: .1em; }
+      .editorial-copy { margin: 0; color: #526164; font-size: 2.1cqw; line-height: 1.8; text-wrap: pretty; }
+      .page-caption { margin: 7% 0 3%; color: #354e54; font-size: 2.1cqw; font-weight: 600; letter-spacing: .03em; }
+      .inset-photos { display: grid; flex: 1; min-height: 0; grid-template-columns: 1fr 1fr; align-items: end; gap: 6%; margin-top: 5%; }
+      .inset-photos img { width: 100%; height: 100%; max-height: 100%; min-height: 0; object-fit: cover; border-radius: 18% 18% 4% 4%; filter: saturate(.7); }
+      .inset-photos img:first-child { height: 88%; }
+      .album-card:nth-child(even) .inset-photos img:first-child { height: 100%; border-radius: 45% 45% 4% 4%; }
+      .album-card:nth-child(even) .inset-photos img:last-child { height: 85%; }
+      .page-footer { display: flex; justify-content: space-between; gap: 4px; margin-top: 6%; color: #447a86; font-size: 1.65cqw; letter-spacing: .04em; white-space: nowrap; }
+      .open-album { border-bottom: 1px solid rgba(45,120,135,.45); padding-bottom: 1px; }
+      .footer { display: flex; width: min(960px, calc(100% - 76px)); align-items: center; justify-content: space-between; gap: 20px; margin: 76px auto 0; padding: 22px 0 30px; border-top: 1px solid #b5bdc0; color: #58676a; font-size: 10px; letter-spacing: .13em; }
+      @media (min-width: 1200px) { .cover-link { width: 48%; } }
       @media (max-width: 700px) {
-        .page { padding: 22px 18px 20px; }
-        .topbar { font-size: 9px; letter-spacing: 0.12em; }
-        .status span:last-child { display: none; }
-        main { align-content: start; padding: 74px 0 48px; }
-        .intro { margin-bottom: 24px; }
-        h1 { font-size: 31px; }
-        .map-entry { margin-top: 17px; }
-        .filters { margin-bottom: 34px; }
-        .album-track {
-          width: calc(100vw - 36px);
-          min-height: 0;
-          justify-content: flex-start;
-          gap: 18px;
-          overflow-x: auto;
-          padding: 4px max(0px, calc((100vw - 36px - 270px) / 2)) 16px;
-          scroll-snap-type: x mandatory;
-          scrollbar-width: none;
-        }
-        .album-track::-webkit-scrollbar { display: none; }
-        .album-card { width: min(270px, calc(100vw - 66px)); flex: 0 0 auto; scroll-snap-align: center; }
-        .album-meta { padding-top: 54px; }
-        .album-meta::before { height: 36px; }
-        .album-name { font-size: 16px; }
-        .footer { font-size: 8px; }
-        .footer-rule { width: 80px; }
-        .corner { width: 28px; height: 28px; }
+        .topbar { min-height: 62px; padding: 0 20px; font-size: 10px; letter-spacing: .04em; }
+        main { width: calc(100% - 42px); margin-top: -8px; }
+        .cover-intro { padding-top: 0; }
+        .cover-link { width: min(82%, 360px); }
+        .collection-toolbar { margin: 0 0 32px; gap: 10px; }
+        .collection-label { font-size: 9px; letter-spacing: .06em; }
+        .filters { gap: 18px; }
+        .filter-button { font-size: 11px; }
+        .album-track { grid-template-columns: 1fr; gap: 48px; margin: -16px; padding: 16px; overflow: clip; }
+        .editorial-page { padding-top: 4.5%; }
+        .page-running { font-size: 8px; margin-bottom: 6%; }
+        .photo-kicker { font-size: 7px; }
+        .editorial-copy { font-size: 10px; line-height: 1.7; }
+        .page-caption { font-size: 10px; margin-top: 6%; }
+        .page-footer { font-size: 8px; }
+        .footer { width: calc(100% - 42px); margin-top: 56px; font-size: 9px; gap: 10px; letter-spacing: .04em; }
       }
-
       @media (prefers-reduced-motion: reduce) {
-        .album-card { animation: none; }
-        .album-cover,
-        .album-cover img,
-        .filter-button::after,
-        .map-entry { transition: none; }
+        html { scroll-behavior: auto; }
+        .album-card { transition: none; }
       }
     </style>
   </head>
   <body>
-    <span class="corner corner--tl" aria-hidden="true"></span>
-    <span class="corner corner--tr" aria-hidden="true"></span>
-    <span class="corner corner--bl" aria-hidden="true"></span>
-    <span class="corner corner--br" aria-hidden="true"></span>
-
-    <div class="page">
-      <header class="topbar">
-        <a class="brand" href={sitePath('/')} aria-label="返回J先生魔法学院首页">
-          <span class="brand-mark" aria-hidden="true"></span>
-          <span>J先生 · 影像志</span>
+    <a class="skip-link" href="#collection">跳到相册</a>
+    <header class="topbar">
+      <a class="brand" href={sitePath('/')}>J先生 · 旅行相册</a>
+      <a class="map-entry" href={sitePath('/topics/space/travel/travel-map/')} aria-label="进入世界地图" title="进入世界地图">
+        <IconWorld className="map-icon" size={29} stroke={1.35} aria-hidden="true" />
+        <span class="sr-only">进入世界地图</span>
+      </a>
+    </header>
+    <main>
+      <header class="cover-intro">
+        <h1 class="sr-only">旅行相册 · 把时间装进相册</h1>
+        <a class="cover-link" href="#collection" aria-label="翻开旅行画册，浏览全部相册">
+          <img class="cover-art" src={sitePath('/images/photo-wall/editorial/wanderlust-cover-cn-v1.png')} alt="J先生旅行相册青蓝色精装画册" width="1122" height="1402" fetchpriority="high" />
         </a>
-        <span class="status"><span class="status-dot" aria-hidden="true"></span><span>PHOTO ARCHIVE / 03</span></span>
       </header>
-
-      <main>
-        <header class="intro">
-          <p class="eyebrow">TRAVEL &amp; LIFE ARCHIVE</p>
-          <h1>把时间装进相册</h1>
-          <a class="map-entry" href={sitePath('/topics/space/travel/travel-map/')}>进入世界地图</a>
-        </header>
-
-        <div class="filters" role="tablist" aria-label="按地区筛选相册">
-          <button class="filter-button" type="button" role="tab" data-region="domestic" aria-selected="false">国内</button>
-          <button class="filter-button" type="button" role="tab" data-region="overseas" aria-selected="true">国外</button>
+      <div class="collection-toolbar" id="collection">
+        <p class="collection-label">THE TRAVEL COLLECTION / 04</p>
+        <div class="filters" role="group" aria-label="按地区筛选相册">
+          <button class="filter-button" type="button" data-region="all" aria-pressed="true" aria-controls="album-collection">全部</button>
+          <button class="filter-button" type="button" data-region="domestic" aria-pressed="false" aria-controls="album-collection">国内</button>
+          <button class="filter-button" type="button" data-region="overseas" aria-pressed="false" aria-controls="album-collection">国外</button>
         </div>
-
-        <div class="album-track" aria-live="polite">
-          {albums.map((album) => (
-            <a
-              class="album-card"
-              href={album.href}
-              data-region={album.region}
-              data-tone={album.tone}
-              hidden={album.region !== 'overseas'}
-              aria-label={`打开${album.displayName}相册，共${album.data.album.count}张照片`}
-            >
-              <span class="album-cover">
-                <img
-                  src={sitePath(album.data.album.cover)}
-                  alt={album.coverAlt}
-                  width={album.coverPhoto.width}
-                  height={album.coverPhoto.height}
-                  loading="eager"
-                  decoding="async"
-                />
-              </span>
-              <span class="album-meta">
-                <span class="album-name">{album.displayName}</span>
-                <span class="album-count">{album.data.album.count} PHOTOS</span>
-              </span>
-            </a>
-          ))}
-        </div>
-      </main>
-
-      <footer class="footer">
-        <span>MINERAL EARTH / 2026</span>
-        <span class="footer-rule" aria-hidden="true"></span>
-        <a class="home-link" href={sitePath('/')}>返回主站</a>
-      </footer>
-    </div>
-
+      </div>
+      <p class="sr-only" id="filter-status" role="status">显示全部4本相册</p>
+      <section class="album-track" id="album-collection" aria-label="旅行画册">
+        {albums.map((album) => (
+          <a class="album-card" href={album.href} data-region={album.region} aria-label={`打开${album.displayName}相册，共${album.data.album.count}张照片`}>
+            <img class="paper" src={sitePath('/images/photo-wall/editorial/open-pages-v1.png')} alt="" width="1409" height="1117" aria-hidden="true" />
+            <div class="photo-page">
+              <img class="main-photo" src={sitePath(album.data.album.cover)} alt={album.displayName} width={album.coverPhoto.width} height={album.coverPhoto.height} loading="lazy" decoding="async" />
+              <span class="photo-kicker">J's journal</span>
+              <span class="folio">{album.number}</span>
+            </div>
+            <div class="editorial-page">
+              <p class="page-running"><span>TRAVEL NOTES</span><span>No. {album.number}</span></p>
+              <h2><span class="album-title">{album.title}</span><span class="album-date">{album.date}</span></h2>
+              <p class="editorial-copy">{album.note}</p>
+              <p class="page-caption">{album.caption}</p>
+              <div class="inset-photos" aria-hidden="true">
+                {album.insets.map((photo) => <img src={sitePath(photo.src)} alt="" width={photo.width} height={photo.height} loading="lazy" decoding="async" />)}
+              </div>
+              <div class="page-footer"><span>{album.data.album.count.toLocaleString('en-US')} PHOTOS</span><span class="open-album">翻开相册</span></div>
+            </div>
+          </a>
+        ))}
+      </section>
+    </main>
+    <footer class="footer">
+      <span>4 本相册 · {photoCount.toLocaleString('en-US')} 张影像</span>
+      <span>把时间装进相册</span>
+      <a href={sitePath('/')}>返回主站</a>
+    </footer>
     <script>
       const filterButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('.filter-button'));
       const albumCards = Array.from(document.querySelectorAll<HTMLElement>('.album-card'));
-
-      const selectRegion = (region: string) => {
-        filterButtons.forEach((button) => button.setAttribute('aria-selected', String(button.dataset.region === region)));
-        albumCards.forEach((card) => { card.hidden = card.dataset.region !== region; });
-      };
+      const filterStatus = document.querySelector<HTMLElement>('#filter-status');
 
       filterButtons.forEach((button) => {
-        button.addEventListener('click', () => selectRegion(button.dataset.region || 'overseas'));
+        button.addEventListener('click', () => {
+          const region = button.dataset.region || 'all';
+          filterButtons.forEach((filter) => filter.setAttribute('aria-pressed', String(filter === button)));
+          albumCards.forEach((card) => { card.hidden = region !== 'all' && card.dataset.region !== region; });
+          if (filterStatus) filterStatus.textContent = `显示${button.textContent} ${albumCards.filter((card) => !card.hidden).length} 本相册`;
+        });
       });
     </script>
   </body>

@@ -1,3 +1,161 @@
+# 相册首页中文标题批注 — 2026-09-05 Design QA
+
+## Target and scope
+
+- Source visual truth: the three browser annotations on `http://127.0.0.1:4415/officialwebsite/topics/space/travel/photo-wall/`, requesting the cover title `J先生旅行相册`, Chinese album titles, date-only subtitle lines, and removal of the duplicated date/location line.
+- Same-layout baseline: `C:/Users/huawei/.codex/visualizations/2026/09/04/photo-wall-globe-entry/desktop-1440x900-puppeteer.png` — 1440 × 900 px.
+- Implementation URL: `http://127.0.0.1:4415/officialwebsite/topics/space/travel/photo-wall/?v=cncopy-final`.
+- Final desktop implementation: `C:/Users/huawei/.codex/visualizations/2026/09/05/photo-wall-cn-copy/desktop-1440x900-edge.png` — 1440 × 900 CSS px and image px, device pixel ratio 1, initial scroll position.
+- Final mobile implementation: Puppeteer artifact `photo-wall-cn-copy-mobile-final2` — 390 × 844 CSS px and image px, initial scroll position.
+
+## Full-view and focused comparison evidence
+
+- The 1440 × 900 baseline and final desktop capture were opened together in the same comparison input. The cover, two-column book rhythm, filters, world-map icon, photos, margins, and surrounding page remained fixed while only the annotated copy changed.
+- A focused lower-page browser capture, `photo-wall-cn-copy-desktop-lower`, shows all four final title/date pairs: `海南三亚 / 2016`, `日本关东 / 2015`, `牙买加 / 2004–2005`, and `上海 / 2013–2026`; no former date/location line remains below them.
+- The edited cover asset was inspected at its native 1122 × 1402 px. The exact Chinese title is legible without乱码; the book, architecture, cyan palette, texture, shadow, composition, and two small subtitle lines remain aligned with the original asset.
+- The 390 × 844 mobile capture was inspected separately because the supplied browser annotations show a desktop viewport. It confirms the longer Chinese cover title and card title/date pair remain inside their surfaces without clipping or horizontal page overflow.
+
+## Required fidelity surfaces
+
+- Fonts/typography: the cover title is embedded cleanly in the image. Album headings now use the existing square Chinese sans-serif stack at a restrained editorial weight; dates use the existing serif numeric treatment with consistent spacing. No title wraps or stretches abnormally.
+- Spacing/layout: the removed duplicate line gives the description a cleaner start while preserving the original card height, paper gutter, inset-photo area, and row rhythm.
+- Colors/tokens: cover and card title colors remain the established black and muted teal; no palette token or surrounding component changed.
+- Image quality: `wanderlust-cover-cn-v1.png` is a non-destructive ImageGen text-localization edit of the original cover. It stays 1122 × 1402 px and is referenced as a real raster asset rather than an HTML/CSS overlay.
+- Copy/content: all four display headings are Chinese; every subtitle is a date or date range; the repeated date/location paragraph was removed. Album counts, notes, captions, real photos, URLs, filter regions, and map destination are unchanged.
+
+## Findings and comparison history
+
+1. Initial post-edit desktop and lower-page inspection: no actionable P0/P1/P2 mismatch. All three annotated changes are visible and the four cards remain balanced.
+2. Mobile inspection: no clipping, overlap, abnormal wrapping, or horizontal document overflow. No additional visual fix was required.
+3. Accepted date convention: the Shanghai coffee album uses `2013–2026`, the range represented by its dated source photos; the other three dates follow their existing album names and source periods.
+
+## Interaction and code verification
+
+- DOM verification found four Chinese titles, four date values, zero `.place-name` duplicate rows, and zero English album-title strings.
+- All four existing album hrefs remain unchanged.
+- Domestic filter script verification returns only `海南三亚` and `上海`; the core filter logic and accessibility state remain unchanged.
+- Desktop and mobile document checks found no horizontal overflow.
+- All 17 page images, including the new cover, decoded successfully in the browser; the cover reports its expected 1122 × 1402 natural size.
+- Scoped Astro check: 1 file, 0 errors, 0 warnings.
+- No route, dataset, map, dependency, commit, push, or deployment change was made.
+
+final result: passed
+
+---
+
+# 相册首页世界地图图标入口 — 2026-09-04 Design QA
+
+## Target and scope
+
+- Source visual truth: `D:/UserTemp/huawei/codex-clipboard-92e75ee7-b337-4e23-8462-d7db64bf92c2.png` (1488 × 1562) for the preserved world-map entry and `D:/UserTemp/huawei/codex-clipboard-0dd57b79-420f-4b1e-9d98-97a8437e9498.png` (722 × 494) for the icy cyan/gray page palette.
+- Implementation URL: `http://127.0.0.1:4415/officialwebsite/topics/space/travel/photo-wall/`.
+- Scope: replace the top-right `3D / 进入世界地图` text control with a palette-matched globe icon while preserving the existing map route and page.
+
+## Captured evidence
+
+- Desktop implementation: `C:/Users/huawei/.codex/visualizations/2026/09/04/photo-wall-globe-entry/desktop-1440x900-puppeteer.png` — 1440 × 900 CSS px and image px, device pixel ratio 1, initial scroll position.
+- Mobile implementation: `C:/Users/huawei/.codex/visualizations/2026/09/04/photo-wall-globe-entry/mobile-390x844-puppeteer.png` — 390 × 844 CSS px and image px, device pixel ratio 1, initial scroll position.
+- Focused icon capture: `C:/Users/huawei/.codex/visualizations/2026/09/04/photo-wall-globe-entry/globe-entry-48x48-puppeteer.png` — 48 × 48 px.
+- The cyan book reference and final desktop render were opened together in the same comparison input. The focused crop was then inspected at native size for line weight, contrast, circular geometry, and surrounding space.
+
+## Required fidelity surfaces
+
+- Fonts/typography: no visible navigation copy was added; the accessible name and native tooltip remain `进入世界地图`. Existing page typography is unchanged.
+- Spacing/layout: the icon is a 48 × 48 px circular control in the existing top-right slot. It does not move the centered book or filter layout and remains fully visible at both verified viewports.
+- Colors/tokens: translucent ice-cyan fill, blue-gray stroke, deep teal globe line, and a restrained cool shadow reuse the cover and editorial ink palette.
+- Image/icon quality: the globe is the installed Tabler `IconWorld`, not a text glyph, emoji, placeholder, inline custom SVG, or CSS drawing. The 1.35 px stroke stays crisp at native size.
+- Copy/content: the world-map destination and map page are unchanged. The visible text was intentionally replaced by the requested globe graphic; screen-reader and tooltip copy preserve the action meaning.
+
+## Findings and comparison history
+
+1. Initial final comparison: no actionable P0/P1/P2 mismatch. The globe entry is visually distinct, palette-consistent, and readable without competing with the centered cover.
+2. Accepted difference: neither supplied reference contains a globe illustration matching this exact control. The implementation therefore uses the project's installed icon library and derives its colors from the supplied cyan travel-book reference.
+
+## Interaction and code verification
+
+- Desktop 1440 × 900: no horizontal overflow; icon measures 48 × 48 px.
+- Mobile 390 × 844: no horizontal overflow; icon is fully within the viewport and exceeds the 44 × 44 px minimum touch target.
+- The link exposes `aria-label="进入世界地图"`, a matching title, and a real SVG icon.
+- Clicked the globe entry from the album homepage: navigated to `/officialwebsite/topics/space/travel/travel-map/`; the destination loaded with title `旅行影像地图 · J先生的个人空间` and its canvas present.
+- Browser console output during the checked navigation was empty.
+- Scoped Astro check: 1 file, 0 errors, 0 warnings.
+- No route, data, album card, map implementation, dependency, commit, push, or deployment change was made.
+
+final result: passed
+
+---
+
+# 旅行相册画册布局 — 2026-09-01 Design QA
+
+## Target and scope
+
+- Source visual truth: `D:/UserTemp/huawei/codex-clipboard-a792941d-f1fa-49f8-94a2-23f9b8b39444.png` (736 × 1312).
+- Implementation: `http://127.0.0.1:4415/officialwebsite/topics/space/travel/photo-wall/`.
+- Source: `src/pages/topics/space/travel/photo-wall.astro` in `C:/tmp/codex-resume-label-release-20260831-local`.
+- The main MyWebsite checkout contains an old placeholder for this page and unrelated pending changes. This implementation uses the existing clean checkout whose album page matched the live page; the old placeholder and unrelated edits were not touched.
+- Layout target: a centered cyan hardback cover, then two columns of open travel magazines on a cool gray desk. Preserve the real four albums, photos, domestic/overseas filtering and world-map entry. No route, data schema, detail-page, dependency or deployment changes.
+
+## Captured evidence
+
+All captures use device pixel ratio 1, with no browser chrome; pixel dimensions equal CSS viewport dimensions. The in-app browser automation surface was not exposed, so the available Puppeteer browser was used. The development toolbar was removed only in the browser for clean captures.
+
+- Same-size reference comparison: `C:/Users/huawei/.codex/visualizations/2026/09/01/album-editorial/reference-final.png` — 736 × 1312, all four albums visible.
+- Desktop: `C:/Users/huawei/.codex/visualizations/2026/09/01/album-editorial/desktop-final.png` — 1440 × 900, initial scroll position.
+- Focused spread comparison: `C:/Users/huawei/.codex/visualizations/2026/09/01/album-editorial/spreads-final.png` — 1440 × 900, scrolled to the four open spreads. Checked title lettering, image crops, page gutters, folios and text/image spacing against the reference's spread regions.
+- Mobile: `C:/Users/huawei/.codex/visualizations/2026/09/01/album-editorial/mobile-final.png` — 390 × 844, initial position after the overflow fix.
+- The original reference and the final 736 × 1312 implementation were opened together in one comparison input, not judged solely from code or separate remembered views.
+
+## Comparison history
+
+1. Initial rendered pass: blocked. [P2] First row began at y522 instead of the reference's y411. [P2] Fallback lettering was too broad, causing long titles to wrap and squeeze the inset photos. Fixed cover sizing, moved the filter bar into the available side space beneath the cover, bundled a condensed display font, shortened the long English headings and removed the second descriptive paragraph.
+2. Same-size recapture: first-row boxes are x38/y410.7 and x385/y410.7, both 313 × 247.8. These match the reference spread positions and proportions closely. [P2] One Shanghai photo was mostly blank at its portrait crop; replaced it with another existing, visually inspected latte photo. Lazy images were explicitly decoded before final capture.
+3. Mobile pass: [P2] The decorative paper/shadow asset extended the scroll width to 400px on a 390px viewport. Added a padded clipping area around the mobile grid, preserving book content and shadows inside the viewport. Post-fix document width is 390px, and every page footer remains inside its book.
+4. Final reference, desktop spread and mobile captures inspected: no remaining actionable P0/P1/P2 findings.
+
+## Required fidelity surfaces
+
+- Fonts/typography: condensed teal uppercase headings now use locally hosted Bebas Neue, matching the reference's tall editorial character. Chinese descriptions use a compact sans-serif; Chinese location names use a restrained serif. No abnormal stretching or broken title lines observed. Desktop and mobile labels remain fully inside the page surfaces.
+- Spacing/layout: centered cover, two-column spread grid, near-identical reference-width spread boxes, natural paper gutter and generous row spacing. Mobile intentionally becomes one column while retaining both facing pages. No horizontal scrolling, unintended overlap or cut-off interactive content remains.
+- Colors/tokens: #cfd0d2 desk, pale cyan cover, white paper, #2d7887 headings, blue/gray photo treatment. Gray edges of generated artwork are lightly feathered into the desk; no visible checkerboard or abrupt background rectangle.
+- Image quality: generated cover and blank paper assets provide actual raster book texture and shadow rather than drawn substitutes. Real cover and inset photos come from the four unchanged album datasets. All 17 image elements decoded successfully. Portrait crop choices were visually inspected; the Jamaica timestamp is part of the user's original photograph and was preserved.
+- Copy/content: four authentic albums and 2,968 photos, not six invented destinations. Chinese album names, image counts and routes are unchanged. Descriptive copy is short and consistent with the existing album descriptions. English display titles provide the reference's editorial hierarchy without copying its gibberish text.
+- Accessibility: real links and native filter buttons, aria-pressed states, polite filter status, skip link, visible keyboard focus, reduced-motion handling, meaningful cover alt text and decorative images excluded from accessibility. Buttons retain 44px minimum height.
+
+## Interaction and code verification
+
+- Clicked 国内: only 三亚 and 上海 shown; selected state/status updated.
+- Clicked 国外: only 日本 and 牙买加 shown; selected state updated.
+- Clicked 全部: four albums restored.
+- Clicked the 三亚 book: navigated to the existing 三亚 page and verified its title/heading.
+- Clicked 3D/world-map entry: navigated to the existing travel-map route and verified its title.
+- All four album URLs, the album homepage and the world-map URL returned HTTP 200.
+- Focused the filter button and checked visible focus. No page error/unhandled rejection was recorded during the final filter interaction pass; no errors appeared in the browser tool's console output during those interactions.
+- `git diff --check` passed.
+- Scoped `npm run lint -- --tsconfig C:/Users/huawei/.codex/visualizations/2026/09/01/album-editorial/tsconfig.json --minimumSeverity warning`: 1 file, 0 errors, 0 warnings.
+- An earlier directory-scoped Astro check picked up 74 files and reported 12 existing type errors in album detail pages and bible-reader.ts. Those unrelated files were not changed. The targeted single-page check is the verification for this change; no full-site build or deployment was performed.
+- The directory-scoped check also created ignored `.astro` and `node_modules` cache folders inside the travel directory. An attempted cleanup was blocked by the environment policy; these ignored generated caches are not part of the source diff.
+
+## Asset provenance
+
+- `public/images/photo-wall/editorial/wanderlust-cover-v1.png`, 1122 × 1402: built-in ImageGen. Prompt: standalone pale-cyan hardback travel book matching the reference, directly overhead, architectural cathedral cover, exact WANDERLUST / A JOURNEY THROUGH TRAVEL / J'S TRAVEL JOURNAL text, realistic left spine and soft cast shadow, plain #cfd0d2 background, no other objects.
+- `public/images/photo-wall/editorial/open-pages-v1.png`, 1409 × 1117: built-in ImageGen. Prompt: completely blank open magazine, straight overhead, spread aspect 1.263, central gutter, white paper grain, thin layered edges and soft down/left shadow; solid #cfd0d2 surroundings, no text, illustrations or photographs. Actual HTML content is aligned over the page surfaces.
+- Both assets are opaque raster images with slight gray background variation, blended at the outer edges. They are decorative artwork, not represented as the user's travel photographs.
+- `public/images/photo-wall/editorial/BebasNeue-Regular.ttf` and `BebasNeue-OFL.txt`: [Google Fonts source and license](https://github.com/google/fonts/tree/main/ofl/bebasneue), served locally with no runtime font network request or new package dependency.
+
+## Accepted differences and next step
+
+- Four existing books occupy two rows, versus six illustrative books in the reference. The existing archive was preserved rather than inventing trips or duplicating albums.
+- Reference European landmark photos are replaced by the user's own album images; decorative cover artwork is recreated, not pixel-identical.
+- Small navigation and filters remain as usable web controls although the reference is a static print mockup.
+- P3: subtle paper curl and cover architecture differ from the static reference. These do not affect the selected layout or interactions.
+- Local review only. No commit, push or production publication in this task.
+
+final result: passed
+
+---
+
+# Earlier QA records (preserved)
+
 # 圣经人物排行功能 — Design QA
 
 ## Comparison target
