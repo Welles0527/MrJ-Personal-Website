@@ -56,7 +56,7 @@ let youtubeLoadGeneration = 0;
 let youtubeReadyGeneration = 0;
 let requestedYoutubeId = "";
 let requestedYoutubeConfirmed = false;
-let youtubeFallbackActive = false;
+let youtubeStartupFallbackTimer = 0;
 const $ = selector => document.querySelector(selector);
 const coverClass = song => `cover-${song.cover || "sun"}`;
 const isCurrent = song => state.current?.title === song.title && state.current?.artist === song.artist;
@@ -440,11 +440,13 @@ function sendYouTubeListening() {
   sendYouTubeCommand("getVideoData");
 }
 
-function fallbackToYouTube(song, message = "B站暂时无法播放，已切换到 YouTube") {
+function fallbackToBilibili(song, message = "YouTube 7 秒内未开始播放，已切换到 B 站") {
   const source = resolveSongSource(song);
-  if (!source.youtubeId) return false;
-  youtubeFallbackActive = true;
-  playSong(song.title, song.artist, { preserveBatch: true, sourceOverride: "youtube" });
+  const player = $("#mediaPlayer");
+  if (!source.bvid || !player?.src.includes("youtube-nocookie.com")) return false;
+  window.clearTimeout(youtubeStartupFallbackTimer);
+  youtubeStartupFallbackTimer = 0;
+  playSong(song.title, song.artist, { preserveBatch: true, sourceOverride: "bilibili" });
   announceQueue(`${message} · ${song.title}`);
   return true;
 }
@@ -532,9 +534,9 @@ window.addEventListener("message", event => {
   if (event.origin === "https://player.bilibili.com") {
     if (player.src.includes("player.bilibili.com")) {
       if (event.data === "bilibili:player:ended" || event.data?.event === "ended") {
-        if (!playNextQueuedSong({ sourceOverride: "bilibili" })) setPlaybackState(false);
+        if (!playNextQueuedSong()) setPlaybackState(false);
       } else if (event.data === "bilibili:player:error" || event.data?.event === "error" || event.data?.type === "error") {
-        fallbackToYouTube(state.current, "B站播放受限，已切换到 YouTube");
+        announceQueue(`B站播放受限 · ${state.current.title}`);
       }
     }
     return;
@@ -547,8 +549,16 @@ window.addEventListener("message", event => {
   const playerState = readPlayerState(payload);
   syncSongFromEmbeddedPlaylist(readPlayerVideoId(payload), playerState);
   if (playerState === 1 || playerState === 3) {
+    if (playerState === 1) {
+      window.clearTimeout(youtubeStartupFallbackTimer);
+      youtubeStartupFallbackTimer = 0;
+    }
     window.clearTimeout(youtubeAdvanceFallbackTimer);
     setPlaybackState(true);
+  }
+  if (payload?.event === "onError" || payload?.event === "error") {
+    fallbackToBilibili(state.current, "YouTube 播放受限，已切换到 B 站");
+    return;
   }
   if (playerState === 0) {
     if (autoAdvanceLocked) return;
@@ -578,7 +588,7 @@ $("#mediaPlayer").addEventListener("load", () => {
 });
 $("#mediaPlayer").addEventListener("error", () => {
   const player = $("#mediaPlayer");
-  if (player.src.includes("player.bilibili.com")) fallbackToYouTube(state.current);
+  if (player.src.includes("youtube-nocookie.com")) fallbackToBilibili(state.current, "YouTube 播放受限，已切换到 B 站");
 });
 window.addEventListener("pageshow", () => window.setTimeout(sendYouTubeListening, 100));
 document.addEventListener("visibilitychange", sendYouTubeListening);
@@ -586,12 +596,18 @@ document.addEventListener("visibilitychange", sendYouTubeListening);
 function playSong(title, artist, { preserveBatch = false, sourceOverride = "" } = {}) {
   const song = songs.find(item => item.title === title && (!artist || item.artist === artist)) || songs.find(item => item.title === title) || state.current;
   if (!preserveBatch) batchPlaybackKeys = [];
+  window.clearTimeout(youtubeStartupFallbackTimer);
+  youtubeStartupFallbackTimer = 0;
   window.clearTimeout(youtubeAdvanceFallbackTimer);
   const activeSong = { ...song, artist: artist || song.artist };
   updateCurrentSong(activeSong, { render: false });
   const resolvedSource = resolveSongSource(activeSong);
-  const source = sourceOverride === "youtube" || (youtubeFallbackActive && resolvedSource.youtubeId && sourceOverride !== "bilibili")
+  const source = sourceOverride === "youtube" && resolvedSource.youtubeId
     ? { youtubeId: resolvedSource.youtubeId }
+    : sourceOverride === "bilibili" && resolvedSource.bvid
+      ? { bvid: resolvedSource.bvid }
+      : resolvedSource.youtubeId
+        ? { youtubeId: resolvedSource.youtubeId }
     : resolvedSource.bvid
       ? { bvid: resolvedSource.bvid }
       : resolvedSource;
@@ -610,6 +626,14 @@ function playSong(title, artist, { preserveBatch = false, sourceOverride = "" } 
     playerShell.classList.add("is-playing");
     $("#sourceLink").href = `https://www.youtube.com/watch?v=${source.youtubeId}`;
     $("#playerSourceLabel").textContent = "YouTube";
+    if (resolvedSource.bvid) {
+      const fallbackSongKey = songKey(activeSong);
+      const loadGeneration = youtubeLoadGeneration;
+      youtubeStartupFallbackTimer = window.setTimeout(() => {
+        if (youtubeLoadGeneration !== loadGeneration || songKey(state.current) !== fallbackSongKey || !mediaPlayer.src.includes("youtube-nocookie.com")) return;
+        fallbackToBilibili(activeSong);
+      }, 7000);
+    }
   } else if (source.bvid) {
     youtubePlaylistEntries = [];
     requestedYoutubeId = "";
