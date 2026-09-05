@@ -132,35 +132,48 @@
 
   function renderMarketPrice(element, result) {
     const chart = getChart(element);
-    const candles = Array.isArray(result?.dailyCandles) ? result.dailyCandles : [];
+    const candles = Array.isArray(result?.candles) && result.candles.length
+      ? result.candles
+      : Array.isArray(result?.dailyCandles) ? result.dailyCandles : [];
     if (!chart || !candles.length) return;
+    const profile = global.StockTechnicalTimeframes?.getProfile(result.query?.period || result.dataMeta?.period) || {
+      id: "day",
+      lineLabel: "日线",
+      maPeriods: [5, 10, 20, 60]
+    };
     const dates = candles.map(candle => candle.date);
     const closes = candles.map(candle => Number(candle.close));
     const narrow = element.clientWidth < 640;
-    const definitions = [
-      { name: "日线收盘", values: closes, color: "#edf1ff", width: 2.2, z: 6 },
-      { name: "周均 MA5", values: movingAverage(closes, 5), color: "#7891ff", width: 1.6, z: 5 },
-      { name: "月均 MA20", values: movingAverage(closes, 20), color: "#a278ff", width: 1.6, z: 4 },
-      { name: "季均 MA60", values: movingAverage(closes, 60), color: "#4ee0bc", width: 1.6, z: 3 },
-      { name: "年均 MA250", values: movingAverage(closes, 250), color: "#ffb447", width: 1.8, z: 2 }
-    ];
+    const maColors = ["#7891ff", "#a278ff", "#4ee0bc", "#ffb447"];
+    const definitions = [{ name: `${profile.lineLabel}收盘`, values: closes, color: "#edf1ff", width: 2.25, z: 6 }]
+      .concat((profile.maPeriods || [5, 10, 20, 60]).map((period, index) => ({
+        name: `MA${period}`,
+        values: movingAverage(closes, period),
+        color: maColors[index],
+        width: index === 3 ? 1.8 : 1.55,
+        z: 5 - index
+      })));
+    const visibleCount = { day: 180, week: 120, month: 84, quarter: 32, year: 20 }[profile.id] || 120;
+    const formatAxisDate = value => {
+      if (profile.id === "year") return String(value).slice(0, 4);
+      if (profile.id === "quarter") {
+        const [year, month] = String(value).split("-").map(Number);
+        return Number.isFinite(year) && Number.isFinite(month) ? `${year} Q${Math.floor((month - 1) / 3) + 1}` : value;
+      }
+      return String(value).slice(5);
+    };
+    const support = Number(result.tradeLevels?.buyZone?.lower ?? result.tradeLevels?.stop);
+    const resistance = Number(result.tradeLevels?.breakout?.price);
+    const levelData = [
+      Number.isFinite(support) ? { name: "结构支撑", yAxis: support, lineStyle: { color: "rgba(69,220,193,.55)" }, label: { color: "#7be3bd" } } : null,
+      Number.isFinite(resistance) ? { name: "确认位", yAxis: resistance, lineStyle: { color: "rgba(245,185,72,.55)" }, label: { color: "#f5c86e" } } : null
+    ].filter(Boolean);
     chart.setOption({
-      animation: false,
+      animation: true,
+      animationDuration: 420,
       color: definitions.map(item => item.color),
-      grid: { top: narrow ? 68 : 58, right: narrow ? 14 : 24, bottom: 36, left: narrow ? 46 : 62, containLabel: false },
-      legend: {
-        type: narrow ? "scroll" : "plain",
-        top: 14,
-        left: narrow ? 10 : 20,
-        right: narrow ? 10 : 20,
-        itemWidth: narrow ? 15 : 20,
-        itemHeight: 3,
-        itemGap: narrow ? 10 : 18,
-        pageIconColor: "#9cabec",
-        pageIconInactiveColor: "rgba(255,255,255,.18)",
-        pageTextStyle: { color: "rgba(225,229,240,.58)", fontSize: 9 },
-        textStyle: { color: "rgba(225,229,240,.72)", fontSize: narrow ? 9 : 11 }
-      },
+      grid: { top: narrow ? 28 : 24, right: narrow ? 12 : 22, bottom: 34, left: narrow ? 45 : 60, containLabel: false },
+      legend: { show: false },
       tooltip: {
         trigger: "axis",
         triggerOn: "mousemove",
@@ -188,7 +201,7 @@
         data: dates,
         axisLine: { lineStyle: { color: "rgba(255,255,255,.12)" } },
         axisTick: { show: false },
-        axisLabel: { color: "rgba(220,225,238,.52)", fontSize: 10, formatter: value => value.slice(5), interval: narrow ? 29 : 24 }
+        axisLabel: { color: "rgba(220,225,238,.52)", fontSize: 10, formatter: formatAxisDate, interval: "auto", hideOverlap: true }
       },
       yAxis: {
         type: "value",
@@ -200,13 +213,13 @@
       },
       dataZoom: [{
         type: "inside",
-        startValue: dates[Math.max(0, dates.length - (narrow ? 100 : 180))],
+        startValue: dates[Math.max(0, dates.length - Math.min(visibleCount, narrow ? Math.ceil(visibleCount * .65) : visibleCount))],
         endValue: dates.at(-1),
         zoomOnMouseWheel: true,
         moveOnMouseMove: true,
         moveOnMouseWheel: false
       }],
-      series: definitions.map(item => ({
+      series: definitions.map((item, index) => ({
         name: item.name,
         type: "line",
         data: item.values,
@@ -215,8 +228,21 @@
         smooth: false,
         sampling: "lttb",
         z: item.z,
-        lineStyle: { color: item.color, width: item.width, opacity: item.name === "日线收盘" ? .88 : .94 },
+        lineStyle: { color: item.color, width: item.width, opacity: index === 0 ? .94 : .9 },
         itemStyle: { color: item.color },
+        areaStyle: index === 0 ? {
+          color: new global.echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: "rgba(69,220,193,.16)" },
+            { offset: 1, color: "rgba(69,220,193,0)" }
+          ])
+        } : undefined,
+        markLine: index === 0 && levelData.length ? {
+          silent: true,
+          symbol: "none",
+          label: { show: !narrow, position: "insideEndTop", fontSize: 9, formatter: params => `${params.name} ${Number(params.value).toLocaleString("zh-CN", { maximumFractionDigits: 0 })}` },
+          lineStyle: { type: "dashed", width: 1 },
+          data: levelData
+        } : undefined,
         emphasis: { focus: "series", lineStyle: { width: item.width + .8 } }
       }))
     }, { notMerge: true });
