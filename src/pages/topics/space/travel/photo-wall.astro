@@ -1,4 +1,5 @@
 ---
+import travelAlbums from '../../../../data/travel-2018-albums.json';
 import albumData from '../../../../data/jamaica-photo-album.json';
 import coffeeAlbumData from '../../../../data/coffee-latte-art-album.json';
 import japanAlbumData from '../../../../data/japan-kanto-2015-album.json';
@@ -7,6 +8,16 @@ import { sitePath } from '../../../../data/site';
 import { IconWorld } from '@tabler/icons-react';
 
 const albums = [
+  ...travelAlbums.map((data) => ({
+    data,
+    displayName: data.album.name,
+    region: data.region,
+    title: data.title,
+    date: data.date,
+    note: data.album.description,
+    caption: data.title,
+    insetIds: data.photos.filter((photo) => photo.id !== data.album.coverId).slice(0, 2).map((photo) => photo.id),
+  })),
   {
     data: sanyaAlbumData,
     displayName: '2016 海南三亚',
@@ -64,7 +75,7 @@ const photoCount = albums.reduce((total, album) => total + album.data.album.coun
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#cfd0d2" />
     <meta name="robots" content="noindex" />
-    <meta name="description" content="翻开J先生的旅行画册，在三亚、上海、日本与牙买加的真实影像间漫游。" />
+    <meta name="description" content="翻开J先生的旅行画册，在伦敦、裸心谷、湖州、三亚、上海、日本与牙买加的真实影像间漫游。" />
     <title>旅行相册 · J先生的影像志</title>
     <style>
       @font-face {
@@ -192,14 +203,14 @@ const photoCount = albums.reduce((total, album) => total + album.data.album.coun
         </a>
       </header>
       <div class="collection-toolbar" id="collection">
-        <p class="collection-label">THE TRAVEL COLLECTION / 04</p>
+        <p class="collection-label">THE TRAVEL COLLECTION / {String(albums.length).padStart(2, '0')}</p>
         <div class="filters" role="group" aria-label="按地区筛选相册">
           <button class="filter-button" type="button" data-region="all" aria-pressed="true" aria-controls="album-collection">全部</button>
           <button class="filter-button" type="button" data-region="domestic" aria-pressed="false" aria-controls="album-collection">国内</button>
           <button class="filter-button" type="button" data-region="overseas" aria-pressed="false" aria-controls="album-collection">国外</button>
         </div>
       </div>
-      <p class="sr-only" id="filter-status" role="status">显示全部4本相册</p>
+      <p class="sr-only" id="filter-status" role="status">显示全部{albums.length}本相册</p>
       <section class="album-track" id="album-collection" aria-label="旅行画册">
         {albums.map((album) => (
           <a class="album-card" href={album.href} data-region={album.region} aria-label={`打开${album.displayName}相册，共${album.data.album.count}张照片`}>
@@ -224,7 +235,7 @@ const photoCount = albums.reduce((total, album) => total + album.data.album.coun
       </section>
     </main>
     <footer class="footer">
-      <span>4 本相册 · {photoCount.toLocaleString('en-US')} 张影像</span>
+      <span>{albums.length} 本相册 · {photoCount.toLocaleString('en-US')} 张影像</span>
       <span>把时间装进相册</span>
       <a href={sitePath('/')}>返回主站</a>
     </footer>
