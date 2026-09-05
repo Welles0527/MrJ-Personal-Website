@@ -3,9 +3,24 @@ import coffeeAlbumData from '../../../../data/coffee-latte-art-album.json';
 import jamaicaAlbumData from '../../../../data/jamaica-photo-album.json';
 import japanAlbumData from '../../../../data/japan-kanto-2015-album.json';
 import sanyaAlbumData from '../../../../data/sanya-2016-album.json';
+import travelAlbums from '../../../../data/travel-2018-albums.json';
 import { sitePath } from '../../../../data/site';
 
+const travelCoordinates = {
+  'london-2018': { country: '英国', region: '英国 · 伦敦', latitude: 51.497799, longitude: -0.112702 },
+  'naked-valley-2018': { country: '中国', region: '中国 · 浙江 · 裸心谷', latitude: 30.562559, longitude: 119.86982 },
+  'huzhou-2018': { country: '中国', region: '中国 · 浙江 · 湖州', latitude: 30.959429, longitude: 120.102669 },
+};
 const locations = [
+  ...travelAlbums.map((data) => ({
+    id: data.album.slug,
+    name: data.album.name,
+    markerName: data.title,
+    ...travelCoordinates[data.album.slug as keyof typeof travelCoordinates],
+    count: data.album.count,
+    href: sitePath(`/topics/space/travel/photo-wall/${data.album.slug}/`),
+    cover: data.album.cover,
+  })),
   {
     id: 'shanghai',
     name: '上海',
@@ -181,6 +196,9 @@ const mapPayload = JSON.stringify({
         overflow: hidden;
         pointer-events: none;
       }
+
+      .marker-leaders { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+      .marker-leaders line { stroke: #8d9dd7; stroke-width: 1; stroke-dasharray: 3 3; }
 
       .map-marker {
         position: absolute;
@@ -942,6 +960,9 @@ const mapPayload = JSON.stringify({
         aria-label="交互式旅行地图。拖动或使用方向键移动视角，使用加号和减号缩放，按 Home 键重置。"
       ></canvas>
       <div class="marker-layer" data-marker-layer>
+        <svg class="marker-leaders" aria-hidden="true">
+          {locations.map((location) => <line data-marker-leader={location.id} />)}
+        </svg>
         {locations.map((location) => (
           <a
             class="map-marker"
@@ -1842,18 +1863,24 @@ const mapPayload = JSON.stringify({
 
       const updateMarkers = () => {
         const project = state.mode === 'flat' ? projectFlat : projectGlobe;
-        const mobileOffsets = state.mode === 'flat' && state.width <= 820
+        const markerOffsets = state.width <= 820
           ? {
-              'japan-kanto': { x: 8, y: -47 },
+              'japan-kanto': { x: 18, y: -47 },
               shanghai: { x: 28, y: 0 },
-              sanya: { x: -4, y: 47 },
+              sanya: { x: 8, y: 47 },
+              'huzhou-2018': { x: -48, y: -27 },
+              'naked-valley-2018': { x: -70, y: 38 },
             }
-          : {};
+          : {
+              'huzhou-2018': { x: -60, y: -30 },
+              'naked-valley-2018': { x: state.mode === 'flat' ? -100 : -70, y: 38 },
+            };
         for (const location of payload.locations || []) {
           const element = markerElements.get(location.id);
           if (!element) continue;
           const point = project(location.longitude, location.latitude);
-          const offset = mobileOffsets[location.id] || { x: 0, y: 0 };
+          const offset = markerOffsets[location.id] || { x: 0, y: 0 };
+          const anchor = { x: point.x, y: point.y };
           point.x += offset.x;
           point.y += offset.y;
           const onscreen = point.visible
@@ -1867,6 +1894,14 @@ const mapPayload = JSON.stringify({
           element.style.opacity = onscreen ? String(edgeOpacity) : '0';
           element.style.visibility = onscreen ? 'visible' : 'hidden';
           element.style.pointerEvents = onscreen && edgeOpacity > 0.28 ? 'auto' : 'none';
+          const leader = document.querySelector(`[data-marker-leader="${location.id}"]`);
+          if (leader) {
+            leader.setAttribute('x1', String(anchor.x));
+            leader.setAttribute('y1', String(anchor.y));
+            leader.setAttribute('x2', String(point.x));
+            leader.setAttribute('y2', String(point.y));
+            leader.style.opacity = onscreen && (offset.x || offset.y) ? String(edgeOpacity * 0.7) : '0';
+          }
           element.style.setProperty('--marker-depth', String(point.depth || 1));
           element.querySelector('.marker-count').textContent = formatNumber.format(location.count);
         }
