@@ -951,7 +951,7 @@
             ? "AI选股 - A股个股跟踪"
             : "A股个股跟踪";
     root.innerHTML = `
-      <div class="tracking-layout ${state.viewMode === "ai-selection" ? "ai-selection-layout" : ""}">
+      <div class="tracking-layout ${state.viewMode === "ai-selection" ? "ai-selection-layout" : ""} ${state.viewMode === "daily" ? "daily-noir-layout" : ""}">
         ${renderWorkspaceNav(stock)}
         ${state.viewMode === "market" ? "" : renderSidebar(stock)}
         <main class="tracking-main ${fullWidthView ? "technical-main" : ""} ${state.viewMode === "score-matrix" ? "score-matrix-main" : ""} ${state.viewMode === "operation-advice" ? "operation-advice-main" : ""}">
@@ -1937,7 +1937,7 @@
     const emptyTitle = options.emptyTitle || "没有符合条件的信息";
     const emptyText = options.emptyText || "请调整筛选条件后再查看";
     return `
-      <section class="message-timeline" aria-label="最新消息时间流">
+      <section class="message-timeline" aria-label="最新消息时间流" ${options.showDigestOrigin ? 'tabindex="0"' : ""}>
         ${messages.length ? messages.map(message => renderMessage(message, options)).join("") : `
           <div class="timeline-empty"><strong>${escapeHtml(emptyTitle)}</strong><span>${escapeHtml(emptyText)}</span></div>`}
       </section>`;

@@ -717,3 +717,110 @@ The reference and implementation were reviewed together at the same viewport. Th
 - Browser console and page errors: none.
 
 final result: passed
+
+---
+
+# 上证指数技术共振监测 V2 — Design QA
+
+## Source truth and capture state
+
+- Source reference: `D:/Downloads/shanghai_index_signal_v2_demo.html`.
+- Implemented route: `http://127.0.0.1:9462/officialwebsite/stock-tracking/?stock=301026&view=market&period=day`.
+- Desktop reference and implementation were captured at 1440 × 900 CSS pixels with device scale factor 1.
+- Mobile implementation was captured at 390 × 844 CSS pixels with device scale factor 1.
+- Comparison state: current scenario, real market quote loaded, day period selected. Astro's development toolbar was hidden; no product content was removed.
+- Evidence:
+  - `tmp/market-v2-qa/reference-1440x900.png`
+  - `tmp/market-v2-qa/implementation-1440x900-final.png`
+  - `tmp/market-v2-qa/implementation-mobile-390x844-final.png`
+  - `tmp/market-v2-qa/comparison-1440x900-final.png`
+  - `tmp/market-v2-qa/comparison-focus-final.png`
+
+## Fidelity review
+
+- Typography: restored the demo's compact information hierarchy, uppercase micro-labels, high-contrast Chinese headings and restrained metadata scale without changing the site's existing font stack.
+- Layout and spacing: reproduced the header strip, 64/36 chart-and-decision grid, 65/35 matrix-and-evidence grid, ring metrics, four-stage state rail and compact condition cards. The desktop rows align and the responsive view collapses into one column without document-level horizontal overflow.
+- Color and surfaces: matched the near-black/navy panels, thin cool-gray borders, blue-violet structure accents, teal confirmations, amber setup/risk accents and red failure states. Shadows remain subtle and do not obscure chart lines or labels.
+- Data and copy: demo-only synthetic values were replaced with the existing real Shanghai Composite quote, candles, technical scores and support/confirmation levels. Market breadth is shown as `--` because the provider does not expose constituent breadth; coverage and confidence are reduced instead of fabricating data.
+- Assets and chart quality: retained vector UI icons and rendered the price/MA chart from real period candles at the viewport's native resolution. No rasterized demo text or low-resolution substitute assets were introduced.
+
+## Interaction and responsive review
+
+- Current, opportunity-confirmation and risk-deterioration scenarios switch the decision state while preserving the real quote; projected scenarios are explicitly labelled as conditional simulations.
+- Day/week/month/quarter/year controls update the URL, selected-period legend and real candle series.
+- Chart tooltip appears on hover and clears after pointer leave; no shadow or tooltip residue remains.
+- Desktop width: 1440px document/client widths match. Mobile width: 390px document/client widths match; the dense matrix scroll is contained inside its own panel.
+- No page errors or console errors were observed in the final desktop and mobile capture runs.
+
+## Findings and iteration history
+
+1. P2 — the first chart pass was taller than the reference and pushed the matrix below the intended fold. Reduced only the market V2 chart height and rechecked desktop/mobile proportions.
+2. P1 — unavailable breadth values were initially formatted as zero. Corrected missing-value handling so unavailable data stays `--`, and the model reports 5/6-source coverage rather than false precision.
+3. P1 — the confirmation scenario could stop at TRIGGER. Tightened the scenario projection so the confirmation control deterministically demonstrates CONFIRMED and the risk control demonstrates FAILED, without mutating live quote data.
+4. Final full-view and focused comparisons found no remaining P0/P1/P2 issue. The existing application navigation is intentionally retained above the reproduced dashboard.
+
+## Verification
+
+- `node --check public/stock-tracking/technical-analysis-page.js` — passed.
+- `node --check public/stock-tracking/technical-analysis-chart.js` — passed.
+- `node tests/market-score-matrix-contract.mjs` — passed.
+- `node tests/stock-technical-analysis-engine.cjs` — passed (47 cases).
+- `npm run build` — passed; 134 pages built and the existing alternative-knowledge regression passed.
+- `npm run lint` — blocked by 12 pre-existing TypeScript errors in unrelated travel photo-wall and Bible reader files; no error points to the four files in this change.
+- Edge via Playwright in a user-approved isolated browser session: 1440 × 900 and 390 × 844 visual checks, real-data wait, scenario/period controls, tooltip dismissal and overflow checks — passed.
+
+final result: passed
+
+# 今日必读 — Noir / warm gold style update (2026-09-01)
+
+## Scope and visual target
+
+- User reference: `D:/UserTemp/huawei/codex-clipboard-a7a9a579-3945-4adc-8777-9c9713bc536b.png` (1024 × 1536).
+- Local preview: `http://127.0.0.1:9341/officialwebsite/stock-tracking/?stock=301026&view=daily`.
+- Changed core files: `public/stock-tracking/styles.css`, `public/stock-tracking/app.js`, `src/pages/stock-tracking/index.astro`.
+- Regression assertions: `tests/stock-tracking-daily-stock-layout.mjs`.
+- Scope is a visual-language transfer, not a clone of the reference's productivity product. Preserve 今日要闻 → 个股重大消息 → 个股红绿灯, actual data, left-watchlist filtering and all existing destinations. The hooded portrait, productivity metrics and unrelated widgets are intentionally not imported.
+- No dependencies, data-generation rules, watchlist storage, stock judgments or routes changed. Not committed or published.
+
+## Evidence and comparison
+
+Evidence directory: `C:/Users/huawei/.codex/visualizations/2026/08/09/019fe72b-6b94-7b01-8ea0-e4e8740af958/daily-noir-20260831/`.
+
+- `baseline-desktop.png`: previous appearance, 1440 × 900 viewport, full-page capture.
+- `desktop-final.png` / `desktop-viewport.png`: final full-page and first-viewport captures, 1440 × 900 viewport.
+- `mobile-final.png`: final full-page capture, 390 × 844 viewport.
+- `traffic-final.png`: focused six-dimension traffic-light region.
+- `comparison-full.png`: reference and implementation in one image, reviewed for overall density, surfaces and hierarchy.
+- `comparison-detail.png`: reference dashboard cards and implemented traffic-light card together, reviewed for typography, icons, borders, spacing and semantic colors.
+- Final screenshots hide only Astro's development toolbar, not application content.
+
+## Fidelity review
+
+- Palette: near-black `#090a0b` canvas, matte `#121314` content cards, `#0d0e0f` navigation, muted gold `#c4a16a` interactive accents. Removed the daily view's purple selection, gray canvas and pronounced shadows.
+- Geometry: 12px outer cards, 8px controls, thin `#292a2b` dividers and consistent 16px section spacing. All three desktop cards align at x=294 with width=1126; mobile cards align at x=10 with width=370.
+- Typography: retain the existing Chinese UI font stack; 30px leading headline, 23px section titles, 15–16px readable message copy, subdued metadata. No condensed-English font substitution or stretched text.
+- Density: all messages remain present (82 in the verified live state); the message region scrolls within a 460px desktop / 520px mobile maximum height so the traffic light is not buried below thousands of pixels of history. No duplicate filter row was added.
+- Icons: reuse existing line icons; navigation, watchlist controls, message badges/checks/source links and all six traffic dimensions were visibly rendered. No substitute imagery, new SVG artwork or icon dependencies.
+- Risk semantics: positive traffic-light signals remain green, negative signals red and unknown/awaiting evidence yellow. Gold denotes navigation and presentation, not an investment classification. Corrected the daily legend's inherited market-price color collision.
+
+## Findings and iteration history
+
+1. Initial pass found a higher-specificity legacy gradient on the navigation shell. Increased only the daily-scoped selector specificity and checked a fresh page load; the shell now computes to solid `rgb(13, 14, 15)`.
+2. Initial captures were taken before asynchronous real messages loaded. Final evidence waits for actual message rows and includes the complete scrollable list.
+3. The first keyboard-scroll assertion sampled before the native scroll animation finished. Waiting for positive scrollTop confirms PageDown works (401px observed); no application change was needed.
+4. User continuation restarted the tool runtime and the preview process was no longer listening. Restarted the Astro preview and reverified HTML, CSS and JS each returned HTTP 200.
+5. Full-view and focused combined-image review: no remaining P0/P1/P2 visual issue within the style-transfer scope. Mobile intentionally converts the traffic table to labeled stacked rows; horizontally scrollable navigation/filter strips remain functional.
+
+## Verification
+
+- `node --check public/stock-tracking/app.js` — passed.
+- `node tests/stock-tracking-daily-stock-layout.mjs` — passed, including theme scoping, keyboard-focus markup, six-dimension/data-boundary tests and red/green legend colors.
+- `git diff --check` — passed (only normal LF/CRLF conversion notices).
+- Edge via Playwright in an isolated session, explicitly approved by the user: 1440 × 900, 768 × 1024 and 390 × 844. Document/body width equals viewport width; no daily section content overflow.
+- Clicking a stock on desktop/mobile stays on `view=daily`, scopes major messages and updates the selected-stock traffic light. “全部自选股” restores all messages.
+- One today's-message checkbox was marked read and then restored to unread. Only the isolated local session was used; no signed-in user data was changed.
+- Focused message region accepts keyboard PageDown. All messages remain reachable; source links remain visible.
+- Navigating to 个股日历 removes the daily theme class and retains its original palette.
+- No browser page errors observed. Astro successfully served the changed page; a full-site production build was not run for this scoped CSS/markup change.
+
+final result: passed

@@ -2,6 +2,13 @@ import assert from "node:assert";
 import fs from "node:fs";
 
 const appSource = fs.readFileSync(new URL("../public/stock-tracking/app.js", import.meta.url), "utf8");
+const styleSource = fs.readFileSync(new URL("../public/stock-tracking/styles.css", import.meta.url), "utf8");
+
+assert.match(appSource, /state\.viewMode === "daily" \? "daily-noir-layout" : ""/, "noir theme must be limited to the daily view");
+assert.match(appSource, /options\.showDigestOrigin \? 'tabindex="0"' : ""/, "scrollable daily messages must support keyboard focus");
+assert.match(styleSource, /\.daily-noir-layout \.daily-major-news-section > \.message-timeline\s*\{[^}]*overflow-y: auto;/);
+assert.match(styleSource, /\.daily-noir-layout \.daily-traffic-footer \.positive \{ color: #72d69e !important; \}/, "positive traffic-light legend must stay green");
+assert.match(styleSource, /\.daily-noir-layout \.daily-traffic-footer \.negative \{ color: #ff767f !important; \}/, "negative traffic-light legend must stay red");
 
 assert.match(appSource, /function dailyResearchContext\(/);
 assert.match(appSource, /trackedCodes\.has\(item\.code\) && item\.hasMaterialChange/);

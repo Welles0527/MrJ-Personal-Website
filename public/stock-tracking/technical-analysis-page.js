@@ -352,41 +352,276 @@
     </div>`;
   }
 
-  function MarketPricePanel(result) {
-    const candles = Array.isArray(result.dailyCandles) ? result.dailyCandles : [];
-    const completedThrough = result.dataMeta?.dailySeriesCompletedThrough || candles.at(-1)?.date || "--";
-    return `<section class="ta-market-price" aria-labelledby="ta-market-price-title">
-      <div class="ta-panel-title ta-market-price-heading">
-        <div><h2 id="ta-market-price-title">上证指数真实走势</h2><p>${candles.length} 个已完成交易日 · 更新至 ${escapeHtml(completedThrough)} · 日线收盘及周/月/季/年均线</p></div>
+  const marketPeriodNotes = {
+    day: "短期触发",
+    week: "中期主导",
+    month: "趋势背景",
+    quarter: "长期环境",
+    year: "长期锚点"
+  };
+
+  const marketStateMeta = {
+    SETUP: { label: "机会准备阶段", tag: "等待独立确认", tone: "amber", color: "#f5b948" },
+    TRIGGER: { label: "价格触发阶段", tag: "等待周线确认", tone: "blue", color: "#6f8dff" },
+    CONFIRMED: { label: "机会确认阶段", tag: "共振成立", tone: "mint", color: "#45dcc1" },
+    FAILED: { label: "信号失效 / 防守阶段", tag: "风险否决", tone: "red", color: "#ff6f7d" }
+  };
+
+  function finiteNumber(value) {
+    if (value === null || value === undefined || value === "") return null;
+    return Number.isFinite(Number(value)) ? Number(value) : null;
+  }
+
+  function clampScore(value) {
+    const number = finiteNumber(value);
+    return number === null ? null : Math.max(0, Math.min(100, Math.round(number)));
+  }
+
+  function averageScores(values, fallback = null) {
+    const valid = values.map(finiteNumber).filter(value => value !== null);
+    return valid.length ? valid.reduce((sum, value) => sum + value, 0) / valid.length : fallback;
+  }
+
+  function weightedScores(entries, fallback = null) {
+    const valid = entries.map(([value, weight]) => [finiteNumber(value), Number(weight)]).filter(([value, weight]) => value !== null && Number.isFinite(weight) && weight > 0);
+    const denominator = valid.reduce((sum, [, weight]) => sum + weight, 0);
+    return denominator ? valid.reduce((sum, [value, weight]) => sum + value * weight, 0) / denominator : fallback;
+  }
+
+  function rawMarketRows(result, matrix) {
+    const order = Object.keys(timeframes.PROFILES);
+    const source = new Map((Array.isArray(matrix?.rows) ? matrix.rows : []).map(row => [row.period, row]));
+    const activePeriod = result.query?.period || result.dataMeta?.period || "day";
+    if (!source.has(activePeriod)) {
+      const dimensions = result.scores?.dimensions || {};
+      source.set(activePeriod, {
+        period: activePeriod,
+        label: timeframes.getProfile(activePeriod).label,
+        scoreDate: result.overview?.scoreDate,
+        total: result.scores?.total,
+        trend: dimensions.trend?.score,
+        structure: dimensions.structure?.score,
+        momentum: dimensions.momentum?.score,
+        volumePrice: dimensions.volumePrice?.score,
+        volatility: dimensions.volatility?.score
+      });
+    }
+    return order.map(period => source.get(period) || {
+      period,
+      label: timeframes.getProfile(period).label,
+      error: "评分尚未完成"
+    });
+  }
+
+  function scenarioRow(row, scenario) {
+    const deltas = scenario === "confirmed"
+      ? { trend: 6, structure: 12, momentum: 16, volumePrice: 15, volatility: 8 }
+      : scenario === "risk"
+        ? { trend: -12, structure: -20, momentum: -18, volumePrice: -16, volatility: -12 }
+        : { trend: 0, structure: 0, momentum: 0, volumePrice: 0, volatility: 0 };
+    const dimensions = Object.fromEntries(Object.keys(deltas).map(key => {
+      const value = finiteNumber(row[key]);
+      return [key, value === null ? null : clampScore(value + deltas[key])];
+    }));
+    const total = scenario === "current"
+      ? finiteNumber(row.total)
+      : weightedScores([
+          [dimensions.trend, 30],
+          [dimensions.structure, 25],
+          [dimensions.momentum, 20],
+          [dimensions.volumePrice, 15],
+          [dimensions.volatility, 10]
+        ]);
+    const trigger = weightedScores([[dimensions.momentum, 45], [dimensions.volumePrice, 40], [dimensions.structure, 15]]);
+    const confirmation = weightedScores([[dimensions.trend, 35], [dimensions.structure, 40], [dimensions.volumePrice, 25]]);
+    const risk = 100 - weightedScores([[dimensions.structure, 45], [dimensions.volatility, 35], [dimensions.trend, 20]], 50);
+    const available = Object.values(dimensions).filter(value => value !== null).length;
+    const normalized = {
+      ...row,
+      ...dimensions,
+      total: clampScore(total),
+      direction: clampScore(dimensions.trend),
+      breadth: null,
+      trigger: clampScore(trigger),
+      confirmation: clampScore(confirmation),
+      risk: clampScore(risk),
+      coverage: Math.round(available / 6 * 100)
+    };
+    if (normalized.risk >= 70 || (normalized.structure !== null && normalized.structure < 35)) normalized.phase = "FAILED";
+    else if (normalized.trigger >= 65 && normalized.confirmation >= 60 && normalized.direction >= 55) normalized.phase = "CONFIRMED";
+    else if (normalized.trigger >= 60) normalized.phase = "TRIGGER";
+    else if (normalized.direction >= 55 || normalized.confirmation >= 52) normalized.phase = "SETUP";
+    else normalized.phase = "FAILED";
+    return normalized;
+  }
+
+  function buildMarketDecision(result, matrix, scenario = "current") {
+    const rows = rawMarketRows(result, matrix).map(row => scenarioRow(row, scenario));
+    const byPeriod = Object.fromEntries(rows.map(row => [row.period, row]));
+    const day = byPeriod.day || {};
+    const week = byPeriod.week || {};
+    const month = byPeriod.month || {};
+    const quarter = byPeriod.quarter || {};
+    const year = byPeriod.year || {};
+    const strategic = weightedScores([
+      [averageScores([quarter.trend, quarter.structure]), 60],
+      [averageScores([year.trend, year.structure]), 40]
+    ], averageScores([quarter.trend, quarter.structure, year.trend, year.structure], 50));
+    const holding = weightedScores([
+      [averageScores([week.trend, week.structure]), 60],
+      [averageScores([month.trend, month.structure]), 40]
+    ], averageScores([week.trend, week.structure, month.trend, month.structure], 50));
+    const dailyTrigger = finiteNumber(day.trigger) ?? 50;
+    const mediumStructure = averageScores([week.structure, month.structure], 50);
+    const volumeConfirmation = weightedScores([[day.volumePrice, 60], [week.volumePrice, 40]], 50);
+    const direction = weightedScores([[strategic, 55], [holding, 45]], 50);
+    const risk = weightedScores([[day.risk, 50], [week.risk, 30], [month.risk, 20]], 50);
+    const structureBreak = finiteNumber(day.structure) !== null && finiteNumber(week.structure) !== null && day.structure < 35 && week.structure < 45;
+    let state = "SETUP";
+    if (risk >= 70 || structureBreak) state = "FAILED";
+    else if (strategic >= 55 && dailyTrigger >= 65 && mediumStructure >= 55 && volumeConfirmation >= 55) state = "CONFIRMED";
+    else if (dailyTrigger >= 60 && volumeConfirmation >= 50) state = "TRIGGER";
+    else if (strategic < 45 && holding < 45) state = "FAILED";
+    if (scenario === "confirmed") state = "CONFIRMED";
+    if (scenario === "risk") state = "FAILED";
+    const stateMeta = marketStateMeta[state];
+    const validRows = rows.filter(row => !row.error && row.total !== null);
+    const coverage = averageScores(validRows.map(row => row.coverage), 0);
+    const disagreement = Math.min(18, Math.abs(strategic - holding) * .35);
+    const confidence = clampScore(Math.max(0, coverage - disagreement));
+    const resonanceSignals = [strategic >= 55, mediumStructure >= 55, dailyTrigger >= 60, volumeConfirmation >= 55];
+    const resonanceCount = resonanceSignals.filter(Boolean).length;
+    const quoteLabel = state === "CONFIRMED" ? "共振确认" : state === "FAILED" ? "风险防守" : state === "TRIGGER" ? "触发待确认" : "机会准备";
+    const scenarioNote = scenario === "current" ? "真实行情计算" : "条件推演，不覆盖真实行情";
+    const breadthNote = "当前行情源未提供成分股宽度，宽度不参与确认，置信度已相应扣减。";
+    const verdict = state === "CONFIRMED"
+      ? `季年环境 ${formatNumber(strategic, 0)} 分，周月结构 ${formatNumber(mediumStructure, 0)} 分，日线触发 ${formatNumber(dailyTrigger, 0)} 分；方向、结构与量价已形成可验证共振。${breadthNote}`
+      : state === "FAILED"
+        ? `综合回撤风险 ${formatNumber(risk, 0)} 分，周月结构 ${formatNumber(mediumStructure, 0)} 分；风险覆盖规则优先，当前信号进入防守或失效状态。${breadthNote}`
+        : `季年环境 ${formatNumber(strategic, 0)} 分，日线触发 ${formatNumber(dailyTrigger, 0)} 分，量能确认 ${formatNumber(volumeConfirmation, 0)} 分；短期信号尚未获得完整的中期确认。${breadthNote}`;
+    const activePeriod = result.query?.period || result.dataMeta?.period || "day";
+    const activeRow = byPeriod[activePeriod] || day;
+    return {
+      rows,
+      state,
+      ...stateMeta,
+      quoteLabel,
+      scenarioNote,
+      verdict,
+      direction: clampScore(direction),
+      risk: clampScore(risk),
+      confidence,
+      resonanceCount,
+      strategic: clampScore(strategic),
+      mediumStructure: clampScore(mediumStructure),
+      dailyTrigger: clampScore(dailyTrigger),
+      volumeConfirmation: clampScore(volumeConfirmation),
+      activeTotal: clampScore(activeRow?.total ?? result.scores?.total),
+      activePeriod,
+      upgradeText: `确认位 ${formatNumber(result.tradeLevels?.breakout?.price)} 附近有效突破；周线结构升至 55 分以上；量价确认保持 55 分以上。`,
+      downgradeText: `跌破结构支撑 ${formatNumber(result.tradeLevels?.buyZone?.lower ?? result.tradeLevels?.stop)}，或日、周结构同步跌破 35/45 分，状态转为 FAILED。`
+    };
+  }
+
+  function marketScoreCell(value, kind = "score") {
+    const number = finiteNumber(value);
+    if (number === null) return `<span class="market-v2-score-empty" title="当前数据源未提供该项">--</span>`;
+    const tone = kind === "risk"
+      ? number >= 65 ? "risk-high" : number >= 45 ? "risk-mid" : "risk-low"
+      : number >= 65 ? "score-strong" : number >= 45 ? "score-neutral" : "score-weak";
+    return `<span class="market-v2-score ${tone}">${formatNumber(number, 0)}</span>`;
+  }
+
+  function MarketSignalHeader(result, decision, state) {
+    const stock = result.overview;
+    const rising = Number(stock.changePct) >= 0;
+    return `<header class="market-v2-topbar" style="--market-state-color:${decision.color}">
+      <div class="market-v2-brand">
+        <button type="button" class="market-v2-icon-button" data-action="return-stock-view" aria-label="返回个股看板">${icon("back")}</button>
+        <span class="market-v2-brand-mark">${icon("trend")}</span>
+        <div><div class="market-v2-title-line"><h1>上证指数技术共振监测</h1><span>V2 REAL</span></div><p>000001 · 多周期状态引擎 · 方向 / 宽度 / 触发 / 确认 / 风险分离</p></div>
       </div>
-      <div id="technical-market-price-chart" class="ta-market-price-chart" role="img" aria-label="上证指数日线收盘走势，以及周均、月均、季均和年均线"></div>
-    </section>`;
+      <div class="market-v2-quote ${rising ? "rise" : "fall"}"><div><strong>${formatNumber(stock.price)}</strong><span>${rising ? "+" : ""}${formatNumber(stock.change)}　${rising ? "+" : ""}${formatNumber(stock.changePct)}%</span></div><small>真实行情 · ${formatDateTime(stock.updatedAt)}</small></div>
+      <div class="market-v2-actions">
+        <span class="market-v2-chip">${escapeHtml(stock.tradingStatus)}</span>
+        <span class="market-v2-chip state">${escapeHtml(decision.quoteLabel)}</span>
+        <div class="market-v2-scenario-switch" role="group" aria-label="切换决策情景">
+          ${[
+            ["current", "当前状态"],
+            ["confirmed", "机会确认"],
+            ["risk", "风险恶化"]
+          ].map(([id, label]) => `<button type="button" data-action="set-market-scenario" data-scenario="${id}" aria-pressed="${state.marketScenario === id}">${label}</button>`).join("")}
+        </div>
+        <button type="button" class="market-v2-icon-button" data-action="refresh-technical" aria-label="刷新真实行情" ${state.status === "loading" ? "disabled" : ""}>${icon("refresh")}</button>
+      </div>
+    </header>`;
   }
 
-  function MarketScoreMatrix(matrix, status) {
-    const rows = Array.isArray(matrix?.rows) ? matrix.rows : [];
-    const scoreDate = rows.map(row => row.scoreDate).filter(Boolean).sort().at(-1) || "--";
-    const scoreCell = (value, emphasized = false) => Number.isFinite(Number(value))
-      ? `<span class="ta-market-matrix-score ${scoreTone(value)}${emphasized ? " total" : ""}">${formatNumber(value, 0)}</span>`
-      : `<span class="ta-market-matrix-empty">--</span>`;
-    const body = status === "loading" && !rows.length
-      ? `<div class="ta-market-matrix-state" role="status"><span class="ta-summary-loader" aria-hidden="true"></span><strong>正在计算五周期评分</strong><small>读取上证指数真实日、周、月行情</small></div>`
-      : `<div class="ta-market-matrix-scroll"><table>
-          <thead><tr><th scope="col">周期</th><th scope="col">总分</th><th scope="col">趋势</th><th scope="col">量价</th><th scope="col">动量</th><th scope="col">结构</th><th scope="col">波动</th></tr></thead>
-          <tbody>${rows.map(row => `<tr${row.error ? ` class="is-error" title="${escapeHtml(row.error)}"` : ""}>
-            <th scope="row"><strong>${escapeHtml(row.label)}</strong></th>
-            <td>${scoreCell(row.total, true)}</td><td>${scoreCell(row.trend)}</td><td>${scoreCell(row.volumePrice)}</td><td>${scoreCell(row.momentum)}</td><td>${scoreCell(row.structure)}</td><td>${scoreCell(row.volatility)}</td>
-          </tr>`).join("")}</tbody>
-        </table></div>`;
-    return `<section class="ta-market-score-matrix" aria-labelledby="ta-market-score-matrix-title">
-      <div class="ta-panel-title ta-market-matrix-heading"><div><h2 id="ta-market-score-matrix-title">大盘评分矩阵</h2><p>上证指数真实行情 · 五周期独立计算</p></div><time datetime="${escapeHtml(scoreDate)}">评分日期 ${escapeHtml(scoreDate)}</time></div>
-      ${body}
-      <footer><span class="strong">≥65 偏多</span><span class="neutral">45～64 中性</span><span class="weak">＜45 偏空</span></footer>
-    </section>`;
+  function MarketPricePanel(result, decision) {
+    const profile = timeframes.getProfile(result.query?.period || result.dataMeta?.period);
+    const periods = profile.maPeriods || [5, 10, 20, 60];
+    const support = result.tradeLevels?.buyZone?.lower ?? result.tradeLevels?.stop;
+    const resistance = result.tradeLevels?.breakout?.price;
+    const colors = ["#d7dbea", "#7691ff", "#9b72ff", "#45dcc1", "#f5ad3d"];
+    const legend = [`${profile.lineLabel}收盘`, ...periods.map(period => `MA${period}`)];
+    return `<article class="market-v2-panel market-v2-chart-panel" aria-labelledby="market-v2-chart-title">
+      <div class="market-v2-panel-head"><div><span>MARKET STRUCTURE</span><h2 id="market-v2-chart-title">指数真实走势与关键结构</h2><p>价格、均线与触发区分层展示；高周期只用于环境，短周期只负责触发。</p></div><em>当前：${escapeHtml(decision.state)}</em></div>
+      <div class="market-v2-chart-toolbar">
+        <div class="market-v2-legend">${legend.map((label, index) => `<span><i style="--legend-color:${colors[index]}"></i>${escapeHtml(label)}</span>`).join("")}</div>
+        ${TimeframeSelector(profile.id)}
+      </div>
+      <div id="technical-market-price-chart" class="market-v2-chart" role="img" aria-label="上证指数${escapeHtml(profile.lineLabel)}真实走势与均线"></div>
+      <div class="market-v2-chart-footer"><div><span class="support">结构支撑 ${formatNumber(support)}</span><span class="resistance">确认位 ${formatNumber(resistance)}</span></div><p>${decision.state === "CONFIRMED" ? "结构、量价与触发已形成确认" : decision.state === "FAILED" ? "结构或风险过滤已触发防守" : "短期信号正在修复，等待中期确认"}</p></div>
+    </article>`;
   }
 
-  function MarketOverview(result, matrix, matrixStatus) {
-    return `<div class="ta-market-overview-grid">${MarketPricePanel(result)}${MarketScoreMatrix(matrix, matrixStatus)}</div>`;
+  function MarketDecisionPanel(decision) {
+    const flow = ["REGIME", "SETUP", "TRIGGER", "CONFIRMED"];
+    const activeIndex = decision.state === "FAILED" ? 1 : Math.max(1, flow.indexOf(decision.state));
+    const ring = (title, value, note, color) => `<div class="market-v2-ring-card"><span class="market-v2-ring" style="--ring-value:${value};--ring-color:${color}"><strong>${value}</strong></span><div><small>${title}</small><b>${note}</b></div></div>`;
+    return `<article class="market-v2-panel market-v2-decision-panel" style="--market-state-color:${decision.color}" aria-labelledby="market-v2-decision-title">
+      <div class="market-v2-panel-head"><div><span>DECISION ENGINE</span><h2 id="market-v2-decision-title">今日决策状态</h2><p>总分不再直接等于机会；先判断环境，再判断触发、确认与否决。</p></div><em>模型 v2.0 · ${decision.scenarioNote}</em></div>
+      <div class="market-v2-decision-body">
+        <div class="market-v2-status-row"><div class="market-v2-state"><i></i><div><strong>${decision.state}</strong><span>${escapeHtml(decision.label)}</span></div></div><span>${escapeHtml(decision.tag)}</span></div>
+        <p class="market-v2-verdict">${escapeHtml(decision.verdict)}</p>
+        <div class="market-v2-rings">${ring("方向状态", decision.direction, decision.direction >= 60 ? "方向占优" : decision.direction >= 45 ? "中性偏弱" : "方向转弱", "#6f8dff")}${ring("回撤风险", decision.risk, decision.risk >= 65 ? "高风险" : decision.risk >= 45 ? "中等" : "风险可控", decision.risk >= 65 ? "#ff6f7d" : "#f5b948")}${ring("模型置信度", decision.confidence, decision.confidence >= 80 ? "覆盖充分" : "覆盖有限", "#45dcc1")}</div>
+        <div class="market-v2-flow">${flow.map((label, index) => `<div class="${index < activeIndex ? "done" : index === activeIndex ? "active" : ""}"><span>${decision.state === "FAILED" && index === activeIndex ? "!" : index + 1}</span><b>${decision.state === "FAILED" && index === activeIndex ? "FAILED" : label}</b></div>`).join("")}</div>
+        <div class="market-v2-conditions"><div class="upgrade"><strong>升级条件</strong><p>${escapeHtml(decision.upgradeText)}</p></div><div class="downgrade"><strong>降级条件</strong><p>${escapeHtml(decision.downgradeText)}</p></div></div>
+      </div>
+    </article>`;
+  }
+
+  function MarketDecisionMatrix(decision, matrixStatus) {
+    const body = matrixStatus === "loading" && !decision.rows.some(row => !row.error)
+      ? `<div class="market-v2-matrix-state" role="status"><span class="ta-summary-loader" aria-hidden="true"></span><strong>正在计算五周期状态</strong><small>读取上证指数真实日、周、月行情</small></div>`
+      : `<div class="market-v2-matrix-scroll"><table><thead><tr><th>周期</th><th>方向</th><th>宽度</th><th>触发</th><th>确认</th><th>风险</th><th>覆盖率</th><th>当前阶段</th></tr></thead><tbody>${decision.rows.map(row => `<tr${row.error ? ` class="is-error" title="${escapeHtml(row.error)}"` : ""}><th scope="row"><span>${escapeHtml(row.label)}</span><div><strong>${escapeHtml(row.label)}线</strong><small>${escapeHtml(marketPeriodNotes[row.period] || "周期状态")}</small></div></th><td>${marketScoreCell(row.direction)}</td><td>${marketScoreCell(row.breadth)}</td><td>${marketScoreCell(row.trigger)}</td><td>${marketScoreCell(row.confirmation)}</td><td>${marketScoreCell(row.risk, "risk")}</td><td><span class="market-v2-coverage"><i><b style="--coverage:${row.coverage || 0}%"></b></i>${row.coverage || 0}%</span></td><td><span class="market-v2-phase phase-${String(row.phase || "SETUP").toLowerCase()}">${escapeHtml(row.phase || "--")}</span></td></tr>`).join("")}</tbody></table></div>`;
+    return `<article class="market-v2-panel market-v2-matrix-panel" aria-labelledby="market-v2-matrix-title"><div class="market-v2-panel-head"><div><span>MULTI-TIMEFRAME MATRIX</span><h2 id="market-v2-matrix-title">多周期决策矩阵</h2><p>方向、宽度、触发、确认、风险与覆盖率分开；波动不再替方向加分。</p></div><em>风险列：数值越高风险越大</em></div>${body}</article>`;
+  }
+
+  function MarketResonancePanel(result, decision) {
+    const evidence = [
+      { icon: "trend", label: "长期趋势", note: "季线与年线趋势、结构", value: decision.strategic, color: "#6f8dff" },
+      { icon: "structure", label: "中期结构", note: "周线与月线结构状态", value: decision.mediumStructure, color: decision.mediumStructure >= 55 ? "#45dcc1" : "#ff6f7d" },
+      { icon: "structure", label: "市场宽度", note: "数据源暂未提供成分股覆盖", value: null, color: "#8e94a4" },
+      { icon: "momentum", label: "价格触发", note: "日线动量、量价与结构", value: decision.dailyTrigger, color: "#9473ff" },
+      { icon: "volumePrice", label: "量能确认", note: "日线与周线量价独立验证", value: decision.volumeConfirmation, color: "#45dcc1" },
+      { icon: "reduce", label: "风险过滤", note: "结构破坏与波动风险", value: decision.risk, color: decision.risk >= 65 ? "#ff6f7d" : "#f5b948", risk: true }
+    ];
+    const evidenceRow = item => {
+      const value = finiteNumber(item.value);
+      return `<div class="market-v2-evidence" style="--evidence-color:${item.color}"><span>${icon(item.icon)}</span><div><strong>${item.label}</strong><small>${item.note}</small></div><i><b style="--evidence-value:${value === null ? 0 : value}%"></b></i><em>${value === null ? "--" : formatNumber(value, 0)}</em></div>`;
+    };
+    return `<article class="market-v2-panel market-v2-resonance-panel" style="--market-state-color:${decision.color}" aria-labelledby="market-v2-resonance-title"><div class="market-v2-panel-head"><div><span>INDEPENDENT EVIDENCE</span><h2 id="market-v2-resonance-title">真正的共振链</h2><p>只统计相对独立的信息源；MACD、均线和 ROC 不再重复投票。</p></div><em>${decision.resonanceCount} / 4 项可验证</em></div><div class="market-v2-resonance-body"><div class="market-v2-evidence-list">${evidence.map(evidenceRow).join("")}</div><div class="market-v2-compare"><div><small>V1 · 诊断总分</small><strong>${decision.activeTotal ?? "--"}</strong><p>趋势、结构、动量、量价、波动线性加权，适合看状态，不直接等于机会。</p></div><span>${icon("trend")}</span><div><small>V2 · 决策表达</small><strong style="color:${decision.color}">${decision.state}</strong><p>${escapeHtml(decision.label)}；风险覆盖规则优先。</p></div></div></div><footer><span>共振 = 环境 × 结构 × 宽度 × 量能，而不是多个价格指标相加。</span><span>${escapeHtml(decision.scenarioNote)}</span></footer></article>`;
+  }
+
+  function MarketSignalDashboard(result, matrix, matrixStatus, state) {
+    const decision = buildMarketDecision(result, matrix, state.marketScenario);
+    return `<div class="market-signal-v2">
+      ${MarketSignalHeader(result, decision, state)}
+      <section class="market-v2-grid-top">${MarketPricePanel(result, decision)}${MarketDecisionPanel(decision)}</section>
+      <section class="market-v2-grid-bottom">${MarketDecisionMatrix(decision, matrixStatus)}${MarketResonancePanel(result, decision)}</section>
+      <div class="market-v2-data-note">${escapeHtml(result.dataMeta.source)} · ${result.dataMeta.rawCount} 个有效${escapeHtml(result.dataMeta.barLabel)} · 指数真实行情 · 技术状态不代表上涨概率</div>
+    </div>`;
   }
 
   function StockScoreSummary(summary, status, currentCode, period) {
@@ -578,6 +813,7 @@
         summaryError: "",
         marketMatrix: null,
         marketMatrixStatus: "idle",
+        marketScenario: "current",
         error: "",
         searchQuery: "",
         query: {
@@ -644,13 +880,17 @@
       if (this.state.status === "error" || !this.state.result) return ErrorState(this.state, context);
       this.state.result.overview.name = stock.name || this.state.result.overview.name;
       const marketMode = context.variant === "market";
+      if (marketMode) {
+        return `<div class="technical-analysis-page market-technical-analysis-page">
+          ${MarketSignalDashboard(this.state.result, this.state.marketMatrix, this.state.marketMatrixStatus, this.state)}
+        </div>`;
+      }
       return `<div class="technical-analysis-page ${marketMode ? "market-technical-analysis-page" : ""}">
         <div class="ta-technical-shell">
-          ${marketMode ? "" : StockScoreSummary(this.state.summary, this.state.summaryStatus, stock.code, this.state.query.period)}
-          <main class="ta-stock-detail" aria-label="${escapeHtml(stock.name)}${marketMode ? "大盘" : "个股"}技术分析">
-            ${DashboardHeader(this.state.result, this.state, marketMode)}
-            ${marketMode ? MarketOverview(this.state.result, this.state.marketMatrix, this.state.marketMatrixStatus) : ""}
-            ${TechnicalNarrative(this.state.result, marketMode)}
+          ${StockScoreSummary(this.state.summary, this.state.summaryStatus, stock.code, this.state.query.period)}
+          <main class="ta-stock-detail" aria-label="${escapeHtml(stock.name)}个股技术分析">
+            ${DashboardHeader(this.state.result, this.state, false)}
+            ${TechnicalNarrative(this.state.result, false)}
             <div class="ta-analysis-workspace">
               <div class="ta-dashboard-grid">${RadarOverview(this.state.result)}${TradePositionPanel(this.state.result)}</div>
               ${ScoreTrend(this.state.result)}
@@ -693,6 +933,12 @@
       if (action === "refresh-technical") {
         this.load(this.currentStockCode, { forceRefresh: true });
         return "async";
+      }
+      if (action === "set-market-scenario") {
+        const scenario = ["current", "confirmed", "risk"].includes(target.dataset.scenario) ? target.dataset.scenario : "current";
+        if (scenario === this.state.marketScenario) return false;
+        this.state.marketScenario = scenario;
+        return true;
       }
       if (action === "set-technical-period") {
         const period = timeframes.normalizePeriod(target.dataset.period);
