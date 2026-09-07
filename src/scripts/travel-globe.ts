@@ -41,17 +41,28 @@ async function start() {
   const interactionEvents = new AbortController();
   const pointers = new Set<number>();
   let restoreTimer = 0;
+  let motionActive = false;
+  const sampledView = new Matrix4();
   const useMotionResolution = () => {
     window.clearTimeout(restoreTimer);
-    viewer.resolutionScale = Math.min(devicePixelRatio, 1.25) / devicePixelRatio;
+    motionActive = true;
+    viewer.resolutionScale = 1 / devicePixelRatio;
   };
   const restoreResolution = () => {
     window.clearTimeout(restoreTimer);
-    restoreTimer = window.setTimeout(() => {
-      if (pointers.size || viewer.isDestroyed()) return;
+    Matrix4.clone(viewer.camera.viewMatrix, sampledView);
+    let stableSamples = 0;
+    const waitForCamera = () => {
+      if (viewer.isDestroyed()) return;
+      const stable = !pointers.size && Matrix4.equalsEpsilon(sampledView, viewer.camera.viewMatrix, 1e-7);
+      stableSamples = stable ? stableSamples + 1 : 0;
+      Matrix4.clone(viewer.camera.viewMatrix, sampledView);
+      if (stableSamples < 3) { restoreTimer = window.setTimeout(waitForCamera, 120); return; }
+      motionActive = false;
       viewer.resolutionScale = fullResolution;
       viewer.scene.requestRender();
-    }, 500);
+    };
+    restoreTimer = window.setTimeout(waitForCamera, 120);
   };
   // Camera movement events also fire when the drawing buffer resizes. Use real
   // input events so restoring high resolution cannot restart the low-res mode.
@@ -94,7 +105,7 @@ async function start() {
       ? Rectangle.fromDegrees(70 - halfLongitudeSpan, -45, 70 + halfLongitudeSpan, 85)
       : Cartesian3.fromDegrees(80, 28, overviewHeight());
     const options = { destination, orientation: { heading: 0, pitch: -Math.PI/2, roll: 0 } };
-    if (animate && !reducedMotion) viewer.camera.flyTo({ ...options, duration: 1.6 });
+    if (animate && !reducedMotion) { useMotionResolution(); viewer.camera.flyTo({ ...options, duration: 1.6 }); restoreResolution(); }
     else viewer.camera.setView(options);
     viewer.scene.requestRender();
   };
@@ -103,7 +114,7 @@ async function start() {
   const light = new DirectionalLight({ direction: Cartesian3.clone(viewer.camera.directionWC) });
   viewer.scene.light = light;
   viewer.scene.preRender.addEventListener(() => Cartesian3.clone(viewer.camera.directionWC, light.direction));
-  const skyOptions = { overviewHeight: overviewHeight(), overviewLat: 28, overviewLng: 80 };
+  const skyOptions = { overviewHeight: overviewHeight(), overviewLat: 28, overviewLng: 80, isInteracting: () => motionActive };
   let detachSky = attachStarMapSky(viewer, skyOptions);
   document.querySelector('[data-imagery]')!.textContent = highResolution ? '高清卫星影像 · Esri' : '离线底图 · 高清影像暂不可用';
   const selectAlbum = (id: string) => {
@@ -121,7 +132,9 @@ async function start() {
     document.querySelectorAll<HTMLButtonElement>('.album-focus').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.focus === id)));
     document.querySelectorAll<HTMLElement>('[data-album-row]').forEach(row => row.classList.toggle('is-selected', row.dataset.albumRow === id));
     const destination = Cartesian3.fromDegrees(album.longitude, album.latitude, 2800000);
+    useMotionResolution();
     viewer.camera.flyTo({ destination, duration: reducedMotion ? 0 : 1.6, orientation: { heading: 0, pitch: -Math.PI/2, roll: 0 } });
+    restoreResolution();
     if (innerWidth <= 820) document.querySelector('.world')?.scrollIntoView({ behavior: reducedMotion ? 'instant' : 'smooth', block: 'start' });
   };
   document.querySelectorAll<HTMLButtonElement>('[data-focus]').forEach(button => button.addEventListener('click', () => selectAlbum(button.dataset.focus!)));

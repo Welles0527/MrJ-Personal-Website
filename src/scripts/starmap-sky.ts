@@ -426,10 +426,11 @@ type CesiumConstellationSkyProps = {
   overviewLat: number
   overviewLng: number
   show: boolean
+  isInteracting: () => boolean
 }
 
 export function attachStarMapSky(viewer: Viewer, {
-  overviewHeight, overviewLat, overviewLng,
+  overviewHeight, overviewLat, overviewLng, isInteracting,
 }: Omit<CesiumConstellationSkyProps, 'show'>) {    const pointCollection = viewer.scene.primitives.add(
       new PointPrimitiveCollection({ blendOption: BlendOption.TRANSLUCENT }),
     )
@@ -936,8 +937,27 @@ export function attachStarMapSky(viewer: Viewer, {
       })
     }
 
+    let previousTime = startTime
+    let animationTime = 0
+    let previousInteraction: boolean | undefined
+    let previousAuroraCount = -1
     const updateRotation = () => {
-      const elapsedSeconds = (performance.now() - startTime) / 1000
+      const now = performance.now()
+      const interacting = isInteracting()
+      if (!interacting) animationTime += (now - previousTime) / 1000
+      previousTime = now
+      const elapsedSeconds = animationTime
+      // Keep stars, the moon and the main aurora ribbons while moving. The
+      // secondary transparent layers and meteor trails return after inertia ends.
+      if (interacting !== previousInteraction || auroraGlowCollection.length !== previousAuroraCount) {
+        for (let i = 0; i < auroraGlowCollection.length; i++) {
+          auroraGlowCollection.get(i).show = !interacting || i % 5 === 0
+        }
+        meteorPointCollection.show = !interacting
+        meteorTrailCollection.show = !interacting
+        previousInteraction = interacting
+        previousAuroraCount = auroraGlowCollection.length
+      }
       const angle = reduceMotion ? 0 : elapsedSeconds * idleRotationRadiansPerSecond
       const cameraDistance = Cartesian3.magnitude(viewer.camera.positionWC)
       const expandedEarthRadius = Ellipsoid.WGS84.maximumRadius + earthOcclusionPadding
@@ -955,6 +975,9 @@ export function attachStarMapSky(viewer: Viewer, {
           ? earthCosineLimit
           : 2
       }
+
+      // Earth occlusion must still follow the camera; decorative animation does not.
+      if (interacting) return
 
       Matrix3.fromRotationZ(angle, rotation)
       Matrix4.fromRotationTranslation(rotation, Cartesian3.ZERO, modelMatrix)
