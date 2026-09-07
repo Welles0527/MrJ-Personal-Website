@@ -25,3 +25,6 @@ coverage/
 tmp/
 **/.npm-cache/
 **/.wrangler/
+
+# Generated Cesium runtime assets (prepared before dev/build)
+/public/cesium/

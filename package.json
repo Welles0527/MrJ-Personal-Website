@@ -10,7 +10,9 @@
     "lint": "astro check",
     "test:todo-modal": "node tests/todo-modal-regression.mjs",
     "test:alternative-knowledge": "node tests/alternative-knowledge-regression.mjs",
-    "test:worship-cloud-store": "node tests/worship-cloud-store.mjs"
+    "test:worship-cloud-store": "node tests/worship-cloud-store.mjs",
+    "predev": "node scripts/prepare-cesium.mjs",
+    "prebuild": "node scripts/prepare-cesium.mjs"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.10",
@@ -20,6 +22,7 @@
     "@tabler/icons-react": "3.45.0",
     "@xyflow/react": "^12.11.2",
     "astro": "^7.2.0",
+    "cesium": "1.142.0",
     "gsap": "^3.15.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
@@ -27,5 +30,11 @@
   },
   "devDependencies": {
     "playwright": "^1.62.0"
+  },
+  "overrides": {
+    "cesium": {
+      "@cesium/engine": "26.0.0",
+      "@cesium/widgets": "16.0.0"
+    }
   }
 }

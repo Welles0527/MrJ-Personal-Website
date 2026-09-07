@@ -1,0 +1,70 @@
+---
+import { sitePath } from '../data/site';
+interface Location { id: string; name: string; markerName: string; country: string; region: string; count: number; latitude: number; longitude: number; href: string; cover: string }
+interface Props { locations: Location[] }
+const { locations } = Astro.props;
+const total = locations.reduce((sum, album) => sum + album.count, 0);
+const countries = new Set(locations.map((album) => album.country));
+---
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#060c15" />
+    <meta name="robots" content="noindex" />
+    <title>星球上的回忆 · J先生旅行相册</title>
+  </head>
+  <body>
+    <main class="atlas" data-atlas>
+      <header class="topbar"><h1>Beyond Coordinates</h1><p>从一个地方到另一个地方，把沿途的时光留在这里。</p><a href={sitePath('/topics/space/travel/photo-wall/')} class="brand"><span class="brand-icon">✧</span> J先生 <span class="divider">/</span> 旅行影像志</a><a class="back" href={sitePath('/topics/space/travel/photo-wall/')}>返回相册墙 ↗</a></header>
+      <aside class="journal">
+        <p class="eyebrow">A PERSONAL ATLAS</p>
+        <h2 class="atlas-title">旅行相册</h2>
+        <p class="intro">那些远行与日常，都在这颗星球上。<br />选择一册回忆，让视线抵达那里。</p>
+        <div class="totals"><span><b>{countries.size.toString().padStart(2,'0')}</b> 个国家</span><span><b>{locations.length.toString().padStart(2,'0')}</b> 本相册</span><span><b>{total.toLocaleString()}</b> 张照片</span></div>
+        <div class="collection-heading"><h2>我的旅行收藏</h2><span>EXPLORE · {locations.length.toString().padStart(2,'0')}</span></div>
+        <nav class="album-list" aria-label="旅行相册">
+          {locations.map((album, index) => <div class="album-row" data-album-row={album.id}>
+            <button type="button" class="album-focus" data-focus={album.id} aria-label={`在地球上定位${album.markerName}`} aria-pressed="false">
+              <img src={sitePath(album.cover)} width="56" height="56" alt={`${album.markerName}相册封面`} />
+              <span><strong>{album.name}</strong><small>{album.country} · {album.count.toLocaleString()} 张照片</small></span><em>{String(index+1).padStart(2,'0')}</em>
+            </button>
+            <a class="album-open" href={album.href} aria-label={`打开${album.markerName}相册`}>↗</a>
+          </div>)}
+        </nav>
+      </aside>
+      <section class="world" aria-label="交互式旅行地球">
+        <div id="cesium-globe" aria-label="拖动旋转地球，滚轮或双指缩放"></div>
+        <div class="map-toolbar" aria-label="地图控制">
+          <div class="mode-switch"><button data-mode="3d" aria-pressed="true">3D 地球</button><button data-mode="2d" aria-pressed="false">平面地图</button></div>
+          <button data-home aria-label="返回全球视角">◎</button><button data-zoom="in" aria-label="放大地球">＋</button><button data-zoom="out" aria-label="缩小地球">−</button>
+        </div>
+        <p class="loading" data-loading role="status">正在展开你的世界…</p>
+        <div class="map-markers" data-markers>
+          <svg class="pin-leaders" aria-hidden="true">{locations.map(album=><line data-leader={album.id} />)}</svg>
+          {locations.map((album) => <button class="map-pin" data-pin={album.id} data-focus={album.id} aria-label={`在地球上定位${album.markerName}`} hidden><span class="pin-dot"></span><span>{album.markerName}<small>{album.count} 张</small></span></button>)}
+        </div>
+        <article class="selection" data-selection hidden aria-label="选中相册">
+          <img data-selection-image alt="" width="180" height="120" />
+          <div><small data-selection-region></small><h2 data-selection-title></h2><p data-selection-count></p><a data-selection-link>打开相册 ↗</a></div>
+          <button data-close aria-label="关闭相册预览">×</button>
+        </article>
+        <div class="world-footer"><span><i></i> <span data-view-status>全球视角</span></span><span data-imagery>正在连接高清影像</span></div>
+      </section>
+      <script id="cesium-albums" type="application/json" is:inline set:html={JSON.stringify(locations.map(a=>({...a,cover:sitePath(a.cover)})))} />
+    </main>
+    <script>import '../scripts/travel-globe';</script>
+  </body>
+</html>
+<style is:global>
+  @import 'cesium/Build/Cesium/Widgets/widgets.css';
+  *{box-sizing:border-box}html,body{margin:0;min-width:320px;background:#010409;color:#edf4f7;font-family:Arial,'Microsoft YaHei',sans-serif}button,a{-webkit-tap-highlight-color:transparent}button{font:inherit;cursor:pointer;color:inherit}a{color:inherit;text-decoration:none}button:focus-visible,a:focus-visible{outline:2px solid #a5f3fc;outline-offset:3px}[hidden]{display:none!important}
+  .atlas{height:100svh;min-height:650px;display:grid;grid-template-columns:minmax(0,1fr) 330px;position:relative;background:#010409}
+  .topbar{position:absolute;top:25px;left:0;right:330px;text-align:center;z-index:4;pointer-events:none}.topbar h1{font-size:40px;letter-spacing:-2px;margin:0;font-weight:750}.topbar p{font-size:12px;color:#a1aab6;margin:7px 0 12px}.topbar a{pointer-events:auto;font-size:11px;display:inline-block;padding:8px 16px;background:#0b1221a8;border:1px solid #b8c9df26}.brand{border-radius:6px 0 0 6px}.back{border-radius:0 6px 6px 0}.brand-icon,.divider{display:none}
+  .journal{grid-column:2;grid-row:1;z-index:2;min-height:0;padding:130px 20px 20px;border-left:1px solid #c5e9f21c;display:flex;flex-direction:column;background:linear-gradient(155deg,#07161bba,#010409eb);backdrop-filter:blur(12px)}.eyebrow{font-size:9px;letter-spacing:2.5px;color:#7dcae0;margin:0 0 10px}.atlas-title{font-size:24px;margin:0}.intro{font-size:11px;line-height:1.9;color:#9daeb6;margin:15px 0}.totals{display:flex;gap:23px;border-top:1px solid #d3ecff16;border-bottom:1px solid #d3ecff16;padding:15px 0;color:#9aabb5;font-size:9px}.totals b{display:block;font-size:22px;line-height:1.6;font-weight:600;color:#f1f7fa}.collection-heading{display:flex;justify-content:space-between;align-items:center;padding:20px 0 10px}.collection-heading h2{font-size:12px;font-weight:500;margin:0}.collection-heading>span{font-size:8px;color:#72929f}.album-list{overflow-y:auto;min-height:0;scrollbar-width:thin;scrollbar-color:#27404a transparent}.album-row{display:flex;align-items:center;border-bottom:1px solid #d9eaff0c;border-radius:7px}.album-row.is-selected,.album-row:hover{background:#8bd8eb15}.album-focus{display:flex;text-align:left;align-items:center;gap:10px;border:0;background:none;padding:10px 3px;min-width:0;flex:1}.album-focus img{width:44px;height:44px;object-fit:cover;border-radius:6px}.album-focus>span{min-width:0;flex:1}.album-focus strong{font-size:11px;font-weight:500;display:block;line-height:1.6}.album-focus small{display:block;margin-top:3px;font-size:9px;color:#8cabb5}.album-focus em{font-size:9px;color:#5b7d88;font-style:normal}.album-open{padding:16px 8px;min-width:32px;text-align:center;color:#b5e2f0}
+  .world{grid-column:1;grid-row:1;position:relative;min-height:0;overflow:hidden;background:#010409}#cesium-globe{position:absolute;inset:0}.map-toolbar{position:absolute;z-index:4;bottom:62px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:7px;white-space:nowrap}.map-toolbar button{border:1px solid #b1d9ee26;background:#0b1221c9;min-width:36px;height:36px;border-radius:6px;backdrop-filter:blur(12px);font-size:18px}.mode-switch{display:flex;border:1px solid #b1d9ee26;padding:3px;border-radius:6px;background:#0b1221c9;margin-right:4px}.mode-switch button{border:0;background:none;font-size:10px;height:28px;padding:0 13px;min-width:0}.mode-switch button[aria-pressed=true]{background:#eff8ff;color:#101923}.map-markers{position:absolute;inset:0;pointer-events:none}.map-pin{position:absolute;display:flex;gap:6px;align-items:center;transform:translate(-50%,-50%);pointer-events:auto;border:1px solid #c7edff45;background:#071523ad;border-radius:5px;padding:5px 8px;white-space:nowrap;font-size:10px;box-shadow:0 2px 10px #0004}.pin-dot{width:6px;height:6px;border-radius:50%;background:#88ddeb;box-shadow:0 0 8px #77dfff}.map-pin small{display:block;font-size:8px;color:#b2d5de;margin-top:2px}.map-pin:hover{background:#194453}.world-footer{position:absolute;bottom:29px;left:22px;right:22px;display:flex;justify-content:space-between;pointer-events:none;font-size:9px;color:#8ea7b4}.world-footer i{display:inline-block;width:5px;height:5px;background:#a5f3fc;border-radius:50%;margin-right:7px}.loading{position:absolute;top:46%;width:100%;text-align:center;color:#c6eaf1;font-size:13px;pointer-events:none}.selection{position:absolute;bottom:116px;left:24px;right:24px;max-width:390px;padding:10px;display:flex;gap:15px;border:1px solid #a6dff62e;border-radius:9px;background:#061019df;backdrop-filter:blur(16px);box-shadow:0 15px 70px #0007;z-index:5}.selection>img{width:110px;height:118px;object-fit:cover;border-radius:5px}.selection>div{padding:8px 0;min-width:0}.selection small{font-size:9px;color:#95c7d4}.selection h2{font-size:15px;font-weight:500;margin:7px 22px 7px 0}.selection p{font-size:10px;color:#9baab5;margin:0 0 16px}.selection a{font-size:11px;color:#d0f2fc;border-bottom:1px solid #91c6d8;padding:5px 0}.selection>button{position:absolute;right:5px;top:3px;border:0;background:none;font-size:22px;color:#a9c8d4;min-width:32px;min-height:32px}.cesium-widget-credits{font-size:8px!important}.cesium-viewer-bottom{left:10px!important}.pin-leaders{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}.pin-leaders line{stroke:#d3f2ff;stroke-width:1;stroke-opacity:.55}
+  @media(max-height:780px) and (min-width:821px){.journal{padding-top:100px}.intro{margin:10px 0}.album-focus{padding:7px 3px}}
+  @media(max-width:820px){.atlas{height:auto;min-height:100svh;grid-template-columns:1fr;grid-template-rows:560px auto}.topbar{top:25px;right:0}.topbar h1{font-size:30px;letter-spacing:-1.4px}.topbar p{font-size:10px}.topbar a{font-size:10px;padding:7px 12px}.world{grid-column:1;grid-row:1;height:560px}.journal{grid-column:1;grid-row:2;padding:22px 20px 30px;border-left:0;border-top:1px solid #bde6f51c}.journal .intro{display:none}.atlas-title{font-size:22px}.totals{justify-content:space-between;margin-top:15px}.album-list{max-height:none;overflow:visible}.album-focus img{width:52px;height:52px}.album-focus{padding:12px 3px}.album-focus strong{font-size:13px}.album-focus small{font-size:10px}.map-toolbar{bottom:62px}.world-footer{font-size:8px;left:14px;right:14px;bottom:32px}.selection{bottom:114px;left:12px;right:12px}.selection>img{height:100px;width:90px}.selection>div{padding:3px 0}.selection h2{font-size:14px}.selection p{margin-bottom:9px}}
+  @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
