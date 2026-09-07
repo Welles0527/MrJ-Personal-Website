@@ -1,4 +1,4 @@
-import { Viewer, TileMapServiceImageryProvider, ArcGisMapServerImageryProvider, ImageryLayer, Cartesian3, Cartesian2, Color, DirectionalLight, Matrix4, SceneTransforms, SceneMode } from 'cesium';
+import { Viewer, TileMapServiceImageryProvider, ArcGisMapServerImageryProvider, ImageryLayer, Cartesian3, Cartesian2, Color, DirectionalLight, Matrix4, PerspectiveFrustum, Rectangle, SceneTransforms, SceneMode } from 'cesium';
 import { attachStarMapSky } from './starmap-sky';
 
 type Album = { id: string; name: string; markerName: string; country: string; region: string; count: number; latitude: number; longitude: number; href: string; cover: string };
@@ -10,6 +10,18 @@ const loading = document.querySelector<HTMLElement>('[data-loading]')!;
 const panel = document.querySelector<HTMLElement>('[data-selection]')!;
 const status = document.querySelector<HTMLElement>('[data-view-status]')!;
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const filterButtons = document.querySelectorAll<HTMLButtonElement>('[data-album-filter]');
+filterButtons.forEach(button => button.addEventListener('click', () => {
+  const filter = button.dataset.albumFilter;
+  let count = 0;
+  document.querySelectorAll<HTMLElement>('[data-album-row]').forEach(row => {
+    row.hidden = filter !== 'all' && row.dataset.region !== filter;
+    if (!row.hidden) count++;
+  });
+  filterButtons.forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+  const label = filter === 'domestic' ? '国内' : filter === 'international' ? '国外' : '全部';
+  document.querySelector('[data-filter-count]')!.textContent = `${label} · ${count} 本`;
+}));
 
 async function start() {
   let highResolution = true;
@@ -68,8 +80,20 @@ async function start() {
   const pins = albums.map(album => document.querySelector<HTMLButtonElement>(`[data-pin="${album.id}"]`)!);
   const leaders = albums.map(album => document.querySelector<SVGLineElement>(`[data-leader="${album.id}"]`)!);
   let selected: string | null = null;
+  const overviewHeight = () => {
+    const { clientWidth: width, clientHeight: height } = viewer.canvas;
+    const diameter = Math.min(height * 0.74, width * (innerWidth <= 820 ? 0.82 : 0.42));
+    const frustum = viewer.camera.frustum as PerspectiveFrustum;
+    const radius = viewer.scene.globe.ellipsoid.maximumRadius;
+    const angularSize = (diameter / height) * Math.tan((frustum.fovy ?? Math.PI / 3) / 2);
+    return radius * (Math.sqrt(1 + 1 / (angularSize * angularSize)) - 1);
+  };
   const globalView = (animate = true) => {
-    const options = { destination: Cartesian3.fromDegrees(80, 28, 14500000), orientation: { heading: 0, pitch: -Math.PI/2, roll: 0 } };
+    const halfLongitudeSpan = Math.min(179, 65 * viewer.canvas.clientWidth / viewer.canvas.clientHeight);
+    const destination = viewer.scene.mode === SceneMode.SCENE2D
+      ? Rectangle.fromDegrees(70 - halfLongitudeSpan, -45, 70 + halfLongitudeSpan, 85)
+      : Cartesian3.fromDegrees(80, 28, overviewHeight());
+    const options = { destination, orientation: { heading: 0, pitch: -Math.PI/2, roll: 0 } };
     if (animate && !reducedMotion) viewer.camera.flyTo({ ...options, duration: 1.6 });
     else viewer.camera.setView(options);
     viewer.scene.requestRender();
@@ -79,7 +103,7 @@ async function start() {
   const light = new DirectionalLight({ direction: Cartesian3.clone(viewer.camera.directionWC) });
   viewer.scene.light = light;
   viewer.scene.preRender.addEventListener(() => Cartesian3.clone(viewer.camera.directionWC, light.direction));
-  const skyOptions = { overviewHeight: 14500000, overviewLat: 28, overviewLng: 80 };
+  const skyOptions = { overviewHeight: overviewHeight(), overviewLat: 28, overviewLng: 80 };
   let detachSky = attachStarMapSky(viewer, skyOptions);
   document.querySelector('[data-imagery]')!.textContent = highResolution ? '高清卫星影像 · Esri' : '离线底图 · 高清影像暂不可用';
   const selectAlbum = (id: string) => {
@@ -111,11 +135,19 @@ async function start() {
     close();
     document.querySelectorAll<HTMLButtonElement>('[data-mode]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
     detachSky();
+    const flat = button.dataset.mode === '2d';
+    viewer.scene.globe.enableLighting = !flat;
+    viewer.scene.globe.dynamicAtmosphereLighting = !flat;
+    const layer = viewer.imageryLayers.get(0);
+    layer.brightness = flat ? 1 : 0.78;
+    layer.contrast = flat ? 1 : 1.15;
+    layer.saturation = flat ? 1 : 0.62;
     if (button.dataset.mode === '2d') {
       viewer.scene.morphTo2D(0);
       detachSky = () => {};
     } else {
       viewer.scene.morphTo3D(0);
+      skyOptions.overviewHeight = overviewHeight();
       detachSky = attachStarMapSky(viewer, skyOptions);
     }
     globalView(false);
