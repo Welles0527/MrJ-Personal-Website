@@ -1075,7 +1075,6 @@
     const majorMessages = dailyDigestMessages(false);
     return `
       <section class="global-view daily-digest-view">
-        ${renderDailyNewsSection(researchContext)}
         ${renderDailyMajorNewsSection(majorMessages)}
         ${renderDailyTrafficLightSection(researchContext)}
       </section>`;
@@ -1085,35 +1084,7 @@
     const research = window.STOCK_DAILY_RESEARCH;
     const reports = Array.isArray(research?.stocks) ? research.stocks : [];
     const report = reports.find(item => item.code === stock.code);
-    const trackedCodes = new Set(data.stocks.map(item => item.code));
-    const changed = reports
-      .filter(item => trackedCodes.has(item.code) && item.hasMaterialChange)
-      .sort((a, b) => (Number(b.importanceScore) || 0) - (Number(a.importanceScore) || 0));
-    const priorityCodes = [...new Set([
-      ...(Array.isArray(research?.topChangeCodes) ? research.topChangeCodes : []),
-      ...changed.map(item => item.code)
-    ])].filter(code => trackedCodes.has(code)).slice(0, 5);
-    const priority = priorityCodes.map(code => reports.find(item => item.code === code)).filter(Boolean);
-    return { research, report, priority, stock };
-  }
-
-  function renderDailyNewsSection({ research, priority }) {
-    return `
-      <section class="daily-page-section daily-news-section" aria-labelledby="daily-news-title">
-        <header class="daily-page-section-header">
-          <div>
-            <h2 id="daily-news-title">今日要闻</h2>
-            <p>概括全部自选股中最值得关注的变化</p>
-          </div>
-          ${research?.generatedAt ? `<time datetime="${escapeHtml(research.generatedAt)}">${formatDateTime(research.generatedAt)} 更新</time>` : ""}
-        </header>
-        <div class="daily-radar-priority" role="list" aria-label="今日要闻股票">
-          ${priority.length ? priority.map((item, index) => `
-            <article class="daily-radar-item" role="listitem">
-              <span>${index + 1}</span><b>${escapeHtml(item.name)}</b><strong>${escapeHtml(item.conclusion || item.headline)}</strong><small>${escapeHtml(item.currentJudgment || item.status)}</small>
-            </article>`).join("") : `<p class="daily-radar-clear">今日暂无需要置顶的概括性要闻。</p>`}
-        </div>
-      </section>`;
+    return { research, report, stock };
   }
 
   function renderDailyMajorNewsSection(messages) {
@@ -1341,7 +1312,9 @@
   }
 
   function renderDailyTrafficLightSection({ research, report, stock }) {
-    const rows = report ? buildDailyTrafficRows(report) : [];
+    const monitor = window.STOCK_MONITOR_RATINGS?.stocks?.[stock.code];
+    const usesMonitor = stock.code === "688633";
+    const rows = monitor ? monitor.rows.map(row => ({ ...row, icon: dailyTrafficDimensionConfig.find(item => item.id === row.id)?.icon || "pulse", comparisonTone: "steady" })) : !usesMonitor && report ? buildDailyTrafficRows(report) : [];
     const riskTone = rows.find(row => row.id === "risk")?.tone || "neutral";
     const sourceCount = Array.isArray(report?.sources) ? report.sources.length : 0;
     return `
@@ -1349,13 +1322,13 @@
         <header class="daily-page-section-header">
           <div>
             <h2 id="daily-traffic-title">个股红绿灯</h2>
-            <p>${escapeHtml(stock.name)} ${escapeHtml(stock.code)} · 六维事实信号与边际变化</p>
+            <p>${escapeHtml(stock.name)} ${escapeHtml(stock.code)} · ${monitor ? "每日监控原文评级" : "六维事实信号与边际变化"}</p>
           </div>
-          ${research?.asOfTradeDate ? `<time datetime="${escapeHtml(research.asOfTradeDate)}">${escapeHtml(research.asOfTradeDate)} 交易日</time>` : ""}
+          ${monitor ? `<time datetime="${escapeHtml(monitor.reportDate)}">${escapeHtml(monitor.reportDate)} 报告 · ${monitor.reportDate === new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Shanghai" }) ? "今日报告" : "最近已同步报告"}</time>` : research?.asOfTradeDate ? `<time datetime="${escapeHtml(research.asOfTradeDate)}">${escapeHtml(research.asOfTradeDate)} 交易日</time>` : ""}
         </header>
-        ${report ? `
-          <article class="daily-traffic-report" data-traffic-stock="${escapeHtml(report.code)}">
-            <div class="daily-traffic-table" role="table" aria-label="${escapeHtml(report.name)}个股红绿灯">
+        ${monitor || (!usesMonitor && report) ? `
+          <article class="daily-traffic-report" data-traffic-stock="${escapeHtml(stock.code)}">
+            <div class="daily-traffic-table" role="table" aria-label="${escapeHtml(stock.name)}个股红绿灯">
               <div class="daily-traffic-row daily-traffic-head" role="row">
                 <span role="columnheader">维度</span>
                 <span role="columnheader">今日评级</span>
@@ -1365,14 +1338,14 @@
               ${rows.map(row => `
                 <div class="daily-traffic-row daily-traffic-${row.tone} ${row.id === "overall" ? "daily-traffic-overall" : ""}" role="row" data-traffic-dimension="${row.id}">
                   <div class="daily-traffic-dimension" role="cell"><span>${icon(row.icon)}</span><strong>${row.label}</strong></div>
-                  <div class="daily-traffic-rating" role="cell"><span class="daily-traffic-rating-icon">${icon("pulse")}</span><strong>${dailyTrafficRatingLabel(row, riskTone)}</strong></div>
-                  <div class="daily-traffic-comparison daily-traffic-comparison-${row.comparisonTone}" role="cell"><small>较昨日</small><strong>${row.comparison}</strong></div>
+                  <div class="daily-traffic-rating" role="cell"><span class="daily-traffic-rating-icon">${icon("pulse")}</span><strong>${escapeHtml(monitor ? row.rating : dailyTrafficRatingLabel(row, riskTone))}</strong></div>
+                  <div class="daily-traffic-comparison daily-traffic-comparison-${row.comparisonTone}" role="cell"><small>较昨日</small><strong>${escapeHtml(row.comparison)}</strong></div>
                   <div class="daily-traffic-evidence" role="cell"><small>边际变化</small><span>${escapeHtml(row.evidence)}</span></div>
                 </div>`).join("")}
             </div>
             <footer class="daily-traffic-footer">
               <div aria-label="红绿灯图例"><span class="positive">偏积极</span><span class="neutral">中性/待验证</span><span class="negative">偏消极</span></div>
-              <small>基于当日研读、${sourceCount} 条事实来源与真实行情自动归类；无对应事实时保持中性/待验证。</small>
+              <small>${monitor ? `来源：${escapeHtml(monitor.sourceTitle)} · 同步于 ${formatDateTime(monitor.syncedAt)}。颜色、评级与理由保留监控原文，不重新打分。` : `基于当日研读、${sourceCount} 条事实来源与真实行情自动归类；无对应事实时保持中性/待验证。`}</small>
             </footer>
           </article>` : `
           <div class="daily-research-empty" role="status">

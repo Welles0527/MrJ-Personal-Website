@@ -11,12 +11,11 @@ assert.match(styleSource, /\.daily-noir-layout \.daily-traffic-footer \.positive
 assert.match(styleSource, /\.daily-noir-layout \.daily-traffic-footer \.negative \{ color: #ff767f !important; \}/, "negative traffic-light legend must stay red");
 
 assert.match(appSource, /function dailyResearchContext\(/);
-assert.match(appSource, /trackedCodes\.has\(item\.code\) && item\.hasMaterialChange/);
-assert.match(appSource, /function renderDailyNewsSection\(/);
+assert.doesNotMatch(appSource, /function renderDailyNewsSection\(/);
 assert.match(appSource, /function renderDailyMajorNewsSection\(/);
 assert.match(appSource, /function renderDailyTrafficLightSection\(/);
 assert.doesNotMatch(appSource, /重点变化雷达/);
-assert.match(appSource, /今日要闻/);
+assert.doesNotMatch(appSource, /今日要闻/);
 assert.match(appSource, /个股重大消息/);
 assert.match(appSource, /个股红绿灯/);
 assert.match(appSource, /function buildDailyTrafficRows\(/);
@@ -94,13 +93,12 @@ const dailyViewSource = appSource.match(/function renderDailyDigestView\([\s\S]*
 assert.doesNotMatch(dailyViewSource, /renderMessageHeader\("daily"\)/);
 assert.doesNotMatch(dailyViewSource, /renderDailyDigestFilters\(\)/);
 assert.doesNotMatch(dailyViewSource, /renderDailyDigestSection\(/);
-assert.match(dailyViewSource, /renderDailyNewsSection\(researchContext\)/);
+assert.doesNotMatch(dailyViewSource, /renderDailyNewsSection\(researchContext\)/);
 assert.match(dailyViewSource, /renderDailyMajorNewsSection\(majorMessages\)/);
 assert.match(dailyViewSource, /renderDailyTrafficLightSection\(researchContext\)/);
 assert.ok(
-  dailyViewSource.indexOf("renderDailyNewsSection(researchContext)") < dailyViewSource.indexOf("renderDailyMajorNewsSection(majorMessages)")
-    && dailyViewSource.indexOf("renderDailyMajorNewsSection(majorMessages)") < dailyViewSource.indexOf("renderDailyTrafficLightSection(researchContext)"),
-  "daily view must render news, major messages, and the stock traffic light in that order"
+  dailyViewSource.indexOf("renderDailyMajorNewsSection(majorMessages)") < dailyViewSource.indexOf("renderDailyTrafficLightSection(researchContext)"),
+  "daily view must render major messages and the stock traffic light in that order"
 );
 
-console.log("Stock tracking daily three-section contract passed.");
+console.log("Stock tracking daily two-section contract passed.");
