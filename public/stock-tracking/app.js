@@ -1313,7 +1313,7 @@
 
   function renderDailyTrafficLightSection({ research, report, stock }) {
     const monitor = window.STOCK_MONITOR_RATINGS?.stocks?.[stock.code];
-    const usesMonitor = stock.code === "688633";
+    const usesMonitor = ["688633", "301026", "603507", "300871"].includes(stock.code);
     const rows = monitor ? monitor.rows.map(row => ({ ...row, icon: dailyTrafficDimensionConfig.find(item => item.id === row.id)?.icon || "pulse", comparisonTone: "steady" })) : !usesMonitor && report ? buildDailyTrafficRows(report) : [];
     const riskTone = rows.find(row => row.id === "risk")?.tone || "neutral";
     const sourceCount = Array.isArray(report?.sources) ? report.sources.length : 0;
