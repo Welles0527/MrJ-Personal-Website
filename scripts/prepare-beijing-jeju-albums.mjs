@@ -17,6 +17,7 @@ function query(sql) {
 const prepared = [];
 for (const [id, slug, title, date, region, expected] of definitions) {
   const [album] = query(`select json_build_object('name',"albumName",'coverId',"albumThumbnailAssetId") from album where id='${id}';`);
+  if (slug === 'beijing-2019') album.coverId = '0bfb49b0-667b-4d2a-a6b5-8f4e0894a5fb';
   const assets = query(`select json_build_object('id',a.id,'originalPath',a."originalPath",'takenAt',a."localDateTime",'type',a.type) from album_asset aa join asset a on a.id=aa."assetId" where aa."albumId"='${id}' and a."deletedAt" is null order by a."localDateTime",a.id;`);
   if (assets.length !== expected || new Set(assets.map(a => a.id)).size !== expected || assets.some(a => a.type !== 'IMAGE')) throw new Error(`Invalid assets: ${slug}`);
   if (!assets.some(a => a.id === album.coverId)) throw new Error(`Missing cover: ${slug}`);
