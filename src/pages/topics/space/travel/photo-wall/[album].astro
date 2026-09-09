@@ -85,6 +85,7 @@ const days = albumData.album.dayOrder.map((dayKey, index) => {
         line-height: 0.9;
       }
       h1 span { display: block; margin-bottom: 0.28em; color: #c8b3a0; font-size: 0.32em; font-family: inherit; letter-spacing: 0.1em; }
+      h1 bdi { white-space: nowrap; }
       .intro { max-width: 520px; margin: 30px 0 0; color: rgba(247, 238, 226, 0.68); font-family: Georgia, "Noto Serif SC", serif; font-size: 17px; line-height: 1.9; }
       .stats { display: flex; gap: 38px; margin-top: 38px; }
       .stat { padding-top: 12px; border-top: 1px solid rgba(247, 238, 226, 0.24); }
@@ -154,7 +155,7 @@ const days = albumData.album.dayOrder.map((dayKey, index) => {
         <header class="hero">
           <div>
             <p class="eyebrow">{albumData.album.eyebrow}</p>
-            <h1><span>{albumData.date}</span>{albumData.title}</h1>
+            <h1><span>{albumData.date}</span>{albumData.title.includes('+') ? albumData.title.split('+').map((city, index) => <><bdi>{index === 0 ? `${city}+` : city}</bdi>{index === 0 && <wbr />}</>) : albumData.title}</h1>
             <p class="intro">{albumData.album.description}</p>
             <div class="stats" aria-label="相册信息">
               <div class="stat"><strong>{albumData.album.count}</strong><small>PHOTOS</small></div>
@@ -162,7 +163,7 @@ const days = albumData.album.dayOrder.map((dayKey, index) => {
             </div>
           </div>
           <div class="hero-cover">
-            <img src={sitePath(coverPhoto.src)} alt="2016海南三亚相册封面" width={coverPhoto.width} height={coverPhoto.height} fetchpriority="high" />
+            <img src={sitePath(coverPhoto.src)} alt={`${albumData.album.name}相册封面`} width={coverPhoto.width} height={coverPhoto.height} fetchpriority="high" />
             <div class="cover-note"><span>{albumData.album.dateRange}</span><span>{albumData.title}</span></div>
           </div>
         </header>

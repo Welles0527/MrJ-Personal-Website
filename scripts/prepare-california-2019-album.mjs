@@ -133,12 +133,12 @@ const countsByDay = Object.fromEntries(dayOrder.map((day) => [day, photos.filter
 const coverPhoto = photos.find((photo) => photo.id === coverId);
 
 const californiaAlbum = {
-  title: '美国加州',
+  title: '洛杉矶+旧金山',
   date: '2019年1月',
   region: 'overseas',
   album: {
     slug: 'california-2019',
-    name: '2019年1月 美国（加州）',
+    name: '2019年1月 洛杉矶+旧金山',
     eyebrow: 'CALIFORNIA · WINTER JOURNAL',
     description: '2019年1月的加州旅程。从洛杉矶、圣塔莫尼卡与圣塔芭芭拉，沿海岸北上旧金山，把十三天的城市、海岸与同行时光依照拍摄日期编排。',
     dateRange: '2019年1月7日—19日',
