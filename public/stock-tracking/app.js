@@ -885,7 +885,8 @@
           }));
     const [quoteResults, informationResults] = await Promise.all([
       Promise.allSettled(quoteRequests),
-      Promise.allSettled(informationRequests)
+      Promise.allSettled(informationRequests),
+      window.StockMonitorReports?.refresh().then(() => render())
     ]);
 
     const fulfilledValues = results => results
@@ -1346,6 +1347,7 @@
             <footer class="daily-traffic-footer">
               <div aria-label="红绿灯图例"><span class="positive">偏积极</span><span class="neutral">中性/待验证</span><span class="negative">偏消极</span></div>
               <small>${monitor ? `来源：${escapeHtml(monitor.sourceTitle)} · 同步于 ${formatDateTime(monitor.syncedAt)}。颜色、评级与理由保留监控原文，不重新打分。` : `基于当日研读、${sourceCount} 条事实来源与真实行情自动归类；无对应事实时保持中性/待验证。`}</small>
+              ${usesMonitor ? `<small data-monitor-sync-status="${escapeHtml(stock.code)}" role="status">${escapeHtml(window.StockMonitorReports?.status?.[stock.code] || "正在检查云端报告；当前显示此前已发布版本。")}</small>` : ""}
             </footer>
           </article>` : `
           <div class="daily-research-empty" role="status">
