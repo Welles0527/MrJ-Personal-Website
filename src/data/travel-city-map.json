@@ -1,0 +1,2166 @@
+{
+  "totalPhotos": 8935,
+  "locatedPhotos": 3856,
+  "unlocatedPhotos": 5079,
+  "albumPhotoCount": 8940,
+  "albums": [
+    {
+      "slug": "turkey-2019",
+      "name": "2019年 9月 土耳其",
+      "count": 1656,
+      "unlocatedCount": 421,
+      "cover": "/images/photo-wall/turkey-2019/1ede528e-14ed-41e5-8e2f-33d036aeff93.webp"
+    },
+    {
+      "slug": "beijing-2019",
+      "name": "2019年 5月 北京",
+      "count": 128,
+      "unlocatedCount": 4,
+      "cover": "/images/photo-wall/beijing-2019/0bfb49b0-667b-4d2a-a6b5-8f4e0894a5fb.webp"
+    },
+    {
+      "slug": "guang-shen-zhu-2019",
+      "name": "2019年 3月 广深珠",
+      "count": 625,
+      "unlocatedCount": 138,
+      "cover": "/images/photo-wall/guang-shen-zhu-2019/b939401c-d0b1-4278-81cf-e85b306b6d22.webp"
+    },
+    {
+      "slug": "california-2019",
+      "name": "2019年1月 洛杉矶+旧金山",
+      "count": 1326,
+      "unlocatedCount": 211,
+      "cover": "/images/photo-wall/california-2019/4fd62a33-33b4-4420-906b-0e6825eed858.webp"
+    },
+    {
+      "slug": "london-2018",
+      "name": "2018年 8月 伦敦",
+      "count": 383,
+      "unlocatedCount": 85,
+      "cover": "/images/photo-wall/london-2018/b15764e0-4fb2-40a9-ab9c-440ee05c93b3.webp"
+    },
+    {
+      "slug": "naked-valley-2018",
+      "name": "2018年 5月 裸心谷",
+      "count": 96,
+      "unlocatedCount": 59,
+      "cover": "/images/photo-wall/naked-valley-2018/e90c7a27-5ce8-4daa-93e4-0094a9b72232.webp"
+    },
+    {
+      "slug": "huzhou-2018",
+      "name": "2018年 1月 湖州",
+      "count": 146,
+      "unlocatedCount": 3,
+      "cover": "/images/photo-wall/huzhou-2018/218ca10e-f06e-4f08-a22c-e94c8795d76e.webp"
+    },
+    {
+      "slug": "germany-czech-2015",
+      "name": "2015年 10月 德国捷克",
+      "count": 530,
+      "unlocatedCount": 529,
+      "cover": "/images/photo-wall/germany-czech-2015/04096770-16f9-4dd7-ae26-b1d91f5d4965.webp"
+    },
+    {
+      "slug": "jiuzhaigou-2014",
+      "name": "2014 年 8月 九寨沟",
+      "count": 66,
+      "unlocatedCount": 66,
+      "cover": "/images/photo-wall/jiuzhaigou-2014/bff476d0-20d7-4e96-8e5b-1c6e93c159e3.webp"
+    },
+    {
+      "slug": "australia-2013",
+      "name": "2013年 11月 澳洲",
+      "count": 303,
+      "unlocatedCount": 0,
+      "cover": "/images/photo-wall/australia-2013/c1d7158d-5b8d-49d1-8776-d41f56ac9e17.webp"
+    },
+    {
+      "slug": "jeju-2007",
+      "name": "2007年 7月 济州岛",
+      "count": 713,
+      "unlocatedCount": 713,
+      "cover": "/images/photo-wall/jeju-2007/097376c3-9e93-4738-b6c0-2754f50e194f.webp"
+    },
+    {
+      "slug": "coffee-latte-art",
+      "name": "咖啡拉花",
+      "count": 310,
+      "unlocatedCount": 194,
+      "cover": "/images/photo-wall/coffee-latte-art/0019462c-7880-4b55-b5f3-29634f139b9f.webp"
+    },
+    {
+      "slug": "jamaica",
+      "name": "牙买加",
+      "count": 2154,
+      "unlocatedCount": 2154,
+      "cover": "/images/photo-wall/jamaica/a72614b6b37421485e35aa728267669edd077cd7.webp"
+    },
+    {
+      "slug": "japan-kanto-2015",
+      "name": "2015年日本（关东）",
+      "count": 378,
+      "unlocatedCount": 377,
+      "cover": "/images/photo-wall/japan-kanto-2015/3af3d43a-63de-4dc8-b277-f7510a62bd9b.webp"
+    },
+    {
+      "slug": "sanya-2016",
+      "name": "2016 海南三亚",
+      "count": 126,
+      "unlocatedCount": 126,
+      "cover": "/images/photo-wall/sanya-2016/4c98a0e6-9c70-49ca-9509-2d4dcf40d536.webp"
+    }
+  ],
+  "cities": [
+    {
+      "id": "city-1e03d0585ca4ec48",
+      "name": "旧金山",
+      "markerName": "旧金山",
+      "originalName": "San Francisco",
+      "sourceNames": [
+        "San Francisco"
+      ],
+      "country": "美国",
+      "region": "美国 · 旧金山",
+      "count": 289,
+      "latitude": 37.801929,
+      "longitude": -122.411057,
+      "cover": "/images/photo-wall/california-2019/22a7f661-a39b-41e3-b496-ac15d85646aa.webp",
+      "albumSlugs": [
+        "california-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-1e03d0585ca4ec48.json"
+    },
+    {
+      "id": "city-fc8d39488c94057c",
+      "name": "伊斯坦布尔",
+      "markerName": "伊斯坦布尔",
+      "originalName": "Istanbul",
+      "sourceNames": [
+        "Istanbul"
+      ],
+      "country": "土耳其",
+      "region": "土耳其 · 伊斯坦布尔",
+      "count": 221,
+      "latitude": 41.010765,
+      "longitude": 28.974169,
+      "cover": "/images/photo-wall/turkey-2019/6b2c36e0-a319-48b4-99b9-1bc62a4d9824.webp",
+      "albumSlugs": [
+        "turkey-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-fc8d39488c94057c.json"
+    },
+    {
+      "id": "city-d58c1887571f3c2b",
+      "name": "洛杉矶",
+      "markerName": "洛杉矶",
+      "originalName": "Los Angeles",
+      "sourceNames": [
+        "Los Angeles"
+      ],
+      "country": "美国",
+      "region": "美国 · 洛杉矶",
+      "count": 206,
+      "latitude": 34.049061,
+      "longitude": -118.25425,
+      "cover": "/images/photo-wall/california-2019/0a123e58-61c9-4946-b88c-f40ea359e132.webp",
+      "albumSlugs": [
+        "california-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-d58c1887571f3c2b.json"
+    },
+    {
+      "id": "city-c227b0e7be563038",
+      "name": "圣莫尼卡",
+      "markerName": "圣莫尼卡",
+      "originalName": "Santa Monica",
+      "sourceNames": [
+        "Santa Monica"
+      ],
+      "country": "美国",
+      "region": "美国 · 圣莫尼卡",
+      "count": 181,
+      "latitude": 34.072292,
+      "longitude": -118.475006,
+      "cover": "/images/photo-wall/california-2019/4fd62a33-33b4-4420-906b-0e6825eed858.webp",
+      "albumSlugs": [
+        "california-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-c227b0e7be563038.json"
+    },
+    {
+      "id": "city-57e80c199eeb92dc",
+      "name": "凯恩斯",
+      "markerName": "凯恩斯",
+      "originalName": "Cairns",
+      "sourceNames": [
+        "Cairns"
+      ],
+      "country": "澳大利亚",
+      "region": "澳大利亚 · 凯恩斯",
+      "count": 159,
+      "latitude": -16.92366,
+      "longitude": 145.76613,
+      "cover": "/images/photo-wall/australia-2013/c1d7158d-5b8d-49d1-8776-d41f56ac9e17.webp",
+      "albumSlugs": [
+        "australia-2013",
+        "coffee-latte-art"
+      ],
+      "photosPath": "/data/travel-cities/city-57e80c199eeb92dc.json"
+    },
+    {
+      "id": "city-2583401b303db3aa",
+      "name": "格雷梅",
+      "markerName": "格雷梅",
+      "originalName": "Göreme",
+      "sourceNames": [
+        "Göreme"
+      ],
+      "country": "土耳其",
+      "region": "土耳其 · 格雷梅",
+      "count": 157,
+      "latitude": 38.640423,
+      "longitude": 34.828671,
+      "cover": "/images/photo-wall/turkey-2019/1ede528e-14ed-41e5-8e2f-33d036aeff93.webp",
+      "albumSlugs": [
+        "turkey-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-2583401b303db3aa.json"
+    },
+    {
+      "id": "city-ebc4a721a2d6600f",
+      "name": "棉花堡",
+      "markerName": "棉花堡",
+      "originalName": "Pamukkale",
+      "sourceNames": [
+        "Pamukkale"
+      ],
+      "country": "土耳其",
+      "region": "土耳其 · 棉花堡",
+      "count": 147,
+      "latitude": 37.923389,
+      "longitude": 29.124241,
+      "cover": "/images/photo-wall/turkey-2019/79ab436a-3d24-442c-92e6-a19d22321cd1.webp",
+      "albumSlugs": [
+        "turkey-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-ebc4a721a2d6600f.json"
+    },
+    {
+      "id": "city-c909d32b13ff3f94",
+      "name": "澳门",
+      "markerName": "澳门",
+      "originalName": "Macao",
+      "sourceNames": [
+        "Luhuan"
+      ],
+      "country": "中国",
+      "region": "中国 · 澳门",
+      "count": 140,
+      "latitude": 22.101559,
+      "longitude": 113.534523,
+      "cover": "/images/photo-wall/guang-shen-zhu-2019/603c4759-327f-4f73-8f79-894516db53e1.webp",
+      "albumSlugs": [
+        "guang-shen-zhu-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-c909d32b13ff3f94.json"
+    },
+    {
+      "id": "city-295ebe44a4db110d",
+      "name": "北京",
+      "markerName": "北京",
+      "originalName": "Beijing",
+      "sourceNames": [
+        "Beijing",
+        "Beiyuan",
+        "Chaowai",
+        "Datun",
+        "Dongfeng",
+        "Wangjing"
+      ],
+      "country": "中国",
+      "region": "中国 · 北京",
+      "count": 126,
+      "latitude": 39.931084,
+      "longitude": 116.448593,
+      "cover": "/images/photo-wall/beijing-2019/0bfb49b0-667b-4d2a-a6b5-8f4e0894a5fb.webp",
+      "albumSlugs": [
+        "beijing-2019",
+        "coffee-latte-art"
+      ],
+      "photosPath": "/data/travel-cities/city-295ebe44a4db110d.json"
+    },
+    {
+      "id": "city-453d3cd64cb21da5",
+      "name": "于斯屈达尔",
+      "markerName": "于斯屈达尔",
+      "originalName": "Üsküdar",
+      "sourceNames": [
+        "Üsküdar"
+      ],
+      "country": "土耳其",
+      "region": "土耳其 · 于斯屈达尔",
+      "count": 123,
+      "latitude": 41.038136,
+      "longitude": 28.9974,
+      "cover": "/images/photo-wall/turkey-2019/85e174d3-3e73-4454-a9c7-7e11593c75ba.webp",
+      "albumSlugs": [
+        "turkey-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-453d3cd64cb21da5.json"
+    },
+    {
+      "id": "city-cf48bcefbfefc381",
+      "name": "上海",
+      "markerName": "上海",
+      "originalName": "Shanghai",
+      "sourceNames": [
+        "Changning",
+        "Changzheng",
+        "Hongkou",
+        "Huacao",
+        "Huangpu",
+        "Laogang",
+        "Luwan",
+        "Pudong",
+        "Shanghai"
+      ],
+      "country": "中国",
+      "region": "中国 · 上海",
+      "count": 111,
+      "latitude": 31.229027,
+      "longitude": 121.408127,
+      "cover": "/images/photo-wall/coffee-latte-art/0019462c-7880-4b55-b5f3-29634f139b9f.webp",
+      "albumSlugs": [
+        "coffee-latte-art",
+        "california-2019",
+        "turkey-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-cf48bcefbfefc381.json"
+    },
+    {
+      "id": "city-bb6881828173365a",
+      "name": "Baique",
+      "markerName": "Baique",
+      "originalName": "Baique",
+      "sourceNames": [
+        "Baique"
+      ],
+      "country": "中国",
+      "region": "中国 · Baique",
+      "count": 107,
+      "latitude": 30.959795,
+      "longitude": 120.102776,
+      "cover": "/images/photo-wall/huzhou-2018/218ca10e-f06e-4f08-a22c-e94c8795d76e.webp",
+      "albumSlugs": [
+        "huzhou-2018"
+      ],
+      "photosPath": "/data/travel-cities/city-bb6881828173365a.json"
+    },
+    {
+      "id": "city-701864e5f2b54d21",
+      "name": "安塔利亚",
+      "markerName": "安塔利亚",
+      "originalName": "Antalya",
+      "sourceNames": [
+        "Antalya"
+      ],
+      "country": "土耳其",
+      "region": "土耳其 · 安塔利亚",
+      "count": 99,
+      "latitude": 36.885422,
+      "longitude": 30.705072,
+      "cover": "/images/photo-wall/turkey-2019/a473afec-19ab-4bae-9830-ecd510395ed3.webp",
+      "albumSlugs": [
+        "turkey-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-701864e5f2b54d21.json"
+    },
+    {
+      "id": "city-4000a58316042496",
+      "name": "卡什",
+      "markerName": "卡什",
+      "originalName": "Kaş",
+      "sourceNames": [
+        "Kaş"
+      ],
+      "country": "土耳其",
+      "region": "土耳其 · 卡什",
+      "count": 96,
+      "latitude": 36.203667,
+      "longitude": 29.641161,
+      "cover": "/images/photo-wall/turkey-2019/52201423-2cde-4e2b-8d82-593b776a6209.webp",
+      "albumSlugs": [
+        "turkey-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-4000a58316042496.json"
+    },
+    {
+      "id": "city-ba7804d237279c7b",
+      "name": "切什梅",
+      "markerName": "切什梅",
+      "originalName": "Çeşme",
+      "sourceNames": [
+        "Çeşme"
+      ],
+      "country": "土耳其",
+      "region": "土耳其 · 切什梅",
+      "count": 82,
+      "latitude": 38.323769,
+      "longitude": 26.302248,
+      "cover": "/images/photo-wall/turkey-2019/20b4041c-5d87-48a6-8a9e-a03df9e071a3.webp",
+      "albumSlugs": [
+        "turkey-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-ba7804d237279c7b.json"
+    },
+    {
+      "id": "city-e2bf35c29b55af21",
+      "name": "费特希耶",
+      "markerName": "费特希耶",
+      "originalName": "Fethiye",
+      "sourceNames": [
+        "Fethiye"
+      ],
+      "country": "土耳其",
+      "region": "土耳其 · 费特希耶",
+      "count": 82,
+      "latitude": 36.624561,
+      "longitude": 29.112936,
+      "cover": "/images/photo-wall/turkey-2019/e1d32ca1-1a12-40ac-ace4-556e2fd04abe.webp",
+      "albumSlugs": [
+        "turkey-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-e2bf35c29b55af21.json"
+    },
+    {
+      "id": "city-e15632cc42fdde89",
+      "name": "广州",
+      "markerName": "广州",
+      "originalName": "Guangzhou",
+      "sourceNames": [
+        "Guangzhou"
+      ],
+      "country": "中国",
+      "region": "中国 · 广州",
+      "count": 81,
+      "latitude": 23.110811,
+      "longitude": 113.239441,
+      "cover": "/images/photo-wall/guang-shen-zhu-2019/102db6d2-0653-421a-8ae3-6cc998914b27.webp",
+      "albumSlugs": [
+        "guang-shen-zhu-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-e15632cc42fdde89.json"
+    },
+    {
+      "id": "city-011c3d599d97a204",
+      "name": "墨尔本",
+      "markerName": "墨尔本",
+      "originalName": "Melbourne",
+      "sourceNames": [
+        "Melbourne"
+      ],
+      "country": "澳大利亚",
+      "region": "澳大利亚 · 墨尔本",
+      "count": 77,
+      "latitude": -37.8136,
+      "longitude": 144.9631,
+      "cover": "/images/photo-wall/australia-2013/a979244b-d965-4dad-b8f5-fb23cf646c1d.webp",
+      "albumSlugs": [
+        "australia-2013"
+      ],
+      "photosPath": "/data/travel-cities/city-011c3d599d97a204.json"
+    },
+    {
+      "id": "city-c61d3150187ec9a5",
+      "name": "斯坦福",
+      "markerName": "斯坦福",
+      "originalName": "Stanford",
+      "sourceNames": [
+        "Stanford"
+      ],
+      "country": "美国",
+      "region": "美国 · 斯坦福",
+      "count": 75,
+      "latitude": 37.426922,
+      "longitude": -122.168625,
+      "cover": "/images/photo-wall/california-2019/5f479b54-acb2-4f20-9f3c-e6a9ab6c1ee2.webp",
+      "albumSlugs": [
+        "california-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-c61d3150187ec9a5.json"
+    },
+    {
+      "id": "city-1e56a9d3bb13b009",
+      "name": "阿拉米达",
+      "markerName": "阿拉米达",
+      "originalName": "Alameda",
+      "sourceNames": [
+        "Alameda"
+      ],
+      "country": "美国",
+      "region": "美国 · 阿拉米达",
+      "count": 73,
+      "latitude": 37.781689,
+      "longitude": -122.287788,
+      "cover": "/images/photo-wall/california-2019/7dd9a38d-78f3-41c7-b3d5-e138e6b39e7e.webp",
+      "albumSlugs": [
+        "california-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-1e56a9d3bb13b009.json"
+    },
+    {
+      "id": "city-6054f37bfefdc1a8",
+      "name": "Frant",
+      "markerName": "Frant",
+      "originalName": "Frant",
+      "sourceNames": [
+        "Frant"
+      ],
+      "country": "英国",
+      "region": "英国 · Frant",
+      "count": 63,
+      "latitude": 51.090771,
+      "longitude": 0.234227,
+      "cover": "/images/photo-wall/london-2018/cb8ba3b3-94ae-4582-827e-736057163246.webp",
+      "albumSlugs": [
+        "london-2018"
+      ],
+      "photosPath": "/data/travel-cities/city-6054f37bfefdc1a8.json"
+    },
+    {
+      "id": "city-26f06fbb5e037fb5",
+      "name": "Gangxia",
+      "markerName": "Gangxia",
+      "originalName": "Gangxia",
+      "sourceNames": [
+        "Gangxia"
+      ],
+      "country": "中国",
+      "region": "中国 · Gangxia",
+      "count": 60,
+      "latitude": 22.544724,
+      "longitude": 114.054283,
+      "cover": "/images/photo-wall/guang-shen-zhu-2019/f40f2962-6faa-4253-879a-e200321f859e.webp",
+      "albumSlugs": [
+        "guang-shen-zhu-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-26f06fbb5e037fb5.json"
+    },
+    {
+      "id": "city-bb70a575520d6868",
+      "name": "悉尼",
+      "markerName": "悉尼",
+      "originalName": "Sydney",
+      "sourceNames": [
+        "Sydney"
+      ],
+      "country": "澳大利亚",
+      "region": "澳大利亚 · 悉尼",
+      "count": 54,
+      "latitude": -33.8688,
+      "longitude": 151.2093,
+      "cover": "/images/photo-wall/australia-2013/389e669a-656b-43b0-a7aa-94d970c657e1.webp",
+      "albumSlugs": [
+        "australia-2013",
+        "coffee-latte-art"
+      ],
+      "photosPath": "/data/travel-cities/city-bb70a575520d6868.json"
+    },
+    {
+      "id": "city-81a165eb93e64660",
+      "name": "塞尔丘克",
+      "markerName": "塞尔丘克",
+      "originalName": "Selçuk",
+      "sourceNames": [
+        "Selçuk"
+      ],
+      "country": "土耳其",
+      "region": "土耳其 · 塞尔丘克",
+      "count": 53,
+      "latitude": 37.939236,
+      "longitude": 27.342251,
+      "cover": "/images/photo-wall/turkey-2019/83ac4368-5809-4099-a4a2-41f6c176511b.webp",
+      "albumSlugs": [
+        "turkey-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-81a165eb93e64660.json"
+    },
+    {
+      "id": "city-f48cbc42238aa1ca",
+      "name": "圣巴巴拉",
+      "markerName": "圣巴巴拉",
+      "originalName": "Santa Barbara",
+      "sourceNames": [
+        "Santa Barbara"
+      ],
+      "country": "美国",
+      "region": "美国 · 圣巴巴拉",
+      "count": 52,
+      "latitude": 34.424049,
+      "longitude": -119.702263,
+      "cover": "/images/photo-wall/california-2019/21370ad6-eb6e-490e-b95b-59279622bd6a.webp",
+      "albumSlugs": [
+        "california-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-f48cbc42238aa1ca.json"
+    },
+    {
+      "id": "city-16f364445137c86e",
+      "name": "Baishizhou",
+      "markerName": "Baishizhou",
+      "originalName": "Baishizhou",
+      "sourceNames": [
+        "Baishizhou"
+      ],
+      "country": "中国",
+      "region": "中国 · Baishizhou",
+      "count": 51,
+      "latitude": 22.536011,
+      "longitude": 113.969734,
+      "cover": "/images/photo-wall/guang-shen-zhu-2019/1af9e9ca-4f90-4958-91d9-302575c4441f.webp",
+      "albumSlugs": [
+        "guang-shen-zhu-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-16f364445137c86e.json"
+    },
+    {
+      "id": "city-76768e7f37b3c055",
+      "name": "坎布里亚",
+      "markerName": "坎布里亚",
+      "originalName": "Cambria",
+      "sourceNames": [
+        "Cambria"
+      ],
+      "country": "美国",
+      "region": "美国 · 坎布里亚",
+      "count": 44,
+      "latitude": 35.662186,
+      "longitude": -121.16848,
+      "cover": "/images/photo-wall/california-2019/87ab34d1-1e89-4f68-9329-09f1009119b8.webp",
+      "albumSlugs": [
+        "california-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-76768e7f37b3c055.json"
+    },
+    {
+      "id": "city-7f4e881ef0c844f0",
+      "name": "Kalkan",
+      "markerName": "Kalkan",
+      "originalName": "Kalkan",
+      "sourceNames": [
+        "Kalkan"
+      ],
+      "country": "土耳其",
+      "region": "土耳其 · Kalkan",
+      "count": 43,
+      "latitude": 36.229355,
+      "longitude": 29.449211,
+      "cover": "/images/photo-wall/turkey-2019/f8922217-7ee0-43f4-9ca4-9e9abe087841.webp",
+      "albumSlugs": [
+        "turkey-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-7f4e881ef0c844f0.json"
+    },
+    {
+      "id": "city-3491cfa441f6499c",
+      "name": "圣克拉拉",
+      "markerName": "圣克拉拉",
+      "originalName": "Santa Clara",
+      "sourceNames": [
+        "Santa Clara"
+      ],
+      "country": "美国",
+      "region": "美国 · 圣克拉拉",
+      "count": 39,
+      "latitude": 37.376957,
+      "longitude": -121.922737,
+      "cover": "/images/photo-wall/california-2019/e4139a76-e2e3-4e68-af1a-766eb70c4cbd.webp",
+      "albumSlugs": [
+        "california-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-3491cfa441f6499c.json"
+    },
+    {
+      "id": "city-ae36b37a725da166",
+      "name": "伦敦",
+      "markerName": "伦敦",
+      "originalName": "London",
+      "sourceNames": [
+        "London"
+      ],
+      "country": "英国",
+      "region": "英国 · 伦敦",
+      "count": 39,
+      "latitude": 51.506207,
+      "longitude": -0.121139,
+      "cover": "/images/photo-wall/london-2018/cc4a57b5-928a-465f-9311-cb34b11b0bd3.webp",
+      "albumSlugs": [
+        "london-2018"
+      ],
+      "photosPath": "/data/travel-cities/city-ae36b37a725da166.json"
+    },
+    {
+      "id": "city-ba6b5f2f18abb60c",
+      "name": "City of Westminster",
+      "markerName": "City of Westminster",
+      "originalName": "City of Westminster",
+      "sourceNames": [
+        "City of Westminster"
+      ],
+      "country": "英国",
+      "region": "英国 · City of Westminster",
+      "count": 39,
+      "latitude": 51.499329,
+      "longitude": -0.158311,
+      "cover": "/images/photo-wall/london-2018/b15764e0-4fb2-40a9-ab9c-440ee05c93b3.webp",
+      "albumSlugs": [
+        "london-2018"
+      ],
+      "photosPath": "/data/travel-cities/city-ba6b5f2f18abb60c.json"
+    },
+    {
+      "id": "city-5d2db6254864c167",
+      "name": "Shadwell",
+      "markerName": "Shadwell",
+      "originalName": "Shadwell",
+      "sourceNames": [
+        "Shadwell"
+      ],
+      "country": "英国",
+      "region": "英国 · Shadwell",
+      "count": 38,
+      "latitude": 51.507614,
+      "longitude": -0.07305,
+      "cover": "/images/photo-wall/london-2018/c1fffc1b-615f-4fa2-b18e-e21f505ad3fc.webp",
+      "albumSlugs": [
+        "london-2018"
+      ],
+      "photosPath": "/data/travel-cities/city-5d2db6254864c167.json"
+    },
+    {
+      "id": "city-b4f116748304dd02",
+      "name": "珠海",
+      "markerName": "珠海",
+      "originalName": "Zhuhai",
+      "sourceNames": [
+        "Zhuhai"
+      ],
+      "country": "中国",
+      "region": "中国 · 珠海",
+      "count": 35,
+      "latitude": 22.28599,
+      "longitude": 113.584068,
+      "cover": "/images/photo-wall/guang-shen-zhu-2019/fc34ac6a-720c-443a-9912-c9dc4c265d38.webp",
+      "albumSlugs": [
+        "guang-shen-zhu-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-b4f116748304dd02.json"
+    },
+    {
+      "id": "city-7fea927d9a4e0cab",
+      "name": "Nangaoqiao",
+      "markerName": "Nangaoqiao",
+      "originalName": "Nangaoqiao",
+      "sourceNames": [
+        "Nangaoqiao"
+      ],
+      "country": "中国",
+      "region": "中国 · Nangaoqiao",
+      "count": 34,
+      "latitude": 30.929197,
+      "longitude": 120.090218,
+      "cover": "/images/photo-wall/huzhou-2018/1a61fe8c-9906-4316-b6a9-7443e8d7df2a.webp",
+      "albumSlugs": [
+        "huzhou-2018"
+      ],
+      "photosPath": "/data/travel-cities/city-7fea927d9a4e0cab.json"
+    },
+    {
+      "id": "city-994c0d237b86bc89",
+      "name": "格伦代尔",
+      "markerName": "格伦代尔",
+      "originalName": "Glendale",
+      "sourceNames": [
+        "Glendale"
+      ],
+      "country": "美国",
+      "region": "美国 · 格伦代尔",
+      "count": 33,
+      "latitude": 34.101608,
+      "longitude": -118.340157,
+      "cover": "/images/photo-wall/california-2019/f918f01d-991f-4db9-a176-31e91cebbdb0.webp",
+      "albumSlugs": [
+        "california-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-994c0d237b86bc89.json"
+    },
+    {
+      "id": "city-12bc13ad9ccf39d8",
+      "name": "索尔万",
+      "markerName": "索尔万",
+      "originalName": "Solvang",
+      "sourceNames": [
+        "Solvang"
+      ],
+      "country": "美国",
+      "region": "美国 · 索尔万",
+      "count": 32,
+      "latitude": 34.594672,
+      "longitude": -120.140503,
+      "cover": "/images/photo-wall/california-2019/2bd06bc6-e662-4514-8a19-90fc4feaba3c.webp",
+      "albumSlugs": [
+        "california-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-12bc13ad9ccf39d8.json"
+    },
+    {
+      "id": "city-7386f7fbe966bacf",
+      "name": "Yuehai Residential",
+      "markerName": "Yuehai Residential",
+      "originalName": "Yuehai Residential",
+      "sourceNames": [
+        "Yuehai Residential"
+      ],
+      "country": "中国",
+      "region": "中国 · Yuehai Residential",
+      "count": 31,
+      "latitude": 22.515079,
+      "longitude": 113.9356,
+      "cover": "/images/photo-wall/guang-shen-zhu-2019/5e5002e4-9aad-465b-82a1-e3a342b64060.webp",
+      "albumSlugs": [
+        "guang-shen-zhu-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-7386f7fbe966bacf.json"
+    },
+    {
+      "id": "city-a8733a005731f275",
+      "name": "Clapham Junction",
+      "markerName": "Clapham Junction",
+      "originalName": "Clapham Junction",
+      "sourceNames": [
+        "Clapham Junction"
+      ],
+      "country": "英国",
+      "region": "英国 · Clapham Junction",
+      "count": 30,
+      "latitude": 51.474751,
+      "longitude": -0.157504,
+      "cover": "/images/photo-wall/london-2018/a7a4b095-8251-4898-98d5-004928c51e2d.webp",
+      "albumSlugs": [
+        "london-2018"
+      ],
+      "photosPath": "/data/travel-cities/city-a8733a005731f275.json"
+    },
+    {
+      "id": "city-248afe0445b15603",
+      "name": "Şişli",
+      "markerName": "Şişli",
+      "originalName": "Şişli",
+      "sourceNames": [
+        "Şişli"
+      ],
+      "country": "土耳其",
+      "region": "土耳其 · Şişli",
+      "count": 28,
+      "latitude": 41.036583,
+      "longitude": 28.984808,
+      "cover": "/images/photo-wall/turkey-2019/85d3de24-1b51-42f7-a7a2-7c70eab4b5c4.webp",
+      "albumSlugs": [
+        "turkey-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-248afe0445b15603.json"
+    },
+    {
+      "id": "city-9b6d529354521c43",
+      "name": "Kensington",
+      "markerName": "Kensington",
+      "originalName": "Kensington",
+      "sourceNames": [
+        "Kensington"
+      ],
+      "country": "英国",
+      "region": "英国 · Kensington",
+      "count": 28,
+      "latitude": 51.499966,
+      "longitude": -0.174226,
+      "cover": "/images/photo-wall/london-2018/fd1ac2a5-f718-481b-8d27-042009362e1f.webp",
+      "albumSlugs": [
+        "london-2018"
+      ],
+      "photosPath": "/data/travel-cities/city-9b6d529354521c43.json"
+    },
+    {
+      "id": "city-2c3562138bc97d42",
+      "name": "伯班克",
+      "markerName": "伯班克",
+      "originalName": "Burbank",
+      "sourceNames": [
+        "Burbank"
+      ],
+      "country": "美国",
+      "region": "美国 · 伯班克",
+      "count": 27,
+      "latitude": 34.13826,
+      "longitude": -118.354019,
+      "cover": "/images/photo-wall/california-2019/f03af21f-7990-417c-8e82-9ae99bd292f0.webp",
+      "albumSlugs": [
+        "california-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-2c3562138bc97d42.json"
+    },
+    {
+      "id": "city-1df762b8a46445bb",
+      "name": "City of London",
+      "markerName": "City of London",
+      "originalName": "City of London",
+      "sourceNames": [
+        "City of London"
+      ],
+      "country": "英国",
+      "region": "英国 · City of London",
+      "count": 24,
+      "latitude": 51.506634,
+      "longitude": -0.077631,
+      "cover": "/images/photo-wall/london-2018/daedc622-ec98-4179-a3a7-47e90c89ff5d.webp",
+      "albumSlugs": [
+        "london-2018"
+      ],
+      "photosPath": "/data/travel-cities/city-1df762b8a46445bb.json"
+    },
+    {
+      "id": "city-9287fd6d521b05e3",
+      "name": "Fatou",
+      "markerName": "Fatou",
+      "originalName": "Fatou",
+      "sourceNames": [
+        "Fatou"
+      ],
+      "country": "中国",
+      "region": "中国 · Fatou",
+      "count": 23,
+      "latitude": 30.559521,
+      "longitude": 119.869858,
+      "cover": "/images/photo-wall/naked-valley-2018/e90c7a27-5ce8-4daa-93e4-0094a9b72232.webp",
+      "albumSlugs": [
+        "naked-valley-2018"
+      ],
+      "photosPath": "/data/travel-cities/city-9287fd6d521b05e3.json"
+    },
+    {
+      "id": "city-8e9c16206554eef7",
+      "name": "厄吕代尼兹",
+      "markerName": "厄吕代尼兹",
+      "originalName": "Ölüdeniz",
+      "sourceNames": [
+        "Ölüdeniz"
+      ],
+      "country": "土耳其",
+      "region": "土耳其 · 厄吕代尼兹",
+      "count": 19,
+      "latitude": 36.575916,
+      "longitude": 29.091236,
+      "cover": "/images/photo-wall/turkey-2019/b33be432-329d-4374-a98d-ea314c110f66.webp",
+      "albumSlugs": [
+        "turkey-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-8e9c16206554eef7.json"
+    },
+    {
+      "id": "city-e18958c8259a68f0",
+      "name": "Haikuotiankong",
+      "markerName": "Haikuotiankong",
+      "originalName": "Haikuotiankong",
+      "sourceNames": [
+        "Haikuotiankong"
+      ],
+      "country": "中国",
+      "region": "中国 · Haikuotiankong",
+      "count": 19,
+      "latitude": 22.51857,
+      "longitude": 113.941681,
+      "cover": "/images/photo-wall/guang-shen-zhu-2019/395070c3-7ff6-49d3-bfe9-1a500d7001dc.webp",
+      "albumSlugs": [
+        "guang-shen-zhu-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-e18958c8259a68f0.json"
+    },
+    {
+      "id": "city-f508ad89b09a9a3d",
+      "name": "Esenler",
+      "markerName": "Esenler",
+      "originalName": "Esenler",
+      "sourceNames": [
+        "Esenler"
+      ],
+      "country": "土耳其",
+      "region": "土耳其 · Esenler",
+      "count": 19,
+      "latitude": 41.046345,
+      "longitude": 28.896946,
+      "cover": "/images/photo-wall/turkey-2019/952b649b-d2db-4dd1-86df-e0976e94ca91.webp",
+      "albumSlugs": [
+        "turkey-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-f508ad89b09a9a3d.json"
+    },
+    {
+      "id": "city-d0e870168557b019",
+      "name": "卡尤科斯",
+      "markerName": "卡尤科斯",
+      "originalName": "Cayucos",
+      "sourceNames": [
+        "Cayucos"
+      ],
+      "country": "美国",
+      "region": "美国 · 卡尤科斯",
+      "count": 17,
+      "latitude": 35.545334,
+      "longitude": -120.919304,
+      "cover": "/images/photo-wall/california-2019/45b4252c-24a7-4c08-806c-56f93c91a753.webp",
+      "albumSlugs": [
+        "california-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-d0e870168557b019.json"
+    },
+    {
+      "id": "city-952ed6be4714a7fc",
+      "name": "Camberwell",
+      "markerName": "Camberwell",
+      "originalName": "Camberwell",
+      "sourceNames": [
+        "Camberwell"
+      ],
+      "country": "英国",
+      "region": "英国 · Camberwell",
+      "count": 15,
+      "latitude": 51.472466,
+      "longitude": -0.112697,
+      "cover": "/images/photo-wall/london-2018/152ff8d4-6239-46a9-8105-be49880f1815.webp",
+      "albumSlugs": [
+        "london-2018"
+      ],
+      "photosPath": "/data/travel-cities/city-952ed6be4714a7fc.json"
+    },
+    {
+      "id": "city-c622817fa27158c6",
+      "name": "Avanos",
+      "markerName": "Avanos",
+      "originalName": "Avanos",
+      "sourceNames": [
+        "Avanos"
+      ],
+      "country": "土耳其",
+      "region": "土耳其 · Avanos",
+      "count": 15,
+      "latitude": 38.6775,
+      "longitude": 34.855488,
+      "cover": "/images/photo-wall/turkey-2019/76af7b81-ee78-4743-8ac9-1b69a4096d61.webp",
+      "albumSlugs": [
+        "turkey-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-c622817fa27158c6.json"
+    },
+    {
+      "id": "city-772934f03b9ce5b0",
+      "name": "Moganshan",
+      "markerName": "Moganshan",
+      "originalName": "Moganshan",
+      "sourceNames": [
+        "Moganshan"
+      ],
+      "country": "中国",
+      "region": "中国 · Moganshan",
+      "count": 14,
+      "latitude": 30.602097,
+      "longitude": 119.869011,
+      "cover": "/images/photo-wall/naked-valley-2018/99cea238-6111-4997-a4e5-f209d99e6e34.webp",
+      "albumSlugs": [
+        "naked-valley-2018"
+      ],
+      "photosPath": "/data/travel-cities/city-772934f03b9ce5b0.json"
+    },
+    {
+      "id": "city-0b4349cd73c32e03",
+      "name": "Mission Canyon",
+      "markerName": "Mission Canyon",
+      "originalName": "Mission Canyon",
+      "sourceNames": [
+        "Mission Canyon"
+      ],
+      "country": "美国",
+      "region": "美国 · Mission Canyon",
+      "count": 13,
+      "latitude": 34.437904,
+      "longitude": -119.713036,
+      "cover": "/images/photo-wall/california-2019/401e716b-8852-4205-b983-9a9ebaf6412f.webp",
+      "albumSlugs": [
+        "california-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-0b4349cd73c32e03.json"
+    },
+    {
+      "id": "city-882e3ae43e1dd7fa",
+      "name": "坎贝尔港",
+      "markerName": "坎贝尔港",
+      "originalName": "Port Campbell",
+      "sourceNames": [
+        "Port Campbell"
+      ],
+      "country": "澳大利亚",
+      "region": "澳大利亚 · 坎贝尔港",
+      "count": 13,
+      "latitude": -38.6621,
+      "longitude": 143.1051,
+      "cover": "/images/photo-wall/australia-2013/03773b26-6a67-47e9-b721-eefdacd82a7a.webp",
+      "albumSlugs": [
+        "australia-2013"
+      ],
+      "photosPath": "/data/travel-cities/city-882e3ae43e1dd7fa.json"
+    },
+    {
+      "id": "city-f1776bd4bbd6676c",
+      "name": "Fulham",
+      "markerName": "Fulham",
+      "originalName": "Fulham",
+      "sourceNames": [
+        "Fulham"
+      ],
+      "country": "英国",
+      "region": "英国 · Fulham",
+      "count": 13,
+      "latitude": 51.480343,
+      "longitude": -0.196272,
+      "cover": "/images/photo-wall/london-2018/e34530e3-d062-450b-9af4-5e9fa7091b76.webp",
+      "albumSlugs": [
+        "london-2018"
+      ],
+      "photosPath": "/data/travel-cities/city-f1776bd4bbd6676c.json"
+    },
+    {
+      "id": "city-619049c4293a5809",
+      "name": "Wushan",
+      "markerName": "Wushan",
+      "originalName": "Wushan",
+      "sourceNames": [
+        "Wushan"
+      ],
+      "country": "中国",
+      "region": "中国 · Wushan",
+      "count": 11,
+      "latitude": 23.110195,
+      "longitude": 113.318733,
+      "cover": "/images/photo-wall/guang-shen-zhu-2019/bcb072e8-09bd-468e-a9cc-8ae533292c04.webp",
+      "albumSlugs": [
+        "guang-shen-zhu-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-619049c4293a5809.json"
+    },
+    {
+      "id": "city-f112fdf712139458",
+      "name": "Keji yuan",
+      "markerName": "Keji yuan",
+      "originalName": "Keji yuan",
+      "sourceNames": [
+        "Keji yuan"
+      ],
+      "country": "中国",
+      "region": "中国 · Keji yuan",
+      "count": 10,
+      "latitude": 22.5424,
+      "longitude": 113.947838,
+      "cover": "/images/photo-wall/guang-shen-zhu-2019/a0546c55-2010-499d-89d7-89c8d4895a02.webp",
+      "albumSlugs": [
+        "guang-shen-zhu-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-f112fdf712139458.json"
+    },
+    {
+      "id": "city-4ddb7e3e964b9288",
+      "name": "Botuofeinuochunshuian",
+      "markerName": "Botuofeinuochunshuian",
+      "originalName": "Botuofeinuochunshuian",
+      "sourceNames": [
+        "Botuofeinuochunshuian"
+      ],
+      "country": "中国",
+      "region": "中国 · Botuofeinuochunshuian",
+      "count": 9,
+      "latitude": 22.538877,
+      "longitude": 113.971619,
+      "cover": "/images/photo-wall/guang-shen-zhu-2019/116b433a-f687-4b68-9b49-9137f0ff9ed2.webp",
+      "albumSlugs": [
+        "guang-shen-zhu-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-4ddb7e3e964b9288.json"
+    },
+    {
+      "id": "city-9283624d45a6f7e2",
+      "name": "İmrahor",
+      "markerName": "İmrahor",
+      "originalName": "İmrahor",
+      "sourceNames": [
+        "İmrahor"
+      ],
+      "country": "土耳其",
+      "region": "土耳其 · İmrahor",
+      "count": 9,
+      "latitude": 41.2617,
+      "longitude": 28.737909,
+      "cover": "/images/photo-wall/turkey-2019/490ba985-2f9a-4f05-9ecb-1ae043777eb3.webp",
+      "albumSlugs": [
+        "turkey-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-9283624d45a6f7e2.json"
+    },
+    {
+      "id": "city-81a5aeda8f6aea81",
+      "name": "Hailianting",
+      "markerName": "Hailianting",
+      "originalName": "Hailianting",
+      "sourceNames": [
+        "Hailianting"
+      ],
+      "country": "中国",
+      "region": "中国 · Hailianting",
+      "count": 8,
+      "latitude": 22.525019,
+      "longitude": 113.997894,
+      "cover": "/images/photo-wall/guang-shen-zhu-2019/ef0eb105-fafe-4a1e-85c7-e4a05c11ed5c.webp",
+      "albumSlugs": [
+        "guang-shen-zhu-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-81a5aeda8f6aea81.json"
+    },
+    {
+      "id": "city-ea53afd260607d25",
+      "name": "Alaçatı",
+      "markerName": "Alaçatı",
+      "originalName": "Alaçatı",
+      "sourceNames": [
+        "Alaçatı"
+      ],
+      "country": "土耳其",
+      "region": "土耳其 · Alaçatı",
+      "count": 8,
+      "latitude": 38.289352,
+      "longitude": 26.37871,
+      "cover": "/images/photo-wall/turkey-2019/19eb7473-839c-4e9d-b5b2-edc5d8fe92f2.webp",
+      "albumSlugs": [
+        "turkey-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-ea53afd260607d25.json"
+    },
+    {
+      "id": "city-2213879369489b95",
+      "name": "Shahe Residential",
+      "markerName": "Shahe Residential",
+      "originalName": "Shahe Residential",
+      "sourceNames": [
+        "Shahe Residential"
+      ],
+      "country": "中国",
+      "region": "中国 · Shahe Residential",
+      "count": 7,
+      "latitude": 22.536692,
+      "longitude": 113.972076,
+      "cover": "/images/photo-wall/guang-shen-zhu-2019/a818dbb4-b9f4-48e6-a60d-7e3a1a2b2f8b.webp",
+      "albumSlugs": [
+        "guang-shen-zhu-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-2213879369489b95.json"
+    },
+    {
+      "id": "city-3629da627abe9e3f",
+      "name": "Shatou Residential",
+      "markerName": "Shatou Residential",
+      "originalName": "Shatou Residential",
+      "sourceNames": [
+        "Shatou Residential"
+      ],
+      "country": "中国",
+      "region": "中国 · Shatou Residential",
+      "count": 7,
+      "latitude": 22.536835,
+      "longitude": 114.049568,
+      "cover": "/images/photo-wall/guang-shen-zhu-2019/fe58a2a4-eaf6-4c65-97f0-edfc5cb15f7e.webp",
+      "albumSlugs": [
+        "guang-shen-zhu-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-3629da627abe9e3f.json"
+    },
+    {
+      "id": "city-b838d5504c61af0d",
+      "name": "圣何塞",
+      "markerName": "圣何塞",
+      "originalName": "San Jose",
+      "sourceNames": [
+        "San Jose"
+      ],
+      "country": "美国",
+      "region": "美国 · 圣何塞",
+      "count": 6,
+      "latitude": 37.3354,
+      "longitude": -121.890236,
+      "cover": "/images/photo-wall/california-2019/14e99d7d-7a24-44e4-8996-0afe9f6101c0.webp",
+      "albumSlugs": [
+        "california-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-b838d5504c61af0d.json"
+    },
+    {
+      "id": "city-01265175b56fd735",
+      "name": "Gümüşkent",
+      "markerName": "Gümüşkent",
+      "originalName": "Gümüşkent",
+      "sourceNames": [
+        "Gümüşkent"
+      ],
+      "country": "土耳其",
+      "region": "土耳其 · Gümüşkent",
+      "count": 5,
+      "latitude": 38.771816,
+      "longitude": 34.525063,
+      "cover": "/images/photo-wall/turkey-2019/e1383e06-b6ba-4215-af63-72cef39c43b4.webp",
+      "albumSlugs": [
+        "turkey-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-01265175b56fd735.json"
+    },
+    {
+      "id": "city-424c22be85998f21",
+      "name": "戛纳",
+      "markerName": "戛纳",
+      "originalName": "Cannes",
+      "sourceNames": [
+        "Cannes"
+      ],
+      "country": "法国",
+      "region": "法国 · 戛纳",
+      "count": 5,
+      "latitude": 43.549858,
+      "longitude": 7.025278,
+      "cover": "/images/photo-wall/london-2018/db8e54da-2016-4875-8238-f669e46854a7.webp",
+      "albumSlugs": [
+        "london-2018"
+      ],
+      "photosPath": "/data/travel-cities/city-424c22be85998f21.json"
+    },
+    {
+      "id": "city-6951ba195d1764cb",
+      "name": "Jida",
+      "markerName": "Jida",
+      "originalName": "Jida",
+      "sourceNames": [
+        "Jida"
+      ],
+      "country": "中国",
+      "region": "中国 · Jida",
+      "count": 5,
+      "latitude": 22.263853,
+      "longitude": 113.578285,
+      "cover": "/images/photo-wall/guang-shen-zhu-2019/580f3b69-14ca-4d16-84d8-e52d695321f3.webp",
+      "albumSlugs": [
+        "guang-shen-zhu-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-6951ba195d1764cb.json"
+    },
+    {
+      "id": "city-9963e4085ce43492",
+      "name": "奥克兰",
+      "markerName": "奥克兰",
+      "originalName": "Oakland",
+      "sourceNames": [
+        "Oakland"
+      ],
+      "country": "美国",
+      "region": "美国 · 奥克兰",
+      "count": 5,
+      "latitude": 37.803108,
+      "longitude": -122.272316,
+      "cover": "/images/photo-wall/california-2019/f27ee9e6-24c2-42b6-92e6-1eb685b359ee.webp",
+      "albumSlugs": [
+        "california-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-9963e4085ce43492.json"
+    },
+    {
+      "id": "city-319de8f11abc2149",
+      "name": "新加坡",
+      "markerName": "新加坡",
+      "originalName": "Singapore",
+      "sourceNames": [
+        "Singapore"
+      ],
+      "country": "新加坡",
+      "region": "新加坡 · 新加坡",
+      "count": 4,
+      "latitude": 1.283416,
+      "longitude": 103.8591,
+      "cover": "/images/photo-wall/coffee-latte-art/2ad56615-4417-4032-a5bf-86d2bd44a744.webp",
+      "albumSlugs": [
+        "coffee-latte-art"
+      ],
+      "photosPath": "/data/travel-cities/city-319de8f11abc2149.json"
+    },
+    {
+      "id": "city-7b1633545c590336",
+      "name": "Gaziemir",
+      "markerName": "Gaziemir",
+      "originalName": "Gaziemir",
+      "sourceNames": [
+        "Gaziemir"
+      ],
+      "country": "土耳其",
+      "region": "土耳其 · Gaziemir",
+      "count": 4,
+      "latitude": 38.295208,
+      "longitude": 27.148373,
+      "cover": "/images/photo-wall/turkey-2019/80150ef7-5901-449a-8508-54e286452198.webp",
+      "albumSlugs": [
+        "turkey-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-7b1633545c590336.json"
+    },
+    {
+      "id": "city-a4df11e181f6f682",
+      "name": "Yuehai",
+      "markerName": "Yuehai",
+      "originalName": "Yuehai",
+      "sourceNames": [
+        "Yuehai"
+      ],
+      "country": "中国",
+      "region": "中国 · Yuehai",
+      "count": 4,
+      "latitude": 22.546909,
+      "longitude": 113.948952,
+      "cover": "/images/photo-wall/guang-shen-zhu-2019/42136535-95cb-4ac0-b471-85756f24de70.webp",
+      "albumSlugs": [
+        "guang-shen-zhu-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-a4df11e181f6f682.json"
+    },
+    {
+      "id": "city-e0c32ad9998fdc18",
+      "name": "Beizhoushan",
+      "markerName": "Beizhoushan",
+      "originalName": "Beizhoushan",
+      "sourceNames": [
+        "Beizhoushan"
+      ],
+      "country": "中国",
+      "region": "中国 · Beizhoushan",
+      "count": 4,
+      "latitude": 22.524458,
+      "longitude": 113.989922,
+      "cover": "/images/photo-wall/guang-shen-zhu-2019/a069fc86-4a0e-4622-bc64-9703357fe36d.webp",
+      "albumSlugs": [
+        "guang-shen-zhu-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-e0c32ad9998fdc18.json"
+    },
+    {
+      "id": "city-2f090734470dd1c3",
+      "name": "Pendik",
+      "markerName": "Pendik",
+      "originalName": "Pendik",
+      "sourceNames": [
+        "Pendik"
+      ],
+      "country": "土耳其",
+      "region": "土耳其 · Pendik",
+      "count": 3,
+      "latitude": 40.909012,
+      "longitude": 29.315691,
+      "cover": "/images/photo-wall/turkey-2019/7ebd9ab7-92ea-49ff-a465-9d4a497e7e63.webp",
+      "albumSlugs": [
+        "turkey-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-2f090734470dd1c3.json"
+    },
+    {
+      "id": "city-381ed46e52f532cb",
+      "name": "Arnavutköy",
+      "markerName": "Arnavutköy",
+      "originalName": "Arnavutköy",
+      "sourceNames": [
+        "Arnavutköy"
+      ],
+      "country": "土耳其",
+      "region": "土耳其 · Arnavutköy",
+      "count": 3,
+      "latitude": 41.053539,
+      "longitude": 29.021807,
+      "cover": "/images/photo-wall/turkey-2019/38960db0-f341-4c6c-ad98-4c6d1659a5ac.webp",
+      "albumSlugs": [
+        "turkey-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-381ed46e52f532cb.json"
+    },
+    {
+      "id": "city-6b2eb63b38eb32bf",
+      "name": "Gülşehir",
+      "markerName": "Gülşehir",
+      "originalName": "Gülşehir",
+      "sourceNames": [
+        "Gülşehir"
+      ],
+      "country": "土耳其",
+      "region": "土耳其 · Gülşehir",
+      "count": 3,
+      "latitude": 38.722095,
+      "longitude": 34.684803,
+      "cover": "/images/photo-wall/turkey-2019/49a86fdd-1d5e-49bb-b743-2257814f5df0.webp",
+      "albumSlugs": [
+        "turkey-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-6b2eb63b38eb32bf.json"
+    },
+    {
+      "id": "city-9447bfbbfdb362cd",
+      "name": "Bademli",
+      "markerName": "Bademli",
+      "originalName": "Bademli",
+      "sourceNames": [
+        "Bademli"
+      ],
+      "country": "土耳其",
+      "region": "土耳其 · Bademli",
+      "count": 3,
+      "latitude": 38.373569,
+      "longitude": 26.927782,
+      "cover": "/images/photo-wall/turkey-2019/03a30ae4-bd84-4004-ab40-175407c97dbf.webp",
+      "albumSlugs": [
+        "turkey-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-9447bfbbfdb362cd.json"
+    },
+    {
+      "id": "city-c5f3d25fa7cd9efe",
+      "name": "Nevşehir",
+      "markerName": "Nevşehir",
+      "originalName": "Nevşehir",
+      "sourceNames": [
+        "Nevşehir"
+      ],
+      "country": "土耳其",
+      "region": "土耳其 · Nevşehir",
+      "count": 3,
+      "latitude": 38.682224,
+      "longitude": 34.697201,
+      "cover": "/images/photo-wall/turkey-2019/0edc179b-e4db-4b6f-a4e0-f10890a98bbb.webp",
+      "albumSlugs": [
+        "turkey-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-c5f3d25fa7cd9efe.json"
+    },
+    {
+      "id": "city-d9acabbb38eeb80d",
+      "name": "Nossa Senhora de Fátima",
+      "markerName": "Nossa Senhora de Fátima",
+      "originalName": "Nossa Senhora de Fátima",
+      "sourceNames": [
+        "Nossa Senhora de Fátima"
+      ],
+      "country": "中国",
+      "region": "中国 · Nossa Senhora de Fátima",
+      "count": 3,
+      "latitude": 22.222412,
+      "longitude": 113.554436,
+      "cover": "/images/photo-wall/guang-shen-zhu-2019/aecb36c4-552a-47f0-b2da-758962599cb1.webp",
+      "albumSlugs": [
+        "guang-shen-zhu-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-d9acabbb38eeb80d.json"
+    },
+    {
+      "id": "city-2ad196172be4101f",
+      "name": "Merkezefendi",
+      "markerName": "Merkezefendi",
+      "originalName": "Merkezefendi",
+      "sourceNames": [
+        "Merkezefendi"
+      ],
+      "country": "土耳其",
+      "region": "土耳其 · Merkezefendi",
+      "count": 2,
+      "latitude": 37.833717,
+      "longitude": 29.049448,
+      "cover": "/images/photo-wall/turkey-2019/4595094c-2d34-4559-ac42-1ab39c42e163.webp",
+      "albumSlugs": [
+        "turkey-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-2ad196172be4101f.json"
+    },
+    {
+      "id": "city-2c5de51937aefd97",
+      "name": "卡梅尔",
+      "markerName": "卡梅尔",
+      "originalName": "Carmel-by-the-Sea",
+      "sourceNames": [
+        "Carmel-by-the-Sea"
+      ],
+      "country": "美国",
+      "region": "美国 · 卡梅尔",
+      "count": 2,
+      "latitude": 36.554985,
+      "longitude": -121.922768,
+      "cover": "/images/photo-wall/california-2019/c8e8eeb0-b763-4b42-8923-e6223b8fec42.webp",
+      "albumSlugs": [
+        "california-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-2c5de51937aefd97.json"
+    },
+    {
+      "id": "city-716eaa42820fd2c3",
+      "name": "Groombridge",
+      "markerName": "Groombridge",
+      "originalName": "Groombridge",
+      "sourceNames": [
+        "Groombridge"
+      ],
+      "country": "英国",
+      "region": "英国 · Groombridge",
+      "count": 2,
+      "latitude": 51.094124,
+      "longitude": 0.214593,
+      "cover": "/images/photo-wall/london-2018/dbb87b7a-9176-4569-ba27-193ca5d68c41.webp",
+      "albumSlugs": [
+        "london-2018"
+      ],
+      "photosPath": "/data/travel-cities/city-716eaa42820fd2c3.json"
+    },
+    {
+      "id": "city-71f74ace46439fa5",
+      "name": "莫罗贝",
+      "markerName": "莫罗贝",
+      "originalName": "Morro Bay",
+      "sourceNames": [
+        "Morro Bay"
+      ],
+      "country": "美国",
+      "region": "美国 · 莫罗贝",
+      "count": 2,
+      "latitude": 35.394474,
+      "longitude": -120.857697,
+      "cover": "/images/photo-wall/california-2019/0f0aacb5-e33b-478a-b06c-0fe94755cd9f.webp",
+      "albumSlugs": [
+        "california-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-71f74ace46439fa5.json"
+    },
+    {
+      "id": "city-dbfa177ab13c7d91",
+      "name": "Ürgüp",
+      "markerName": "Ürgüp",
+      "originalName": "Ürgüp",
+      "sourceNames": [
+        "Ürgüp"
+      ],
+      "country": "土耳其",
+      "region": "土耳其 · Ürgüp",
+      "count": 2,
+      "latitude": 38.672588,
+      "longitude": 34.88554,
+      "cover": "/images/photo-wall/turkey-2019/c5fa948a-c18f-4044-8dce-07d963497561.webp",
+      "albumSlugs": [
+        "turkey-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-dbfa177ab13c7d91.json"
+    },
+    {
+      "id": "city-e75d22f7cda061f7",
+      "name": "Tianmuhu",
+      "markerName": "Tianmuhu",
+      "originalName": "Tianmuhu",
+      "sourceNames": [
+        "Tianmuhu"
+      ],
+      "country": "中国",
+      "region": "中国 · Tianmuhu",
+      "count": 2,
+      "latitude": 31.326387,
+      "longitude": 119.413498,
+      "cover": "/images/photo-wall/huzhou-2018/b4e4449f-11b7-4c88-ad2a-92fa8993db6a.webp",
+      "albumSlugs": [
+        "huzhou-2018"
+      ],
+      "photosPath": "/data/travel-cities/city-e75d22f7cda061f7.json"
+    },
+    {
+      "id": "city-f6abc4598a88b730",
+      "name": "Pleasanton",
+      "markerName": "Pleasanton",
+      "originalName": "Pleasanton",
+      "sourceNames": [
+        "Pleasanton"
+      ],
+      "country": "美国",
+      "region": "美国 · Pleasanton",
+      "count": 2,
+      "latitude": 37.699265,
+      "longitude": -121.845131,
+      "cover": "/images/photo-wall/california-2019/1670f7ad-f05c-4c83-ac77-62c1efbd999f.webp",
+      "albumSlugs": [
+        "california-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-f6abc4598a88b730.json"
+    },
+    {
+      "id": "city-1079e2b6671e5e2a",
+      "name": "Crowborough",
+      "markerName": "Crowborough",
+      "originalName": "Crowborough",
+      "sourceNames": [
+        "Crowborough"
+      ],
+      "country": "英国",
+      "region": "英国 · Crowborough",
+      "count": 1,
+      "latitude": 51.07695,
+      "longitude": 0.191351,
+      "cover": "/images/photo-wall/london-2018/18e4c645-e98c-4ccd-bf14-a646ff529970.webp",
+      "albumSlugs": [
+        "london-2018"
+      ],
+      "photosPath": "/data/travel-cities/city-1079e2b6671e5e2a.json"
+    },
+    {
+      "id": "city-113b438164062c82",
+      "name": "Kayseri",
+      "markerName": "Kayseri",
+      "originalName": "Kayseri",
+      "sourceNames": [
+        "Kayseri"
+      ],
+      "country": "土耳其",
+      "region": "土耳其 · Kayseri",
+      "count": 1,
+      "latitude": 38.758694,
+      "longitude": 35.482464,
+      "cover": "/images/photo-wall/turkey-2019/42c389f9-c607-487f-b6d4-2c497e3913a8.webp",
+      "albumSlugs": [
+        "turkey-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-113b438164062c82.json"
+    },
+    {
+      "id": "city-15b3ac8630dbf403",
+      "name": "Gonzales",
+      "markerName": "Gonzales",
+      "originalName": "Gonzales",
+      "sourceNames": [
+        "Gonzales"
+      ],
+      "country": "美国",
+      "region": "美国 · Gonzales",
+      "count": 1,
+      "latitude": 36.522278,
+      "longitude": -121.453772,
+      "cover": "/images/photo-wall/california-2019/5abcb61b-06b2-4822-b548-d037e95d1dfb.webp",
+      "albumSlugs": [
+        "california-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-15b3ac8630dbf403.json"
+    },
+    {
+      "id": "city-16cd69ed9a0d65b5",
+      "name": "Yanhanshan",
+      "markerName": "Yanhanshan",
+      "originalName": "Yanhanshan",
+      "sourceNames": [
+        "Yanhanshan"
+      ],
+      "country": "中国",
+      "region": "中国 · Yanhanshan",
+      "count": 1,
+      "latitude": 22.528534,
+      "longitude": 113.987564,
+      "cover": "/images/photo-wall/guang-shen-zhu-2019/a1afcd71-70cb-47f3-b089-c2c8a2c78a69.webp",
+      "albumSlugs": [
+        "guang-shen-zhu-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-16cd69ed9a0d65b5.json"
+    },
+    {
+      "id": "city-197b4a48225b7855",
+      "name": "São Lourenço",
+      "markerName": "São Lourenço",
+      "originalName": "São Lourenço",
+      "sourceNames": [
+        "São Lourenço"
+      ],
+      "country": "中国",
+      "region": "中国 · São Lourenço",
+      "count": 1,
+      "latitude": 22.163609,
+      "longitude": 113.512535,
+      "cover": "/images/photo-wall/guang-shen-zhu-2019/fd6576f6-4cb1-43b1-be8e-ac8ced4f39f7.webp",
+      "albumSlugs": [
+        "guang-shen-zhu-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-197b4a48225b7855.json"
+    },
+    {
+      "id": "city-19a128a2f0580e33",
+      "name": "Agoura",
+      "markerName": "Agoura",
+      "originalName": "Agoura",
+      "sourceNames": [
+        "Agoura"
+      ],
+      "country": "美国",
+      "region": "美国 · Agoura",
+      "count": 1,
+      "latitude": 34.137489,
+      "longitude": -118.723076,
+      "cover": "/images/photo-wall/california-2019/3c694144-fe0d-4527-adc5-6ebcf8d733f8.webp",
+      "albumSlugs": [
+        "california-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-19a128a2f0580e33.json"
+    },
+    {
+      "id": "city-4255b7e69abab3ff",
+      "name": "Holborn",
+      "markerName": "Holborn",
+      "originalName": "Holborn",
+      "sourceNames": [
+        "Holborn"
+      ],
+      "country": "英国",
+      "region": "英国 · Holborn",
+      "count": 1,
+      "latitude": 51.510654,
+      "longitude": -0.111853,
+      "cover": "/images/photo-wall/london-2018/60ccf1ce-ab74-49d4-93a8-9f09508263d5.webp",
+      "albumSlugs": [
+        "london-2018"
+      ],
+      "photosPath": "/data/travel-cities/city-4255b7e69abab3ff.json"
+    },
+    {
+      "id": "city-461e5dc33251ab3a",
+      "name": "Torbalı",
+      "markerName": "Torbalı",
+      "originalName": "Torbalı",
+      "sourceNames": [
+        "Torbalı"
+      ],
+      "country": "土耳其",
+      "region": "土耳其 · Torbalı",
+      "count": 1,
+      "latitude": 38.141144,
+      "longitude": 27.332083,
+      "cover": "/images/photo-wall/turkey-2019/08426187-7a50-4c92-934e-6150fc7080d9.webp",
+      "albumSlugs": [
+        "turkey-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-461e5dc33251ab3a.json"
+    },
+    {
+      "id": "city-54957afeb2e63bd4",
+      "name": "Seki",
+      "markerName": "Seki",
+      "originalName": "Seki",
+      "sourceNames": [
+        "Seki"
+      ],
+      "country": "土耳其",
+      "region": "土耳其 · Seki",
+      "count": 1,
+      "latitude": 36.840652,
+      "longitude": 29.587402,
+      "cover": "/images/photo-wall/turkey-2019/7654b67d-e0a3-4bf8-b43c-23d6bb0d02ba.webp",
+      "albumSlugs": [
+        "turkey-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-54957afeb2e63bd4.json"
+    },
+    {
+      "id": "city-6d7aa6513980e988",
+      "name": "Orcutt",
+      "markerName": "Orcutt",
+      "originalName": "Orcutt",
+      "sourceNames": [
+        "Orcutt"
+      ],
+      "country": "美国",
+      "region": "美国 · Orcutt",
+      "count": 1,
+      "latitude": 34.835018,
+      "longitude": -120.36911,
+      "cover": "/images/photo-wall/california-2019/3e9609ac-b5b2-477e-890f-03b8e66d9869.webp",
+      "albumSlugs": [
+        "california-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-6d7aa6513980e988.json"
+    },
+    {
+      "id": "city-70fe7290cf613e0f",
+      "name": "福冈",
+      "markerName": "福冈",
+      "originalName": "Fukuoka",
+      "sourceNames": [
+        "Fukuoka"
+      ],
+      "country": "日本",
+      "region": "日本 · 福冈",
+      "count": 1,
+      "latitude": 33.588894,
+      "longitude": 130.413177,
+      "cover": "/images/photo-wall/coffee-latte-art/f63f6618-e36c-433e-8f47-96dc669cc5d6.webp",
+      "albumSlugs": [
+        "coffee-latte-art"
+      ],
+      "photosPath": "/data/travel-cities/city-70fe7290cf613e0f.json"
+    },
+    {
+      "id": "city-7898d9f1c0d61232",
+      "name": "Los Alamos",
+      "markerName": "Los Alamos",
+      "originalName": "Los Alamos",
+      "sourceNames": [
+        "Los Alamos"
+      ],
+      "country": "美国",
+      "region": "美国 · Los Alamos",
+      "count": 1,
+      "latitude": 34.740242,
+      "longitude": -120.267235,
+      "cover": "/images/photo-wall/california-2019/dd5146b2-0fb1-4051-a9b3-090756a83b37.webp",
+      "albumSlugs": [
+        "california-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-7898d9f1c0d61232.json"
+    },
+    {
+      "id": "city-7910a1c1dfba99fb",
+      "name": "Konak",
+      "markerName": "Konak",
+      "originalName": "Konak",
+      "sourceNames": [
+        "Konak"
+      ],
+      "country": "土耳其",
+      "region": "土耳其 · Konak",
+      "count": 1,
+      "latitude": 38.395756,
+      "longitude": 27.04833,
+      "cover": "/images/photo-wall/turkey-2019/cbf358d3-238e-426f-b211-8e6b0d4c9c02.webp",
+      "albumSlugs": [
+        "turkey-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-7910a1c1dfba99fb.json"
+    },
+    {
+      "id": "city-8fec8ba8e8395eb6",
+      "name": "京都",
+      "markerName": "京都",
+      "originalName": "Kyoto",
+      "sourceNames": [
+        "Kyoto"
+      ],
+      "country": "日本",
+      "region": "日本 · 京都",
+      "count": 1,
+      "latitude": 34.995183,
+      "longitude": 135.781661,
+      "cover": "/images/photo-wall/japan-kanto-2015/a7d8108f-153f-42ba-9a86-1080996e3b85.webp",
+      "albumSlugs": [
+        "japan-kanto-2015"
+      ],
+      "photosPath": "/data/travel-cities/city-8fec8ba8e8395eb6.json"
+    },
+    {
+      "id": "city-93505879bfe67192",
+      "name": "厦门",
+      "markerName": "厦门",
+      "originalName": "Xiamen",
+      "sourceNames": [
+        "Xiamen"
+      ],
+      "country": "中国",
+      "region": "中国 · 厦门",
+      "count": 1,
+      "latitude": 24.438709,
+      "longitude": 118.083443,
+      "cover": "/images/photo-wall/coffee-latte-art/ae7a48ed-a741-4492-95c9-b5ee715cc8bd.webp",
+      "albumSlugs": [
+        "coffee-latte-art"
+      ],
+      "photosPath": "/data/travel-cities/city-93505879bfe67192.json"
+    },
+    {
+      "id": "city-a727da8dde851e47",
+      "name": "Emeryville",
+      "markerName": "Emeryville",
+      "originalName": "Emeryville",
+      "sourceNames": [
+        "Emeryville"
+      ],
+      "country": "美国",
+      "region": "美国 · Emeryville",
+      "count": 1,
+      "latitude": 37.816067,
+      "longitude": -122.357468,
+      "cover": "/images/photo-wall/california-2019/572dae85-36a5-4d3f-bfa8-ce14535e2841.webp",
+      "albumSlugs": [
+        "california-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-a727da8dde851e47.json"
+    },
+    {
+      "id": "city-af05277d3ad0b35a",
+      "name": "Melikgazi",
+      "markerName": "Melikgazi",
+      "originalName": "Melikgazi",
+      "sourceNames": [
+        "Melikgazi"
+      ],
+      "country": "土耳其",
+      "region": "土耳其 · Melikgazi",
+      "count": 1,
+      "latitude": 38.765694,
+      "longitude": 35.482342,
+      "cover": "/images/photo-wall/turkey-2019/3d8ced33-47d1-4181-bb4b-dfb7ef9bb4f3.webp",
+      "albumSlugs": [
+        "turkey-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-af05277d3ad0b35a.json"
+    },
+    {
+      "id": "city-af6767dda41044b6",
+      "name": "El Rio",
+      "markerName": "El Rio",
+      "originalName": "El Rio",
+      "sourceNames": [
+        "El Rio"
+      ],
+      "country": "美国",
+      "region": "美国 · El Rio",
+      "count": 1,
+      "latitude": 34.223804,
+      "longitude": -119.103775,
+      "cover": "/images/photo-wall/california-2019/f096690a-be80-4276-bb1c-a26a81c6e3da.webp",
+      "albumSlugs": [
+        "california-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-af6767dda41044b6.json"
+    },
+    {
+      "id": "city-bc7e76d2ec6af6b2",
+      "name": "Soledad",
+      "markerName": "Soledad",
+      "originalName": "Soledad",
+      "sourceNames": [
+        "Soledad"
+      ],
+      "country": "美国",
+      "region": "美国 · Soledad",
+      "count": 1,
+      "latitude": 36.427064,
+      "longitude": -121.332336,
+      "cover": "/images/photo-wall/california-2019/96802fb8-30b8-4d54-99f7-9c871295148a.webp",
+      "albumSlugs": [
+        "california-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-bc7e76d2ec6af6b2.json"
+    },
+    {
+      "id": "city-c208147cec60c531",
+      "name": "Jingling",
+      "markerName": "Jingling",
+      "originalName": "Jingling",
+      "sourceNames": [
+        "Jingling"
+      ],
+      "country": "中国",
+      "region": "中国 · Jingling",
+      "count": 1,
+      "latitude": 29.382038,
+      "longitude": 120.822388,
+      "cover": "/images/photo-wall/coffee-latte-art/857a3063-855a-4d10-a917-5692799b387e.webp",
+      "albumSlugs": [
+        "coffee-latte-art"
+      ],
+      "photosPath": "/data/travel-cities/city-c208147cec60c531.json"
+    },
+    {
+      "id": "city-c3f396ed790462b6",
+      "name": "San Miguel",
+      "markerName": "San Miguel",
+      "originalName": "San Miguel",
+      "sourceNames": [
+        "San Miguel"
+      ],
+      "country": "美国",
+      "region": "美国 · San Miguel",
+      "count": 1,
+      "latitude": 35.831264,
+      "longitude": -120.758209,
+      "cover": "/images/photo-wall/california-2019/80182c90-eeef-4bd2-a740-e079740357d2.webp",
+      "albumSlugs": [
+        "california-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-c3f396ed790462b6.json"
+    },
+    {
+      "id": "city-c78424a23b2575eb",
+      "name": "布拉格",
+      "markerName": "布拉格",
+      "originalName": "Prague",
+      "sourceNames": [
+        "Prague"
+      ],
+      "country": "捷克",
+      "region": "捷克 · 布拉格",
+      "count": 1,
+      "latitude": 50.087564,
+      "longitude": 14.421633,
+      "cover": "/images/photo-wall/germany-czech-2015/5f07d112-c1ac-48fd-b041-6c70f198c676.webp",
+      "albumSlugs": [
+        "germany-czech-2015"
+      ],
+      "photosPath": "/data/travel-cities/city-c78424a23b2575eb.json"
+    },
+    {
+      "id": "city-d2933b01a5ce0431",
+      "name": "Spreckels",
+      "markerName": "Spreckels",
+      "originalName": "Spreckels",
+      "sourceNames": [
+        "Spreckels"
+      ],
+      "country": "美国",
+      "region": "美国 · Spreckels",
+      "count": 1,
+      "latitude": 36.635445,
+      "longitude": -121.599167,
+      "cover": "/images/photo-wall/california-2019/418f5681-cf1f-4e17-99e7-f7134175a1e2.webp",
+      "albumSlugs": [
+        "california-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-d2933b01a5ce0431.json"
+    },
+    {
+      "id": "city-f7d2b036ff1a342a",
+      "name": "Fremont",
+      "markerName": "Fremont",
+      "originalName": "Fremont",
+      "sourceNames": [
+        "Fremont"
+      ],
+      "country": "美国",
+      "region": "美国 · Fremont",
+      "count": 1,
+      "latitude": 37.577114,
+      "longitude": -121.972412,
+      "cover": "/images/photo-wall/california-2019/960dbce6-8fbf-4e2f-aac2-9bc2deff5d6a.webp",
+      "albumSlugs": [
+        "california-2019"
+      ],
+      "photosPath": "/data/travel-cities/city-f7d2b036ff1a342a.json"
+    }
+  ]
+}
