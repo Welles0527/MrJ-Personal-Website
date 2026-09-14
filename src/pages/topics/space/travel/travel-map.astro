@@ -1,9 +1,84 @@
 ---
 import TravelGlobe from '../../../../components/TravelGlobe.astro';
-import cityMap from '../../../../data/travel-city-map.json';
+import coffeeAlbumData from '../../../../data/coffee-latte-art-album.json';
+import jamaicaAlbumData from '../../../../data/jamaica-photo-album.json';
+import japanAlbumData from '../../../../data/japan-kanto-2015-album.json';
+import sanyaAlbumData from '../../../../data/sanya-2016-album.json';
+import travelAlbums from '../../../../data/travel-2018-albums.json';
 import { sitePath } from '../../../../data/site';
 
-const locations = cityMap.cities.map(city => ({ ...city, photosPath: sitePath(city.photosPath) }));
-const albums = cityMap.albums.map(album => ({ ...album, href: sitePath(`/topics/space/travel/photo-wall/${album.slug}/`) }));
+const travelCoordinates = {
+  'turkey-2019': { country: '土耳其', region: '土耳其 · 伊斯坦布尔、卡帕多奇亚、地中海沿岸', latitude: 41.010765, longitude: 28.974169 },
+  'beijing-2019': { country: '中国', region: '中国 · 北京', latitude: 39.9042, longitude: 116.4074 },
+  'jeju-2007': { country: '韩国', region: '韩国 · 济州岛', latitude: 33.38, longitude: 126.53 },
+  'guang-shen-zhu-2019': { country: '中国', region: '中国 · 广州、深圳、珠海', latitude: 22.6, longitude: 113.7 },
+  'jiuzhaigou-2014': { country: '中国', region: '中国 · 四川 · 九寨沟', latitude: 33.2, longitude: 103.9 },
+  'germany-czech-2015': { country: '德国 / 捷克', region: '德国、捷克 · 布拉格定位', latitude: 50.087564, longitude: 14.421633 },
+  'australia-2013': { country: '澳大利亚', region: '澳大利亚 · 凯恩斯、悉尼、墨尔本', latitude: -33.8688, longitude: 151.2093 },
+  'california-2019': { country: '美国', region: '美国 · 加利福尼亚州', latitude: 35.811421, longitude: -120.414327 },
+  'london-2018': { name: '2018年 8月 英国', markerName: '英国', country: '英国', region: '英国', latitude: 51.497799, longitude: -0.112702 },
+  'naked-valley-2018': { country: '中国', region: '中国 · 浙江 · 裸心谷', latitude: 30.562559, longitude: 119.86982 },
+  'huzhou-2018': { country: '中国', region: '中国 · 浙江 · 湖州', latitude: 30.959429, longitude: 120.102669 },
+};
+const locations = [
+  ...travelAlbums.map((data) => ({
+    id: data.album.slug,
+    name: data.album.name,
+    markerName: data.title,
+    ...travelCoordinates[data.album.slug as keyof typeof travelCoordinates],
+    count: data.album.count,
+    href: sitePath(`/topics/space/travel/photo-wall/${data.album.slug}/`),
+    cover: data.album.cover,
+  })),
+  {
+    id: 'shanghai',
+    name: '上海',
+    markerName: '上海',
+    country: '中国',
+    region: '中国 · 上海',
+    count: coffeeAlbumData.album.count,
+    latitude: 31.2304,
+    longitude: 121.4737,
+    href: sitePath('/topics/space/travel/photo-wall/coffee-latte-art'),
+    cover: coffeeAlbumData.album.cover,
+  },
+  {
+    id: 'sanya',
+    name: '2016 海南三亚',
+    markerName: '三亚',
+    country: '中国',
+    region: '中国 · 海南',
+    count: sanyaAlbumData.album.count,
+    latitude: 18.2528,
+    longitude: 109.5119,
+    href: sitePath('/topics/space/travel/photo-wall/sanya-2016'),
+    cover: sanyaAlbumData.album.cover,
+  },
+  {
+    id: 'jamaica',
+    name: '(2004-2005)牙买加',
+    markerName: '牙买加',
+    country: '牙买加',
+    region: '加勒比海 · 牙买加',
+    count: jamaicaAlbumData.album.count,
+    latitude: 18.1096,
+    longitude: -77.2975,
+    href: sitePath('/topics/space/travel/photo-wall/jamaica'),
+    cover: jamaicaAlbumData.album.cover,
+  },
+  {
+    id: 'japan-kanto',
+    name: '2015年日本（关东）',
+    markerName: '东京',
+    country: '日本',
+    region: '日本 · 关东',
+    count: japanAlbumData.album.count,
+    latitude: 35.6762,
+    longitude: 139.6503,
+    href: sitePath('/topics/space/travel/photo-wall/japan-kanto-2015'),
+    cover: japanAlbumData.album.cover,
+  },
+];
+
 ---
-<TravelGlobe locations={locations} albums={albums} totalPhotos={cityMap.totalPhotos} locatedPhotos={cityMap.locatedPhotos} unlocatedPhotos={cityMap.unlocatedPhotos} />
+<TravelGlobe locations={locations} />
