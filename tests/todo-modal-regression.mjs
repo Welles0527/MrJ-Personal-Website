@@ -150,6 +150,83 @@ try {
   await themeToggle.click();
   assert.equal(await themeToggle.getAttribute('data-theme-current'), 'dark', 'light theme must cycle back to dark');
 
+  await page.locator('[data-action="open-template"]').click();
+  const templateModal = page.locator('[data-template-modal]');
+  await templateModal.waitFor({ state: 'visible' });
+  assert.equal(
+    await page.locator('[data-action="export-backup"] + [data-action="open-template"]').count(),
+    1,
+    'weekly template entry must appear immediately after Excel backup'
+  );
+  await page.locator('[data-template-form] input[name="templateTitle"]').fill('WEEKLY TEMPLATE REGRESSION');
+  await page.locator('[data-template-form] .todo-template-everyday').click();
+  assert.equal(await page.locator('[data-template-form] input[name="templateWeekdays"]:checked').count(), 7, 'everyday checkbox must select all seven weekdays');
+  await page.locator('[data-template-form] select[name="templateCategory"]').selectOption('life');
+  await page.locator('[data-template-form] button[type="submit"]').click();
+  await page.waitForFunction(() => document.querySelector('[data-template-list]')?.textContent.includes('WEEKLY TEMPLATE REGRESSION'));
+  assert.match(await page.locator('[data-template-list]').innerText(), /每天[\s\S]*WEEKLY TEMPLATE REGRESSION/, 'saved template must retain all seven weekdays');
+
+  await page.locator('.todo-template-item', { hasText: 'WEEKLY TEMPLATE REGRESSION' }).getByRole('button', { name: '编辑' }).click();
+  assert.equal(await page.locator('[data-template-form] input[name="templateWeekdays"]:checked').count(), 7, 'editing an everyday template must restore all weekday selections');
+  assert.equal(await page.locator('[data-template-form] input[name="templateEveryday"]').isChecked(), true, 'editing an everyday template must restore the everyday checkbox');
+  await page.locator('[data-template-form] input[name="templateTitle"]').fill('WEEKLY TEMPLATE UPDATED');
+  await page.locator('[data-template-form] button[type="submit"]').click();
+  await page.waitForFunction(() => document.querySelector('[data-template-list]')?.textContent.includes('WEEKLY TEMPLATE UPDATED'));
+  assert.doesNotMatch(await page.locator('[data-template-list]').innerText(), /WEEKLY TEMPLATE REGRESSION/, 'template editing must replace the previous title');
+
+  await page.locator('[data-template-form] input[name="templateTitle"]').fill('TEMP TEMPLATE TO DELETE');
+  await page.locator('[data-template-form] .todo-template-weekday-option').nth(0).click();
+  await page.locator('[data-template-form] .todo-template-weekday-option').nth(1).click();
+  await page.locator('[data-template-form] button[type="submit"]').click();
+  await page.waitForFunction(() => document.querySelector('[data-template-list]')?.textContent.includes('TEMP TEMPLATE TO DELETE'));
+  const disposableTemplate = page.locator('.todo-template-item', { hasText: 'TEMP TEMPLATE TO DELETE' });
+  await disposableTemplate.getByRole('button', { name: '移除' }).click();
+  await disposableTemplate.getByRole('button', { name: '确认移除' }).click();
+  await page.waitForFunction(() => !document.querySelector('[data-template-list]')?.textContent.includes('TEMP TEMPLATE TO DELETE'));
+  assert.equal(await disposableTemplate.count(), 0, 'confirmed template removal must remove the item from the active template');
+
+  if (process.env.TODO_SEARCH_SCREENSHOT_DIR) {
+    const screenshotDir = path.resolve(process.env.TODO_SEARCH_SCREENSHOT_DIR);
+    await mkdir(screenshotDir, { recursive: true });
+    await templateModal.evaluate((dialog) => { dialog.scrollTop = 0; });
+    const desktopTemplateBox = await templateModal.boundingBox();
+    assert.ok(desktopTemplateBox && desktopTemplateBox.y >= 0 && desktopTemplateBox.y + desktopTemplateBox.height <= 900, 'desktop template modal must stay within the viewport');
+    await page.screenshot({ path: path.join(screenshotDir, 'todo-template-desktop.png') });
+    await page.locator('[data-action="close-template"]').first().click();
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.locator('[data-action="open-template"]').click();
+    await templateModal.evaluate((dialog) => { dialog.scrollTop = 0; });
+    await page.screenshot({ path: path.join(screenshotDir, 'todo-template-mobile.png') });
+    const mobileTemplateBox = await templateModal.boundingBox();
+    assert.ok(mobileTemplateBox && mobileTemplateBox.y >= 0 && mobileTemplateBox.y + mobileTemplateBox.height <= 844, 'mobile template modal must stay within the viewport');
+    await page.locator('[data-action="close-template"]').first().click();
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.locator('[data-action="open-template"]').click();
+  }
+
+  const weekDates = await page.locator('.todo-day-column').evaluateAll((columns) => columns.map((column) => column.getAttribute('data-drop-date')));
+  assert.equal(weekDates.length, 7, 'selected week must expose seven dated columns');
+  weekDates.forEach((date) => assert.match(date || '', /^\d{4}-\d{2}-\d{2}$/, 'every selected weekday must expose a valid date'));
+  await page.locator('[data-action="import-template"]').click();
+  await page.waitForFunction((dates) => dates.every((date) => document.querySelector(`.todo-day-column[data-drop-date="${date}"]`)?.textContent.includes('WEEKLY TEMPLATE UPDATED')), weekDates);
+  for (const date of weekDates) {
+    assert.equal(
+      await page.locator(`.todo-day-column[data-drop-date="${date}"] .todo-item`, { hasText: 'WEEKLY TEMPLATE UPDATED' }).count(),
+      1,
+      'everyday template import must create one task on each weekday'
+    );
+  }
+  await page.locator('[data-action="import-template"]').click();
+  await page.waitForTimeout(150);
+  for (const date of weekDates) {
+    assert.equal(
+      await page.locator(`.todo-day-column[data-drop-date="${date}"] .todo-item`, { hasText: 'WEEKLY TEMPLATE UPDATED' }).count(),
+      1,
+      're-importing the same everyday template into the same week must not duplicate tasks'
+    );
+  }
+  await page.locator('[data-action="close-template"]').last().click();
+
   const success = await submitTask(page, 'MODAL SUCCESS REGRESSION');
   assert.equal(success.openAfterSubmit, false, 'valid submit must close before the delayed cloud response');
   await page.waitForTimeout(1300);
@@ -209,8 +286,8 @@ try {
   assert.doesNotMatch(await page.locator('body').innerText(), /MODAL FAIL REGRESSION/, 'unconfirmed task must be rolled back');
 
   const counters = await page.evaluate(() => globalThis.__todoModalRegression);
-  assert.deepEqual(counters, { calls: 2, confirmed: 1, failures: 1 });
-  console.log('Todo modal, search, and date-location regression test passed.');
+  assert.deepEqual(counters, { calls: 13, confirmed: 12, failures: 1 });
+  console.log('Todo modal, weekly template, search, and date-location regression test passed.');
 } finally {
   await browser?.close();
   await server.stop();

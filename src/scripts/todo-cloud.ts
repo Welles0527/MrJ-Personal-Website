@@ -18,6 +18,10 @@ export type CloudTodo = {
   updatedAt: string;
   deletedAt?: string;
   syncVersion?: number;
+  templateWeekdays?: number[];
+  /** Legacy single-day field retained only while older cloud records are read. */
+  templateWeekday?: number;
+  templateSourceId?: string;
 };
 
 type CloudTodoRecord = CloudTodo & {
@@ -243,6 +247,9 @@ export const upsertCloudTodo = async (
       throw new Error('云端待办已在其他浏览器删除，请刷新后重试。');
     }
     const payload = { ...todo, ownerId, syncVersion: nextSyncVersion };
+    if (todo.templateWeekdays === undefined) delete payload.templateWeekdays;
+    if (todo.templateWeekday === undefined) delete payload.templateWeekday;
+    if (todo.templateSourceId === undefined) delete payload.templateSourceId;
     let result: CloudResult<unknown>;
     if (current.todo) {
       const conditions: Record<string, unknown> = {
@@ -254,7 +261,10 @@ export const upsertCloudTodo = async (
       result = assertCloudResult(
         await db.collection(TODO_COLLECTION).where(conditions).update({
           ...payload,
-          deletedAt: todo.deletedAt ?? db.command.remove()
+          deletedAt: todo.deletedAt ?? db.command.remove(),
+          templateWeekdays: todo.templateWeekdays ?? db.command.remove(),
+          templateWeekday: todo.templateWeekday ?? db.command.remove(),
+          templateSourceId: todo.templateSourceId ?? db.command.remove()
         }) as CloudResult<unknown>,
         '保存云端待办失败。'
       );
@@ -280,6 +290,9 @@ export const upsertCloudTodo = async (
     if (!verification.todo) throw new Error('云端保存后未能回读该记录。');
     if (verification.todo.updatedAt !== todo.updatedAt) throw new Error('云端回读的更新时间与本次保存不一致。');
     if (verification.todo.deletedAt !== todo.deletedAt) throw new Error('云端回读的删除标记与本次保存不一致。');
+    if (JSON.stringify(verification.todo.templateWeekdays) !== JSON.stringify(todo.templateWeekdays)) throw new Error('云端回读的模板日期与本次保存不一致。');
+    if (verification.todo.templateWeekday !== todo.templateWeekday) throw new Error('云端回读的模板日期与本次保存不一致。');
+    if (verification.todo.templateSourceId !== todo.templateSourceId) throw new Error('云端回读的模板来源与本次保存不一致。');
     if (verification.todo.syncVersion !== nextSyncVersion) throw new Error('云端回读的同步版本与本次保存不一致。');
 
     logSync('save_verified', {

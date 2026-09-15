@@ -115,10 +115,16 @@ const navItems: NavItem[] = [
 
         <section class="todo-filter-section" aria-label="待办分类筛选与数据工具">
           <div class="todo-filter-list" data-category-filters></div>
-          <button class="todo-data-button" type="button" data-action="export-backup">
-            <span aria-hidden="true">⇩</span>
-            导出 Excel 备份
-          </button>
+          <div class="todo-data-tools">
+            <button class="todo-data-button" type="button" data-action="export-backup">
+              <span aria-hidden="true">⇩</span>
+              导出 Excel 备份
+            </button>
+            <button class="todo-data-button todo-template-button" type="button" data-action="open-template">
+              <span aria-hidden="true">▦</span>
+              每周模板
+            </button>
+          </div>
         </section>
 
         <section class="todo-planner-card" aria-label="日期选择与当前周概览">
@@ -276,6 +282,69 @@ const navItems: NavItem[] = [
           <div class="todo-modal-actions">
             <button class="todo-secondary-button" type="button" data-action="dismiss-export-reminder">本周不再提醒</button>
             <button class="todo-primary-button" type="button" data-action="export-reminder-now">立即导出</button>
+          </div>
+        </div>
+      </dialog>
+
+      <dialog class="todo-modal todo-template-modal" aria-labelledby="todo-template-title" data-template-modal>
+        <div class="todo-template-content">
+          <div class="todo-modal-header">
+            <div>
+              <p class="todo-kicker">每周固定节奏</p>
+              <h2 id="todo-template-title">每周事项模板</h2>
+            </div>
+            <button class="todo-dialog-close" type="button" aria-label="关闭每周模板" data-action="close-template">×</button>
+          </div>
+          <p class="todo-template-intro">把固定事项安排到星期几。新一周开始后，导入到当前所选周即可。</p>
+
+          <form class="todo-template-form" data-template-form novalidate>
+            <label class="todo-field todo-field-wide">
+              <span>事项名称 <b>*</b></span>
+              <input name="templateTitle" type="text" autocomplete="off" maxlength="120" placeholder="例如：整理本周账目" required />
+              <em data-template-title-error></em>
+            </label>
+            <fieldset class="todo-template-weekday-field">
+              <legend>固定日期</legend>
+              <div class="todo-template-weekday-options">
+                <label class="todo-template-everyday">
+                  <input name="templateEveryday" type="checkbox" />
+                  <span>每天</span>
+                </label>
+                <div class="todo-template-weekdays" data-template-weekdays></div>
+              </div>
+            </fieldset>
+            <div class="todo-template-form-grid">
+              <label class="todo-field">
+                <span>分类</span>
+                <select name="templateCategory" required></select>
+              </label>
+              <label class="todo-template-important">
+                <input name="templateImportant" type="checkbox" />
+                <span>重要事项</span>
+              </label>
+            </div>
+            <label class="todo-field todo-field-wide">
+              <span>备注</span>
+              <textarea name="templateNote" rows="2" maxlength="500" placeholder="选填：补充执行标准或准备事项"></textarea>
+            </label>
+            <div class="todo-template-form-actions">
+              <button class="todo-secondary-button" type="button" data-action="reset-template-form" hidden>取消编辑</button>
+              <button class="todo-primary-button" type="submit" data-template-submit>添加到模板</button>
+            </div>
+          </form>
+
+          <div class="todo-template-summary">
+            <div>
+              <strong>模板清单</strong>
+              <span data-template-count>0 项</span>
+            </div>
+            <small data-template-week-range></small>
+          </div>
+          <div class="todo-template-list" data-template-list></div>
+
+          <div class="todo-modal-actions todo-template-footer">
+            <button class="todo-secondary-button" type="button" data-action="close-template">稍后再说</button>
+            <button class="todo-primary-button" type="button" data-action="import-template" data-template-import>导入到当前周</button>
           </div>
         </div>
       </dialog>
@@ -818,6 +887,12 @@ const navItems: NavItem[] = [
         scrollbar-width: thin;
       }
 
+      .todo-data-tools {
+        display: flex;
+        flex: 0 0 auto;
+        gap: 0.52rem;
+      }
+
       .todo-filter-list,
       .todo-week-overview-scroll,
       .todo-mobile-days {
@@ -868,6 +943,11 @@ const navItems: NavItem[] = [
         align-items: center;
         gap: 0.34rem;
         white-space: nowrap;
+      }
+
+      .todo-template-button {
+        border-color: rgba(154, 96, 39, 0.24);
+        background: rgba(239, 215, 176, 0.78);
       }
 
       .todo-planner-card {
@@ -1602,7 +1682,8 @@ const navItems: NavItem[] = [
       }
 
       .todo-form,
-      .todo-delete-content {
+      .todo-delete-content,
+      .todo-template-content {
         min-width: 0;
         box-sizing: border-box;
         padding: 1.45rem;
@@ -1610,6 +1691,224 @@ const navItems: NavItem[] = [
           repeating-linear-gradient(0deg, transparent 0 38px, rgba(122, 76, 34, 0.06) 39px 40px),
           #f8e6c8;
       }
+
+      .todo-template-modal {
+        position: fixed;
+        inset: 0;
+        margin: auto;
+        width: min(94vw, 760px);
+        max-height: calc(100dvh - 1.5rem);
+        overflow-y: auto;
+      }
+
+      .todo-template-intro {
+        margin: -0.45rem 0 1rem;
+        color: var(--muted);
+        font-size: 0.86rem;
+        line-height: 1.6;
+      }
+
+      .todo-template-form {
+        display: grid;
+        gap: 0.72rem;
+        border: 1px solid rgba(122, 76, 34, 0.14);
+        border-radius: 0.68rem;
+        padding: 0.9rem;
+        background: rgba(255, 246, 229, 0.58);
+      }
+
+      .todo-template-form-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: end;
+        gap: 0.72rem;
+      }
+
+      .todo-template-weekday-field {
+        min-width: 0;
+        margin: 0;
+        border: 0;
+        padding: 0;
+      }
+
+      .todo-template-weekday-field legend {
+        margin-bottom: 0.42rem;
+        color: #5c3a1c;
+        font-size: 0.82rem;
+        font-weight: 900;
+      }
+
+      .todo-template-weekday-options {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 0.46rem;
+      }
+
+      .todo-template-weekdays {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 0.34rem;
+      }
+
+      .todo-template-weekday-option,
+      .todo-template-everyday {
+        position: relative;
+        display: grid;
+        min-width: 0;
+        min-height: 2.4rem;
+        place-items: center;
+        border: 1px solid rgba(122, 76, 34, 0.16);
+        border-radius: 0.52rem;
+        background: rgba(255, 246, 229, 0.66);
+        color: #6a4728;
+        cursor: pointer;
+        font-size: 0.74rem;
+        font-weight: 900;
+      }
+
+      .todo-template-everyday { padding: 0 0.78rem; white-space: nowrap; }
+      .todo-template-weekday-option input,
+      .todo-template-everyday input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .todo-template-weekday-option:has(input:checked),
+      .todo-template-everyday:has(input:checked) {
+        border-color: rgba(210, 145, 76, 0.62);
+        background: linear-gradient(180deg, #a8612d, #75401c);
+        color: #fff5e5;
+        box-shadow: inset 0 1px 0 rgba(255, 226, 190, 0.24), 0 6px 14px rgba(74, 33, 4, 0.2);
+      }
+
+      .todo-template-weekday-option:focus-within,
+      .todo-template-everyday:focus-within {
+        outline: 2px solid rgba(210, 145, 76, 0.56);
+        outline-offset: 2px;
+      }
+
+      .todo-template-important {
+        display: flex;
+        min-height: 2.62rem;
+        align-items: center;
+        gap: 0.44rem;
+        color: #6a4728;
+        font-size: 0.78rem;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+
+      .todo-template-important input {
+        width: 1rem;
+        height: 1rem;
+        accent-color: #90602e;
+      }
+
+      .todo-template-form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.56rem;
+      }
+
+      .todo-template-summary {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 1rem;
+        margin: 1.05rem 0 0.58rem;
+      }
+
+      .todo-template-summary > div {
+        display: flex;
+        align-items: baseline;
+        gap: 0.52rem;
+      }
+
+      .todo-template-summary strong { font-size: 0.94rem; }
+      .todo-template-summary span,
+      .todo-template-summary small { color: var(--muted); font-size: 0.72rem; font-weight: 800; }
+
+      .todo-template-list {
+        display: grid;
+        max-height: min(34vh, 19rem);
+        gap: 0.52rem;
+        overflow-y: auto;
+        padding-right: 0.18rem;
+      }
+
+      .todo-template-empty {
+        margin: 0;
+        border: 1px dashed rgba(122, 76, 34, 0.2);
+        border-radius: 0.62rem;
+        padding: 1rem;
+        color: var(--muted);
+        text-align: center;
+      }
+
+      .todo-template-day {
+        display: grid;
+        grid-template-columns: 4.7rem minmax(0, 1fr);
+        gap: 0.62rem;
+      }
+
+      .todo-template-day-label {
+        padding-top: 0.58rem;
+        color: #795332;
+        font-size: 0.74rem;
+        font-weight: 900;
+      }
+
+      .todo-template-day-items { display: grid; gap: 0.38rem; }
+
+      .todo-template-item {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 0.72rem;
+        border: 1px solid rgba(122, 76, 34, 0.13);
+        border-radius: 0.58rem;
+        padding: 0.54rem 0.62rem;
+        background: rgba(255, 250, 241, 0.66);
+      }
+
+      .todo-template-item-main { min-width: 0; }
+      .todo-template-item-title {
+        display: block;
+        overflow: hidden;
+        color: #3d2410;
+        font-size: 0.82rem;
+        font-weight: 900;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .todo-template-item-meta {
+        display: flex;
+        gap: 0.4rem;
+        margin-top: 0.2rem;
+        color: var(--muted);
+        font-size: 0.68rem;
+        font-weight: 800;
+      }
+
+      .todo-template-item-actions { display: flex; gap: 0.32rem; }
+      .todo-template-item-actions button {
+        min-height: 1.85rem;
+        border: 1px solid rgba(122, 76, 34, 0.14);
+        border-radius: 0.44rem;
+        padding: 0.3rem 0.5rem;
+        background: transparent;
+        color: #755033;
+        font-size: 0.68rem;
+        font-weight: 900;
+      }
+
+      .todo-template-item-actions button:hover { background: rgba(154, 96, 39, 0.1); }
+      .todo-template-item-actions .is-confirming { border-color: rgba(143, 61, 31, 0.42); color: #9e4726; }
+      .todo-template-footer { align-items: center; }
 
       .todo-modal-header {
         display: flex;
@@ -2293,8 +2592,39 @@ const navItems: NavItem[] = [
       }
 
       html[data-todo-theme="dark"] .todo-form,
-      html[data-todo-theme="dark"] .todo-delete-content {
+      html[data-todo-theme="dark"] .todo-delete-content,
+      html[data-todo-theme="dark"] .todo-template-content {
         background: #202a2c;
+      }
+
+      html[data-todo-theme="dark"] .todo-template-form,
+      html[data-todo-theme="dark"] .todo-template-item {
+        border-color: rgba(218, 229, 226, 0.1);
+        background: rgba(255, 255, 255, 0.025);
+      }
+
+      html[data-todo-theme="dark"] .todo-template-day-label,
+      html[data-todo-theme="dark"] .todo-template-important,
+      html[data-todo-theme="dark"] .todo-template-weekday-field legend,
+      html[data-todo-theme="dark"] .todo-template-item-title { color: #dfe6e3; }
+
+      html[data-todo-theme="dark"] .todo-template-weekday-option,
+      html[data-todo-theme="dark"] .todo-template-everyday {
+        border-color: rgba(218, 229, 226, 0.12);
+        background: rgba(5, 10, 11, 0.36);
+        color: #acb9b5;
+      }
+
+      html[data-todo-theme="dark"] .todo-template-weekday-option:has(input:checked),
+      html[data-todo-theme="dark"] .todo-template-everyday:has(input:checked) {
+        border-color: rgba(224, 172, 122, 0.5);
+        background: linear-gradient(180deg, #99592f, #713819);
+        color: #fff1e3;
+      }
+
+      html[data-todo-theme="dark"] .todo-template-item-actions button {
+        border-color: rgba(218, 229, 226, 0.12);
+        color: #acb9b5;
       }
 
       html[data-todo-theme="dark"] .todo-dialog-close {
@@ -3183,7 +3513,8 @@ const navItems: NavItem[] = [
       }
 
       html[data-todo-theme="dark"] .todo-form,
-      html[data-todo-theme="dark"] .todo-delete-content {
+      html[data-todo-theme="dark"] .todo-delete-content,
+      html[data-todo-theme="dark"] .todo-template-content {
         background:
           linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 12rem),
           var(--surface-panel);
@@ -3361,6 +3692,7 @@ const navItems: NavItem[] = [
         .todo-utility { width: 2.35rem; height: 2.35rem; }
         .todo-filter-section { align-items: stretch; flex-direction: column; gap: 0.44rem; }
         .todo-filter-list { width: 100%; }
+        .todo-data-tools { width: 100%; overflow-x: auto; padding-bottom: 0.18rem; }
         .todo-data-button { width: max-content; }
         .todo-planner-card { min-height: 0; border-radius: 0.72rem; }
         .todo-calendar-panel,
@@ -3400,7 +3732,15 @@ const navItems: NavItem[] = [
           gap: 0.72rem;
         }
         .todo-day-column { min-height: 24rem; }
-        .todo-form-grid { grid-template-columns: 1fr; }
+        .todo-form-grid,
+        .todo-template-form-grid { grid-template-columns: 1fr; }
+        .todo-template-weekday-options { grid-template-columns: 1fr; }
+        .todo-template-weekdays { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .todo-template-everyday { min-height: 2.2rem; }
+        .todo-template-important { min-height: 1.8rem; }
+        .todo-template-day { grid-template-columns: 1fr; gap: 0.28rem; }
+        .todo-template-day-label { padding-top: 0; }
+        .todo-template-item { align-items: start; }
         .todo-search-item { grid-template-columns: minmax(0, 1fr); }
         .todo-search-created { white-space: normal; }
         .todo-modal-actions { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
@@ -3409,6 +3749,20 @@ const navItems: NavItem[] = [
 
       @media (max-width: 420px) {
         .todo-modal { width: calc(100vw - 1.5rem); }
+        .todo-template-content { padding: 1rem; }
+        .todo-template-content .todo-modal-header { margin-bottom: 0.88rem; }
+        .todo-template-form { padding: 0.78rem; }
+        .todo-template-summary { margin-top: 0.82rem; }
+        .todo-template-footer {
+          position: sticky;
+          z-index: 2;
+          bottom: -1rem;
+          margin: 0.7rem -1rem -1rem;
+          padding: 0.7rem 1rem 1rem;
+          background: #f8e6c8;
+        }
+        html[data-todo-theme="dark"] .todo-template-footer { background: var(--surface-panel); }
+        html.theme-noir-amber .todo-template-footer { background: #17191b; }
         .todo-login-modal .todo-modal-actions { grid-template-columns: 1fr; }
       }
 
@@ -3925,7 +4279,8 @@ const navItems: NavItem[] = [
       }
 
       html.theme-noir-amber .todo-form,
-      html.theme-noir-amber .todo-delete-content {
+      html.theme-noir-amber .todo-delete-content,
+      html.theme-noir-amber .todo-template-content {
         background:
           linear-gradient(180deg, rgba(213, 154, 59, 0.025), transparent 11rem),
           #17191b;

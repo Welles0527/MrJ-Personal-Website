@@ -22,6 +22,8 @@ type TodoState = {
   weekIndex: number;
   editingId: string | null;
   pendingDeleteId: string | null;
+  editingTemplateId: string | null;
+  pendingTemplateDeleteId: string | null;
 };
 
 const STORAGE_KEY = 'mywebsite.weekly-todos.v1';
@@ -90,7 +92,14 @@ const createId = () => typeof crypto !== 'undefined' && 'randomUUID' in crypto
 
 const isCategory = (value: unknown): value is TodoCategory => categories.some((category) => category.value === value);
 const isPlacement = (value: unknown): value is TodoPlacement => placements.some((placement) => placement.value === value);
+const isTemplateWeekday = (value: unknown): value is number => Number.isInteger(value) && Number(value) >= 0 && Number(value) <= 6;
 const isWeeklyTemplate = (todo: Todo) => todo.placement === 'weekly' && !todo.date;
+const templateWeekdaysFor = (todo: Todo) => {
+  const weekdays = Array.isArray(todo.templateWeekdays)
+    ? todo.templateWeekdays.filter(isTemplateWeekday)
+    : isTemplateWeekday(todo.templateWeekday) ? [todo.templateWeekday] : [];
+  return [...new Set(weekdays)].sort((first, second) => first - second);
+};
 const copiedCompletionForDate = (todo: Todo) => isWeeklyTemplate(todo) ? false : todo.completed;
 const shouldCopyWeeklyTemplate = (todo: Todo | undefined, destination: string | undefined) =>
   Boolean(todo && isWeeklyTemplate(todo) && destination !== 'weekly');
@@ -127,6 +136,10 @@ const normalizeTodo = (value: unknown): Todo | null => {
     return null;
   }
 
+  const templateWeekdays = Array.isArray(item.templateWeekdays)
+    ? [...new Set(item.templateWeekdays.filter(isTemplateWeekday))].sort((first, second) => first - second)
+    : isTemplateWeekday(item.templateWeekday) ? [item.templateWeekday] : [];
+
   return {
     id: item.id,
     title: item.title,
@@ -141,6 +154,8 @@ const normalizeTodo = (value: unknown): Todo | null => {
     note: item.note,
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
+    templateWeekdays: templateWeekdays.length ? templateWeekdays : undefined,
+    templateSourceId: typeof item.templateSourceId === 'string' && item.templateSourceId ? item.templateSourceId : undefined,
     syncVersion: typeof item.syncVersion === 'number'
       && Number.isInteger(item.syncVersion)
       && item.syncVersion >= 1
@@ -261,8 +276,10 @@ export function mountTodoWorkspace(root: HTMLElement) {
   const trashModal = getElement<HTMLDialogElement>('[data-trash-modal]');
   const migrationModal = getElement<HTMLDialogElement>('[data-migration-modal]');
   const exportReminderModal = getElement<HTMLDialogElement>('[data-export-reminder-modal]');
+  const templateModal = getElement<HTMLDialogElement>('[data-template-modal]');
   const loginModal = getElement<HTMLDialogElement>('[data-login-modal]');
   const todoForm = getElement<HTMLFormElement>('[data-todo-form]');
+  const templateForm = getElement<HTMLFormElement>('[data-template-form]');
   const loginForm = getElement<HTMLFormElement>('[data-login-form]');
   const formTitle = getElement<HTMLElement>('[data-form-title]');
   const titleError = getElement<HTMLElement>('[data-title-error]');
@@ -273,6 +290,13 @@ export function mountTodoWorkspace(root: HTMLElement) {
   const trashList = getElement<HTMLElement>('[data-trash-list]');
   const migrationStatus = getElement<HTMLElement>('[data-migration-status]');
   const migrationConfirm = getElement<HTMLButtonElement>('[data-action="confirm-migration"]');
+  const templateTitleError = getElement<HTMLElement>('[data-template-title-error]');
+  const templateList = getElement<HTMLElement>('[data-template-list]');
+  const templateCount = getElement<HTMLElement>('[data-template-count]');
+  const templateWeekRange = getElement<HTMLElement>('[data-template-week-range]');
+  const templateImportButton = getElement<HTMLButtonElement>('[data-template-import]');
+  const templateSubmitButton = getElement<HTMLButtonElement>('[data-template-submit]');
+  const templateResetButton = getElement<HTMLButtonElement>('[data-action="reset-template-form"]');
   const signUpButton = getElement<HTMLButtonElement>('[data-action="sign-up"]');
   const authStatus = getElement<HTMLElement>('[data-auth-status]');
   const lastSyncStatus = getElement<HTMLElement>('[data-last-sync]');
@@ -289,6 +313,12 @@ export function mountTodoWorkspace(root: HTMLElement) {
   const importantInput = todoForm.elements.namedItem('important') as HTMLInputElement;
   const noteInput = todoForm.elements.namedItem('note') as HTMLTextAreaElement;
   const todoSubmitButton = todoForm.querySelector<HTMLButtonElement>('button[type="submit"]');
+  const templateTitleInput = templateForm.elements.namedItem('templateTitle') as HTMLInputElement;
+  const templateEverydayInput = templateForm.elements.namedItem('templateEveryday') as HTMLInputElement;
+  const templateWeekdaysContainer = getElement<HTMLElement>('[data-template-weekdays]');
+  const templateCategoryInput = templateForm.elements.namedItem('templateCategory') as HTMLSelectElement;
+  const templateImportantInput = templateForm.elements.namedItem('templateImportant') as HTMLInputElement;
+  const templateNoteInput = templateForm.elements.namedItem('templateNote') as HTMLTextAreaElement;
   const loginEmailInput = loginForm.elements.namedItem('email') as HTMLInputElement;
   const loginPasswordInput = loginForm.elements.namedItem('password') as HTMLInputElement;
   const verificationCodeInput = loginForm.elements.namedItem('verificationCode') as HTMLInputElement;
@@ -319,7 +349,9 @@ export function mountTodoWorkspace(root: HTMLElement) {
     viewMonth: currentDate.getMonth(),
     weekIndex: weekIndexForDate(currentDate, currentDate.getFullYear(), currentDate.getMonth()),
     editingId: null,
-    pendingDeleteId: null
+    pendingDeleteId: null,
+    editingTemplateId: null,
+    pendingTemplateDeleteId: null
   };
 
   const getWeeks = () => monthWeeks(state.viewYear, state.viewMonth);
@@ -605,6 +637,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
     renderBoard();
     renderStats();
     if (searchModal.open) renderSearchResults();
+    if (templateModal.open) renderTemplateList();
   };
 
   const openForm = (date?: Date, todo?: Todo, placement: TodoPlacement = 'upcoming') => {
@@ -625,6 +658,109 @@ export function mountTodoWorkspace(root: HTMLElement) {
 
   const closeForm = () => {
     if (todoModal.open) todoModal.close();
+  };
+
+  const templateTodos = () => allTodosForPlacement('weekly');
+
+  const templateWeekdayInputs = () => Array.from(templateWeekdaysContainer.querySelectorAll<HTMLInputElement>('input[name="templateWeekdays"]'));
+
+  const selectedTemplateWeekdays = () => templateWeekdayInputs()
+    .filter((input) => input.checked)
+    .map((input) => Number(input.value))
+    .filter(isTemplateWeekday);
+
+  const setTemplateWeekdays = (weekdays: number[]) => {
+    const selected = new Set(weekdays);
+    templateWeekdayInputs().forEach((input) => { input.checked = selected.has(Number(input.value)); });
+    templateEverydayInput.checked = selected.size === weekdayNames.length;
+  };
+
+  const resetTemplateForm = () => {
+    state.editingTemplateId = null;
+    templateTitleInput.value = '';
+    setTemplateWeekdays([0]);
+    templateCategoryInput.value = 'work';
+    templateImportantInput.checked = false;
+    templateNoteInput.value = '';
+    templateTitleError.textContent = '';
+    templateSubmitButton.textContent = '添加到模板';
+    templateResetButton.hidden = true;
+  };
+
+  const renderTemplateList = () => {
+    const templates = templateTodos();
+    const assignedTemplates = templates.filter((todo) => templateWeekdaysFor(todo).length);
+    const weeklyOccurrences = assignedTemplates.reduce((total, todo) => total + templateWeekdaysFor(todo).length, 0);
+    const selectedWeek = getSelectedWeek();
+    templateCount.textContent = `${templates.length} 项 · 每周 ${weeklyOccurrences} 次${templates.length !== assignedTemplates.length ? ` · ${templates.length - assignedTemplates.length} 项待安排` : ''}`;
+    templateWeekRange.textContent = selectedWeek ? `当前周 ${monthDay(selectedWeek[0])}—${monthDay(selectedWeek[6])}` : '';
+    templateImportButton.disabled = !assignedTemplates.length;
+
+    if (!templates.length) {
+      templateList.innerHTML = '<p class="todo-template-empty">模板还是空的。先添加一项每周固定事项吧。</p>';
+      return;
+    }
+
+    const sortedTemplates = [...templates].sort((first, second) => {
+      const firstDay = templateWeekdaysFor(first)[0] ?? 99;
+      const secondDay = templateWeekdaysFor(second)[0] ?? 99;
+      return firstDay - secondDay || comparePlacementTodos(first, second);
+    });
+
+    templateList.innerHTML = sortedTemplates.map((todo) => {
+      const weekdays = templateWeekdaysFor(todo);
+      const scheduleLabel = weekdays.length === weekdayNames.length
+        ? '每天'
+        : weekdays.length ? weekdays.map((weekday) => weekdayNames[weekday]).join('、') : '待安排';
+      return `<section class="todo-template-day">
+      <div class="todo-template-day-label">${scheduleLabel}</div>
+      <div class="todo-template-day-items"><article class="todo-template-item" data-template-id="${escapeHtml(todo.id)}">
+        <div class="todo-template-item-main">
+          <strong class="todo-template-item-title">${todo.important ? '<span aria-label="重要">★</span> ' : ''}${escapeHtml(todo.title)}</strong>
+          <span class="todo-template-item-meta"><span>${escapeHtml(categoryLabel(todo.category))}</span>${todo.note ? '<span>有备注</span>' : ''}</span>
+        </div>
+        <div class="todo-template-item-actions">
+          <button type="button" data-action="edit-template" data-todo-id="${escapeHtml(todo.id)}">编辑</button>
+          <button class="${state.pendingTemplateDeleteId === todo.id ? 'is-confirming' : ''}" type="button" data-action="delete-template" data-todo-id="${escapeHtml(todo.id)}">${state.pendingTemplateDeleteId === todo.id ? '确认移除' : '移除'}</button>
+        </div>
+      </article></div>
+    </section>`;
+    }).join('');
+  };
+
+  const openTemplate = () => {
+    templateWeekdaysContainer.innerHTML = weekdayNames.map((label, index) => `<label class="todo-template-weekday-option">
+      <input name="templateWeekdays" type="checkbox" value="${index}" />
+      <span>${label.replace('周', '')}</span>
+    </label>`).join('');
+    templateCategoryInput.innerHTML = categories.map((category) => `<option value="${category.value}">${category.label}</option>`).join('');
+    resetTemplateForm();
+    renderTemplateList();
+    if (!templateModal.open) templateModal.showModal();
+    templateTitleInput.focus();
+  };
+
+  const editTemplate = (todo: Todo) => {
+    state.editingTemplateId = todo.id;
+    state.pendingTemplateDeleteId = null;
+    templateTitleInput.value = todo.title;
+    setTemplateWeekdays(templateWeekdaysFor(todo));
+    templateCategoryInput.value = todo.category;
+    templateImportantInput.checked = todo.important;
+    templateNoteInput.value = todo.note;
+    templateTitleError.textContent = '';
+    templateSubmitButton.textContent = '保存模板事项';
+    templateResetButton.hidden = false;
+    renderTemplateList();
+    templateTitleInput.focus();
+  };
+
+  const setTemplatePending = (pending: boolean, mode: 'save' | 'import') => {
+    const button = mode === 'save' ? templateSubmitButton : templateImportButton;
+    button.disabled = pending;
+    button.textContent = pending
+      ? mode === 'save' ? '保存中…' : '导入中…'
+      : mode === 'save' ? state.editingTemplateId ? '保存模板事项' : '添加到模板' : '导入到当前周';
   };
 
   const setTodoSavePending = (pending: boolean) => {
@@ -983,7 +1119,10 @@ export function mountTodoWorkspace(root: HTMLElement) {
       date: dateKey,
       completed: copiedCompletionForDate(todo),
       sortOrder: nextDateSortOrder(dateKey),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      templateWeekdays: undefined,
+      templateWeekday: undefined,
+      templateSourceId: isWeeklyTemplate(todo) ? todo.id : todo.templateSourceId
     };
     const saved = await saveMovedTodo(copiedTodo, '待办已复制并同步到云端。');
     if (!saved) return;
@@ -1189,11 +1328,14 @@ export function mountTodoWorkspace(root: HTMLElement) {
       .replaceAll("'", '&apos;');
     const textCell = (column: string, row: number, value: string) =>
       `<c r="${column}${row}" t="inlineStr"><is><t xml:space="preserve">${escapeXml(value)}</t></is></c>`;
-    const headers = ['日期', '展示栏目', '分类', '待办事项', '重要', '完成状态', '备注', '创建时间', '更新时间'];
+    const headers = ['日期', '模板固定日', '展示栏目', '分类', '待办事项', '重要', '完成状态', '备注', '创建时间', '更新时间'];
     const rowsForTodos = (todos: Todo[]) => [
       headers,
       ...todos.map((todo) => [
         todoDateLabel(todo),
+        templateWeekdaysFor(todo).length === weekdayNames.length
+          ? '每天'
+          : templateWeekdaysFor(todo).map((weekday) => weekdayNames[weekday]).join('、'),
         placementLabel(todo.placement),
         categoryLabel(todo.category),
         todo.title,
@@ -1335,6 +1477,101 @@ export function mountTodoWorkspace(root: HTMLElement) {
       exportReminderModal.showModal();
     }
     exportReminderTimer = window.setTimeout(scheduleExportReminder, Math.max(1000, nextFriday.getTime() - now.getTime()));
+  };
+
+  const deleteTemplateTodo = async (todo: Todo) => {
+    if (!cloudSession) {
+      showLogin('请先登录后再修改模板。');
+      return;
+    }
+    const session = cloudSession;
+    const deletedAt = new Date().toISOString();
+    const deletedTodo = { ...todo, updatedAt: deletedAt, deletedAt };
+    try {
+      await (await getCloudApi()).upsertCloudTodo(session.uid, deletedTodo, todo.updatedAt);
+      if (cloudSession?.uid !== session.uid) return;
+      state.todos = state.todos.filter((item) => item.id !== todo.id);
+      state.trash = [deletedTodo, ...state.trash.filter((item) => item.id !== todo.id)];
+      state.pendingTemplateDeleteId = null;
+      if (state.editingTemplateId === todo.id) resetTemplateForm();
+      render();
+      markSyncSuccess(session);
+      notify('模板事项已移入云端回收站。');
+    } catch (error) {
+      showCloudError(error, '移除模板事项失败。');
+    }
+  };
+
+  const importWeeklyTemplate = async () => {
+    const selectedWeek = getSelectedWeek();
+    const templateSlots = templateTodos().flatMap((template) =>
+      templateWeekdaysFor(template).map((weekday) => ({ template, weekday })));
+    if (!selectedWeek || !templateSlots.length) {
+      notify('请先为模板事项设置固定日期。');
+      return;
+    }
+    if (!cloudSession) {
+      showLogin('请先登录后再导入每周模板。');
+      return;
+    }
+
+    const candidates = templateSlots.filter(({ template, weekday }) => {
+      const targetDate = toDateKey(selectedWeek[weekday]);
+      return !state.todos.some((todo) => todo.date === targetDate && todo.templateSourceId === template.id);
+    });
+    const skipped = templateSlots.length - candidates.length;
+    if (!candidates.length) {
+      notify('当前周已导入全部模板事项，无需重复导入。');
+      return;
+    }
+
+    const appendedByDate = new Map<string, number>();
+    const importedTodos = candidates.map(({ template, weekday }, index) => {
+      const targetDate = toDateKey(selectedWeek[weekday]);
+      const dateOffset = appendedByDate.get(targetDate) ?? 0;
+      appendedByDate.set(targetDate, dateOffset + 1);
+      const {
+        templateWeekdays: ignoredWeekdays,
+        templateWeekday: ignoredWeekday,
+        templateSourceId: ignoredSource,
+        syncVersion: ignoredVersion,
+        ...base
+      } = template;
+      void ignoredWeekdays;
+      void ignoredWeekday;
+      void ignoredSource;
+      void ignoredVersion;
+      const now = new Date(Date.now() + index).toISOString();
+      return {
+        ...base,
+        id: createId(),
+        date: targetDate,
+        completed: false,
+        sortOrder: nextDateSortOrder(targetDate) + dateOffset,
+        createdAt: now,
+        updatedAt: now,
+        templateSourceId: template.id
+      } satisfies Todo;
+    });
+
+    const session = cloudSession;
+    setTemplatePending(true, 'import');
+    try {
+      const api = await getCloudApi();
+      const receipts = await Promise.all(importedTodos.map((todo) => api.upsertCloudTodo(session.uid, todo)));
+      if (cloudSession?.uid !== session.uid) return;
+      receipts.forEach((receipt, index) => upsertTodoInState(normalizeTodo(receipt.todo) || importedTodos[index]));
+      render();
+      markSyncSuccess(session);
+      notify(`已导入 ${importedTodos.length} 项到当前周${skipped ? `，跳过 ${skipped} 项重复事项` : ''}。`);
+      void refreshCloudState(session).catch(() => undefined);
+    } catch (error) {
+      await refreshCloudState(session).catch(() => undefined);
+      showCloudError(error, '导入每周模板失败。');
+    } finally {
+      setTemplatePending(false, 'import');
+      renderTemplateList();
+    }
   };
 
   window.addEventListener('message', (event) => {
@@ -1523,7 +1760,10 @@ export function mountTodoWorkspace(root: HTMLElement) {
         completed: trashTodo.completed,
         note: trashTodo.note,
         createdAt: trashTodo.createdAt,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
+        templateWeekdays: trashTodo.templateWeekdays,
+        templateWeekday: trashTodo.templateWeekday,
+        templateSourceId: trashTodo.templateSourceId
       };
       const session = cloudSession;
       try {
@@ -1596,6 +1836,26 @@ export function mountTodoWorkspace(root: HTMLElement) {
       }
     }
     if (action === 'export-backup') exportBackup();
+    if (action === 'open-template') openTemplate();
+    if (action === 'close-template') {
+      if (templateModal.open) templateModal.close();
+    }
+    if (action === 'reset-template-form') resetTemplateForm();
+    if (action === 'edit-template') {
+      const todo = state.todos.find((item) => item.id === trigger.dataset.todoId && isWeeklyTemplate(item));
+      if (todo) editTemplate(todo);
+    }
+    if (action === 'delete-template') {
+      const todo = state.todos.find((item) => item.id === trigger.dataset.todoId && isWeeklyTemplate(item));
+      if (!todo) return;
+      if (state.pendingTemplateDeleteId !== todo.id) {
+        state.pendingTemplateDeleteId = todo.id;
+        renderTemplateList();
+        return;
+      }
+      await deleteTemplateTodo(todo);
+    }
+    if (action === 'import-template') await importWeeklyTemplate();
     if (action === 'dismiss-export-reminder') {
       markExportReminderHandled();
       if (exportReminderModal.open) exportReminderModal.close();
@@ -1724,10 +1984,81 @@ export function mountTodoWorkspace(root: HTMLElement) {
   searchInput.addEventListener('input', renderSearchResults);
   todoModal.addEventListener('close', () => { state.editingId = null; });
   deleteModal.addEventListener('close', () => { state.pendingDeleteId = null; });
+  templateModal.addEventListener('close', () => {
+    state.editingTemplateId = null;
+    state.pendingTemplateDeleteId = null;
+  });
   migrationModal.addEventListener('close', () => {
     pendingMigrationTodos = null;
     migrationConfirm.disabled = true;
     clearMigrationProbe();
+  });
+
+  templateForm.addEventListener('change', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement)) return;
+    if (target === templateEverydayInput) {
+      setTemplateWeekdays(target.checked ? weekdayNames.map((_, index) => index) : []);
+      return;
+    }
+    if (target.name === 'templateWeekdays') {
+      templateEverydayInput.checked = templateWeekdayInputs().every((input) => input.checked);
+    }
+  });
+
+  templateForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const title = templateTitleInput.value.trim();
+    const weekdays = selectedTemplateWeekdays();
+    if (!title) {
+      templateTitleError.textContent = '请填写事项名称。';
+      templateTitleInput.focus();
+      return;
+    }
+    if (!weekdays.length || !isCategory(templateCategoryInput.value)) {
+      templateTitleError.textContent = '请至少选择一个固定日期，并确认分类有效。';
+      return;
+    }
+    if (!cloudSession) {
+      showLogin('请先登录后再保存模板。');
+      return;
+    }
+
+    const existing = state.editingTemplateId
+      ? state.todos.find((todo) => todo.id === state.editingTemplateId && isWeeklyTemplate(todo))
+      : undefined;
+    const now = new Date().toISOString();
+    const nextTodo: Todo = {
+      id: existing?.id ?? createId(),
+      title,
+      date: '',
+      category: templateCategoryInput.value,
+      placement: 'weekly',
+      sortOrder: existing?.sortOrder ?? nextSortOrder('weekly'),
+      important: templateImportantInput.checked,
+      completed: false,
+      note: templateNoteInput.value.trim(),
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+      templateWeekdays: weekdays
+    };
+
+    setTemplatePending(true, 'save');
+    try {
+      const saved = await saveCloudTodo(
+        nextTodo,
+        existing ? '模板事项已更新并同步到云端。' : '模板事项已添加并同步到云端。',
+        existing?.updatedAt
+      );
+      if (saved) {
+        resetTemplateForm();
+        renderTemplateList();
+      }
+    } catch (error) {
+      showCloudError(error, '保存模板事项失败。');
+    } finally {
+      setTemplatePending(false, 'save');
+    }
   });
 
   todoForm.addEventListener('submit', async (event) => {
@@ -1764,7 +2095,10 @@ export function mountTodoWorkspace(root: HTMLElement) {
       completed: existing?.completed ?? false,
       note: noteInput.value.trim(),
       createdAt: existing?.createdAt ?? now,
-      updatedAt: now
+      updatedAt: now,
+      templateWeekdays: !nextDate && nextPlacement === 'weekly' ? existing?.templateWeekdays : undefined,
+      templateWeekday: undefined,
+      templateSourceId: nextDate ? existing?.templateSourceId : undefined
     };
     if (!cloudSession) {
       showLogin('请先登录后再保存待办。');
