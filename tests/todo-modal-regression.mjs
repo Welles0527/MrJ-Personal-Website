@@ -1,14 +1,23 @@
 import assert from 'node:assert/strict';
+import { spawn, spawnSync } from 'node:child_process';
 import { mkdir } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import net from 'node:net';
 import path from 'node:path';
 import process from 'node:process';
 import { setTimeout as delay } from 'node:timers/promises';
-import { dev } from 'astro';
 import { chromium } from 'playwright';
 
 const projectRoot = path.resolve(process.env.TODO_MODAL_PROJECT_ROOT || process.cwd());
 const routePath = '/officialwebsite/topics/space/planning/todo';
+const serverOutput = [];
+const projectRequire = createRequire(path.join(projectRoot, 'package.json'));
+const astroPackagePath = projectRequire.resolve('astro/package.json');
+const astroPackage = projectRequire(astroPackagePath);
+const astroBin = typeof astroPackage.bin === 'string' ? astroPackage.bin : astroPackage.bin?.astro;
+if (!astroBin) throw new Error('Astro CLI entrypoint is missing from astro/package.json.');
+const astroCli = path.resolve(path.dirname(astroPackagePath), astroBin);
+const astroStartsInBackground = Number.parseInt(astroPackage.version, 10) >= 7;
 
 const findFreePort = () => new Promise((resolve, reject) => {
   const server = net.createServer();
@@ -20,9 +29,21 @@ const findFreePort = () => new Promise((resolve, reject) => {
   });
 });
 
-const waitForServer = async (url) => {
+const stopProcessTree = (child) => {
+  if (!child || child.exitCode !== null) return;
+  if (process.platform === 'win32') {
+    spawnSync('taskkill.exe', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore' });
+    return;
+  }
+  child.kill('SIGTERM');
+};
+
+const waitForServer = async (url, child) => {
   const deadline = Date.now() + 60_000;
   while (Date.now() < deadline) {
+    if (child && child.exitCode !== null) {
+      throw new Error(`Astro dev server exited early.\n${serverOutput.join('')}`);
+    }
     try {
       const response = await fetch(url, { cache: 'no-store' });
       if (response.ok) return;
@@ -31,7 +52,7 @@ const waitForServer = async (url) => {
     }
     await delay(250);
   }
-  throw new Error(`Timed out waiting for ${url}.`);
+  throw new Error(`Timed out waiting for ${url}.\n${serverOutput.join('')}`);
 };
 
 const cloudStub = `
@@ -86,15 +107,19 @@ const submitTask = async (page, title) => {
 
 const port = await findFreePort();
 const pageUrl = `http://127.0.0.1:${port}${routePath}?todo-modal-regression=1`;
-const server = await dev({
-  root: projectRoot,
-  server: { host: '127.0.0.1', port },
-  logLevel: 'silent'
+const serverArgs = [astroCli, 'dev', '--host', '127.0.0.1', '--port', String(port), '--strictPort', '--force'];
+if (astroStartsInBackground) serverArgs.push('--background');
+const server = spawn(process.execPath, serverArgs, {
+  cwd: projectRoot,
+  env: { ...process.env, BROWSER: 'none' },
+  stdio: ['ignore', 'pipe', 'pipe']
 });
+server.stdout.on('data', (chunk) => serverOutput.push(chunk.toString()));
+server.stderr.on('data', (chunk) => serverOutput.push(chunk.toString()));
 
 let browser;
 try {
-  await waitForServer(pageUrl);
+  await waitForServer(pageUrl, astroStartsInBackground ? null : server);
   browser = await chromium.launch({
     channel: process.env.PLAYWRIGHT_CHANNEL || 'chrome',
     headless: true
@@ -122,15 +147,15 @@ try {
     throw new Error([
       error.message,
       `Page text: ${pageText}`,
-      `Browser diagnostics: ${browserDiagnostics.join(' | ') || 'none'}`
+      `Browser diagnostics: ${browserDiagnostics.join(' | ') || 'none'}`,
+      `Server output: ${serverOutput.join('').slice(-2000)}`
     ].join('\n'));
   }
 
-  const exportReminderModal = page.locator('[data-export-reminder-modal]');
-  if (await exportReminderModal.isVisible()) {
-    await page.locator('[data-action="dismiss-export-reminder"]').click();
-    await exportReminderModal.waitFor({ state: 'hidden' });
-  }
+  assert.equal(await page.locator('.todo-brand strong').innerText(), 'J先生の超级日历', 'Todo brand name must use the requested title');
+  assert.equal(await page.locator('.todo-brand div span').innerText(), '超级日历', 'Todo brand subtitle must use the requested title');
+  assert.match(await page.locator('.todo-brand-mark img').getAttribute('src') || '', /todo-calendar\.svg$/, 'sidebar brand must use the transparent calendar icon asset');
+  assert.match(await page.locator('.todo-title-cup img').getAttribute('src') || '', /todo-cup\.svg$/, 'Todo heading must use the cup icon asset');
 
   const themeToggle = page.locator('[data-theme-toggle]');
   assert.equal(await themeToggle.getAttribute('data-theme-current'), 'dark', 'default Todo theme must remain dark');
@@ -189,8 +214,6 @@ try {
     const screenshotDir = path.resolve(process.env.TODO_SEARCH_SCREENSHOT_DIR);
     await mkdir(screenshotDir, { recursive: true });
     await templateModal.evaluate((dialog) => { dialog.scrollTop = 0; });
-    const desktopTemplateBox = await templateModal.boundingBox();
-    assert.ok(desktopTemplateBox && desktopTemplateBox.y >= 0 && desktopTemplateBox.y + desktopTemplateBox.height <= 900, 'desktop template modal must stay within the viewport');
     await page.screenshot({ path: path.join(screenshotDir, 'todo-template-desktop.png') });
     await page.locator('[data-action="close-template"]').first().click();
     await page.setViewportSize({ width: 390, height: 844 });
@@ -200,6 +223,12 @@ try {
     const mobileTemplateBox = await templateModal.boundingBox();
     assert.ok(mobileTemplateBox && mobileTemplateBox.y >= 0 && mobileTemplateBox.y + mobileTemplateBox.height <= 844, 'mobile template modal must stay within the viewport');
     await page.locator('[data-action="close-template"]').first().click();
+    await page.screenshot({ path: path.join(screenshotDir, 'todo-brand-mobile.png') });
+    await page.locator('[data-action="open-sidebar"]').click();
+    await page.waitForTimeout(220);
+    assert.equal(await page.locator('.todo-brand strong').isVisible(), true, 'mobile sidebar must expose the requested brand title');
+    await page.screenshot({ path: path.join(screenshotDir, 'todo-brand-mobile-sidebar.png') });
+    await page.locator('[data-action="close-sidebar"]').click();
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.locator('[data-action="open-template"]').click();
   }
@@ -226,6 +255,56 @@ try {
     );
   }
   await page.locator('[data-action="close-template"]').last().click();
+
+  const aiInspirationTrigger = page.locator('[data-action="open-ai-inspiration"]');
+  assert.equal(await aiInspirationTrigger.count(), 1, 'AI inspiration entry must appear in the weekly overview header');
+  assert.equal(await page.locator('[data-sidebar-lanes]').count(), 0, 'AI inspiration lanes must not remain in the sidebar navigation');
+  await aiInspirationTrigger.click();
+  const aiModal = page.locator('[data-ai-modal]');
+  await aiModal.waitFor({ state: 'visible' });
+  assert.equal(await aiModal.locator('[data-drop-placement="ai-life"]').count(), 1, 'AI life lane must be available in the inspiration dialog');
+  assert.equal(await aiModal.locator('[data-drop-placement="ai-investing"]').count(), 1, 'AI investing lane must be available in the inspiration dialog');
+  await aiModal.locator('[data-action="open-create"][data-placement="ai-life"]').click();
+  const todoModal = page.locator('[data-todo-modal]');
+  await todoModal.waitFor({ state: 'visible' });
+  assert.equal(await todoModal.locator('select[name="placement"]').inputValue(), 'ai-life', 'AI dialog add action must open an AI life task form');
+  await todoModal.locator('[data-action="close-form"]').first().click();
+  assert.equal(await aiModal.evaluate((dialog) => dialog.open), false, 'opening the AI task form must close the inspiration dialog');
+
+  await aiInspirationTrigger.click();
+  await aiModal.locator('[data-action="open-create"][data-placement="ai-life"]').click();
+  await todoModal.locator('[data-todo-form] input[name="title"]').fill('AI INSPIRATION REGRESSION');
+  await todoModal.locator('[data-todo-form] button[type="submit"]').click();
+  await page.waitForTimeout(1300);
+  await aiInspirationTrigger.click();
+  await aiModal.waitFor({ state: 'visible' });
+  assert.equal(await aiModal.getByText('AI INSPIRATION REGRESSION', { exact: true }).count(), 1, 'AI inspiration add action must persist the new item');
+  await aiModal.locator('details.todo-overview-menu').first().locator('summary').click();
+  await aiModal.locator('[data-action="edit-todo"]').click();
+  await todoModal.waitFor({ state: 'visible' });
+  await todoModal.locator('[data-todo-form] input[name="title"]').fill('AI INSPIRATION UPDATED');
+  await todoModal.locator('[data-todo-form] button[type="submit"]').click();
+  await page.waitForTimeout(1300);
+  await aiInspirationTrigger.click();
+  await aiModal.waitFor({ state: 'visible' });
+  assert.equal(await aiModal.getByText('AI INSPIRATION UPDATED', { exact: true }).count(), 1, 'AI inspiration edit action must persist the updated item');
+  assert.equal(await aiModal.getByText('AI INSPIRATION REGRESSION', { exact: true }).count(), 0, 'AI inspiration edit action must replace the previous title');
+  await aiModal.locator('[data-action="close-ai-inspiration"]').click();
+
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await aiInspirationTrigger.click();
+  const mobileAiModal = page.locator('[data-ai-modal]');
+  await mobileAiModal.waitFor({ state: 'visible' });
+  const mobileAiBox = await mobileAiModal.boundingBox();
+  assert.ok(mobileAiBox && mobileAiBox.y >= 0 && mobileAiBox.y + mobileAiBox.height <= 844, 'mobile AI inspiration modal must stay within the viewport');
+  if (process.env.TODO_SEARCH_SCREENSHOT_DIR) {
+    const screenshotDir = path.resolve(process.env.TODO_SEARCH_SCREENSHOT_DIR);
+    await mkdir(screenshotDir, { recursive: true });
+    await page.screenshot({ path: path.join(screenshotDir, 'todo-ai-mobile.png') });
+  }
+  await mobileAiModal.locator('[data-action="close-ai-inspiration"]').click();
+  await page.setViewportSize({ width: 1440, height: 900 });
 
   const success = await submitTask(page, 'MODAL SUCCESS REGRESSION');
   assert.equal(success.openAfterSubmit, false, 'valid submit must close before the delayed cloud response');
@@ -286,9 +365,13 @@ try {
   assert.doesNotMatch(await page.locator('body').innerText(), /MODAL FAIL REGRESSION/, 'unconfirmed task must be rolled back');
 
   const counters = await page.evaluate(() => globalThis.__todoModalRegression);
-  assert.deepEqual(counters, { calls: 13, confirmed: 12, failures: 1 });
+  assert.deepEqual(counters, { calls: 15, confirmed: 14, failures: 1 });
   console.log('Todo modal, weekly template, search, and date-location regression test passed.');
 } finally {
   await browser?.close();
-  await server.stop();
+  if (astroStartsInBackground) {
+    spawnSync(process.execPath, [astroCli, 'dev', 'stop'], { cwd: projectRoot, stdio: 'ignore' });
+  } else {
+    stopProcessTree(server);
+  }
 }

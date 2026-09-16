@@ -259,7 +259,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
   const monthCalendar = getElement<HTMLElement>('[data-month-calendar]');
   const weekOverview = getElement<HTMLElement>('[data-week-overview]');
   const overviewLanes = getElement<HTMLElement>('[data-overview-lanes]');
-  const sidebarLanes = getElement<HTMLElement>('[data-sidebar-lanes]');
+  const aiInspirationList = getElement<HTMLElement>('[data-ai-inspiration-list]');
   const mobileDays = getElement<HTMLElement>('[data-mobile-days]');
   const board = getElement<HTMLElement>('[data-weekly-board]');
   const stats = getElement<HTMLElement>('[data-weekly-stats]');
@@ -277,6 +277,8 @@ export function mountTodoWorkspace(root: HTMLElement) {
   const migrationModal = getElement<HTMLDialogElement>('[data-migration-modal]');
   const exportReminderModal = getElement<HTMLDialogElement>('[data-export-reminder-modal]');
   const templateModal = getElement<HTMLDialogElement>('[data-template-modal]');
+  const aiModal = getElement<HTMLDialogElement>('[data-ai-modal]');
+  const aiInspirationTrigger = getElement<HTMLButtonElement>('[data-action="open-ai-inspiration"]');
   const loginModal = getElement<HTMLDialogElement>('[data-login-modal]');
   const todoForm = getElement<HTMLFormElement>('[data-todo-form]');
   const templateForm = getElement<HTMLFormElement>('[data-template-form]');
@@ -510,10 +512,11 @@ export function mountTodoWorkspace(root: HTMLElement) {
       </details>` : `<div class="todo-overview-actions">${renderOverviewActionButtons(todo, index, total)}</div>`}
     </li>`;
 
-  const renderPlacementLanes = () => {
-    const sidebarPlacements = placements.filter((placement) => placement.value === 'ai-investing' || placement.value === 'ai-life');
-    sidebarLanes.innerHTML = sidebarPlacements.map((placement) => {
-      const todos = filterTodos(allTodosForPlacement(placement.value));
+  const aiPlacements = placements.filter((placement) => placement.value === 'ai-investing' || placement.value === 'ai-life');
+
+  const renderAiInspiration = () => {
+    aiInspirationList.innerHTML = aiPlacements.map((placement) => {
+      const todos = allTodosForPlacement(placement.value);
       return `<section class="todo-overview-lane" aria-label="${placement.label}" data-drop-placement="${placement.value}">
         <header class="todo-overview-lane-header">
           <div>
@@ -525,6 +528,17 @@ export function mountTodoWorkspace(root: HTMLElement) {
         ${todos.length ? `<ul class="todo-overview-list">${todos.map((todo, index) => renderOverviewTodo(todo, index, todos.length, { compactActions: true })).join('')}</ul>` : '<p class="todo-overview-empty">暂无待办</p>'}
       </section>`;
     }).join('');
+  };
+
+  const closeAiInspiration = () => {
+    if (aiModal.open) aiModal.close();
+    aiInspirationTrigger.setAttribute('aria-expanded', 'false');
+  };
+
+  const openAiInspiration = () => {
+    renderAiInspiration();
+    if (!aiModal.open) aiModal.showModal();
+    aiInspirationTrigger.setAttribute('aria-expanded', 'true');
   };
 
   const renderOverviewLanes = () => {
@@ -632,15 +646,17 @@ export function mountTodoWorkspace(root: HTMLElement) {
     renderSelectors();
     renderMonthCalendar();
     renderOverview();
-    renderPlacementLanes();
+    renderAiInspiration();
     renderMobileDays();
     renderBoard();
     renderStats();
     if (searchModal.open) renderSearchResults();
     if (templateModal.open) renderTemplateList();
+    if (aiModal.open) renderAiInspiration();
   };
 
   const openForm = (date?: Date, todo?: Todo, placement: TodoPlacement = 'upcoming') => {
+    closeAiInspiration();
     state.editingId = todo?.id ?? null;
     formTitle.textContent = todo ? '编辑待办' : '新增待办';
     titleInput.value = todo?.title ?? '';
@@ -1837,6 +1853,8 @@ export function mountTodoWorkspace(root: HTMLElement) {
     }
     if (action === 'export-backup') exportBackup();
     if (action === 'open-template') openTemplate();
+    if (action === 'open-ai-inspiration') openAiInspiration();
+    if (action === 'close-ai-inspiration') closeAiInspiration();
     if (action === 'close-template') {
       if (templateModal.open) templateModal.close();
     }
@@ -1987,6 +2005,9 @@ export function mountTodoWorkspace(root: HTMLElement) {
   templateModal.addEventListener('close', () => {
     state.editingTemplateId = null;
     state.pendingTemplateDeleteId = null;
+  });
+  aiModal.addEventListener('close', () => {
+    aiInspirationTrigger.setAttribute('aria-expanded', 'false');
   });
   migrationModal.addEventListener('close', () => {
     pendingMigrationTodos = null;

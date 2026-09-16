@@ -13,7 +13,6 @@ const navItems: NavItem[] = [
   { label: '首页', icon: '⌂', href: 'https://www.magicj.cn/officialwebsite/' },
   { label: '圣经微读', icon: '✦', href: 'https://www.magicj.cn/officialwebsite/topics/applications/inspiration-station/theology?book=gen&chapter=1' },
   { label: '我的待办', icon: '▣', active: true },
-  { label: '行动全览', icon: '▦', href: `${basePath}topics/space/planning/action-overview` },
   { label: '搜索任务', icon: '⌕', action: 'open-search' },
   { label: '回收站', icon: '♙', action: 'open-trash' }
 ];
@@ -51,10 +50,12 @@ const navItems: NavItem[] = [
 
       <aside class="todo-sidebar" aria-label="待办功能导航" data-todo-sidebar>
         <div class="todo-brand">
-          <span class="todo-brand-mark" aria-hidden="true">☕</span>
+          <span class="todo-brand-mark" aria-hidden="true">
+            <img src={`${basePath}icons/todo-calendar.svg`} alt="" />
+          </span>
           <div>
-            <strong>J-Space</strong>
-            <span>WEEKLY FOCUS</span>
+            <strong>J先生の超级日历</strong>
+            <span>超级日历</span>
           </div>
           <button class="todo-sidebar-close" type="button" aria-label="关闭导航菜单" data-action="close-sidebar">×</button>
         </div>
@@ -78,8 +79,6 @@ const navItems: NavItem[] = [
           ))}
         </nav>
 
-        <div class="todo-sidebar-lanes" data-sidebar-lanes></div>
-
         <div class="todo-sidebar-mail" aria-hidden="true">✉</div>
       </aside>
 
@@ -89,7 +88,7 @@ const navItems: NavItem[] = [
             <button class="todo-menu-button" type="button" aria-label="打开导航菜单" data-action="open-sidebar">☰</button>
             <div>
               <p class="todo-kicker" data-today-label>今天</p>
-              <h1>To-Do-List <span class="todo-title-cup" aria-hidden="true">☕</span></h1>
+              <h1>To-Do-List <span class="todo-title-cup" aria-hidden="true"><img src={`${basePath}icons/todo-cup.svg`} alt="" /></span></h1>
             </div>
           </div>
 
@@ -153,8 +152,11 @@ const navItems: NavItem[] = [
 
           <div class="todo-week-overview-panel">
             <div class="todo-section-label">
-              <span>当前周 · 7 天概览</span>
-              <small data-week-range></small>
+              <div class="todo-section-label-copy">
+                <span>当前周 · 7 天概览</span>
+                <small data-week-range></small>
+              </div>
+              <button class="todo-ai-inspiration-trigger" type="button" data-action="open-ai-inspiration" aria-haspopup="dialog" aria-controls="todo-ai-modal" aria-expanded="false">AI灵感</button>
             </div>
             <div class="todo-week-overview-scroll">
               <div class="todo-week-overview" data-week-overview></div>
@@ -349,6 +351,20 @@ const navItems: NavItem[] = [
         </div>
       </dialog>
 
+      <dialog class="todo-modal todo-ai-modal" id="todo-ai-modal" aria-labelledby="todo-ai-title" data-ai-modal>
+        <div class="todo-ai-content">
+          <div class="todo-modal-header">
+            <div>
+              <p class="todo-kicker">灵感收纳</p>
+              <h2 id="todo-ai-title">AI灵感</h2>
+            </div>
+            <button class="todo-dialog-close" type="button" aria-label="关闭 AI 灵感" data-action="close-ai-inspiration">×</button>
+          </div>
+          <p class="todo-ai-intro">把想做的事情先收在这里，随时编辑或添加新的灵感。</p>
+          <div class="todo-ai-lanes" data-ai-inspiration-list></div>
+        </div>
+      </dialog>
+
       <dialog class="todo-modal todo-login-modal" aria-labelledby="todo-login-title" data-login-modal>
         <form class="todo-form" data-login-form novalidate>
           <div class="todo-modal-header">
@@ -475,15 +491,15 @@ const navItems: NavItem[] = [
     </script>
 
     <style is:global>
-      * { box-sizing: border-box; }
-      html, body { min-width: 320px; margin: 0; background: #f2dfbf; }
-      body {
+      :global(*) { box-sizing: border-box; }
+      :global(html), :global(body) { min-width: 320px; margin: 0; background: #f2dfbf; }
+      :global(body) {
         color: #261509;
         font-family: "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
       }
-      button, input, select, textarea { font: inherit; }
-      button { cursor: pointer; }
-      a { color: inherit; text-decoration: none; }
+      :global(button), :global(input), :global(select), :global(textarea) { font: inherit; }
+      :global(button) { cursor: pointer; }
+      :global(a) { color: inherit; text-decoration: none; }
 
       .todo-shell {
         --espresso: #1d0d03;
@@ -569,19 +585,28 @@ const navItems: NavItem[] = [
         width: 2.82rem;
         height: 2.82rem;
         place-items: center;
-        border-radius: 50%;
-        background: rgba(255, 236, 202, 0.08);
+        overflow: hidden;
+        border-radius: 0.82rem;
+        background: transparent;
         color: #f7d89d;
         font-size: 1.55rem;
         box-shadow: inset 0 0 0 1px rgba(246, 206, 132, 0.22);
+      }
+
+      .todo-brand-mark img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
       }
 
       .todo-brand strong {
         display: block;
         color: #ffe5b8;
         font-family: inherit;
-        font-size: 1.22rem;
-        letter-spacing: 0.16em;
+        font-size: 0.94rem;
+        letter-spacing: 0.01em;
+        white-space: nowrap;
       }
 
       .todo-brand span:not(.todo-brand-mark),
@@ -743,10 +768,18 @@ const navItems: NavItem[] = [
         width: 2.25rem;
         height: 2.25rem;
         place-items: center;
+        overflow: hidden;
         border-radius: 50%;
         background: rgba(255, 239, 214, 0.66);
         font-size: 1.38rem;
         box-shadow: 0 8px 16px rgba(93, 45, 7, 0.14);
+      }
+
+      .todo-title-cup img {
+        display: block;
+        width: 82%;
+        height: 82%;
+        object-fit: contain;
       }
 
       .todo-menu-button { display: none; }
@@ -1080,8 +1113,17 @@ const navItems: NavItem[] = [
         justify-content: center;
         gap: 0.8rem;
         margin-bottom: 0.67rem;
+        padding: 0 5.2rem;
         color: #4d2c13;
         text-align: center;
+      }
+
+      .todo-section-label-copy {
+        display: flex;
+        align-items: baseline;
+        justify-content: center;
+        gap: 0.8rem;
+        min-width: 0;
       }
 
       .todo-section-label span {
@@ -1091,11 +1133,33 @@ const navItems: NavItem[] = [
       }
 
       .todo-section-label small {
-        position: absolute;
-        right: 0;
         color: #7d5737;
         font-size: 0.82rem;
         font-weight: 900;
+      }
+
+      .todo-ai-inspiration-trigger {
+        position: absolute;
+        top: 50%;
+        right: 0;
+        min-height: 2.1rem;
+        transform: translateY(-50%);
+        border: 1px solid rgba(116, 69, 27, 0.16);
+        border-radius: 999px;
+        padding: 0.36rem 0.76rem;
+        background: linear-gradient(180deg, rgba(255, 246, 231, 0.9), rgba(244, 220, 181, 0.78));
+        color: #6f421d;
+        font-size: 0.74rem;
+        font-weight: 900;
+        box-shadow: 0 8px 16px rgba(78, 37, 7, 0.08);
+      }
+
+      .todo-ai-inspiration-trigger:hover,
+      .todo-ai-inspiration-trigger[aria-expanded="true"] {
+        border-color: rgba(163, 93, 35, 0.42);
+        background: linear-gradient(180deg, #f5d9ad, #d99a54);
+        color: #4d2509;
+        transform: translateY(calc(-50% - 1px));
       }
 
       .todo-week-overview-scroll {
@@ -1683,7 +1747,8 @@ const navItems: NavItem[] = [
 
       .todo-form,
       .todo-delete-content,
-      .todo-template-content {
+      .todo-template-content,
+      .todo-ai-content {
         min-width: 0;
         box-sizing: border-box;
         padding: 1.45rem;
@@ -1693,12 +1758,32 @@ const navItems: NavItem[] = [
       }
 
       .todo-template-modal {
-        position: fixed;
-        inset: 0;
-        margin: auto;
         width: min(94vw, 760px);
         max-height: calc(100dvh - 1.5rem);
         overflow-y: auto;
+      }
+
+      .todo-ai-modal {
+        width: min(94vw, 760px);
+        max-height: calc(100dvh - 1.5rem);
+        overflow-y: auto;
+      }
+
+      .todo-ai-intro {
+        margin: -0.45rem 0 1rem;
+        color: var(--muted);
+        font-size: 0.86rem;
+        line-height: 1.6;
+      }
+
+      .todo-ai-lanes {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.72rem;
+      }
+
+      .todo-ai-lanes .todo-overview-lane {
+        min-height: 13rem;
       }
 
       .todo-template-intro {
@@ -2307,7 +2392,7 @@ const navItems: NavItem[] = [
       }
 
       html[data-todo-theme="dark"] .todo-brand-mark {
-        background: rgba(222, 232, 229, 0.07);
+        background: transparent;
         color: #d9b089;
         box-shadow: inset 0 0 0 1px rgba(218, 229, 226, 0.12);
       }
@@ -2593,7 +2678,8 @@ const navItems: NavItem[] = [
 
       html[data-todo-theme="dark"] .todo-form,
       html[data-todo-theme="dark"] .todo-delete-content,
-      html[data-todo-theme="dark"] .todo-template-content {
+      html[data-todo-theme="dark"] .todo-template-content,
+      html[data-todo-theme="dark"] .todo-ai-content {
         background: #202a2c;
       }
 
@@ -2834,8 +2920,7 @@ const navItems: NavItem[] = [
 
       html[data-todo-theme="dark"] .todo-brand-mark {
         border: 1px solid var(--border-bright);
-        background:
-          radial-gradient(circle at 38% 32%, #d7a374 0 12%, #b66e4c 13% 34%, #5a4659 35% 54%, #242c2e 55% 100%);
+        background: transparent;
         color: transparent;
         box-shadow:
           0 1px 0 rgba(255, 255, 255, 0.16) inset,
@@ -2844,8 +2929,8 @@ const navItems: NavItem[] = [
 
       html[data-todo-theme="dark"] .todo-brand strong {
         color: var(--text-primary);
-        font-size: 1.18rem;
-        letter-spacing: 0.05em;
+        font-size: 0.94rem;
+        letter-spacing: 0.01em;
       }
 
       html[data-todo-theme="dark"] .todo-brand div span {
@@ -3171,6 +3256,26 @@ const navItems: NavItem[] = [
       }
 
       html[data-todo-theme="dark"] .todo-section-label {
+        color: var(--text-primary);
+      }
+
+      html[data-todo-theme="dark"] .todo-ai-inspiration-trigger {
+        border-color: var(--border-bright);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(0, 0, 0, 0.07)),
+          var(--surface-card);
+        color: var(--text-secondary);
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.045) inset,
+          0 6px 14px rgba(0, 0, 0, 0.24);
+      }
+
+      html[data-todo-theme="dark"] .todo-ai-inspiration-trigger:hover,
+      html[data-todo-theme="dark"] .todo-ai-inspiration-trigger[aria-expanded="true"] {
+        border-color: rgba(201, 135, 77, 0.48);
+        background:
+          linear-gradient(180deg, rgba(201, 135, 77, 0.18), rgba(0, 0, 0, 0.08)),
+          var(--surface-raised);
         color: var(--text-primary);
       }
 
@@ -3697,6 +3802,8 @@ const navItems: NavItem[] = [
         .todo-planner-card { min-height: 0; border-radius: 0.72rem; }
         .todo-calendar-panel,
         .todo-week-overview-panel { padding: 0.9rem; }
+        .todo-section-label { padding-right: 4.8rem; padding-left: 4.8rem; }
+        .todo-ai-lanes { grid-template-columns: 1fr; }
         .todo-select-row { grid-template-columns: 1fr 0.8fr 1.22fr; gap: 0.34rem; }
         .todo-select-row select { font-size: 0.78rem; }
         .todo-week-overview { min-width: 560px; }
@@ -3749,6 +3856,8 @@ const navItems: NavItem[] = [
 
       @media (max-width: 420px) {
         .todo-modal { width: calc(100vw - 1.5rem); }
+        .todo-section-label { padding-right: 4.45rem; padding-left: 4.45rem; }
+        .todo-section-label-copy { flex-direction: column; align-items: center; gap: 0.2rem; }
         .todo-template-content { padding: 1rem; }
         .todo-template-content .todo-modal-header { margin-bottom: 0.88rem; }
         .todo-template-form { padding: 0.78rem; }
@@ -3887,8 +3996,7 @@ const navItems: NavItem[] = [
 
       html.theme-noir-amber .todo-brand-mark {
         border-color: rgba(239, 182, 87, 0.44);
-        background:
-          radial-gradient(circle at 38% 30%, #f5c269 0 11%, #c8892e 12% 32%, #624a79 33% 53%, #272326 54% 100%);
+        background: transparent;
         box-shadow:
           0 1px 0 rgba(255, 242, 216, 0.22) inset,
           0 0 0 5px rgba(213, 154, 59, 0.06),
@@ -4280,7 +4388,8 @@ const navItems: NavItem[] = [
 
       html.theme-noir-amber .todo-form,
       html.theme-noir-amber .todo-delete-content,
-      html.theme-noir-amber .todo-template-content {
+      html.theme-noir-amber .todo-template-content,
+      html.theme-noir-amber .todo-ai-content {
         background:
           linear-gradient(180deg, rgba(213, 154, 59, 0.025), transparent 11rem),
           #17191b;

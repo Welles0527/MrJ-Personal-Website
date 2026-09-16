@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title>金色咖啡杯</title>
+  <defs>
+    <linearGradient id="gold" x1="20" y1="18" x2="108" y2="112" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffd486" />
+      <stop offset="0.48" stop-color="#d98b24" />
+      <stop offset="1" stop-color="#fff0b1" />
+    </linearGradient>
+  </defs>
+  <g fill="none" stroke="url(#gold)" stroke-linecap="round" stroke-linejoin="round">
+    <path stroke-width="6" d="M24 43h68v25c0 21-17 38-38 38S24 89 24 68V43Z" />
+    <path stroke-width="6" d="M92 53h10c10 0 18 8 18 18s-8 18-18 18H91" />
+    <path stroke-width="6" d="M18 108h96" />
+    <path stroke-width="5" d="M30 115c12 5 56 5 68 0" />
+    <path stroke-width="5" d="M47 30c-7-9-7-16 0-23M76 30c-7-9-7-16 0-23" />
+  </g>
+</svg>
