@@ -37,8 +37,6 @@ type CloudResult<T> = {
   requestId?: string;
   request_id?: string;
   updated?: number;
-  upsertedId?: string;
-  upserted_id?: string;
   deleted?: number;
 };
 
@@ -52,7 +50,7 @@ export type CloudTodoMutationReceipt = {
   taskId: string;
   createdAt: string;
   updatedAt: string;
-  requestId: string;
+  requestId: string | null;
   verificationRequestId: string | null;
   todo: CloudTodo;
 };
@@ -90,14 +88,6 @@ const mutationNumber = (result: CloudResult<unknown>, field: 'updated' | 'delete
   if (typeof direct === 'number') return direct;
   const nested = resultDataObject(result)?.[field];
   return typeof nested === 'number' ? nested : null;
-};
-
-const mutationId = (result: CloudResult<unknown>) => {
-  const direct = result.upsertedId || result.upserted_id;
-  if (direct) return direct;
-  const nested = resultDataObject(result);
-  const value = nested?.upsertedId || nested?.upserted_id || nested?.upsert_id || nested?._id;
-  return typeof value === 'string' ? value : null;
 };
 
 const todoFromRecord = (record: CloudTodoRecord): CloudTodo => {
@@ -276,14 +266,8 @@ export const upsertCloudTodo = async (
         await db.collection(TODO_COLLECTION).doc(todo.id).set(payload) as CloudResult<unknown>,
         '保存云端待办失败。'
       );
-      const updated = mutationNumber(result, 'updated');
-      const upsertedId = mutationId(result);
-      if (updated !== 1 && upsertedId !== todo.id) {
-        throw new Error('云端保存未确认影响记录，请重新读取云端后重试。');
-      }
     }
     requestId = resultRequestId(result);
-    if (!requestId) throw new Error('云端保存未返回 requestId，无法确认本次写入。');
     onMutationConfirmed?.();
 
     const verification = await loadCloudTodo(ownerId, todo.id);

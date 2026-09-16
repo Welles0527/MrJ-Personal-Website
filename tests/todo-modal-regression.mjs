@@ -310,6 +310,7 @@ try {
   assert.equal(success.openAfterSubmit, false, 'valid submit must close before the delayed cloud response');
   await page.waitForTimeout(1300);
   assert.match(await page.locator('body').innerText(), /MODAL SUCCESS REGRESSION/, 'confirmed task must remain visible');
+  assert.equal(await page.locator('[data-sync-retry]').isHidden(), true, 'a confirmed first save must not expose the retry sync action');
 
   await page.locator('[data-action="open-search"]').click();
   const searchModal = page.locator('[data-search-modal]');
