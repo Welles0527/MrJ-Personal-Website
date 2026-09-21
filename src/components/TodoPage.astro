@@ -4471,6 +4471,259 @@ const navItems: NavItem[] = [
         }
       }
 
+      /*
+       * CUE gold theme for the standard dark skin.
+       * This deliberately excludes the separate noir-amber option so the
+       * three-way theme switcher keeps its existing behavior.
+       */
+      html[data-todo-theme="dark"]:not(.theme-noir-amber),
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) body {
+        background: #0e0f0d;
+        color-scheme: dark;
+      }
+
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) .todo-shell {
+        --surface-canvas: #0e0f0d;
+        --surface-main: #121310;
+        --surface-sidebar: #090a08;
+        --surface-panel: #24231e;
+        --surface-card: #2d2b24;
+        --surface-item: #353229;
+        --surface-raised: #3d392e;
+        --surface-recessed: #191a16;
+        --border-subtle: rgba(214, 184, 107, 0.17);
+        --border-bright: rgba(214, 184, 107, 0.32);
+        --text-primary: #f4f0e7;
+        --text-secondary: #d4cfc2;
+        --text-muted: #a49f92;
+        --accent-copper: #d6b86b;
+        --accent-copper-bright: #f1d47a;
+        --accent-copper-deep: #a7853e;
+        --radius-panel: 12px;
+        --radius-card: 9px;
+        --radius-item: 6px;
+        --shadow-panel: 0 1px 0 rgba(255, 241, 201, 0.035) inset, 0 14px 32px rgba(0, 0, 0, 0.32);
+        --shadow-raised: 0 1px 0 rgba(255, 241, 201, 0.055) inset, 0 9px 20px rgba(0, 0, 0, 0.34);
+        --shadow-selected: 0 0 0 1px rgba(214, 184, 107, 0.48), 0 9px 22px rgba(0, 0, 0, 0.36);
+        --category-all: #d6b86b;
+        --category-work: #c5b4d8;
+        --category-study: #dd8876;
+        --category-life: #91b9cf;
+        --category-health: #9bb682;
+        --category-other: #d6b86b;
+        --task-text-work: #d7c9e7;
+        --task-text-study: #f2a091;
+        --task-text-life: #aad2e7;
+        --task-text-health: #bbd39f;
+        --task-text-other: #efd486;
+        background:
+          radial-gradient(circle at 64% 8%, rgba(214, 184, 107, 0.075), transparent 29rem),
+          linear-gradient(118deg, #0d0e0c 0%, #13140f 52%, #0d0e0c 100%);
+      }
+
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) .todo-shell::before {
+        background-image:
+          linear-gradient(rgba(214, 184, 107, 0.018) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(214, 184, 107, 0.018) 1px, transparent 1px);
+        background-size: 48px 48px;
+        opacity: 0.42;
+      }
+
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) .todo-sidebar {
+        border-color: var(--border-bright);
+        background:
+          linear-gradient(180deg, rgba(214, 184, 107, 0.035), transparent 12rem),
+          #090a08;
+        box-shadow: 1px 0 0 rgba(214, 184, 107, 0.1), 14px 0 34px rgba(0, 0, 0, 0.34);
+      }
+
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) .todo-brand-mark,
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) .todo-title-cup {
+        border-color: rgba(214, 184, 107, 0.52);
+        background: #d6b86b;
+        color: #18170f;
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.32);
+      }
+
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) .todo-kicker,
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) .todo-nav-icon {
+        color: var(--accent-copper-bright);
+      }
+
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) .todo-nav .is-active {
+        border-color: #e4c66f;
+        background: #e4c66f;
+        color: #18170f;
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.28);
+      }
+
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) .todo-nav .is-active .todo-nav-icon {
+        color: #18170f;
+      }
+
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) :is(
+        .todo-account-button,
+        .todo-utility,
+        .todo-data-button,
+        .todo-secondary-button,
+        .todo-ai-inspiration-trigger,
+        .todo-dialog-close
+      ) {
+        border-color: var(--border-bright);
+        background: var(--surface-card);
+        color: var(--text-secondary);
+        box-shadow: 0 1px 0 rgba(255, 241, 201, 0.04) inset, 0 6px 14px rgba(0, 0, 0, 0.28);
+      }
+
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) :is(
+        .todo-account-button,
+        .todo-utility,
+        .todo-data-button,
+        .todo-secondary-button,
+        .todo-ai-inspiration-trigger,
+        .todo-dialog-close
+      ):hover {
+        border-color: rgba(241, 212, 122, 0.58);
+        background: var(--surface-raised);
+        color: var(--accent-copper-bright);
+      }
+
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) .todo-primary-button,
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) .todo-filter.is-active,
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) .todo-month-day.is-selected span,
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) .todo-mobile-day.is-selected {
+        border-color: #efd477;
+        background: linear-gradient(180deg, #efd477, #c9a953);
+        color: #18170f;
+        box-shadow: 0 1px 0 rgba(255, 248, 218, 0.45) inset, 0 8px 18px rgba(0, 0, 0, 0.34);
+      }
+
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) .todo-primary-button:hover {
+        border-color: #f6dc87;
+        background: linear-gradient(180deg, #f6dc87, #d6b65f);
+        color: #11120e;
+      }
+
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) .todo-filter {
+        border-color: color-mix(in srgb, var(--filter-color) 28%, var(--border-subtle));
+        background: color-mix(in srgb, var(--filter-color) 5%, var(--surface-card));
+        box-shadow: none;
+      }
+
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) :is(
+        .todo-planner-card,
+        .todo-day-column,
+        .todo-sidebar-lanes .todo-overview-lane,
+        .todo-overview-lane,
+        .todo-modal
+      ) {
+        border-color: var(--border-bright);
+        background: var(--surface-panel);
+        box-shadow: var(--shadow-panel);
+      }
+
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) :is(
+        .todo-overview-item,
+        .todo-overview-item.is-inline-category,
+        .todo-item,
+        .todo-trash-empty,
+        .todo-trash-item,
+        .todo-search-item,
+        .todo-overview-menu-panel
+      ) {
+        border-color: var(--border-subtle);
+        background: var(--surface-item);
+        box-shadow: 0 1px 0 rgba(255, 241, 201, 0.035) inset, 0 5px 12px rgba(0, 0, 0, 0.26);
+      }
+
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) :is(
+        .todo-overview-item,
+        .todo-item,
+        .todo-day-column
+      ):hover {
+        border-color: rgba(214, 184, 107, 0.4);
+        background: var(--surface-raised);
+      }
+
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) :is(
+        .todo-day-overview.is-selected,
+        .todo-day-overview.is-today,
+        .todo-day-column.is-selected,
+        .todo-day-column.is-today
+      ) {
+        border-color: rgba(214, 184, 107, 0.58);
+        background: linear-gradient(180deg, rgba(214, 184, 107, 0.08), transparent 45%), var(--surface-card);
+        box-shadow: var(--shadow-selected);
+      }
+
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) .todo-calendar-panel {
+        border-color: var(--border-subtle);
+        background: #1c1c18;
+      }
+
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) .todo-week-overview-panel,
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) .todo-form,
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) .todo-delete-content,
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) .todo-template-content,
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) .todo-ai-content {
+        background: linear-gradient(180deg, rgba(214, 184, 107, 0.025), transparent 11rem), var(--surface-panel);
+      }
+
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) :is(
+        .todo-field input,
+        .todo-field select,
+        .todo-field textarea,
+        .todo-search-input-wrap
+      ) {
+        border-color: var(--border-bright);
+        background: var(--surface-recessed);
+        color: var(--text-primary);
+      }
+
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) :is(
+        .todo-field input,
+        .todo-field select,
+        .todo-field textarea,
+        .todo-search-input-wrap
+      ):focus-within {
+        border-color: rgba(241, 212, 122, 0.68);
+        box-shadow: 0 0 0 3px rgba(214, 184, 107, 0.12);
+      }
+
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) .todo-checkbox:checked {
+        border-color: #efd477;
+        background: linear-gradient(180deg, #efd477, #b99745);
+      }
+
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) .todo-login-message {
+        color: #d7b56a;
+      }
+
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) .todo-toast,
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) .site-update-notice {
+        border-color: var(--border-bright);
+        background: #171813;
+        color: var(--text-primary);
+      }
+
+      html[data-todo-theme="dark"]:not(.theme-noir-amber) :is(button, a, input, select, textarea):focus-visible {
+        outline: 2px solid rgba(241, 212, 122, 0.86);
+        outline-offset: 2px;
+      }
+
+      @media (max-width: 760px) {
+        html[data-todo-theme="dark"]:not(.theme-noir-amber) .todo-backdrop {
+          background: rgba(4, 5, 4, 0.82);
+        }
+
+        html[data-todo-theme="dark"]:not(.theme-noir-amber) .todo-menu-button,
+        html[data-todo-theme="dark"]:not(.theme-noir-amber) .todo-mobile-day {
+          border-color: var(--border-bright);
+          background: var(--surface-card);
+          color: var(--text-secondary);
+        }
+      }
+
       @media (prefers-reduced-motion: reduce) {
         .todo-shell *,
         .todo-shell *::before,
