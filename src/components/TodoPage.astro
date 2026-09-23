@@ -5258,6 +5258,8 @@ html .todo-day-column.is-today,html[data-todo-theme=dark] .todo-day-column.is-to
 html .todo-day-column.is-today .todo-column-header{border-bottom-color:var(--ref-accent)}
 html .todo-day-column.is-today .todo-column-name{color:var(--ref-accent)}
 html .todo-day-column.is-selected,html[data-todo-theme=dark] .todo-day-column.is-selected{background:var(--ref-selected);border-color:var(--ref-line);box-shadow:none}
+html .todo-board-section .todo-day-column,html[data-todo-theme=dark] .todo-board-section .todo-day-column,html.theme-noir-amber .todo-board-section .todo-day-column{border:1px solid var(--ref-line)}
+html .todo-board-section .todo-day-column.is-today,html .todo-board-section .todo-day-column.is-selected{border-color:color-mix(in srgb,var(--ref-accent) 24%,var(--ref-line))}
 html .todo-item,html[data-todo-theme=dark] .todo-item{background:var(--ref-card);border:1px solid var(--ref-line);box-shadow:0 2px 5px #00000005;border-radius:8px;padding:12px 10px}
 html .todo-item:hover,html[data-todo-theme=dark] .todo-item:hover{background:var(--ref-card);border-color:color-mix(in srgb,var(--ref-muted) 35%,transparent);box-shadow:none}
 html .todo-day-column .todo-item-title,html .todo-day-column .todo-item-title[class*=todo-category-title-],html[data-todo-theme=dark] .todo-item-title{color:var(--ref-text);font-weight:500;font-size:16px;line-height:1.55}
@@ -5288,6 +5290,33 @@ html [data-action=move-overview-up]{font-size:0;--action-icon:url(data:image/svg
 html [data-action=move-overview-down]{font-size:0;--action-icon:url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIxLjY1IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0xMiA1djE0Ii8+PHBhdGggZD0ibTE5IDEyLTcgNy03LTciLz48L3N2Zz4=)}
 html :is(button,a,summary,input,select,textarea):focus-visible{outline:2px solid var(--ref-accent);outline-offset:3px}
 html :is(.todo-filter,.todo-data-button,.todo-day-overview,.todo-item,.todo-nav a,.todo-nav button){transition:background-color .14s ease,border-color .14s ease,color .14s ease}
+
+/* User-supplied category swatches, after the reference theme overrides. */
+html [data-task-category="life"] { --task-background: #8cddef; }
+html [data-task-category="health"] { --task-background: #43f574; }
+html [data-task-category="other"] { --task-background: #f4ce69; }
+html [data-task-category="study"] { --task-background: #d90036; --task-foreground: #fff; }
+html [data-task-category="work"] { --task-background: #a489fc; }
+html .todo-shell :is(.todo-item,.todo-overview-item)[data-task-category],
+html .todo-shell :is(.todo-item,.todo-overview-item)[data-task-category]:hover {
+  background: var(--task-background);
+  color: var(--task-foreground, #17212b);
+  border-color: transparent;
+}
+html .todo-shell [data-task-category] :is(.todo-item-title,.todo-overview-title,.todo-overview-note,.todo-item-star,.todo-delete-button,.todo-overview-menu-summary,.todo-overview-actions button,.todo-tag) {
+  color: var(--task-foreground, #17212b);
+}
+html .todo-shell [data-task-category] .todo-tag {
+  background: transparent;
+}
+html .todo-shell [data-task-category] :is(.todo-delete-button,.todo-overview-menu-summary,.todo-overview-actions button) {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+html .todo-shell [data-task-category] .todo-checkbox {
+  accent-color: #17212b;
+}
     </style>
   </body>
 </html>

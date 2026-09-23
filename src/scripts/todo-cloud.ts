@@ -1,4 +1,12 @@
-import { cloudErrorMessage, getCloudDb, getCloudSession, getRememberedSession, signInWithPassword, signOut, startEmailSignUp } from './site-auth';
+import {
+  cloudErrorMessage,
+  getCloudDb,
+  getCloudSession as getProductionCloudSession,
+  getRememberedSession as getProductionRememberedSession,
+  signInWithPassword as signInWithProductionPassword,
+  signOut as signOutProduction,
+  startEmailSignUp as startProductionEmailSignUp
+} from './site-auth';
 import type { CloudSession } from './site-auth';
 
 export type CloudTodoCategory = 'work' | 'study' | 'life' | 'health' | 'other';
@@ -64,6 +72,16 @@ export type CloudTodoWatcher = {
 const TODO_COLLECTION = 'officialWebsiteTodos';
 const TODO_WATCH_PAGE_SIZE = 100;
 const db = getCloudDb();
+// A throwaway account and in-memory records for local UI checks. This is never enabled in production builds.
+const localTestAccountEnabled = import.meta.env.DEV && new URLSearchParams(window.location.search).get('testAccount') === '1';
+const localTestAccountEmail = '11@11.com';
+let localTestSession: CloudSession | null = null;
+const localTestTodos = new Map<string, CloudTodo>();
+
+const requireLocalTestCredentials = (email: string, password: string) => {
+  if (email !== localTestAccountEmail || !password) throw new Error('本地测试账号为 11@11.com，请输入测试密码。');
+  return { uid: 'local-test-account', account: localTestAccountEmail } satisfies CloudSession;
+};
 
 const validSyncVersion = (value: unknown): value is number => Number.isInteger(value) && Number(value) >= 1;
 
@@ -117,10 +135,36 @@ const logSync = (event: string, detail: Record<string, unknown>) => {
   console.info('[todo-sync]', { event, ...detail });
 };
 
-export { getCloudSession, getRememberedSession, signInWithPassword, signOut, startEmailSignUp };
+export const getRememberedSession = () => localTestAccountEnabled ? localTestSession : getProductionRememberedSession();
+export const getCloudSession = async () => localTestAccountEnabled ? localTestSession : getProductionCloudSession();
+export const signInWithPassword = async (email: string, password: string) => {
+  if (!localTestAccountEnabled) return signInWithProductionPassword(email, password);
+  localTestSession = requireLocalTestCredentials(email, password);
+  return localTestSession;
+};
+export const startEmailSignUp = async (email: string, password: string) => {
+  if (!localTestAccountEnabled) return startProductionEmailSignUp(email, password);
+  const session = requireLocalTestCredentials(email, password);
+  return async (_verificationCode: string) => {
+    localTestSession = session;
+    return session;
+  };
+};
+export const signOut = async () => {
+  if (localTestAccountEnabled) {
+    localTestSession = null;
+    localTestTodos.clear();
+    return;
+  }
+  return signOutProduction();
+};
 export type { CloudSession };
 
 export const loadCloudTodos = async (ownerId: string): Promise<CloudTodoLoadResult> => {
+  if (localTestAccountEnabled) return {
+    todos: ownerId === 'local-test-account' ? [...localTestTodos.values()] : [],
+    requestId: 'local-test-load'
+  };
   const result = assertCloudResult(
     await db.collection(TODO_COLLECTION).where({ ownerId }).limit(1000).get() as CloudResult<CloudTodoRecord[]>,
     '读取云端待办失败。'
@@ -140,6 +184,10 @@ export const loadCloudTodos = async (ownerId: string): Promise<CloudTodoLoadResu
 };
 
 export const loadCloudTodo = async (ownerId: string, todoId: string) => {
+  if (localTestAccountEnabled) {
+    const todo = localTestTodos.get(todoId);
+    return { todo: todo && ownerId === 'local-test-account' ? todo : null, requestId: 'local-test-read' };
+  }
   try {
     const result = assertCloudResult(
       await db.collection(TODO_COLLECTION).doc(todoId).get() as CloudResult<CloudTodoRecord[] | CloudTodoRecord>,
@@ -162,6 +210,11 @@ export const watchCloudTodos = (
   onChange: (todos: CloudTodo[]) => void,
   onError: (error: Error) => void
 ): CloudTodoWatcher => {
+  if (localTestAccountEnabled) return {
+    pageCount: 1,
+    capacity: TODO_WATCH_PAGE_SIZE,
+    close: () => undefined
+  };
   const pageCount = Math.max(1, Math.ceil(todoCount / TODO_WATCH_PAGE_SIZE));
   const watchers: CloudTodoWatcher[] = [];
   let closed = false;
@@ -220,6 +273,20 @@ export const upsertCloudTodo = async (
   expectedUpdatedAt?: string,
   onMutationConfirmed?: () => void
 ): Promise<CloudTodoMutationReceipt> => {
+  if (localTestAccountEnabled) {
+    const saved = { ...todo, syncVersion: (localTestTodos.get(todo.id)?.syncVersion ?? 0) + 1 };
+    localTestTodos.set(todo.id, saved);
+    onMutationConfirmed?.();
+    return {
+      ownerId,
+      taskId: todo.id,
+      createdAt: todo.createdAt,
+      updatedAt: todo.updatedAt,
+      requestId: 'local-test-save',
+      verificationRequestId: 'local-test-verify',
+      todo: saved
+    };
+  }
   let requestId: string | null = null;
   try {
     const current = await loadCloudTodo(ownerId, todo.id);
@@ -312,6 +379,10 @@ export const upsertCloudTodo = async (
 };
 
 export const removeCloudTodo = async (ownerId: string, todoId: string, expectedUpdatedAt: string) => {
+  if (localTestAccountEnabled) {
+    localTestTodos.delete(todoId);
+    return { ownerId, taskId: todoId, requestId: 'local-test-delete', verificationRequestId: 'local-test-verify' };
+  }
   let requestId: string | null = null;
   try {
     const current = await loadCloudTodo(ownerId, todoId);
@@ -352,6 +423,7 @@ export const removeCloudTodo = async (ownerId: string, todoId: string, expectedU
 };
 
 export const upgradeCloudTodoVersions = async (ownerId: string, todos: CloudTodo[]) => {
+  if (localTestAccountEnabled) return 0;
   const outdatedTodos = todos.filter((todo) => !validSyncVersion(todo.syncVersion));
   for (const todo of outdatedTodos) {
     await upsertCloudTodo(ownerId, todo, todo.updatedAt);

@@ -1,5 +1,6 @@
 import type { CloudSession, CloudTodo, CloudTodoCategory, CloudTodoPlacement } from './todo-cloud';
 
+const localTestMode = import.meta.env.DEV && new URLSearchParams(window.location.search).get('testAccount') === '1';
 let cloudApi: Promise<typeof import('./todo-cloud')> | null = null;
 const getCloudApi = () => {
   cloudApi ??= import('./todo-cloud');
@@ -306,6 +307,9 @@ export function mountTodoWorkspace(root: HTMLElement) {
   const loginButton = getElement<HTMLButtonElement>('[data-login-open]');
   const signOutButton = getElement<HTMLButtonElement>('[data-sign-out]');
   const loginMessage = getElement<HTMLElement>('[data-login-message]');
+  if (localTestMode) {
+    getElement<HTMLElement>('.todo-login-copy').textContent = '本地模拟账号：11@11.com。密码仅在此电脑本地使用，不会发送到邮箱或云端；此页面内的测试待办刷新后清空。';
+  }
   const verificationField = getElement<HTMLElement>('[data-verification-field]');
   const toast = getElement<HTMLElement>('[data-toast]');
   const titleInput = todoForm.elements.namedItem('title') as HTMLInputElement;
@@ -324,6 +328,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
   const loginEmailInput = loginForm.elements.namedItem('email') as HTMLInputElement;
   const loginPasswordInput = loginForm.elements.namedItem('password') as HTMLInputElement;
   const verificationCodeInput = loginForm.elements.namedItem('verificationCode') as HTMLInputElement;
+  if (localTestMode) verificationCodeInput.placeholder = '输入任意测试验证码';
   const compactQuery = window.matchMedia('(max-width: 760px)');
   const currentDate = atNoon(new Date());
   let toastTimer: number | undefined;
@@ -399,6 +404,11 @@ export function mountTodoWorkspace(root: HTMLElement) {
   };
 
   const markSyncSuccess = (session: CloudSession, syncedAt = new Date().toISOString()) => {
+    if (localTestMode) {
+      setSyncStatus(`本地模拟：${session.account}`, { retry: false });
+      lastSyncStatus.textContent = '测试数据只保留在本页面';
+      return;
+    }
     setSyncStatus(`已同步：${session.account}`, { lastSyncAt: syncedAt, retry: false });
   };
 
@@ -497,7 +507,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
     total: number,
     options: OverviewTodoOptions = {}
   ) => `
-    <li class="todo-overview-item ${todo.completed ? 'is-completed' : ''} ${options.inlineCategory ? 'is-inline-category' : ''}" draggable="true" data-todo-id="${todo.id}" data-overview-drop-id="${todo.id}" title="双击编辑">
+    <li class="todo-overview-item ${todo.completed ? 'is-completed' : ''} ${options.inlineCategory ? 'is-inline-category' : ''}" data-task-category="${todo.category}" draggable="true" data-todo-id="${todo.id}" data-overview-drop-id="${todo.id}" title="双击编辑">
       <div class="todo-overview-item-main">
         ${options.inlineCategory ? `<div class="todo-overview-title-line">
           <span class="todo-tag ${todo.category}">${categoryLabel(todo.category)}</span>
@@ -594,7 +604,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
   };
 
   const renderTodo = (todo: Todo) => {
-    return `<li class="todo-item ${todo.completed ? 'is-completed' : ''}" draggable="true" data-todo-id="${todo.id}" data-overview-drop-id="${todo.id}" title="双击编辑">
+    return `<li class="todo-item ${todo.completed ? 'is-completed' : ''}" data-task-category="${todo.category}" draggable="true" data-todo-id="${todo.id}" data-overview-drop-id="${todo.id}" title="双击编辑">
       <input class="todo-checkbox" type="checkbox" ${todo.completed ? 'checked' : ''} data-action="toggle-complete" data-todo-id="${todo.id}" aria-label="${todo.completed ? '取消完成' : '完成'}：${escapeHtml(todo.title)}" />
       <div class="todo-item-main">
         <p class="todo-item-title-row">
@@ -927,7 +937,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
 
   const setAuthenticatedHeader = (session: CloudSession) => {
     cloudSession = session;
-    setSyncStatus(`已登录：${session.account}`, { retry: false });
+    setSyncStatus(`${localTestMode ? '本地模拟' : '已登录'}：${session.account}`, { retry: false });
     loginButton.hidden = true;
     signOutButton.hidden = false;
   };
@@ -1042,7 +1052,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
     await refreshCloudState(session);
     await startCloudWatcher(session);
     if (loginModal.open) loginModal.close();
-    notify(successMessage || '已连接云端待办，跨浏览器实时同步已开启。');
+    notify(localTestMode ? '本地模拟账号已就绪；测试数据只保存在当前页面内存中。' : successMessage || '已连接云端待办，跨浏览器实时同步已开启。');
   };
 
   const saveCloudTodo = async (
@@ -1068,7 +1078,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
     upsertTodoInState(verifiedTodo);
     render();
     markSyncSuccess(session);
-    notify(successMessage);
+    notify(localTestMode ? '待办已添加到本地模拟数据，离开或刷新页面后清空。' : successMessage);
     void refreshCloudState(session).catch(() => undefined);
     return true;
   };
@@ -2182,7 +2192,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
   const login = async () => {
     const { email, password } = loginCredentials();
     setLoginPending(true);
-    loginMessage.textContent = '正在登录并读取云端待办…';
+    loginMessage.textContent = localTestMode ? '正在登录本地模拟账号…' : '正在登录并读取云端待办…';
     try {
       await activateSession(await (await getCloudApi()).signInWithPassword(email, password), '登录成功，已读取云端待办。');
     } finally {
@@ -2210,11 +2220,11 @@ export function mountTodoWorkspace(root: HTMLElement) {
         resetEmailSignUp();
       } else {
         const { email, password } = loginCredentials();
-        loginMessage.textContent = '正在发送邮箱验证码…';
+        loginMessage.textContent = localTestMode ? '正在准备本地模拟账号…' : '正在发送邮箱验证码…';
         completeEmailSignUp = await (await getCloudApi()).startEmailSignUp(email, password);
         verificationField.hidden = false;
         signUpButton.textContent = '完成注册';
-        loginMessage.textContent = '验证码已发送到邮箱，请输入后点击“完成注册”。';
+        loginMessage.textContent = localTestMode ? '本地模拟注册已就绪，请输入任意验证码完成登录。' : '验证码已发送到邮箱，请输入后点击“完成注册”。';
         verificationCodeInput.focus();
       }
     } catch (error) {
