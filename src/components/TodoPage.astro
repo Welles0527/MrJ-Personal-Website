@@ -5298,6 +5298,21 @@ html [data-task-category="health"] { --task-background: #43f574; }
 html [data-task-category="other"] { --task-background: #f4ce69; }
 html [data-task-category="study"] { --task-background: #d90036; --task-foreground: #fff; }
 html [data-task-category="work"] { --task-background: #a489fc; }
+
+/* Keep the seven-day labels compact and soften their contrast without restoring heavy cards. */
+html .todo-week-overview .todo-day-name { font-size: 12px; color: color-mix(in srgb, var(--ref-muted) 82%, transparent); }
+html .todo-week-overview .todo-day-date { font-size: 15px; font-weight: 550; color: color-mix(in srgb, var(--ref-text) 82%, transparent); }
+html .todo-week-overview .todo-day-count { font-size: 11px; color: color-mix(in srgb, var(--ref-muted) 82%, transparent); }
+html .todo-week-overview .todo-day-overview.is-today .todo-day-name,
+html .todo-week-overview .todo-day-overview.is-today .todo-day-date,
+html .todo-board-section .todo-day-column.is-today .todo-column-name {
+  color: color-mix(in srgb, var(--ref-accent) 68%, var(--ref-text));
+}
+html .todo-week-overview .todo-day-dot { opacity: 0.7; }
+html .todo-weekly-board .todo-column-name { font-size: 13px; color: color-mix(in srgb, var(--ref-text) 82%, transparent); }
+html .todo-weekly-board .todo-column-date { font-size: 11px; color: color-mix(in srgb, var(--ref-muted) 82%, transparent); }
+html .todo-weekly-board .todo-day-column .todo-item-title { font-size: 14px; color: color-mix(in srgb, var(--ref-text) 82%, transparent); }
+html .todo-weekly-board .todo-empty-day { font-size: 12px; color: color-mix(in srgb, var(--ref-muted) 82%, transparent); }
 html .todo-shell :is(.todo-item,.todo-overview-item)[data-task-category],
 html .todo-shell :is(.todo-item,.todo-overview-item)[data-task-category]:hover {
   background: var(--task-background);
