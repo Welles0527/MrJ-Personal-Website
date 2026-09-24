@@ -301,6 +301,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
   const templateSubmitButton = getElement<HTMLButtonElement>('[data-template-submit]');
   const templateResetButton = getElement<HTMLButtonElement>('[data-action="reset-template-form"]');
   const signUpButton = getElement<HTMLButtonElement>('[data-action="sign-up"]');
+  const forgotPasswordButton = getElement<HTMLButtonElement>('[data-action="forgot-password"]');
   const authStatus = getElement<HTMLElement>('[data-auth-status]');
   const lastSyncStatus = getElement<HTMLElement>('[data-last-sync]');
   const syncRetryButton = getElement<HTMLButtonElement>('[data-sync-retry]');
@@ -327,6 +328,9 @@ export function mountTodoWorkspace(root: HTMLElement) {
   const templateNoteInput = templateForm.elements.namedItem('templateNote') as HTMLTextAreaElement;
   const loginEmailInput = loginForm.elements.namedItem('email') as HTMLInputElement;
   const loginPasswordInput = loginForm.elements.namedItem('password') as HTMLInputElement;
+  const loginTitle = getElement<HTMLElement>('#todo-login-title');
+  const passwordLabel = loginPasswordInput.closest('label')?.querySelector('span');
+  const loginSubmitButton = loginForm.querySelector<HTMLButtonElement>('button[type="submit"]');
   const verificationCodeInput = loginForm.elements.namedItem('verificationCode') as HTMLInputElement;
   if (localTestMode) verificationCodeInput.placeholder = '输入任意测试验证码';
   const compactQuery = window.matchMedia('(max-width: 760px)');
@@ -338,6 +342,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
   let exportReminderTimer: number | undefined;
   let cloudSession: CloudSession | null = null;
   let completeEmailSignUp: ((verificationCode: string) => Promise<CloudSession>) | null = null;
+  let passwordResetVerificationId: string | null = null;
   let draggedTodoId: string | null = null;
   let draggedWithCopy = false;
   let cloudWatcher: import('./todo-cloud').CloudTodoWatcher | null = null;
@@ -2172,11 +2177,12 @@ export function mountTodoWorkspace(root: HTMLElement) {
     render();
   });
 
-  const loginCredentials = () => {
+  const loginCredentials = (requireStrongPassword = false) => {
     const email = loginEmailInput.value.trim();
     const password = loginPasswordInput.value;
     if (!/^\S+@\S+\.\S+$/.test(email)) throw new Error('请输入有效邮箱地址。');
-    if (password.length < 8) throw new Error('密码至少需要 8 位。');
+    if (!password) throw new Error('请输入密码。');
+    if (requireStrongPassword && password.length < 8) throw new Error('新密码至少需要 8 位。');
     return { email, password };
   };
 
@@ -2185,8 +2191,8 @@ export function mountTodoWorkspace(root: HTMLElement) {
     loginPasswordInput.disabled = pending;
     verificationCodeInput.disabled = pending;
     signUpButton.disabled = pending;
-    const submitButton = loginForm.querySelector<HTMLButtonElement>('button[type="submit"]');
-    if (submitButton) submitButton.disabled = pending;
+    forgotPasswordButton.disabled = pending;
+    if (loginSubmitButton) loginSubmitButton.disabled = pending;
   };
 
   const login = async () => {
@@ -2202,6 +2208,33 @@ export function mountTodoWorkspace(root: HTMLElement) {
 
   loginForm.addEventListener('submit', async (event) => {
     event.preventDefault();
+    if (passwordResetVerificationId) {
+      try {
+        const { email, password } = loginCredentials(true);
+        const verificationCode = verificationCodeInput.value.trim();
+        if (!verificationCode) throw new Error('请输入邮箱收到的验证码。');
+        setLoginPending(true);
+        loginMessage.textContent = '正在验证邮箱并重置密码…';
+        await (await getCloudApi()).completePasswordReset(email, passwordResetVerificationId, verificationCode, password);
+        passwordResetVerificationId = null;
+        verificationCodeInput.value = '';
+        verificationField.hidden = true;
+        signUpButton.hidden = false;
+        signUpButton.textContent = '创建账号';
+        forgotPasswordButton.textContent = '忘记密码？';
+        if (loginSubmitButton) loginSubmitButton.textContent = '登录并同步';
+        loginTitle.textContent = '登录我的待办';
+        if (passwordLabel) passwordLabel.textContent = '密码';
+        loginPasswordInput.autocomplete = 'current-password';
+        loginPasswordInput.value = '';
+        loginMessage.textContent = '密码已重置，请使用新密码登录。';
+      } catch (error) {
+        loginMessage.textContent = error instanceof Error ? error.message : '重置密码失败，请检查验证码后重试。';
+      } finally {
+        setLoginPending(false);
+      }
+      return;
+    }
     try {
       await login();
     } catch (error) {
@@ -2219,7 +2252,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
         await activateSession(await completeEmailSignUp(verificationCode), '账号创建成功，已连接云端待办。');
         resetEmailSignUp();
       } else {
-        const { email, password } = loginCredentials();
+        const { email, password } = loginCredentials(true);
         loginMessage.textContent = localTestMode ? '正在准备本地模拟账号…' : '正在发送邮箱验证码…';
         completeEmailSignUp = await (await getCloudApi()).startEmailSignUp(email, password);
         verificationField.hidden = false;
@@ -2230,6 +2263,37 @@ export function mountTodoWorkspace(root: HTMLElement) {
     } catch (error) {
       loginMessage.textContent = error instanceof Error ? error.message : '创建账号失败，请重试。';
       if (completeEmailSignUp) resetEmailSignUp();
+    } finally {
+      setLoginPending(false);
+    }
+  });
+
+  forgotPasswordButton.addEventListener('click', async () => {
+    try {
+      const email = loginEmailInput.value.trim();
+      if (!/^\S+@\S+\.\S+$/.test(email)) throw new Error('请先输入注册账号使用的邮箱地址。');
+      if (localTestMode) {
+        loginMessage.textContent = '本地测试账号不连接邮箱；忘记密码流程不会发送邮件。';
+        return;
+      }
+      const wasResetMode = Boolean(passwordResetVerificationId);
+      if (completeEmailSignUp) resetEmailSignUp();
+      setLoginPending(true);
+      loginMessage.textContent = '正在发送密码重置验证码…';
+      passwordResetVerificationId = await (await getCloudApi()).startPasswordReset(email);
+      verificationField.hidden = false;
+      signUpButton.hidden = true;
+      forgotPasswordButton.textContent = '重新发送验证码';
+      if (loginSubmitButton) loginSubmitButton.textContent = '确认重置密码';
+      if (passwordLabel) passwordLabel.textContent = '新密码';
+      loginTitle.textContent = '重置密码';
+      loginPasswordInput.autocomplete = 'new-password';
+      if (!wasResetMode) loginPasswordInput.value = '';
+      verificationCodeInput.value = '';
+      loginMessage.textContent = '验证码已发送到邮箱；请在上方输入验证码，并在“新密码”中设置至少 8 位的新密码。';
+      verificationCodeInput.focus();
+    } catch (error) {
+      loginMessage.textContent = error instanceof Error ? error.message : '暂时无法发送重置邮件，请稍后重试。';
     } finally {
       setLoginPending(false);
     }

@@ -24,6 +24,13 @@ type SignUpData = {
   verifyOtp?: (params: { token: string }) => Promise<CloudResult<SignInData>>;
 };
 
+type VerificationData = {
+  verification_id?: string;
+  verificationId?: string;
+  verification_token?: string;
+  verificationToken?: string;
+};
+
 type LoginState = {
   user?: CloudUser | null;
 } | null;
@@ -152,6 +159,39 @@ export const signInWithPassword = async (email: string, password: string) => {
   if (!session) throw new Error('登录成功，但未取得登录会话。请重试。');
   rememberSession(session);
   return session;
+};
+
+export const startPasswordReset = async (email: string) => {
+  const modernAuth = auth as typeof auth & {
+    getVerification: (params: { email: string; target: 'USER' }) => Promise<CloudResult<VerificationData> & VerificationData>;
+  };
+  const result = await modernAuth.getVerification({ email, target: 'USER' });
+  const verification = assertCloudResult<VerificationData>(result, '无法发送邮箱验证码，请稍后重试。');
+  const verificationId = verification?.verification_id || verification?.verificationId || result.verification_id || result.verificationId;
+  if (!verificationId) throw new Error('验证码已请求，但没有取得验证编号。请稍后重试。');
+  return verificationId;
+};
+
+export const completePasswordReset = async (email: string, verificationId: string, code: string, newPassword: string) => {
+  const modernAuth = auth as typeof auth & {
+    verify: (params: { verification_id: string; verification_code: string }) => Promise<CloudResult<VerificationData>>;
+    resetPassword: (params: { email: string; new_password: string; verification_token: string }) => Promise<unknown>;
+  };
+  const verificationResult = await modernAuth.verify({ verification_id: verificationId, verification_code: code });
+  const verification = assertCloudResult<VerificationData>(verificationResult, '邮箱验证码错误或已过期。');
+  const verificationToken = verification?.verification_token || verification?.verificationToken;
+  if (!verificationToken) throw new Error('验证码验证成功，但没有取得重置授权。请重新获取验证码。');
+  const resetPassword = modernAuth.resetPassword as unknown as (params: {
+    email: string;
+    new_password: string;
+    verification_token: string;
+  }) => Promise<unknown>;
+  const result: unknown = await resetPassword({ email, new_password: newPassword, verification_token: verificationToken });
+  if (result && typeof result === 'object' && 'error' in result && result.error) {
+    throw new Error(typeof result.error === 'object' && result.error && 'message' in result.error && typeof result.error.message === 'string'
+      ? result.error.message
+      : '重置密码失败，请稍后重试。');
+  }
 };
 
 export const signOut = async () => {

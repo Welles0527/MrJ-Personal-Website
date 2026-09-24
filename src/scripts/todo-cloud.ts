@@ -3,6 +3,8 @@ import {
   getCloudDb,
   getCloudSession as getProductionCloudSession,
   getRememberedSession as getProductionRememberedSession,
+  startPasswordReset as startProductionPasswordReset,
+  completePasswordReset as completeProductionPasswordReset,
   signInWithPassword as signInWithProductionPassword,
   signOut as signOutProduction,
   startEmailSignUp as startProductionEmailSignUp
@@ -141,6 +143,19 @@ export const signInWithPassword = async (email: string, password: string) => {
   if (!localTestAccountEnabled) return signInWithProductionPassword(email, password);
   localTestSession = requireLocalTestCredentials(email, password);
   return localTestSession;
+};
+export const startPasswordReset = async (email: string) => {
+  if (localTestAccountEnabled) return 'local-test-verification';
+  return startProductionPasswordReset(email);
+};
+export const completePasswordReset = async (email: string, verificationId: string, code: string, newPassword: string) => {
+  if (localTestAccountEnabled) {
+    if (email !== localTestAccountEmail || verificationId !== 'local-test-verification' || !code || newPassword.length < 8) {
+      throw new Error('本地模拟验证码无效；测试账号不支持修改密码。');
+    }
+    return;
+  }
+  return completeProductionPasswordReset(email, verificationId, code, newPassword);
 };
 export const startEmailSignUp = async (email: string, password: string) => {
   if (!localTestAccountEnabled) return startProductionEmailSignUp(email, password);

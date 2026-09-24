@@ -385,7 +385,7 @@ const navItems: NavItem[] = [
           </label>
           <label class="todo-field todo-field-wide">
             <span>密码</span>
-            <input name="password" type="password" autocomplete="current-password" minlength="8" placeholder="请输入私有密码" required />
+            <input name="password" type="password" autocomplete="current-password" placeholder="请输入私有密码" required />
           </label>
           <label class="todo-field todo-field-wide" data-verification-field hidden>
             <span>邮箱验证码</span>
@@ -393,6 +393,7 @@ const navItems: NavItem[] = [
           </label>
           <p class="todo-login-message" data-login-message aria-live="polite"></p>
           <div class="todo-modal-actions">
+            <button class="todo-secondary-button" type="button" data-action="forgot-password">忘记密码？</button>
             <button class="todo-secondary-button" type="button" data-action="sign-up">创建账号</button>
             <button class="todo-primary-button" type="submit">登录并同步</button>
           </div>
