@@ -3,15 +3,41 @@ import type { CloudSession, CloudTodo, CloudTodoCategory, CloudTodoPlacement } f
 const localTestMode = import.meta.env.DEV && new URLSearchParams(window.location.search).get('testAccount') === '1';
 let cloudApi: Promise<typeof import('./todo-cloud')> | null = null;
 let cloudApiImportRetry = 0;
+const recoverCloudModuleCache = async (error: unknown) => {
+  if (!import.meta.env.PROD || !(error instanceof Error)
+    || !/Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module/i.test(error.message)) return;
+  try {
+    const key = 'mywebsite.todo-module-recovery.v1';
+    const lastAttempt = Number(sessionStorage.getItem(key) || 0);
+    if (Date.now() - lastAttempt < 300000) return;
+    sessionStorage.setItem(key, String(Date.now()));
+    const assetPath = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/_astro/`;
+    for (const name of await caches.keys()) {
+      if (!name.startsWith('j-space-')) continue;
+      const cache = await caches.open(name);
+      for (const request of await cache.keys()) {
+        const url = new URL(request.url);
+        if (url.origin === location.origin && url.pathname.startsWith(assetPath) && /\.m?js$/.test(url.pathname)) {
+          await cache.delete(request);
+        }
+      }
+    }
+    // A fresh document also clears the browser's failed ES-module dependency map.
+    location.reload();
+  } catch {
+    // Storage may be unavailable; keep the login controls usable and show the error.
+  }
+};
 const loadCloudApi = () => {
   if (cloudApiImportRetry === 0) return import('./todo-cloud');
   if (cloudApiImportRetry === 1) return import('./todo-cloud?retry=1');
   return import('./todo-cloud?retry=2');
 };
 const getCloudApi = () => {
-  cloudApi ??= loadCloudApi().catch((error) => {
+  cloudApi ??= loadCloudApi().catch(async (error) => {
     cloudApi = null;
     cloudApiImportRetry = Math.min(cloudApiImportRetry + 1, 2);
+    await recoverCloudModuleCache(error);
     throw error;
   });
   return cloudApi;

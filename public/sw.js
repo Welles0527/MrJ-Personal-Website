@@ -60,13 +60,26 @@ const networkFirst = async (request, cacheName, fallbackRequest) => {
   }
 };
 
-const cacheFirst = async (request) => {
-  const cached = await caches.match(request);
-  if (cached) return cached;
+const validAsset = (request, response) => {
+  if (!response?.ok) return false;
+  const path = new URL(request.url).pathname;
+  const type = response.headers.get('content-type') || '';
+  if (/\.m?js$/i.test(path)) return /(?:javascript|ecmascript)/i.test(type);
+  if (/\.css$/i.test(path)) return /text\/css/i.test(type);
+  return true;
+};
 
-  const response = await fetch(request);
-  if (response.ok) {
-    const cache = await caches.open(ASSET_CACHE);
+const cacheFirst = async (request) => {
+  const cache = await caches.open(ASSET_CACHE);
+  const cached = await caches.match(request);
+  if (validAsset(request, cached)) return cached;
+  if (cached) await cache.delete(request);
+
+  let response = await fetch(request);
+  // Hosting fallbacks may return HTML with status 200 for a missing script.
+  // Bypass the HTTP cache before allowing that response to poison the asset cache.
+  if (!validAsset(request, response)) response = await fetchFresh(request);
+  if (validAsset(request, response)) {
     await cache.put(request, response.clone());
   }
   return response;
