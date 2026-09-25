@@ -2,8 +2,18 @@ import type { CloudSession, CloudTodo, CloudTodoCategory, CloudTodoPlacement } f
 
 const localTestMode = import.meta.env.DEV && new URLSearchParams(window.location.search).get('testAccount') === '1';
 let cloudApi: Promise<typeof import('./todo-cloud')> | null = null;
+let cloudApiImportRetry = 0;
+const loadCloudApi = () => {
+  if (cloudApiImportRetry === 0) return import('./todo-cloud');
+  if (cloudApiImportRetry === 1) return import('./todo-cloud?retry=1');
+  return import('./todo-cloud?retry=2');
+};
 const getCloudApi = () => {
-  cloudApi ??= import('./todo-cloud');
+  cloudApi ??= loadCloudApi().catch((error) => {
+    cloudApi = null;
+    cloudApiImportRetry = Math.min(cloudApiImportRetry + 1, 2);
+    throw error;
+  });
   return cloudApi;
 };
 

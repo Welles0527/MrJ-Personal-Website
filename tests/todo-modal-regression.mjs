@@ -66,6 +66,7 @@ const cloudStub = `
   export const signInWithPassword = async () => session;
   export const signOut = async () => undefined;
   export const startEmailSignUp = async () => async () => session;
+  export const startPasswordReset = async () => 'reset-regression';
   export const loadCloudTodos = async () => ({ todos: [...stored], requestId: 'load-regression' });
   export const watchCloudTodos = () => ({ pageCount: 1, capacity: 100, close: () => undefined });
   export const upgradeCloudTodoVersions = async () => 0;
@@ -134,12 +135,27 @@ try {
   page.on('request', (request) => {
     if (request.url().includes('todo-cloud')) browserDiagnostics.push(`todo-cloud request: ${request.url()}`);
   });
-  await page.route('**/*todo-cloud.ts*', (route) => route.fulfill({
-    status: 200,
-    contentType: 'application/javascript; charset=utf-8',
-    body: cloudStub
-  }));
+  let todoCloudRequestCount = 0;
+  await page.route('**/*todo-cloud.ts*', async (route) => {
+    todoCloudRequestCount += 1;
+    if (todoCloudRequestCount === 1) {
+      await route.abort('failed');
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/javascript; charset=utf-8',
+      body: cloudStub
+    });
+  });
   await page.goto(pageUrl, { waitUntil: 'networkidle' });
+  await page.locator('[data-login-modal]').waitFor({ state: 'visible' });
+  await page.locator('[data-login-form] input[name="email"]').fill('retry-regression@example.com');
+  await page.locator('[data-action="forgot-password"]').click();
+  await page.waitForTimeout(1000);
+  assert.ok(todoCloudRequestCount >= 2, `cloud module loading must retry after its first request fails; requests=${todoCloudRequestCount}; message=${await page.locator('[data-login-message]').innerText()}`);
+  assert.match(await page.locator('#todo-login-title').innerText(), /重置密码/, 'forgot-password must continue after the failed cloud module request');
+  await page.reload({ waitUntil: 'networkidle' });
   try {
     await page.waitForFunction(() => document.body.textContent.includes('modal-regression@example.com'));
   } catch (error) {
