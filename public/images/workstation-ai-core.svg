@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" role="img" aria-label="旋转的 AI 运算核心">
+  <defs>
+    <radialGradient id="aura"><stop stop-color="#e88438" stop-opacity=".27"/><stop offset=".58" stop-color="#ac541c" stop-opacity=".08"/><stop offset="1" stop-color="#ac541c" stop-opacity="0"/></radialGradient>
+    <radialGradient id="core"><stop stop-color="#302116"/><stop offset=".67" stop-color="#171513"/><stop offset="1" stop-color="#090b0d"/></radialGradient>
+    <linearGradient id="gold" x2="1" y2="1"><stop stop-color="#ffe0b6"/><stop offset=".48" stop-color="#ffad62"/><stop offset="1" stop-color="#a45022"/></linearGradient>
+    <filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="4" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <circle cx="250" cy="250" r="240" fill="url(#aura)"/>
+<g>
+    <circle cx="250" cy="250" r="104" fill="url(#core)" stroke="#ed9552" stroke-width="1.6"/>
+    <path d="M250 167 322 208v84l-72 41-72-41v-84z" fill="none" stroke="url(#gold)" stroke-width="2" filter="url(#glow)"/>
+    <path d="m250 167 0 58m72-17-51 29m51 55-51-29m-21 70v-59m-72 18 51-29m-51-55 51 29" stroke="#e38a45" stroke-opacity=".65" fill="none"/>
+    <path d="m250 218 29 16v33l-29 16-29-16v-33z" fill="#38271b" stroke="#ffc187" stroke-width="2"/>
+    <text x="250" y="259" fill="#ffe0bb" font-family="Arial,sans-serif" font-size="27" font-weight="700" letter-spacing="2" text-anchor="middle">AI</text>
+  </g>
+</svg>

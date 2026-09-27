@@ -173,6 +173,14 @@ try {
   assert.match(await page.locator('.todo-brand-mark img').getAttribute('src') || '', /todo-calendar\.svg$/, 'sidebar brand must use the transparent calendar icon asset');
   assert.match(await page.locator('.todo-title-cup img').getAttribute('src') || '', /todo-cup\.svg$/, 'Todo heading must use the cup icon asset');
 
+  // The weekly backup reminder can open on Friday through Sunday.
+  // Dismiss it through the real UI before testing unrelated controls.
+  const exportReminder = page.locator('[data-export-reminder-modal]');
+  if (await exportReminder.isVisible()) {
+    await exportReminder.locator('[data-action="dismiss-export-reminder"]').click();
+    await exportReminder.waitFor({ state: 'hidden' });
+  }
+
   const themeToggle = page.locator('[data-theme-toggle]');
   assert.equal(await themeToggle.getAttribute('data-theme-current'), 'dark', 'default Todo theme must remain dark');
   await themeToggle.click();
