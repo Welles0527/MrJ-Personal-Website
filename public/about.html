@@ -479,4 +479,39 @@
     window.addEventListener('pagehide',()=>lifecycle.abort(),{once:true});
   }
 })();
-</script><script id="identity-guide-script">(() => {const key='identity-wheel-guide-v1';try{if(localStorage.getItem(key))return}catch{}const stage=document.querySelector('.identity-stage');if(!stage)return;const guide=document.createElement('div');guide.className='identity-wheel-guide';guide.setAttribute('role','status');guide.innerHTML='<strong>认识我的七重身份</strong><span>点击轮盘上的身份图标，让轮盘转动，看看不同的我。</span><button type="button">开始探索</button>';const finish=()=>{stage.classList.remove('guide-active');guide.remove();try{localStorage.setItem(key,'1')}catch{}};guide.querySelector('button').onclick=finish;stage.querySelector('.identity-orbit-controls')?.addEventListener('click',finish,{once:true});setTimeout(()=>{stage.classList.add('guide-active');document.body.append(guide)},650)})();</script><script src="/officialwebsite/contact-qr.js"></script></body></html>
+</script><style id="identity-guide-anchor-styles">
+.identity-wheel-guide{--guide-accent:var(--u-accent, #ffb277);position:fixed;right:auto!important;bottom:auto!important;z-index:1200;width:min(320px,calc(100vw - 24px));max-width:none;box-sizing:border-box;padding:16px 18px;border:1px solid color-mix(in srgb,var(--guide-accent) 45%,transparent);border-radius:16px;background:color-mix(in srgb,var(--u-bg, #171513) 58%,transparent);backdrop-filter:blur(12px);color:var(--u-text, #f5eee6);box-shadow:0 8px 28px #0002;opacity:0;transform:translateY(7px);transition:opacity .25s,transform .25s;pointer-events:none;animation:none}
+.identity-wheel-guide.is-ready{opacity:1;transform:none;pointer-events:auto}
+.identity-wheel-guide strong,.identity-wheel-guide h2{display:block;color:var(--u-text, #f5eee6);font-size:17px;line-height:1.4;margin:6px 0 8px}
+.identity-wheel-guide small{color:var(--guide-accent)}
+.identity-wheel-guide p,.identity-wheel-guide > span{display:block;font-size:13px;line-height:1.65;margin:0 0 12px;color:var(--u-text, #f5eee6)}
+.identity-wheel-guide button{border:0;padding:8px 14px;border-radius:8px;margin:0;background:var(--guide-accent);color:#24170d;cursor:pointer}
+.identity-wheel-guide .calendar-tour-skip{background:transparent;color:var(--u-text, #f5eee6)}
+.identity-wheel-guide .calendar-tour-actions,.identity-wheel-guide .identity-wheel-guide-actions{display:flex;justify-content:space-between;gap:12px}
+.identity-guide-pointer{position:fixed;width:48px;height:60px;z-index:1201;pointer-events:none;color:#fff;filter:drop-shadow(0 2px 3px #0009);transition:left .6s ease,top .6s ease;}
+.identity-guide-pointer svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.identity-guide-pointer:after{content:"";position:absolute;left:13px;top:10px;width:18px;height:18px;border:2px solid var(--u-accent, #ffb277);border-radius:50%;opacity:0}
+.identity-guide-pointer.is-tapped:after{animation:identity-ripple 1.4s ease-out infinite}
+@keyframes identity-ripple{0%{transform:scale(.3);opacity:.9}65%,100%{transform:scale(2.8);opacity:0}}
+.calendar-tour-target{outline:2px solid var(--u-accent, #ffb277)!important;outline-offset:4px}
+@media(prefers-reduced-motion:reduce){.identity-wheel-guide,.identity-guide-pointer{transition:none}.identity-guide-pointer:after{animation:none!important}}
+</style><script id="identity-guide-script">(() => {
+ const key='identity-guide-v3';try{if(localStorage.getItem(key))return}catch{}
+ const steps=[{title:'认识我的七重身份',text:'点击轮盘上的身份图标，看看不同的我。'}];let index=0,target=null,timer=0,finished=false;
+ const guide=document.createElement('div');guide.className='identity-wheel-guide';guide.setAttribute('role','dialog');guide.setAttribute('aria-label','新手操作引导');
+ guide.innerHTML='<small></small><h2></h2><p></p><div class="calendar-tour-actions"><button type="button" class="calendar-tour-skip">跳过</button><button type="button" class="calendar-tour-next">下一步</button></div>';
+ const hand=document.createElement('div');hand.className='identity-guide-pointer';hand.setAttribute('aria-hidden','true');hand.innerHTML='<svg viewBox="0 0 64 80" aria-hidden="true"><path d="M25 71C16 63 13 56 14 48c0-6 8-7 10-2V24c0-7 10-7 10 0v23-10c0-6 9-6 9 0v12-8c0-6 9-6 9 0v11-5c0-5 8-5 8 1v9c0 6-2 12-4 16M29 4v9M12 10l6 6M4 26h10M43 10l-6 6M46 26h10"/></svg>';
+ const position=()=>{if(!target||!target.isConnected)return;const r=target.getBoundingClientRect(),w=guide.offsetWidth,h=guide.offsetHeight;
+ const visible=r.bottom>0&&r.top<innerHeight;guide.style.visibility=hand.style.visibility=visible?'visible':'hidden';
+ hand.style.left=(r.left+r.width/2-22)+'px';hand.style.top=(r.top+r.height/2-18)+'px';
+ guide.style.left=Math.max(12,Math.min(r.left+(r.width-w)/2,innerWidth-w-12))+'px';
+ guide.style.top=Math.max(12,Math.min(r.bottom+42,innerHeight-h-12))+'px';};
+ const finish=()=>{finished=true;clearTimeout(timer);target?.classList.remove('calendar-tour-target');guide.remove();hand.remove();window.removeEventListener('scroll',position);window.removeEventListener('resize',position);try{localStorage.setItem(key,'1')}catch{}};
+ const show=()=>{clearTimeout(timer);guide.classList.remove('is-ready');hand.classList.remove('is-tapped');target?.classList.remove('calendar-tour-target');const step=steps[index];target=[...document.querySelectorAll('.identity-stage .identity-selector')].reduce((top,button)=>!top||button.getBoundingClientRect().top<top.getBoundingClientRect().top?button:top,null);if(!target){finish();return}
+ guide.querySelector('small').textContent=steps.length>1?(index+1)+' / '+steps.length:'';guide.querySelector('h2').textContent=step.title;guide.querySelector('p').textContent=step.text;guide.querySelector('.calendar-tour-next').textContent=index===steps.length-1?'开始探索':'下一步';
+ target.scrollIntoView({behavior:'instant',block:'center'});position();timer=setTimeout(()=>{if(finished)return;target.classList.add('calendar-tour-target');hand.classList.add('is-tapped');guide.classList.add('is-ready');position()},700);};
+ guide.querySelector('.calendar-tour-skip').onclick=finish;guide.querySelector('.calendar-tour-next').onclick=()=>{if(++index===steps.length)finish();else show()};
+ document.querySelector('.identity-stage .identity-orbit-controls')?.addEventListener('click',finish,{once:true});
+ window.addEventListener('scroll',position,{passive:true});window.addEventListener('resize',position);
+ setTimeout(()=>{document.body.append(guide,hand);hand.style.left=innerWidth/2+'px';hand.style.top=innerHeight-70+'px';requestAnimationFrame(()=>requestAnimationFrame(show))},650);
+})();</script><script src="/officialwebsite/contact-qr.js"></script></body></html>
