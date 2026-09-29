@@ -3,6 +3,116 @@
   const baseFiltered = filtered;
   const baseCard = card;
   const baseInlineBracket = inlineBracket;
+  state.matchFilterByEvent ||= Object.create(null);
+  state.matchSearchByEvent ||= Object.create(null);
+  state.matchDateByEvent ||= Object.create(null);
+  const todayInBeijing = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai',
+    year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+  const matchFilters = date => {
+    const dayLabel = date === todayInBeijing() ? '今日' : '当日';
+    return [
+      { id: 'all', label: `${dayLabel}赛事` },
+      { id: 'ended', label: `${dayLabel}已结束` },
+      { id: 'live', label: `${dayLabel}正在进行` },
+    ];
+  };
+  const matchDateRange = (start, end) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(start || '') || !/^\d{4}-\d{2}-\d{2}$/.test(end || '')) return [];
+    const first = Date.parse(`${start}T00:00:00Z`);
+    const last = Date.parse(`${end}T00:00:00Z`);
+    if (!Number.isFinite(first) || !Number.isFinite(last) || last < first) return [];
+    const days = [];
+    for (let day = first; day <= last; day += 24 * 60 * 60 * 1000) days.push(new Date(day).toISOString().slice(0, 10));
+    return days;
+  };
+  const dateLabel = value => {
+    const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return '';
+    const date = new Date(`${value}T12:00:00+08:00`);
+    const weekday = new Intl.DateTimeFormat('zh-CN', { timeZone: 'Asia/Shanghai', weekday: 'short' }).format(date);
+    return `${Number(match[2])}月${Number(match[3])}日 ${weekday}`;
+  };
+
+  const normalizeQuery = value => String(value || '').normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '').replace(/[’‘]/g, "'").trim().toLocaleLowerCase();
+
+  const applyMatchFilter = (panel, selected, query = '', date = '') => {
+    const matches = [...panel.querySelectorAll('.knockout-match,.match-fixture')];
+    const revealFilteredDay = Boolean(query || (date && date !== todayInBeijing()));
+    matches.forEach(match => {
+      const earlier = match.closest('.earlier-matches');
+      if (earlier && date === todayInBeijing() && selected === 'all' && !query) {
+        match.classList.remove('match-filter-hidden');
+        return;
+      }
+      const rawStatus = match.dataset.matchStatus;
+      const statusMatches = selected === 'all' || (selected === 'ended' && rawStatus === 'ended') ||
+        (selected === 'live' && ['live', 'suspended'].includes(rawStatus));
+      const nameMatches = !query || normalizeQuery(match.dataset.matchSearch).includes(normalizeQuery(query));
+      const dateMatches = !date || match.dataset.matchDate === date;
+      match.classList.toggle('match-filter-hidden', !(statusMatches && nameMatches && dateMatches));
+    });
+    panel.querySelectorAll('.knockout-round,.inline-bracket-round').forEach(round => {
+      const roundMatches = [...round.querySelectorAll('.knockout-match,.match-fixture')];
+      round.classList.toggle('match-filter-hidden', roundMatches.length > 0 &&
+        roundMatches.every(match => match.classList.contains('match-filter-hidden')));
+    });
+    panel.querySelectorAll('.later-matches').forEach(section => {
+      const rows = [...section.querySelectorAll('.knockout-match,.match-fixture')];
+      const found = rows.some(match => !match.classList.contains('match-filter-hidden'));
+      section.classList.toggle('match-filter-hidden', selected !== 'all' || (date && !found));
+      if (revealFilteredDay) {
+        section.open = found;
+        if (found) section.dataset.matchFilterAutoOpened = 'true';
+      } else if (section.dataset.matchFilterAutoOpened === 'true') {
+        section.open = false;
+        delete section.dataset.matchFilterAutoOpened;
+      }
+      if (date && section.querySelector('summary')) {
+        section.querySelector('summary').textContent = `${dateLabel(date)}待赛对阵 · ${rows.filter(match => !match.classList.contains('match-filter-hidden')).length} 场`;
+      }
+    });
+    panel.querySelectorAll('.earlier-matches').forEach(section => {
+      const rows = [...section.querySelectorAll('.knockout-match,.match-fixture')];
+      const found = rows.some(match => !match.classList.contains('match-filter-hidden'));
+      if (revealFilteredDay) {
+        section.open = found;
+        if (found) section.dataset.matchFilterAutoOpened = 'true';
+      } else if (section.dataset.matchFilterAutoOpened === 'true') {
+        section.open = false;
+        delete section.dataset.matchFilterAutoOpened;
+      }
+      if (date && section.querySelector('summary')) {
+        section.querySelector('summary').textContent = revealFilteredDay && found ? `${dateLabel(date)}已结束的比赛 · ${rows.filter(match => !match.classList.contains('match-filter-hidden')).length} 场` :
+          `展开当天以前已结束的比赛 · ${rows.length} 场`;
+      }
+      const preserveHistory = date === todayInBeijing() && selected === 'all' && !query;
+      section.classList.toggle('match-filter-hidden', !found && !preserveHistory);
+      if (preserveHistory) {
+        rows.forEach(match => match.classList.remove('match-filter-hidden'));
+      }
+    });
+    const visible = matches.some(match => !match.classList.contains('match-filter-hidden') &&
+      !match.closest('.later-matches.match-filter-hidden,.earlier-matches.match-filter-hidden') &&
+      (!match.closest('details') || match.closest('details').open));
+    panel.querySelector('.match-filter-empty')?.classList.toggle('match-filter-hidden', visible);
+  };
+  const updateMatchFilterButtons = (panel, selectedDate) => {
+    const filters = matchFilters(selectedDate);
+    const dateMatches = [...panel.querySelectorAll('.knockout-match,.match-fixture')]
+      .filter(match => match.dataset.matchDate === selectedDate);
+    const counts = {
+      all: dateMatches.length,
+      ended: dateMatches.filter(match => match.dataset.matchStatus === 'ended').length,
+      live: dateMatches.filter(match => ['live', 'suspended'].includes(match.dataset.matchStatus)).length,
+    };
+    panel.querySelectorAll('[data-match-filter]').forEach(button => {
+      const filter = filters.find(item => item.id === button.dataset.matchFilter);
+      if (filter) button.childNodes[0].textContent = filter.label;
+      const count = button.querySelector('b');
+      if (count) count.textContent = counts[button.dataset.matchFilter] ?? 0;
+    });
+  };
   const normalizeName = value => String(value || '')
     .replace(/[’‘]/g, "'")
     .replace(/\./g, '')
@@ -45,7 +155,8 @@
     return Number(match[1]) > Number(match[2]) ? 0 : 1;
   };
 
-  const decorateBracket = html => {
+  const decorateBracket = (html, event) => {
+    const eventId = event.id;
     const template = document.createElement('template');
     template.innerHTML = html;
     const heading = template.content.querySelector('.inline-bracket-heading');
@@ -56,14 +167,13 @@
       key.innerHTML = '<span class="winner-key"><i aria-hidden="true">胜</i>胜者</span><span class="seed-key"><i aria-hidden="true">✦</i>种子</span>';
       heading.insertBefore(key, heading.querySelector('button'));
     }
-    template.content.querySelectorAll('.inline-bracket-match').forEach(match => {
+    template.content.querySelectorAll('.inline-bracket-match,.knockout-match').forEach(match => {
       const row = match.querySelector(':scope > div');
-      if (!row) return;
       const players = [...match.querySelectorAll('[data-bracket-player]')].length ?
-        [...match.querySelectorAll('[data-bracket-player]')] : [...row.querySelectorAll(':scope > span')];
+        [...match.querySelectorAll('[data-bracket-player]')] : [...(row?.querySelectorAll(':scope > span') || [])];
       if (players.length !== 2) return;
       const winner = match.dataset.matchStatus && match.dataset.matchStatus !== 'ended' ? null :
-        bracketWinnerIndex(match.dataset.score || row.querySelector(':scope > b')?.textContent);
+        bracketWinnerIndex(match.dataset.score || row?.querySelector(':scope > b')?.textContent);
       players.forEach((playerNode, index) => {
         const name = playerNode.textContent.trim();
         const rank = seedRank(name);
@@ -89,10 +199,77 @@
         }
       });
     });
+    const content = template.content.querySelector('.knockout-chart,.inline-bracket-rounds');
+    const panel = template.content.querySelector('.inline-bracket');
+    const allMatches = panel ? [...panel.querySelectorAll('.knockout-match,.match-fixture')] : [];
+    const matches = allMatches.filter(match => !match.closest('.earlier-matches'));
+    if (content && matches.some(match => match.dataset.matchFilterStatus)) {
+      const selected = state.matchFilterByEvent[eventId] || 'all';
+      const query = state.matchSearchByEvent[eventId] || '';
+      const matchDates = [...new Set(allMatches.map(match => match.dataset.matchDate).filter(Boolean))].sort();
+      const calendarDates = event.type === 'qualifier' ? [] : matchDateRange(event.start, event.end);
+      const availableDates = calendarDates.length ? calendarDates : matchDates;
+      const today = todayInBeijing();
+      const selectedDate = availableDates.includes(state.matchDateByEvent[eventId]) ? state.matchDateByEvent[eventId] :
+        availableDates.includes(today) ? today : availableDates[0] || today;
+      state.matchDateByEvent[eventId] = selectedDate;
+      const datedMatches = allMatches.filter(match => match.dataset.matchDate === selectedDate);
+      const counts = {
+        all: datedMatches.length,
+        ended: datedMatches.filter(match => match.dataset.matchStatus === 'ended').length,
+        live: datedMatches.filter(match => ['live', 'suspended'].includes(match.dataset.matchStatus)).length,
+      };
+      const filters = matchFilters(selectedDate);
+      const calendar = document.createElement('div');
+      calendar.className = 'match-date-calendar';
+      calendar.setAttribute('role', 'group');
+      calendar.setAttribute('aria-label', '正赛比赛日期');
+      const dateList = document.createElement('div');
+      dateList.className = 'match-date-list';
+      availableDates.forEach(date => {
+        const [, , month, day] = date.match(/^(\d{4})-(\d{2})-(\d{2})$/) || [];
+        const option = document.createElement('button');
+        option.type = 'button';
+        option.className = `match-date-option${date === today ? ' is-today' : ''}${date === selectedDate ? ' is-selected' : ''}`;
+        option.dataset.matchDay = date;
+        option.setAttribute('aria-pressed', String(date === selectedDate));
+        if (date === today) option.setAttribute('aria-current', 'date');
+        option.setAttribute('aria-label', `${dateLabel(date)}${date === today ? '，今天' : ''}`);
+        option.innerHTML = `<small>${Number(month)}月</small><strong>${Number(day)}</strong><span>${date === today ? '今天' : dateLabel(date).split(' ')[1]}</span>`;
+        dateList.append(option);
+      });
+      const calendarHeading = document.createElement('span');
+      calendarHeading.className = 'match-date-calendar-label';
+      calendarHeading.textContent = '正赛日期';
+      if (event.type !== 'qualifier') calendar.append(calendarHeading, dateList);
+      const searchFilters = document.createElement('div');
+      searchFilters.className = 'match-query-filters';
+      const search = document.createElement('input');
+      search.type = 'search';
+      search.dataset.matchSearch = '';
+      search.value = query;
+      search.placeholder = '输入球员中文名或英文名';
+      search.setAttribute('aria-label', '搜索球员比赛安排');
+      searchFilters.append(search);
+      const bar = document.createElement('div');
+      bar.className = 'match-status-filters';
+      bar.setAttribute('role', 'group');
+      bar.setAttribute('aria-label', '比赛状态筛选');
+      bar.innerHTML = `<span>筛选</span>${filters.map(filter =>
+        `<button type="button" data-match-filter="${filter.id}" aria-pressed="${selected === filter.id}">${filter.label}<b>${counts[filter.id]}</b></button>`).join('')}`;
+      const empty = document.createElement('p');
+      empty.className = 'match-filter-empty match-filter-hidden';
+      empty.textContent = '当前筛选条件下暂无比赛';
+      content.before(calendar);
+      content.before(searchFilters);
+      content.before(bar);
+      content.after(empty);
+      applyMatchFilter(panel, selected, query, selectedDate);
+    }
     return template.innerHTML;
   };
 
-  inlineBracket = event => decorateBracket(baseInlineBracket(event));
+  inlineBracket = event => decorateBracket(baseInlineBracket(event), event);
 
   card = event => {
     if (state.nav !== 'schedule' || status(event) !== 'live') return baseCard(event);
@@ -108,7 +285,7 @@
     const liveCount = events.filter(event => available(event) && status(event) === 'live').length;
     const upcomingCount = events.filter(event => available(event) && status(event) === 'upcoming').length;
     return `<div class="schedule-control" role="region" aria-label="赛程显示范围">
-      <div><strong>正在进行的赛事</strong><span>${liveCount} 场对阵图已默认展开${state.scheduleShowUpcoming ? ` · 已显示 ${upcomingCount} 场未开始赛事` : ''}</span></div>
+      <div><strong>正在进行的赛事</strong><span>${liveCount} 场赛事详情已默认展开${state.scheduleShowUpcoming ? ` · 已显示 ${upcomingCount} 场未开始赛事` : ''}</span></div>
       <button type="button" data-schedule-upcoming aria-expanded="${state.scheduleShowUpcoming}" ${upcomingCount ? '' : 'disabled'}>
         ${state.scheduleShowUpcoming ? '收起未开始赛事' : '展开未开始赛事'}${upcomingCount ? ` · ${upcomingCount}` : ''}
       </button>
@@ -138,6 +315,46 @@
       state.expandedEvent = null;
       document.body.classList.remove('menu-open');
       render();
+      return;
+    }
+
+    const filter = target?.closest('[data-match-filter]');
+    if (filter) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      const panel = filter.closest('.inline-bracket');
+      const eventId = panel?.querySelector('[data-inline-close]')?.dataset.inlineClose;
+      if (panel && eventId) {
+        const selected = filter.dataset.matchFilter;
+        state.matchFilterByEvent[eventId] = selected;
+        const selectedDate = state.matchDateByEvent[eventId] || todayInBeijing();
+        applyMatchFilter(panel, selected, state.matchSearchByEvent[eventId] || '', selectedDate);
+        panel.querySelectorAll('[data-match-filter]').forEach(button =>
+          button.setAttribute('aria-pressed', String(button.dataset.matchFilter === selected)));
+      }
+      return;
+    }
+
+    const dateButton = target?.closest('[data-match-day]');
+    if (dateButton) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      const panel = dateButton.closest('.inline-bracket');
+      const eventId = panel?.querySelector('[data-inline-close]')?.dataset.inlineClose;
+      if (panel && eventId) {
+        const selectedDate = dateButton.dataset.matchDay;
+        state.matchDateByEvent[eventId] = selectedDate;
+        state.matchFilterByEvent[eventId] = 'all';
+        panel.querySelectorAll('[data-match-day]').forEach(button => {
+          const selected = button.dataset.matchDay === selectedDate;
+          button.setAttribute('aria-pressed', String(selected));
+          button.classList.toggle('is-selected', selected);
+        });
+        panel.querySelectorAll('[data-match-filter]').forEach(button =>
+          button.setAttribute('aria-pressed', String(button.dataset.matchFilter === 'all')));
+        updateMatchFilterButtons(panel, selectedDate);
+        applyMatchFilter(panel, 'all', state.matchSearchByEvent[eventId] || '', selectedDate);
+      }
       return;
     }
 
@@ -183,6 +400,17 @@
     }
   }, true);
 
+  document.addEventListener('input', event => {
+    const input = event.target instanceof HTMLInputElement ? event.target : null;
+    if (!input?.matches('[data-match-search]')) return;
+    const panel = input.closest('.inline-bracket');
+    const eventId = panel?.querySelector('[data-inline-close]')?.dataset.inlineClose;
+    if (!panel || !eventId) return;
+    state.matchSearchByEvent[eventId] = input.value;
+    applyMatchFilter(panel, state.matchFilterByEvent[eventId] || 'all', input.value,
+      state.matchDateByEvent[eventId] || '');
+  }, true);
+
   const style = document.createElement('style');
   style.textContent = `
     .schedule-control{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 15px;padding:0;border:0;border-radius:0;background:transparent}
@@ -202,10 +430,14 @@
     .match-fixture .match-actions{display:flex;flex-direction:column;gap:7px}.match-actions a{display:grid;place-items:center;min-height:36px;padding:7px 6px;border-radius:6px;background:var(--selection);color:#111!important;font-size:12px;font-weight:700;text-align:center;white-space:nowrap}.match-actions a:hover{filter:brightness(1.12)}
     .match-round-divider{display:flex;flex-direction:column;align-items:center;gap:1px;padding:12px 10px;border-block:1px solid var(--line);background:color-mix(in srgb,var(--bg) 90%,var(--selection) 10%);text-align:center}.match-round-divider small{color:var(--muted);font-size:11px}.match-round-divider strong{color:var(--selection);font-size:18px}.match-round-divider strong:before,.match-round-divider strong:after{content:'▲';margin:0 9px;font-size:9px;vertical-align:middle}
     .inline-bracket-round:has(.match-fixture) h4{margin:0;padding:7px 0 12px;font-size:14px}.inline-bracket-round:has(.match-fixture) h4 span{color:var(--muted);font-weight:400}
+    .knockout-chart{display:flex;align-items:flex-start;gap:22px;overflow-x:auto;padding:8px 2px 14px;scrollbar-color:var(--line) transparent}.knockout-round{flex:1 0 310px;min-width:0}.knockout-round h4{margin:0 0 12px;padding:7px 10px;border-bottom:1px solid var(--selection);color:var(--selection);font-size:14px}.knockout-round h4 span{color:var(--muted);font-size:11px;font-weight:400}.knockout-round-matches{display:grid;gap:12px}.knockout-match{padding:10px;border:1px solid var(--line);border-radius:9px;background:var(--card)}.knockout-match.has-winner{border-color:color-mix(in srgb,var(--selection) 45%,var(--line))}.knockout-match-meta{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:10px}.knockout-match-meta strong{color:var(--selection);white-space:nowrap}.knockout-match-players{display:grid;grid-template-columns:minmax(0,1fr) 48px minmax(0,1fr);align-items:center;gap:4px;margin-top:10px}.knockout-match .match-entrant,.knockout-match .match-entrant-away{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0}.knockout-match .match-portrait{order:0;position:relative;display:block;width:66px;height:66px;overflow:hidden;border:1px solid var(--line);border-radius:7px;background:var(--bg)}.knockout-match .match-portrait img{display:block;width:100%;height:100%;object-fit:cover;object-position:top}.knockout-match .match-name{order:1;display:flex;align-items:center;flex-direction:column;gap:3px;width:100%;text-align:center}.knockout-match .match-name [data-bracket-player]{font-size:12px;line-height:1.25;overflow-wrap:anywhere}.knockout-match .match-flag,.knockout-match .match-flag .rank-flag,.knockout-match .match-flag svg{display:block;width:22px;height:14px}.knockout-score{display:flex;align-items:center;justify-content:center;gap:3px;font-size:14px}.knockout-score b{font-size:17px}.knockout-score span{color:var(--muted)}.knockout-match-link{display:block;margin-top:8px;color:var(--selection);font-size:11px;text-align:right}.earlier-matches{margin-top:16px}.earlier-matches summary{cursor:pointer;padding:9px 0;color:var(--selection);font-size:12px}.earlier-matches .knockout-match{display:inline-block;vertical-align:top;width:310px;max-width:100%;margin:0 10px 10px 0}.earlier-matches .match-fixture{width:100%}
     @media(max-width:1100px) and (min-width:681px){.match-fixture.inline-bracket-match{grid-template-columns:100px minmax(0,1fr) 106px;gap:8px;padding-inline:10px}.match-fixture .match-pair{grid-template-columns:minmax(0,1fr) 62px minmax(0,1fr);gap:5px}.match-fixture .match-entrant{grid-template-columns:minmax(0,1fr) 62px;gap:5px}.match-fixture .match-entrant-away{grid-template-columns:62px minmax(0,1fr)}.match-fixture .match-portrait{width:62px;height:72px}.match-name>[data-bracket-player]{font-size:13px}.match-when strong{font-size:20px}.match-score b{font-size:20px!important}}
     @media(max-width:680px){.schedule-control{align-items:flex-start;flex-direction:column;gap:9px}.schedule-control button{width:100%}.bracket-key{order:3;width:100%;margin-left:0}.inline-bracket-heading button{margin-left:auto}}
-    @media(max-width:680px){.inline-bracket{padding:12px 0}.inline-bracket-match:not(.match-fixture){grid-template-columns:minmax(0,1fr);gap:8px;padding:12px 10px}.inline-bracket-match:not(.match-fixture)>div{font-size:15px;gap:6px}.inline-bracket-match:not(.match-fixture) b{min-width:44px;font-size:16px;padding:3px}.inline-bracket-match .bracket-player{overflow-wrap:anywhere}.schedule-control button{text-align:left}.match-fixture.inline-bracket-match{grid-template-columns:minmax(0,1fr);gap:10px;padding:14px 8px;min-height:0}.match-fixture .match-when{display:flex;flex-direction:row;align-items:baseline;gap:7px}.match-when strong{font-size:18px}.match-when>span,.match-when>small{font-size:10px!important}.match-when .match-live-indicator{margin:0 0 0 auto;font-size:10px}.match-fixture .match-pair{grid-template-columns:minmax(0,1fr) 64px minmax(0,1fr);gap:5px}.match-fixture .match-entrant,.match-fixture .match-entrant-away{display:flex;flex-direction:column;align-items:center;gap:5px}.match-fixture .match-portrait{order:0;width:58px;height:62px}.match-fixture .match-name,.match-fixture .match-entrant-away .match-name{order:1;align-items:center;text-align:center}.match-name>[data-bracket-player]{font-size:12px}.match-name>small{font-size:9px!important}.match-name .match-flag{height:14px}.match-flag .rank-flag,.match-flag svg{width:22px;height:14px;margin:auto}.match-score>div{min-height:40px}.match-score b{font-size:17px!important}.match-score>small{font-size:8px!important;white-space:normal;text-align:center}.match-fixture .match-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.match-actions a{min-height:32px;font-size:11px}}
+    @media(max-width:680px){.inline-bracket{padding:12px 0}.knockout-round{flex-basis:100%;scroll-snap-align:start}.knockout-chart{scroll-snap-type:x mandatory}.inline-bracket-match:not(.match-fixture){grid-template-columns:minmax(0,1fr);gap:8px;padding:12px 10px}.inline-bracket-match:not(.match-fixture)>div{font-size:15px;gap:6px}.inline-bracket-match:not(.match-fixture) b{min-width:44px;font-size:16px;padding:3px}.inline-bracket-match .bracket-player{overflow-wrap:anywhere}.schedule-control button{text-align:left}.match-fixture.inline-bracket-match{grid-template-columns:minmax(0,1fr);gap:10px;padding:14px 8px;min-height:0}.match-fixture .match-when{display:flex;flex-direction:row;align-items:baseline;gap:7px}.match-when strong{font-size:18px}.match-when>span,.match-when>small{font-size:10px!important}.match-when .match-live-indicator{margin:0 0 0 auto;font-size:10px}.match-fixture .match-pair{grid-template-columns:minmax(0,1fr) 64px minmax(0,1fr);gap:5px}.match-fixture .match-entrant,.match-fixture .match-entrant-away{display:flex;flex-direction:column;align-items:center;gap:5px}.match-fixture .match-portrait{order:0;width:58px;height:62px}.match-fixture .match-name,.match-fixture .match-entrant-away .match-name{order:1;align-items:center;text-align:center}.match-name>[data-bracket-player]{font-size:12px}.match-name>small{font-size:9px!important}.match-name .match-flag{height:14px}.match-flag .rank-flag,.match-flag svg{width:22px;height:14px;margin:auto}.match-score>div{min-height:40px}.match-score b{font-size:17px!important}.match-score>small{font-size:8px!important;white-space:normal;text-align:center}.match-fixture .match-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.match-actions a{min-height:32px;font-size:11px}}
   `;
   document.head.append(style);
+  const filterStyle = document.createElement('style');
+  filterStyle.textContent = '.match-date-calendar{margin:12px 0 10px}.match-date-calendar-label{display:block;margin-bottom:7px;color:var(--muted);font-size:11px}.match-date-list{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px}.match-date-option{display:flex;min-width:0;min-height:65px;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 4px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);cursor:pointer}.match-date-option small,.match-date-option span{font-size:10px;color:var(--muted);line-height:1.1}.match-date-option strong{font-size:19px;line-height:1.1}.match-date-option.is-today{border-color:color-mix(in srgb,var(--gold) 55%,var(--line));background:color-mix(in srgb,var(--gold) 17%,var(--card))}.match-date-option.is-selected{border-color:var(--selection);background:color-mix(in srgb,var(--selection) 16%,var(--card));color:var(--selection)}.match-date-option.is-selected small,.match-date-option.is-selected span{color:inherit}.match-query-filters{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:9px 0 8px}.match-query-filters input{flex:1 1 250px;min-width:0;height:36px;padding:0 11px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--text);font:inherit;font-size:12px}.match-query-filters input::placeholder{color:var(--muted)}.match-status-filters{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin:8px 0 14px}.match-status-filters>span{margin-right:2px;color:var(--muted);font-size:11px}.match-status-filters button{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--text);font-size:11px;line-height:1.2;white-space:nowrap;cursor:pointer}.match-status-filters button[aria-pressed="true"]{border-color:var(--selection);background:color-mix(in srgb,var(--selection) 16%,var(--card));color:var(--selection)}.match-status-filters button b{font-size:10px;opacity:.76}.match-filter-hidden{display:none!important}.match-filter-empty{padding:18px 10px;color:var(--muted);font-size:12px;text-align:center}@media(max-width:680px){.match-date-calendar{margin:9px 0}.match-date-list{gap:4px}.match-date-option{min-height:59px;padding:5px 2px;border-radius:6px}.match-date-option small,.match-date-option span{font-size:9px}.match-date-option strong{font-size:17px}.match-query-filters{align-items:stretch;flex-direction:column}.match-query-filters input{flex:0 0 auto;width:100%;height:40px}.match-status-filters{gap:6px;margin:8px 0 12px}.match-status-filters>span{flex-basis:100%}.match-status-filters button{padding:6px 8px;font-size:10px}}';
+  document.head.append(filterStyle);
   render();
 })();
