@@ -662,6 +662,7 @@ html:not(.dark) .mrj-featured .reading-book-pages{background:repeating-linear-gr
   const projectLinks={'AI旅行相册':'/officialwebsite/topics/space/travel/travel-map/','AI3D旅行相册':'/officialwebsite/topics/space/travel/travel-map/','AI 智能投资':'/officialwebsite/stock-tracking/?stock=301026','AI阅读神器':'/officialwebsite/topics/applications/inspiration-station/theology?book=lev&chapter=7&verse=1','AI魔法学院':'https://www.magicj.cn/aiacademy/'};
   let page='home',routeCleanups=[],frameStart=performance.now();
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  function hydrateAssets(scope){scope.querySelectorAll('img[data-asset]').forEach(img=>{img.src=config.assets[img.dataset.asset];});scope.querySelectorAll('.project-card').forEach(card=>{const title=card.querySelector('header span:last-child')?.textContent?.trim(),href=projectLinks[title];if(!href||card.dataset.projectLinked)return;card.dataset.projectLinked='true';card.tabIndex=0;card.setAttribute('role','link');card.setAttribute('aria-label','打开项目：'+title);card.addEventListener('click',()=>{location.href=href;});card.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();location.href=href;}});});}
   function initReveal(scope){
     const observer=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('is-visible');observer.unobserve(e.target);}}),{threshold:.015,rootMargin:'0px 0px -18px 0px'});
     scope.querySelectorAll('.reveal,.reveal-scale').forEach(el=>observer.observe(el));routeCleanups.push(()=>observer.disconnect());
