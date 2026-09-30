@@ -79,6 +79,9 @@
     .redesign-panel .match-player-filters{flex:0 1 155px;margin:0}.redesign-panel .match-player-filters summary{min-height:38px;font-size:12px}
     .redesign-panel .knockout-chart,.redesign-panel .inline-bracket-rounds{padding:0;display:block}
     .redesign-status-group{margin-top:9px;border:1px solid var(--line);border-radius:13px;overflow:hidden;background:var(--card)}
+    .redesign-status-group[data-group-status="ended"],.redesign-status-group[data-group-status="ended"] .redesign-status-heading{background:transparent}
+    .has-winner,.has-winner .bracket-player,.has-winner [data-bracket-player],.has-winner .match-name{background:transparent!important;box-shadow:none!important}
+    .live-results-list .inline-bracket-round{background:transparent!important}
     .redesign-status-heading{height:45px;display:flex;gap:9px;align-items:center;padding:0 17px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--selection) 4%,var(--card));font-size:12px;margin:0!important;color:var(--text)!important}
     .redesign-status-heading:before{content:'';width:8px;height:8px;border-radius:50%;background:var(--muted)}.redesign-status-group[data-group-status="live"] .redesign-status-heading:before{background:var(--live,var(--selection))}.redesign-status-group[data-group-status="upcoming"] .redesign-status-heading:before{background:var(--upcoming,var(--muted))}
     .redesign-status-heading small{font-size:11px;color:var(--muted);font-weight:400}.redesign-status-heading>span{margin-left:auto;font-size:10px;color:var(--muted);font-weight:400}

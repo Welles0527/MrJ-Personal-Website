@@ -213,7 +213,7 @@
     const text = String(score || '').trim();
     if (/^胜$/.test(text)) return 0;
     if (/^负$/.test(text)) return 1;
-    const match = text.match(/^(\d+)\s*[–-]\s*(\d+)$/);
+    const match = text.match(/^(\d+)\s*[–—:-]\s*(\d+)$/);
     if (!match || match[1] === match[2]) return null;
     return Number(match[1]) > Number(match[2]) ? 0 : 1;
   };
@@ -222,6 +222,11 @@
     const eventId = event.id;
     const template = document.createElement('template');
     template.innerHTML = html;
+    template.content.querySelectorAll('.bracket-match:not(.bracket-missing)').forEach(match => {
+      const players = [...match.querySelectorAll(':scope > .bracket-player')];
+      if (players.length === 2 && players[1].classList.contains('won')) match.insertBefore(players[1], players[0]);
+      if (players.some(player => player.classList.contains('won'))) match.classList.add('has-winner');
+    });
     template.content.querySelectorAll('.inline-bracket-match,.knockout-match').forEach(match => {
       if (match.classList.contains('knockout-match')) {
         const meta = match.querySelector('.knockout-match-meta');
@@ -239,8 +244,32 @@
       const players = [...match.querySelectorAll('[data-bracket-player]')].length ?
         [...match.querySelectorAll('[data-bracket-player]')] : [...(row?.querySelectorAll(':scope > span') || [])];
       if (players.length !== 2) return;
-      const winner = match.dataset.matchStatus && match.dataset.matchStatus !== 'ended' ? null :
+      let winner = match.dataset.matchStatus && match.dataset.matchStatus !== 'ended' ? null :
         bracketWinnerIndex(match.dataset.score || row?.querySelector(':scope > b')?.textContent);
+      if (winner === 1) {
+        const first = players[0].closest('.match-entrant') || players[0];
+        const second = players[1].closest('.match-entrant') || players[1];
+        const placeholder = document.createComment('winner-first');
+        first.replaceWith(placeholder);
+        second.replaceWith(first);
+        placeholder.replaceWith(second);
+        if (first.classList.contains('match-entrant')) {
+          first.classList.replace('match-entrant-home', 'match-entrant-away');
+          second.classList.replace('match-entrant-away', 'match-entrant-home');
+        }
+        const scores = [...match.querySelectorAll('.knockout-score > b,.match-score > div:first-of-type > b')];
+        if (scores.length === 2) {
+          const value = scores[0].textContent;
+          scores[0].textContent = scores[1].textContent;
+          scores[1].textContent = value;
+        }
+        const score = match.dataset.score || row?.querySelector(':scope > b')?.textContent || '';
+        const swapped = score.replace(/^(\d+)\s*([–—:-])\s*(\d+)$/, '$3$2$1').replace(/^负$/, '胜');
+        if (match.dataset.score) match.dataset.score = swapped;
+        else if (row?.querySelector(':scope > b')) row.querySelector(':scope > b').textContent = swapped;
+        players.reverse();
+        winner = 0;
+      }
       players.forEach((playerNode, index) => {
         const name = playerNode.textContent.trim();
         const rank = seedRank(name);
