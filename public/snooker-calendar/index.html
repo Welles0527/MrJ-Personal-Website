@@ -180,7 +180,7 @@ recordVerifiedRounds('shenzhen','https://orderofplay.snooker.org/res/index.asp?t
 events.find(event=>event.id==='shenzhen').matches=events.find(event=>event.id==='shenzhen').result.splice(0);
 let TODAY=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 let CURRENT_MONTH=Number(TODAY.slice(5,7))-1;
-const state={view:'year',nav:'year',month:CURRENT_MONTH,rankingYear:2026,densityOpen:true,expandedEvent:null,types:new Set(Object.keys(types).filter(k=>k!=='qualifier')),regions:new Set(Object.keys(regions)),statuses:new Set(['upcoming','live','ended']),favorites:new Set()};
+const state={view:'year',nav:'schedule',month:CURRENT_MONTH,rankingYear:2026,densityOpen:true,expandedEvent:null,types:new Set(Object.keys(types).filter(k=>k!=='qualifier')),regions:new Set(Object.keys(regions)),statuses:new Set(['upcoming','live','ended']),favorites:new Set()};
 try{state.favorites=new Set(JSON.parse(localStorage.getItem('cue-favorites')||'[]'))}catch{}
 const cnMonths=['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
 const enMonths=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
@@ -356,4 +356,4 @@ const renderWithRankingTheme=render;render=function(){renderWithRankingTheme();i
   guide.querySelector('.calendar-tour-skip').onclick=finish;
   guide.querySelector('.calendar-tour-next').onclick=()=>{if(++index===steps.length)finish();else show()};
   setTimeout(()=>{document.body.append(guide);show()},650);
-})();</script><script src="https://static.cloudbase.net/cloudbase-js-sdk/2.28.6/cloudbase.full.js"></script><script src="./cloud-live-scores.js"></script><script src="./live-updates.js"></script><script src="./schedule-live-view.js"></script></body></html>
+})();</script><script src="https://static.cloudbase.net/cloudbase-js-sdk/2.28.6/cloudbase.full.js"></script><script src="./cloud-live-scores.js"></script><script src="./live-updates.js"></script><script src="./schedule-live-view.js?v=20260930-player-dropdown"></script><script src="./redesign.js?v=20260930-no-side-panels"></script></body></html>

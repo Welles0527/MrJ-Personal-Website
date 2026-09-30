@@ -97,7 +97,7 @@
     return `<span class="match-portrait">${photo ?
       `<img src="${escape(photo)}" alt="${escape(player(name))}的官方照片" loading="lazy" referrerpolicy="no-referrer">` : ''}</span>`;
   };
-  const entrant = (name, side) => {
+  const entrant = (name, side, eliminated = false) => {
     const code = assets[name]?.[0] || playerMeta[name]?.[3];
     const country = countries[code];
     const flag = code === 'GB' ? '<svg viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><path d="M13 0h4v20h-4zM0 8h30v4H0z" fill="#ce1124"/></svg>' :
@@ -106,36 +106,97 @@
         flagIcon(code, country).replace(/^<span[^>]*>|<\/span>$/g, '').replace('<svg ', '<svg aria-hidden="true" ') : '';
     return `<div class="match-entrant match-entrant-${side}"><div class="match-name">
       <span data-bracket-player>${escape(player(name))}</span><span class="match-flag" role="img" aria-label="${escape(country || '')}国旗">${flag}</span></div>
-      ${portrait(name)}</div>`;
+      <div class="match-portrait-wrap">${portrait(name)}${eliminated ? '<span class="match-eliminated">淘汰</span>' : ''}</div></div>`;
   };
   const stale = event => readFailed || (event.status !== 'ended' && Date.now() - Date.parse(event.fetchedAt) >
     Math.max(12 * 60 * 1000, (snapshot?.intervalMs || 5 * 60 * 1000) * 2.5)) ||
     snapshot?.failures?.[event.id] || snapshot?.failures?.source;
+
+  const previousFiltered = filtered;
+  filtered = () => {
+    const eventsToShow = previousFiltered();
+    if (state.nav !== 'results') return eventsToShow;
+    const latestPlayedAt = event => {
+      const played = (snapshot?.events?.[event.id]?.matches || [])
+        .filter(match => ['ended', 'live', 'suspended'].includes(match.status))
+        .map(match => Date.parse(match.startsAt)).filter(Number.isFinite);
+      if (played.length) return Math.max(...played);
+      const eventEnd = Date.parse(`${event.end}T23:59:59+08:00`);
+      return Number.isFinite(eventEnd) ? Math.min(eventEnd, Date.now()) : 0;
+    };
+    return eventsToShow.sort((a, b) => latestPlayedAt(b) - latestPlayedAt(a));
+  };
 
   const previousStatus = status;
   status = event => snapshot?.events?.[event.id]?.status || previousStatus(event);
   const previousBracket = inlineBracket;
   inlineBracket = event => {
     const data = snapshot?.events?.[event.id];
-    if (!data?.matches?.length) return previousBracket(event);
+    const resultsPage = state.nav === 'results';
+    if (!data?.matches?.length) {
+      if (!resultsPage) return previousBracket(event);
+      const rows = (event.result?.length ? event.result : event.matches || []).map((row, index) => ({ row, index })).filter(({ row }) =>
+        /^\d+\s*[–—:-]\s*\d+$/.test(String(row[2])) || row[2] === '胜');
+      const timestamp = label => {
+        const date = String(label).match(/(\d{1,2})月(\d{1,2})日/);
+        return date ? Date.parse(`${event.start.slice(0, 4)}-${String(date[1]).padStart(2, '0')}-${String(date[2]).padStart(2, '0')}T23:59:00+08:00`) : 0;
+      };
+      rows.sort((a, b) => timestamp(b.row[0]) - timestamp(a.row[0]) ||
+        (Number(b.row[0].match(/第\s*(\d+)\s*场/)?.[1]) || b.index) -
+        (Number(a.row[0].match(/第\s*(\d+)\s*场/)?.[1]) || a.index));
+      const content = rows.length ? rows.map(({ row }) => {
+        const score = String(row[2]).match(/^(\d+)\s*[–—:-]\s*(\d+)$/);
+        const winner = score ? Number(score[1]) > Number(score[2]) ? row[1] : Number(score[2]) > Number(score[1]) ? row[3] : '' : row[2] === '胜' ? row[1] : '';
+        const date = String(row[0]).match(/(\d{1,2})月(\d{1,2})日/);
+        const dateValue = date ? `${event.start.slice(0, 4)}-${String(date[1]).padStart(2, '0')}-${String(date[2]).padStart(2, '0')}` : '';
+        const round = String(row[0]).split('·').pop().trim();
+        const number = String(row[0]).match(/第\s*(\d+)\s*场/)?.[1];
+        const home = entrant(row[1], 'home').replace('data-bracket-player>', winner === row[1] ? 'data-bracket-player class="bracket-winner">' : 'data-bracket-player>');
+        const away = entrant(row[3], 'away').replace('data-bracket-player>', winner === row[3] ? 'data-bracket-player class="bracket-winner">' : 'data-bracket-player>');
+        return `<article class="inline-bracket-match match-fixture" data-match-status="ended" data-match-date="${dateValue}" data-match-search="${escape(`${row[1]} ${player(row[1])} ${row[3]} ${player(row[3])}`)}" data-score="${escape(row[2])}"><div class="match-when"><strong>${date ? `${date[1]}月${date[2]}日` : '已结束'}</strong><span>${escape(round)}</span><small>${number ? `第 ${number} 场` : ''}</small></div><div class="match-pair">${home}<div class="match-score"><span>比分</span><div><b>${score?.[1] || escape(row[2])}</b><i aria-hidden="true"></i><b>${score?.[2] || '—'}</b></div></div>${away}</div></article>`;
+      }).join('') :
+        '<p class="inline-bracket-empty">暂无已确认的已赛场次。</p>';
+      return `<section class="inline-bracket live-results-list" style="--event-color:${color(event)}" aria-label="${escape(event.name)}赛果"><div class="inline-bracket-heading"><strong>最新赛果 · 时间倒序</strong><button type="button" data-inline-close="${escape(event.id)}" aria-label="收起赛果">收起 ×</button></div><div class="inline-bracket-rounds live-score-rounds"><section class="inline-bracket-round"><h4>比赛结果 <span>· ${rows.length} 场</span></h4>${content}</section></div></section>`;
+    }
     const now = Date.now();
     const localDay = value => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai',
       year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(value));
     const today = localDay(now);
-    const earlier = data.matches.filter(match => match.status === 'ended' && match.startsAt && localDay(match.startsAt) < today);
-    const current = data.matches.filter(match => !earlier.includes(match));
-    const knockout = data.matches.some(match => /^Round ([3-9]|[1-9]\d+)(?:\b|$)|Quarter|Semi|Final/i.test(match.round || ''));
+    const earlier = resultsPage ? [] : data.matches.filter(match => match.status === 'ended' && match.startsAt && localDay(match.startsAt) < today);
+    const current = resultsPage ? data.matches.filter(match => ['ended', 'live', 'suspended'].includes(match.status))
+      .sort((a, b) => (Date.parse(b.startsAt) || 0) - (Date.parse(a.startsAt) || 0)) :
+      data.matches.filter(match => !earlier.includes(match));
+    const knockoutEvent = data.matches.some(match => /^Round ([3-9]|[1-9]\d+)(?:\b|$)|Quarter|Semi|Final/i.test(match.round || ''));
+    const knockout = !resultsPage && knockoutEvent;
+    const eliminatedPlayers = new Set();
+    if (knockoutEvent) {
+      const playerKey = name => String(name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[’‘]/g, "'").trim().toLocaleLowerCase();
+      const activePlayers = new Set(data.matches.filter(match => !['ended', 'cancelled', 'abandoned'].includes(match.status))
+        .flatMap(match => [match.home, match.away]).filter(Boolean).map(playerKey));
+      data.matches.forEach(match => {
+        if (match.status !== 'ended' || /group|round robin|league stage/i.test(match.round || '') ||
+            match.homeScore == null || match.awayScore == null) return;
+        const homeScore = Number(match.homeScore);
+        const awayScore = Number(match.awayScore);
+        if (!Number.isFinite(homeScore) || !Number.isFinite(awayScore) || homeScore === awayScore) return;
+        const loser = homeScore < awayScore ? match.home : match.away;
+        if (loser && !activePlayers.has(playerKey(loser))) eliminatedPlayers.add(loser);
+      });
+    }
     const soon = match => match.status === 'upcoming' && Date.parse(match.startsAt) >= now &&
       Date.parse(match.startsAt) <= now + 48 * 60 * 60 * 1000;
     const matchFilterStatus = match => match.status === 'ended' ? 'ended' :
       ['live', 'suspended'].includes(match.status) ? 'live' : soon(match) ? 'upcoming' : 'later';
     const finished = current.filter(match => match.status === 'ended');
     const active = current.filter(match => !['ended', 'upcoming'].includes(match.status));
-    const groups = [
+    const groups = resultsPage ? [
+      { title: '最新比赛 · 按时间倒序', matches: current },
+    ] : [
       { title: '今日已结束与进行中', matches: [...finished, ...active] },
       { title: '即将开始（未来48小时）', matches: current.filter(soon) },
     ];
-    const later = current.filter(match => match.status === 'upcoming' && !soon(match));
+    const later = resultsPage ? [] : current.filter(match => match.status === 'upcoming' && !soon(match));
     const matchRow = match => {
       const when = match.startsAt ? dateParts(match.startsAt) : null;
       const live = match.status === 'live';
@@ -144,7 +205,6 @@
       const homeScore = !scored || match.homeScore == null ? '–' : match.homeScore;
       const awayScore = !scored || match.awayScore == null ? '–' : match.awayScore;
       const searchNames = `${match.home} ${player(match.home)} ${match.away} ${player(match.away)}`;
-      const official = `https://www.wst.tv/match-centre/${encodeURIComponent(match.id)}`;
       return `<article class="inline-bracket-match match-fixture ${inProgress ? 'match-live' : ''}" data-live-match="${escape(match.id)}"
         data-match-status="${escape(match.status)}" data-match-filter-status="${matchFilterStatus(match)}"
         data-match-date="${match.startsAt ? localDay(match.startsAt) : ''}" data-match-search="${escape(searchNames)}" data-score="${homeScore}–${awayScore}">
@@ -152,11 +212,9 @@
           <span>${when ? escape(when.date) : '时间待公布'}</span><small>第 ${escape(match.number || '—')} 场</small>
           ${live ? '<b class="match-live-indicator">● 正在直播</b>' : !['ended', 'upcoming'].includes(match.status) ?
             `<b class="match-live-indicator">◉ ${escape(labels[match.status] || '状态待确认')}</b>` : ''}</div>
-        <div class="match-pair">${entrant(match.home, 'home')}
+        <div class="match-pair">${entrant(match.home, 'home', eliminatedPlayers.has(match.home))}
           <div class="match-score"><span>${inProgress ? '局数' : '比分'}</span><div><b>${homeScore}</b><i aria-hidden="true"></i><b>${awayScore}</b></div>
-          ${inProgress ? '<div class="match-points" title="官方比分源暂未提供单局分数"><b>—</b><span>单局得分</span><b>—</b></div>' : ''}</div>${entrant(match.away, 'away')}</div>
-        <div class="match-actions"><a href="${official}" target="_blank" rel="noopener noreferrer">◈ 比赛中心</a>
-          ${inProgress ? `<a href="${official}" target="_blank" rel="noopener noreferrer">▷ 观看选项</a>` : ''}</div>
+          ${inProgress ? '<div class="match-points" title="官方比分源暂未提供单局分数"><b>—</b><span>单局得分</span><b>—</b></div>' : ''}</div>${entrant(match.away, 'away', eliminatedPlayers.has(match.away))}</div>
       </article>`;
     };
     const renderGroup = group => {
@@ -175,14 +233,12 @@
       const homeScore = scored && match.homeScore != null ? match.homeScore : '–';
       const awayScore = scored && match.awayScore != null ? match.awayScore : '–';
       const searchNames = `${match.home} ${player(match.home)} ${match.away} ${player(match.away)}`;
-      const official = `https://www.wst.tv/match-centre/${encodeURIComponent(match.id)}`;
       return `<article class="knockout-match" data-match-status="${escape(match.status)}" data-match-filter-status="${matchFilterStatus(match)}"
         data-match-date="${match.startsAt ? localDay(match.startsAt) : ''}" data-match-search="${escape(searchNames)}" data-score="${homeScore}–${awayScore}">
         <div class="knockout-match-meta"><span>第 ${escape(match.number || '—')} 场 · ${when ? escape(`${when.date} ${when.clock}`) : '时间待公布'}</span>
-        <strong>${escape(labels[match.status] || '待确认')}</strong></div>
-        <div class="knockout-match-players">${entrant(match.home, 'home')}
-          <div class="knockout-score"><b>${homeScore}</b><span>:</span><b>${awayScore}</b></div>${entrant(match.away, 'away')}</div>
-        <a class="knockout-match-link" href="${official}" target="_blank" rel="noopener noreferrer">比赛中心 ↗</a></article>`;
+        ${match.status === 'ended' ? '' : `<strong>${escape(labels[match.status] || '待确认')}</strong>`}</div>
+        <div class="knockout-match-players">${entrant(match.home, 'home', eliminatedPlayers.has(match.home))}
+          <div class="knockout-score"><b>${homeScore}</b><span>:</span><b>${awayScore}</b></div>${entrant(match.away, 'away', eliminatedPlayers.has(match.away))}</div></article>`;
     };
     const bracket = () => {
       const rounds = [...new Set(current.map(match => match.round || '待确认轮次'))];
@@ -194,9 +250,7 @@
       }).join('')}</div>`;
     };
     const note = stale(data) ? '暂未取得最新数据，以下为上次同步记录' : '自动更新中 · 每 20 分钟采集';
-    return `<section class="inline-bracket" style="--event-color:${color(event)}" aria-label="${escape(event.name)}对阵信息">
-      <div class="inline-bracket-heading"><strong>${knockout ? '淘汰赛对阵图' : '球员对阵与赛果'} · ${data.matches.length} 场</strong>
-      <button type="button" data-inline-close="${escape(event.id)}" aria-label="收起对阵">收起 ×</button></div>
+    return `<section class="inline-bracket" data-inline-event-id="${escape(event.id)}" style="--event-color:${color(event)}" aria-label="${escape(event.name)}对阵信息">
       ${knockout ? bracket() : `<div class="inline-bracket-rounds live-score-rounds">${groups.map(renderGroup).join('')}</div>
       ${later.length ? `<details class="later-matches"><summary>其他待赛对阵 · ${later.length} 场（不在未来48小时内或时间待确认）</summary>${later.map(matchRow).join('')}</details>` : ''}`}
       ${earlier.length ? `<details class="earlier-matches"><summary>展开当天以前已结束的比赛 · ${earlier.length} 场</summary>
