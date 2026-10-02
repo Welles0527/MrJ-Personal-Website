@@ -19,7 +19,6 @@
     { name: '旧金山', lat: 37.775, lon: -122.419 },
   ];
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-  const parentLink = canvas.closest('a');
   let landPixels;
   let rotation = 1.08;
   let width = 0;
@@ -27,11 +26,81 @@
   let sphereSize = 0;
   let samplePoints = [];
   let visible = true;
-  let dragging = false;
-  let moved = false;
-  let suppressClick = false;
-  let pointerX = 0;
   let lastPaint = 0;
+  let demoTime = 0;
+  let demoCity = null;
+  const photos = ['0bab8a75-154b-4356-9320-9a65636c4752', '09f5a985-2b61-42d3-b3dd-5b0352ddeb18'].map(id => {
+    const image = new Image();
+    image.src = '/officialwebsite/images/photo-wall/huzhou-2018/' + id + '.webp';
+    image.onload = () => paint();
+    return image;
+  });
+  canvas.setAttribute('aria-label', '旅行相册动画演示：地球旋转、鼠标点击城市、展开小相册');
+  canvas.style.touchAction = 'pan-y';
+  canvas.style.cursor = 'pointer';
+
+  function drawDemo(markers) {
+    if (!demoCity || demoTime < 3200) return;
+    const city = markers.find(marker => marker.name === demoCity.name);
+    if (!city) return;
+    const fade = Math.min(1, (demoTime - 3200) / 250, (9000 - demoTime) / 600);
+    context.save();
+    context.globalAlpha = Math.max(0, fade);
+    // A simulated pointer approaches the city before the click pulse.
+    const progress = Math.min(1, (demoTime - 3200) / 1100);
+    const ease = 1 - Math.pow(1 - progress, 3);
+    const px = city.x + (1 - ease) * 55;
+    const py = city.y + (1 - ease) * 65;
+    if (demoTime >= 4300 && demoTime < 4950) {
+      const pulse = (demoTime - 4300) / 650;
+      context.strokeStyle = 'rgba(255,190,120,' + (1 - pulse) + ')';
+      context.lineWidth = 2;
+      context.beginPath();
+      context.arc(city.x, city.y, 5 + pulse * 19, 0, Math.PI * 2);
+      context.stroke();
+    }
+    context.save();
+    context.translate(px, py);
+    const press = demoTime > 4300 && demoTime < 4470 ? .8 : 1;
+    context.scale(press, press);
+    context.beginPath();
+    context.moveTo(0, 0); context.lineTo(2, 21); context.lineTo(7, 16);
+    context.lineTo(12, 24); context.lineTo(16, 22); context.lineTo(11, 14);
+    context.lineTo(19, 13); context.closePath();
+    context.fillStyle = '#fff5e7'; context.fill();
+    context.strokeStyle = '#493529'; context.lineWidth = 1.5; context.stroke();
+    context.restore();
+    if (demoTime >= 4650) {
+      const appear = Math.min(1, (demoTime - 4650) / 550);
+      const albumWidth = Math.min(148, width * .76);
+      const albumHeight = albumWidth * .7;
+      const x = Math.max(5, Math.min(width - albumWidth - 5, city.x - albumWidth * .3));
+      const y = Math.min(height - albumHeight - 6, city.y + 30);
+      context.globalAlpha *= appear;
+      context.translate(x + albumWidth / 2, y);
+      context.scale(.7 + .3 * appear, .7 + .3 * appear);
+      context.translate(-albumWidth / 2, (1 - appear) * 14);
+      context.shadowColor = '#0008'; context.shadowBlur = 12;
+      context.fillStyle = '#f8eddd';
+      context.beginPath(); context.roundRect(0, 0, albumWidth, albumHeight, 7); context.fill();
+      context.shadowBlur = 0;
+      photos.forEach((photo, index) => {
+        const x = 7 + index * (albumWidth - 10) / 2;
+        const w = (albumWidth - 20) / 2, h = albumHeight - 31;
+        context.fillStyle = '#c9b49a'; context.fillRect(x, 7, w, h);
+        if (photo.complete && photo.naturalWidth) {
+          const scale = Math.max(w / photo.naturalWidth, h / photo.naturalHeight);
+          const sw = w / scale, sh = h / scale;
+          context.drawImage(photo, (photo.naturalWidth - sw) / 2, (photo.naturalHeight - sh) / 2, sw, sh, x, 7, w, h);
+        }
+      });
+      context.fillStyle = '#624630';
+      context.font = '10px "Microsoft YaHei", sans-serif';
+      context.textAlign = 'center';
+      context.fillText(city.name + ' · 相册示意', albumWidth / 2, albumHeight - 10);
+    }
+    context.restore();
+  }
 
   function themeColor(name, fallback) {
     const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -204,6 +273,7 @@
       const depth = Math.cos(lat) * Math.cos(lon);
       return { ...city, depth, x: cx + radius * Math.cos(lat) * Math.sin(lon), y: cy - radius * Math.sin(lat) };
     }).filter((city) => city.depth > 0.18).sort((a, b) => b.depth - a.depth);
+    if (demoTime >= 3200 && !demoCity) demoCity = markers[0] || null;
     markers.forEach((city) => {
       context.save();
       const glow = context.createRadialGradient(city.x, city.y, 1, city.x, city.y, 13);
@@ -223,50 +293,31 @@
       context.strokeStyle = '#ff9a43';
       context.lineWidth = 1.4;
       context.beginPath();
-      context.arc(city.x, city.y, 6.2, 0, Math.PI * 2);
+      context.arc(city.x, city.y, demoCity?.name === city.name ? 10 : 6.2, 0, Math.PI * 2);
       context.stroke();
       context.restore();
     });
     drawCityLabels(markers, dark, cx);
+    drawDemo(markers);
   }
 
   function animate(time) {
-    if (visible && !document.hidden && !dragging && !reducedMotion.matches && time - lastPaint > 50) {
-      rotation += Math.min(time - (lastPaint || time), 100) * 0.00016;
-      if (rotation > Math.PI) rotation -= 2 * Math.PI;
-      paint();
+    const delta = Math.min(time - (lastPaint || time), 100);
+    if (time - lastPaint > 50) {
       lastPaint = time;
+      if (visible && !document.hidden && !reducedMotion.matches) {
+        demoTime += delta;
+        if (demoTime >= 9000) { demoTime = 0; demoCity = null; }
+        if (demoTime < 3200) {
+          rotation += delta * 0.00032;
+          if (rotation > Math.PI) rotation -= 2 * Math.PI;
+        }
+        paint();
+      }
     }
     requestAnimationFrame(animate);
   }
 
-  canvas.addEventListener('pointerdown', (event) => {
-    dragging = true;
-    moved = false;
-    pointerX = event.clientX;
-    canvas.setPointerCapture(event.pointerId);
-  });
-  canvas.addEventListener('pointermove', (event) => {
-    if (!dragging) return;
-    const dx = event.clientX - pointerX;
-    if (Math.abs(dx) > 1) moved = true;
-    rotation -= dx * 0.009;
-    pointerX = event.clientX;
-    paint();
-  });
-  function endDrag() {
-    if (moved) suppressClick = true;
-    dragging = false;
-  }
-  canvas.addEventListener('pointerup', endDrag);
-  canvas.addEventListener('pointercancel', endDrag);
-  parentLink?.addEventListener('click', (event) => {
-    if (suppressClick) {
-      event.preventDefault();
-      event.stopPropagation();
-      suppressClick = false;
-    }
-  }, true);
   new ResizeObserver(resize).observe(canvas);
   new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; }).observe(canvas);
   new MutationObserver(() => paint()).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
