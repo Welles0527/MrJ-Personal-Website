@@ -262,6 +262,12 @@ const comparePlacementTodos = (first: Todo, second: Todo) =>
   || first.createdAt.localeCompare(second.createdAt);
 
 export function mountTodoWorkspace(root: HTMLElement) {
+  if (new URLSearchParams(window.location.search).get('calendar-source') === '1' && window.parent !== window) {
+    void import('./calendar-todo-source')
+      .then(({ mountCalendarTodoSource }) => mountCalendarTodoSource())
+      .catch(() => window.parent.postMessage({ type: 'personal-plan-calendar', status: 'error', todos: [] }, location.origin));
+    return;
+  }
   const migrationParams = new URLSearchParams(window.location.search);
   const migrationTarget = migrationParams.get('todo-migration-target');
 
