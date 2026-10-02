@@ -11,35 +11,12 @@
   };
   const stylesheet = document.createElement('style');
   stylesheet.textContent = `
-    html{scroll-padding-top:90px}body{font-size:14px;line-height:1.55}
-    .layout{margin-left:0!important;min-height:100vh}
-    .layout>main,.layout>header{max-width:1376px;margin:auto;padding-left:30px;padding-right:30px}
-    .layout>main{padding-top:0;padding-bottom:45px}
-    .layout>header{display:flex;box-sizing:border-box;width:100%;height:44px;min-height:44px;background:transparent;border:0;position:static;padding-top:0;padding-bottom:0;gap:10px;color:var(--muted)}
-    .layout>header .crumb{display:flex;flex:1;align-items:center;gap:8px;width:auto!important;min-width:0;font-size:12px;white-space:nowrap}.layout>header .crumb>span,.layout>header .crumb>strong{width:auto!important;max-width:none!important;flex:none;white-space:nowrap}.layout>header .avatar{display:none}
-    #app>aside{display:none!important;position:fixed;inset:74px 0 auto auto;z-index:60;width:280px;height:auto;max-height:calc(100vh - 90px);overflow:auto;padding:18px;background:var(--side);border:1px solid var(--line);border-radius:0 0 12px 12px;transform:none!important}
-    body.menu-open #app>aside{display:block!important}.sidebar-foot{display:none}
-    .redesign-topbar{display:block;position:sticky;top:0;z-index:40;height:74px;min-height:74px;border-bottom:1px solid var(--line);background:var(--side);padding:0}
-    .redesign-topbar-inner{width:100%;max-width:1376px;margin:auto;height:74px;min-height:74px;padding:0 30px;display:flex;align-items:center;gap:24px;box-sizing:border-box}
-    .redesign-topbar .brand.brand-image-lockup{display:flex;gap:12px;align-items:center;flex-shrink:0;width:auto;padding:0;cursor:pointer}
-    .redesign-brand-ball{position:relative;display:grid;place-items:center;width:39px;height:39px;border:1px solid var(--selection);border-radius:50%;background:radial-gradient(circle at 28% 23%,var(--selection),color-mix(in srgb,var(--selection) 40%,var(--side)) 75%)}
-    .redesign-brand-ball:before{content:'';width:16px;height:16px;border-radius:50%;background:radial-gradient(circle at 28% 24%,#fff,#e5e1d4 58%,#96978a)}
-    .redesign-brand-ball:after{content:'';position:absolute;left:18px;top:17px;width:38px;height:2px;background:var(--selection);transform:rotate(-34deg)}
-    .redesign-brand-word{font-size:20px;font-weight:800;letter-spacing:2px;line-height:1;color:var(--text)}.redesign-brand-word b{color:var(--selection)}
-    .redesign-brand-word small{display:block;font-size:8px;letter-spacing:2.5px;font-weight:400;margin-top:7px;color:var(--muted)}
-    .redesign-topbar .nav{display:flex;flex-direction:row;flex:1;min-width:0;gap:0;margin:0;overflow-x:auto;scrollbar-width:none;align-self:stretch}
-    .redesign-topbar .nav button{position:relative;display:flex;width:auto;justify-content:center;align-items:center;gap:4px;padding:0 10px;border:0;border-radius:0;min-height:74px;white-space:nowrap;font-size:12px;background:transparent!important;color:var(--muted)!important;flex-shrink:0}
-    .redesign-topbar .nav button svg{display:none}.redesign-topbar .nav button span{position:static;font-size:10px}
-    .redesign-topbar .nav button.active{color:var(--selection)!important}.redesign-topbar .nav button.active:after{content:'';position:absolute;bottom:0;left:10px;right:10px;height:2px;background:var(--selection)}
-    .redesign-top-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}.redesign-top-actions .theme-picker{padding:0!important;margin:0!important;border:0;gap:3px}
-    .redesign-top-actions .theme-choice{padding:4px!important}.redesign-top-actions .snapshot{font-size:10px;white-space:nowrap;border-radius:50px;padding:6px 10px;color:var(--muted)!important}
-    .layout>header .crumb>strong{color:var(--muted)!important}
-    .redesign-menu{display:grid;place-items:center;width:34px;height:34px;border:1px solid var(--line);border-radius:9px;background:transparent;color:var(--muted)}
-    .redesign-mobile-nav{display:none}
+    body[data-active-nav="schedule"]{font-size:14px;line-height:1.55}
     body[data-active-nav="schedule"] .title-row,body[data-active-nav="schedule"] .legend-row,body[data-active-nav="schedule"] .status-filter,body[data-active-nav="schedule"] main>.theme-picker{display:none}
     body[data-active-nav="schedule"] main>div[style="height:26px"]{display:none}
-    body[data-active-nav="schedule"] .schedule-control{margin:0 0 8px;min-height:0;justify-content:flex-end}.schedule-control>div{display:none}
+    body[data-active-nav="schedule"] .schedule-control{margin:0 0 8px;min-height:0;justify-content:flex-end}body[data-active-nav="schedule"] .schedule-control>div{display:none}
     body[data-active-nav="schedule"] .details-list{gap:12px}
+    body[data-active-nav="results"] .event-row-card[data-event-status="ended"]{background:transparent!important;border:0;border-bottom:1px solid var(--line);border-radius:0;box-shadow:none!important}
     .redesign-hero.event-card{position:relative;display:flex;align-items:center;gap:24px;min-height:145px;padding:22px 30px;border:1px solid var(--line);border-radius:17px;overflow:hidden;background:linear-gradient(112deg,var(--card),color-mix(in srgb,var(--selection) 8%,var(--bg)));box-shadow:0 15px 36px #00000015;isolation:isolate}
     .redesign-hero .event-row-main{display:flex;flex:1;min-width:0;padding:0;gap:20px;text-align:left;align-items:center;background:transparent}
     .redesign-hero .event-big-icon{width:62px;height:62px;flex:0 0 62px;border:1px solid color-mix(in srgb,var(--selection) 35%,var(--line));border-radius:17px;color:var(--selection);background:color-mix(in srgb,var(--selection) 7%,var(--card))}
@@ -68,7 +45,6 @@
     .redesign-panel .match-date-all.is-selected{color:var(--selection);background:color-mix(in srgb,var(--selection) 7%,transparent)}
     .redesign-content-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:22px;align-items:start}.redesign-match-main{min-width:0}
     .redesign-list-top{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;margin-bottom:12px}.redesign-list-title h3{margin:0 0 5px;font-size:21px;line-height:1.3}.redesign-list-title p{font-size:12px;color:var(--muted);margin:0}
-    .redesign-list-top .match-query-filters{margin:0;min-width:210px;max-width:244px;flex:0 1 244px}.redesign-list-top input{height:39px;font-size:12px;background:var(--card)}
     .redesign-panel .match-controls-row{margin:0 0 10px;gap:8px;align-items:center;flex-direction:row;flex-wrap:wrap}
     .redesign-panel .match-status-filters{border:0;background:transparent;gap:7px;overflow:visible;flex:1 1 auto;flex-wrap:wrap}
     .redesign-panel .match-status-filters button{display:flex;gap:7px;min-height:38px;padding:0 12px;border:1px solid var(--line);border-radius:8px;font-size:12px;background:var(--card);color:var(--muted)}
@@ -80,6 +56,7 @@
     .redesign-panel .knockout-chart,.redesign-panel .inline-bracket-rounds{padding:0;display:block}
     .redesign-status-group{margin-top:9px;border:1px solid var(--line);border-radius:13px;overflow:hidden;background:var(--card)}
     .redesign-status-group[data-group-status="ended"],.redesign-status-group[data-group-status="ended"] .redesign-status-heading{background:transparent}
+    .redesign-status-group[data-group-status="ended"]{border:0;border-radius:0;box-shadow:none}
     .has-winner,.has-winner .bracket-player,.has-winner [data-bracket-player],.has-winner .match-name{background:transparent!important;box-shadow:none!important}
     .live-results-list .inline-bracket-round{background:transparent!important}
     .redesign-status-heading{height:45px;display:flex;gap:9px;align-items:center;padding:0 17px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--selection) 4%,var(--card));font-size:12px;margin:0!important;color:var(--text)!important}
@@ -101,15 +78,13 @@
     .redesign-match-dialog{width:min(600px,calc(100vw - 30px));padding:25px;border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--text)}.redesign-match-dialog::backdrop{background:#0009}.redesign-match-dialog h2{margin:0 30px 8px 0;font-size:24px}.redesign-match-dialog>p{font-size:12px;color:var(--muted)}.redesign-match-dialog .dialog-close{position:absolute;right:12px;top:10px}.redesign-dialog-pair{display:grid;grid-template-columns:1fr 60px 1fr;align-items:center;gap:10px;margin-top:25px;text-align:center}.redesign-dialog-pair .match-entrant{display:flex;align-items:center;flex-direction:column-reverse;gap:10px}.redesign-dialog-pair .match-portrait{position:relative;display:block;width:75px;height:85px;overflow:hidden;border-radius:9px;border:1px solid var(--line)}.redesign-dialog-pair .match-name{display:flex;align-items:center;flex-direction:column;gap:5px}.redesign-dialog-pair .match-name>[data-bracket-player]{font-size:14px;line-height:1.4}.redesign-dialog-pair .match-eliminated{display:none}.redesign-dialog-pair .match-score>span,.redesign-dialog-pair .match-score>small{display:none}
     .bottom-note{margin-top:38px;padding-top:23px;border-top:1px solid var(--line);font-size:11px}
     @media(max-width:1200px){.redesign-topbar-inner{gap:15px}.redesign-topbar .nav button{padding:0 7px;font-size:11px}.redesign-top-actions .snapshot{display:none}.redesign-content-grid{grid-template-columns:minmax(0,1fr);gap:15px}.redesign-hero-right{gap:12px}.redesign-hero h2 small{display:block;margin:5px 0 0}.redesign-prize{padding-left:15px}.redesign-panel .knockout-match,.redesign-panel .knockout-match.has-winner,.redesign-panel .match-fixture.inline-bracket-match{grid-template-columns:72px minmax(0,1fr) 55px 10px;gap:5px;padding:11px 10px}.redesign-panel .knockout-match-players,.redesign-panel .match-pair{grid-template-columns:minmax(0,1fr) 55px minmax(0,1fr);gap:5px}.redesign-panel .match-portrait{width:43px;height:50px}.redesign-panel .match-entrant,.redesign-panel .match-entrant-away{gap:6px}.redesign-panel .match-name>[data-bracket-player]{font-size:12px}}
-    @media(max-width:950px){.layout>main,.layout>header,.redesign-topbar-inner{padding-left:20px;padding-right:20px}.redesign-content-grid{grid-template-columns:minmax(0,1fr)}.redesign-prize{display:none}.redesign-panel .match-date-option{flex:0 0 102px}.redesign-top-actions .theme-picker{display:none}.redesign-topbar .nav button{font-size:12px}}
-    @media(max-width:680px){.redesign-topbar,.redesign-topbar-inner{min-height:62px;height:62px}.redesign-topbar-inner{padding:0 15px;gap:12px}.redesign-topbar .nav{display:none}.redesign-top-actions{margin-left:auto}.redesign-brand-ball{width:31px;height:31px}.redesign-brand-ball:before{width:12px;height:12px}.redesign-brand-ball:after{width:27px;left:15px;top:13px}.redesign-brand-word{font-size:17px}.redesign-brand-word small{font-size:7px}.layout>main{padding:0 13px 45px}.layout>header{padding:0 13px;height:44px;min-height:44px}.layout>header .crumb{font-size:10px}.layout>header .topright{display:none}.layout>header .mobile-menu{display:none}
-      .layout>header .mobile-menu{display:none!important}.layout>header .crumb>span,.layout>header .crumb>strong{display:inline!important}
-      #app>aside{inset:62px 0 auto 0;width:100%;max-height:calc(100vh - 62px);border-radius:0}.redesign-mobile-nav{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.redesign-mobile-nav button{padding:12px;text-align:left;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--text)}.redesign-mobile-nav button.active{background:var(--selection);color:var(--selection-ink)}#app>aside .theme-picker{display:flex!important;margin:14px 0!important}
+    @media(max-width:950px){.redesign-content-grid{grid-template-columns:minmax(0,1fr)}.redesign-prize{display:none}.redesign-panel .match-date-option{flex:0 0 102px}}
+    @media(max-width:680px){
       .redesign-hero.event-card{min-height:188px;padding:21px 18px 65px;gap:12px;align-items:flex-start;border-radius:12px}.redesign-hero .event-row-main{gap:11px;align-items:flex-start}.redesign-hero .event-big-icon{width:39px;height:39px;flex-basis:39px;border-radius:10px}.redesign-hero .event-big-icon svg{width:22px;height:22px}.redesign-hero h2{font-size:24px}.redesign-hero h2 small{display:block;font-size:11px;margin:7px 0 0}.redesign-hero-eyebrow{font-size:9px;letter-spacing:1px;gap:6px}.redesign-hero-eyebrow .badge{font-size:9px}.redesign-hero-meta{font-size:10px;gap:8px 12px;margin-top:13px}.redesign-hero-meta span:last-child{display:none}.redesign-hero-right{position:absolute;left:18px;right:18px;bottom:17px;justify-content:space-between}.redesign-prize{display:block;border:0;padding:0}.redesign-prize strong{font-size:18px}.redesign-prize span{display:none}.redesign-detail-button{font-size:10px;padding:8px 12px}.redesign-table-art{right:-160px;opacity:.15}
       .redesign-panel .match-date-calendar{min-height:75px;margin-bottom:21px;padding:5px;gap:0}.redesign-panel .match-date-option{flex:0 0 76px;min-width:76px;min-height:65px;padding:5px 7px}.redesign-panel .match-date-count{top:15px;right:4px;width:17px;height:17px;font-size:9px}.redesign-panel .match-date-option strong{font-size:23px}.redesign-panel .match-date-option small,.redesign-panel .match-date-option span{font-size:9px}.redesign-panel .match-date-all{flex-basis:67px;padding:7px 5px;font-size:10px}
-      .redesign-list-top{display:block}.redesign-list-title h3{font-size:20px}.redesign-list-top .match-query-filters{max-width:none;width:100%;margin-top:14px;min-width:0}.redesign-list-title p{font-size:11px}.redesign-panel .match-controls-row{gap:8px;margin:12px 0}.redesign-panel .match-status-filters{flex-wrap:nowrap;overflow:auto;scrollbar-width:none;gap:5px}.redesign-panel .match-status-filters button{flex:0 0 auto;padding:0 10px;min-height:35px;font-size:11px}.redesign-panel .match-player-filters{flex:0 0 160px;margin-left:auto}
+      .redesign-list-top{display:block}.redesign-list-title h3{font-size:20px}.redesign-list-title p{font-size:11px}.redesign-panel .match-controls-row{gap:8px;margin:12px 0}.redesign-panel .match-status-filters{flex-wrap:nowrap;overflow:auto;scrollbar-width:none;gap:5px}.redesign-panel .match-status-filters button{flex:0 0 auto;padding:0 10px;min-height:35px;font-size:11px}.redesign-panel .match-player-filters{flex:0 0 160px;margin-left:auto}
       .redesign-panel .knockout-match,.redesign-panel .knockout-match.has-winner,.redesign-panel .match-fixture.inline-bracket-match,.redesign-panel .earlier-matches .knockout-match{grid-template-columns:minmax(0,1fr);gap:6px;min-height:118px;padding:11px 12px 9px}.redesign-panel .knockout-match-meta,.redesign-panel .match-when{flex-direction:row;align-items:center;gap:9px;padding-bottom:5px;border-bottom:1px solid var(--line);font-size:10px}.redesign-panel .knockout-match-meta strong{margin-left:auto}.redesign-panel .match-clock,.redesign-panel .match-when strong{font-size:12px}.redesign-panel .knockout-match-players,.redesign-panel .match-pair{grid-template-columns:minmax(0,1fr) 57px minmax(0,1fr);gap:6px;padding-top:5px}.redesign-panel .match-entrant,.redesign-panel .match-entrant-away{flex-direction:column;align-items:center;gap:3px}.redesign-panel .match-name,.redesign-panel .match-entrant-away .match-name{align-items:center;text-align:center}.redesign-panel .match-portrait{width:41px;height:41px;border-radius:8px}.redesign-panel .match-name>[data-bracket-player]{font-size:12px;line-height:1.4}.redesign-panel .knockout-score b{font-size:22px}.redesign-panel .knockout-score .redesign-vs{font-size:13px}.redesign-round-label,.redesign-chevron{display:none}.redesign-status-heading{height:39px;padding:0 11px}.redesign-status-heading>span{display:none}.redesign-panel .match-eliminated{right:-27px;top:-7px}
-      .bottom-note{display:block;line-height:2.2}.redesign-match-dialog{padding:19px}.redesign-match-dialog h2{font-size:21px}
+      body[data-active-nav="schedule"] .bottom-note{display:block;line-height:2.2}.redesign-match-dialog{padding:19px}.redesign-match-dialog h2{font-size:21px}
     }
   `;
   document.head.append(stylesheet);
@@ -133,8 +108,6 @@
     });
     panel.querySelector('[data-redesign-date-title]').textContent = date ? dateLabel(date).replace(' ', ' / ') : '全部日期 / 比赛安排';
     panel.querySelector('[data-redesign-total-caption]').textContent = `共 ${eligible.length} 场比赛 · 北京时间 UTC+8`;
-    const search = panel.querySelector('.redesign-search');
-    if (search && search !== document.activeElement) search.value = state.matchSearchByEvent[id] || '';
     panel.querySelectorAll('[data-match-filter]').forEach(button => {
       if (button.dataset.matchFilter === 'all') button.childNodes[0].textContent = '全部';
     });
@@ -206,8 +179,7 @@
     const grid = document.createElement('div'); grid.className = 'redesign-content-grid';
     const main = document.createElement('div'); main.className = 'redesign-match-main';
     const top = document.createElement('div'); top.className = 'redesign-list-top';
-    top.innerHTML = `<div class="redesign-list-title"><h3 data-redesign-date-title></h3><p data-redesign-total-caption></p></div>
-      <div class="match-query-filters"><input class="redesign-search" type="search" data-match-search aria-label="搜索球员比赛安排" placeholder="搜索球员姓名（中文 / 英文）"></div>`;
+    top.innerHTML = `<div class="redesign-list-title"><h3 data-redesign-date-title></h3><p data-redesign-total-caption></p></div>`;
     main.append(top, panel.querySelector('.match-controls-row'), content);
     const history = panel.querySelector('.earlier-matches'); if (history) main.append(history);
     const empty = panel.querySelector('.match-filter-empty'); if (empty) main.append(empty);
@@ -220,27 +192,11 @@
 
   function adaptPage() {
     document.body.dataset.activeNav = state.nav;
-    const sidebar = document.querySelector('#app>aside');
-    const layout = document.querySelector('.layout');
-    const header = layout?.querySelector(':scope>header');
-    if (sidebar && header) {
-      const topbar = document.createElement('header'); topbar.className = 'redesign-topbar';
-      const inner = document.createElement('div'); inner.className = 'redesign-topbar-inner';
-      const brand = sidebar.querySelector('.brand');
-      brand.innerHTML = '<span class="redesign-brand-ball" aria-hidden="true"></span><span class="redesign-brand-word">CUE<b>.</b><small>WORLD SNOOKER</small></span>';
-      brand.setAttribute('role', 'button'); brand.tabIndex = 0; brand.setAttribute('aria-label', '返回赛程');
-      brand.onclick = () => { state.nav = 'schedule'; render(); };
-      brand.onkeydown = event => { if (['Enter', ' '].includes(event.key)) { event.preventDefault(); brand.click(); } };
-      const nav = sidebar.querySelector('.nav');
-      const mobile = document.createElement('nav'); mobile.className = 'redesign-mobile-nav'; mobile.setAttribute('aria-label', '页面导航');
-      nav.querySelectorAll('button').forEach(button => { const copy = button.cloneNode(true); copy.onclick = () => button.click(); mobile.append(copy); });
-      sidebar.prepend(mobile);
-      const actions = document.createElement('div'); actions.className = 'redesign-top-actions';
-      const themes = document.querySelector('.theme-picker'); if (themes) actions.append(themes);
-      if (themes) { const mobileThemes = themes.cloneNode(true); mobileThemes.querySelectorAll('[data-theme-choice]').forEach(button => { button.onclick = () => themes.querySelector(`[data-theme-choice="${button.dataset.themeChoice}"]`).click(); }); sidebar.append(mobileThemes); }
-      const snapshot = header.querySelector('.snapshot'); if (snapshot) actions.append(snapshot);
-      const menu = document.createElement('button'); menu.className = 'redesign-menu'; menu.type = 'button'; menu.setAttribute('aria-label', '打开导航与筛选'); menu.innerHTML = icon('menu'); menu.onclick = () => document.body.classList.toggle('menu-open'); actions.append(menu);
-      inner.append(brand, nav, actions); topbar.append(inner); document.getElementById('app').prepend(topbar);
+    if (state.nav === 'results') {
+      document.querySelectorAll('.details-list>.event-row-card').forEach(card => {
+        const event = events.find(event => event.id === card.querySelector('[data-inline-event]')?.dataset.inlineEvent);
+        if (event) card.dataset.eventStatus = status(event);
+      });
     }
     if (state.nav !== 'schedule') return;
     document.querySelectorAll('.details-list>.event-row-card').forEach(card => {
@@ -268,12 +224,6 @@
     if (row && ['Enter', ' '].includes(event.key)) { event.preventDefault(); showMatch(row); }
   });
   document.addEventListener('input', event => {
-    if (event.target.matches?.('.redesign-search')) {
-      const panel = event.target.closest('.inline-bracket');
-      state.matchPlayerByEvent[panel.dataset.inlineEventId] = '';
-      panel.querySelectorAll('[data-match-player]').forEach(button => button.setAttribute('aria-pressed', 'false'));
-      panel.querySelector('.match-player-filters summary').textContent = '选择球员';
-    }
     setTimeout(() => document.querySelectorAll('.redesign-panel').forEach(updatePanel), 0);
   }, true);
   render();
