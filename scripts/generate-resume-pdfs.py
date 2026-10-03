@@ -449,8 +449,8 @@ def content_for(language: str) -> dict:
         return {
             "language_label": "中文简历",
             "location": "中国 · 上海",
-            "subtitle": "投资分析与财务分析专家 · 理财规划师",
-            "mentor": "个人 AI 应用导师",
+            "subtitle": "投资分析与财务分析专家 · 理财规划师 · 个人 AI 应用导师",
+            "mentor": "",
             "experience": "核心工作经历",
             "earlier": "早期工作经历",
             "entrepreneurship": "创业经历",
