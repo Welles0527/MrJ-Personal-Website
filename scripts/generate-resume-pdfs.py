@@ -26,7 +26,7 @@ COMPANY_LOGOS = {
     "OYO China": LOGO_DIR / "oyo.png",
     "WeWork China": LOGO_DIR / "wework.png",
     "C&A China": LOGO_DIR / "c-and-a.png",
-    "Costa Coffee China": LOGO_DIR / "costa-coffee.png",
+    "Costa Coffee": LOGO_DIR / "costa-coffee.png",
     "China Lodging Group": LOGO_DIR / "h-world.png",
     "HP China": LOGO_DIR / "hp.png",
 }
@@ -226,13 +226,7 @@ def draw_radar_group(c: canvas.Canvas, title: str, skills: list[tuple[str, int]]
     c.setLineWidth(1.2)
     c.drawPath(shape, fill=1, stroke=1)
 
-    full_labels = (
-        ("Business Analysis", "& Reporting"),
-        ("Budgeting &", "Strategic Planning"),
-        ("Financial Modeling",),
-        ("Leadership",),
-        ("Efficiency",),
-    )
+    full_labels = tuple(tuple(label.split("\n")) for label, _ in skills)
     label_positions = (
         (center_x, center_y - radius - 8, "center"),
         (x + width - 1, center_y - 9, "right"),
@@ -435,7 +429,7 @@ def draw_header(c: canvas.Canvas, content: dict, font: str, bold_font: str) -> N
 
     c.setFillColor(ORANGE_LIGHT)
     c.setFont(font, 7.4)
-    c.drawString(116, PAGE_HEIGHT - 118, "Shanghai · China")
+    c.drawString(116, PAGE_HEIGHT - 118, content["location"])
     c.drawString(220, PAGE_HEIGHT - 118, "welles.gu@gmail.com")
     c.drawString(370, PAGE_HEIGHT - 118, "WeChat · MrJ-0527")
 
@@ -454,6 +448,7 @@ def content_for(language: str) -> dict:
     if language == "zh":
         return {
             "language_label": "中文简历",
+            "location": "中国 · 上海",
             "subtitle": "投资分析与财务分析专家 · 理财规划师",
             "mentor": "个人 AI 应用导师",
             "experience": "核心工作经历",
@@ -492,7 +487,7 @@ def content_for(language: str) -> dict:
                 {
                     "period": "2022/05 - 至今",
                     "company": "IHG China",
-                    "role": "Sr. Manager Finance & Business Support",
+                    "role": "大中华区财务支持高级经理",
                     "meta": "酒店业 · 外企 · 10,000+ 人",
                     "bullets": [
                         "与 FPS 团队协作提升酒店效率，识别并解决加盟酒店的财务相关问题。",
@@ -505,7 +500,7 @@ def content_for(language: str) -> dict:
                 {
                     "period": "2019/10 - 2020/06",
                     "company": "OYO China",
-                    "role": "Senior Analytical Manager · CXO Office",
+                    "role": "战略运营分析主管",
                     "meta": "覆盖约 8,000 家酒店与 8 个区域 · 带领 2 人",
                     "bullets": [
                         "负责中国区业务与商业分析，并支持管理层经营决策。",
@@ -518,7 +513,7 @@ def content_for(language: str) -> dict:
                 {
                     "period": "2018/01 - 2019/10",
                     "company": "WeWork China",
-                    "role": "Senior FP&A Manager",
+                    "role": "财务分析高级经理",
                     "meta": "覆盖 100+ 中国项目 · 带领 2 人",
                     "bullets": [
                         "使用 Anaplan 主导中国区年度预算与季度预测。",
@@ -535,7 +530,7 @@ def content_for(language: str) -> dict:
                 {
                     "period": "2014/06 - 2017/12",
                     "company": "C&A China",
-                    "role": "Financial Analysis Manager",
+                    "role": "财务分析经理",
                     "meta": "约 80 家门店 · 带领 1 人",
                     "bullets": [
                         "主导年度预算、季度预测与月度经营复盘。",
@@ -545,8 +540,8 @@ def content_for(language: str) -> dict:
                 },
                 {
                     "period": "2011/11 - 2014/06",
-                    "company": "Costa Coffee China",
-                    "role": "Senior FP&A",
+                    "company": "Costa Coffee",
+                    "role": "高级财务分析师",
                     "meta": "约 300 家门店",
                     "bullets": [
                         "主导年度预算与战略规划流程。",
@@ -557,7 +552,7 @@ def content_for(language: str) -> dict:
                 {
                     "period": "2010/09 - 2011/10",
                     "company": "China Lodging Group",
-                    "role": "Financial Analyst",
+                    "role": "财务分析师",
                     "meta": "覆盖约 800 家酒店",
                     "bullets": [
                         "支持各区域年度预算与销售差异分析。",
@@ -568,7 +563,7 @@ def content_for(language: str) -> dict:
                 {
                     "period": "2005/03 - 2009/08",
                     "company": "HP China",
-                    "role": "Intercompany / Fixed Assets Team Leader",
+                    "role": "固定资产与内部往来",
                     "meta": "带领 3 人",
                     "bullets": [
                         "处理关联公司结算、对账与长期未清余额。",
@@ -585,6 +580,7 @@ def content_for(language: str) -> dict:
 
     return {
         "language_label": "English Resume",
+        "location": "Shanghai · China",
         "subtitle": "Strategic Finance Professional · FA (Licensed Financial Advisor)",
         "mentor": "Personal AI Application Mentor",
         "experience": "Core Experience",
@@ -716,11 +712,18 @@ def content_for(language: str) -> dict:
 
 
 WORK_SKILLS = [
-    ("Business Analysis & Reporting", 95),
-    ("Budgeting & Strategic Planning", 90),
+    ("Business Analysis\n& Reporting", 95),
+    ("Budgeting &\nStrategic Planning", 90),
     ("Financial Modeling", 90),
     ("Leadership", 80),
     ("Work Efficiency", 90),
+]
+WORK_SKILLS_ZH = [
+    ("分析与\n汇报能力", 95),
+    ("预算与\n战略规划", 90),
+    ("财务建模", 90),
+    ("领导力", 80),
+    ("工作效率", 90),
 ]
 
 AI_SKILLS = [
@@ -753,9 +756,10 @@ def generate_pdf(language: str, destination: Path) -> None:
     for job in content["jobs_page_1"]:
         y_left = draw_job(c, job, left_x, y_left, left_width, font, bold_font)
 
-    y_right = draw_section_title(c, content["skills"], right_x, body_top, right_width, bold_font)
+    y_right = draw_section_title(c, content["work_title"], right_x, body_top, right_width, bold_font)
+    radar_skills = WORK_SKILLS_ZH if language == "zh" else WORK_SKILLS
+    y_right = draw_radar_group(c, content["skills"], radar_skills, right_x, y_right, right_width, font, bold_font)
     y_right = draw_skill_group(c, content["ai_skills_title"], AI_SKILLS, right_x, y_right, right_width, font, bold_font, content["ai_note"])
-    y_right = draw_radar_group(c, content["work_title"], WORK_SKILLS, right_x, y_right, right_width, font, bold_font)
     y_right = draw_personal_group(c, content["personal_title"], content["personal_items"], right_x, y_right, right_width, font, bold_font)
 
     if min(y_left, y_right) < 40:
