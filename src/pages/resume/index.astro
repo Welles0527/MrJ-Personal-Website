@@ -1360,6 +1360,10 @@ const tools = [
         margin-top: 23px;
       }
 
+      .work-skills-feature {
+        margin: 23px 0 30px;
+      }
+
       .skill-list {
         display: grid;
         gap: 14px;
@@ -1965,6 +1969,32 @@ const tools = [
 
         <section class="panel skills-panel" aria-labelledby="skills-title">
           <p class="section-eyebrow i18n" data-zh="自我评估" data-en="Self Assessment">自我评估</p>
+          <section class="work-skills-feature">
+            <h3 class="skill-group-title capability-title--emphasis i18n" data-zh="工作技能" data-en="Work">工作技能</h3>
+            <div class="radar-card">
+              <svg class="radar-chart" viewBox="0 0 300 252" role="img" aria-labelledby="work-radar-title work-radar-description">
+                <title id="work-radar-title" class="i18n" data-zh="工作技能雷达图" data-en="Work capabilities radar chart">工作技能雷达图</title>
+                <desc id="work-radar-description" class="i18n" data-zh="分析与汇报能力 95，预算与战略规划 90，财务建模 90，领导力 80，工作效率 90。" data-en="Business analysis 95, budgeting and planning 90, financial modeling 90, leadership 80, work efficiency 90.">分析与汇报能力 95，预算与战略规划 90，财务建模 90，领导力 80，工作效率 90。</desc>
+                {radarGrid.map((points) => <polygon class="radar-grid" points={points} />)}
+                {radarAxes.map((axis) => (
+                  <line class="radar-axis" x1={radarCenterX} y1={radarCenterY} x2={axis.point.split(',')[0]} y2={axis.point.split(',')[1]} />
+                ))}
+                <polygon class="radar-shape" points={radarShape} />
+                {workSkills.map((skill, index) => {
+                  const [x, y] = radarPoint(index, skill.level).split(',');
+                  return <circle class="radar-point" cx={x} cy={y} r="3.2" />;
+                })}
+                {radarAxes.map((axis) => (
+                  <text class="radar-label" x={axis.labelX} y={axis.labelY} text-anchor={axis.anchor} dominant-baseline="middle">
+                    {axis.labelLinesZh.map((line, lineIndex) => (
+                      <tspan class="i18n" data-zh={line} data-en={axis.labelLinesEn[lineIndex]} x={axis.labelX} dy={lineIndex === 0 ? 0 : 10}>{line}</tspan>
+                    ))}
+                    <tspan class="radar-value" x={axis.labelX} dy="10">{axis.level}%</tspan>
+                  </text>
+                ))}
+              </svg>
+            </div>
+          </section>
           <h2 class="section-title" id="skills-title">
             <span class="i18n" data-zh="能力图谱" data-en="Capabilities">能力图谱</span>
           </h2>
@@ -1984,33 +2014,6 @@ const tools = [
               <p class="ai-practice-note i18n" data-zh="能利用 AI 工具生成专业 PPT 与 AI 简历，制作个人网站、3D 旅行相册 App、投资理财策略、音乐播放器及挂号提醒系统等。" data-en="Uses AI tools to create professional presentations and AI-enhanced résumés, build personal websites, 3D travel-album apps, investment-planning strategies, music players, appointment reminder systems and more.">
                 能利用 AI 工具生成专业 PPT 与 AI 简历，制作个人网站、3D 旅行相册 App、投资理财策略、音乐播放器及挂号提醒系统等。
               </p>
-            </section>
-
-            <section>
-              <h3 class="skill-group-title capability-title--emphasis i18n" data-zh="工作技能" data-en="Work">工作技能</h3>
-              <div class="radar-card">
-                <svg class="radar-chart" viewBox="0 0 300 252" role="img" aria-labelledby="work-radar-title work-radar-description">
-                  <title id="work-radar-title" class="i18n" data-zh="工作技能雷达图" data-en="Work capabilities radar chart">工作技能雷达图</title>
-                  <desc id="work-radar-description" class="i18n" data-zh="分析与汇报能力 95，预算与战略规划 90，财务建模 90，领导力 80，工作效率 90。" data-en="Business analysis 95, budgeting and planning 90, financial modeling 90, leadership 80, work efficiency 90.">分析与汇报能力 95，预算与战略规划 90，财务建模 90，领导力 80，工作效率 90。</desc>
-                  {radarGrid.map((points) => <polygon class="radar-grid" points={points} />)}
-                  {radarAxes.map((axis) => (
-                    <line class="radar-axis" x1={radarCenterX} y1={radarCenterY} x2={axis.point.split(',')[0]} y2={axis.point.split(',')[1]} />
-                  ))}
-                  <polygon class="radar-shape" points={radarShape} />
-                  {workSkills.map((skill, index) => {
-                    const [x, y] = radarPoint(index, skill.level).split(',');
-                    return <circle class="radar-point" cx={x} cy={y} r="3.2" />;
-                  })}
-                  {radarAxes.map((axis) => (
-                    <text class="radar-label" x={axis.labelX} y={axis.labelY} text-anchor={axis.anchor} dominant-baseline="middle">
-                      {axis.labelLinesZh.map((line, lineIndex) => (
-                        <tspan class="i18n" data-zh={line} data-en={axis.labelLinesEn[lineIndex]} x={axis.labelX} dy={lineIndex === 0 ? 0 : 10}>{line}</tspan>
-                      ))}
-                      <tspan class="radar-value" x={axis.labelX} dy="10">{axis.level}%</tspan>
-                    </text>
-                  ))}
-                </svg>
-              </div>
             </section>
 
             <section>
