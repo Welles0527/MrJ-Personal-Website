@@ -29,12 +29,29 @@
   let lastPaint = 0;
   let demoTime = 0;
   let demoCity = null;
-  const photos = ['0bab8a75-154b-4356-9320-9a65636c4752', '09f5a985-2b61-42d3-b3dd-5b0352ddeb18'].map(id => {
-    const image = new Image();
-    image.src = '/officialwebsite/images/photo-wall/huzhou-2018/' + id + '.webp';
-    image.onload = () => paint();
-    return image;
-  });
+  // Shanghai reference photos: CC0, Wikimedia Commons.
+  // https://commons.wikimedia.org/wiki/File:Shanghai_Skyline1.jpg
+  // https://commons.wikimedia.org/wiki/File:Shanghai_Skyline_2025.jpg
+  const cityPhotos = {
+    '三亚': ['sanya-2016/3034dfd5-4bf2-49d6-bd70-91ef861daeb1.webp', 'sanya-2016/372c0e0e-bed5-47fb-b89e-053ccf546362.webp'],
+    '北京': ['beijing-2019/23d41b97-4154-476f-be12-296677774d52.webp', 'beijing-2019/42639a72-3573-4385-b247-5030e0ffa901.webp'],
+    '上海': ['/officialwebsite/images/travel-shanghai-1.jpg', '/officialwebsite/images/travel-shanghai-2.jpg'],
+    '伦敦': ['london-2018/e4398502-63a1-4fda-be13-7e1e82e8fdda.webp', 'london-2018/7a973e2d-04a4-4cba-972f-008cac1d3859.webp'],
+    '湖州': ['huzhou-2018/09f5a985-2b61-42d3-b3dd-5b0352ddeb18.webp', 'huzhou-2018/2f0f7cb5-1100-4b8b-97e5-42f4f45a6e76.webp'],
+    '洛杉矶': ['california-2019/5e476be5-6f91-415a-9d4c-d5f3699d0169.webp', 'california-2019/a05981c5-8678-485c-a42e-440befcf4ece.webp'],
+    '旧金山': ['california-2019/67572867-1370-4c4a-9e41-5ed3131538e7.webp', 'california-2019/f0013edc-1dd1-4950-a414-61a889ba0016.webp'],
+  };
+  const photoCache = new Map();
+  function cityPhoto(name, index) {
+    const path = cityPhotos[name][index];
+    if (!photoCache.has(path)) {
+      const image = new Image();
+      image.onload = () => paint();
+      image.src = path.startsWith('/') ? path : '/officialwebsite/images/photo-wall/' + path;
+      photoCache.set(path, image);
+    }
+    return photoCache.get(path);
+  }
   canvas.setAttribute('aria-label', '旅行相册动画演示：地球旋转、鼠标点击城市、展开小相册');
   canvas.style.touchAction = 'pan-y';
   canvas.style.cursor = 'pointer';
@@ -84,10 +101,12 @@
       context.fillStyle = '#f8eddd';
       context.beginPath(); context.roundRect(0, 0, albumWidth, albumHeight, 7); context.fill();
       context.shadowBlur = 0;
-      photos.forEach((photo, index) => {
+      [0, 1].forEach(index => {
         const x = 7 + index * (albumWidth - 10) / 2;
         const w = (albumWidth - 20) / 2, h = albumHeight - 31;
-        context.fillStyle = '#c9b49a'; context.fillRect(x, 7, w, h);
+        const photo = cityPhoto(city.name, index);
+        context.fillStyle = '#d9d2c7';
+        context.fillRect(x, 7, w, h);
         if (photo.complete && photo.naturalWidth) {
           const scale = Math.max(w / photo.naturalWidth, h / photo.naturalHeight);
           const sw = w / scale, sh = h / scale;
@@ -97,7 +116,7 @@
       context.fillStyle = '#624630';
       context.font = '10px "Microsoft YaHei", sans-serif';
       context.textAlign = 'center';
-      context.fillText(city.name + ' · 相册示意', albumWidth / 2, albumHeight - 10);
+      context.fillText(city.name + ' · 旅行相册', albumWidth / 2, albumHeight - 10);
     }
     context.restore();
   }
@@ -273,7 +292,10 @@
       const depth = Math.cos(lat) * Math.cos(lon);
       return { ...city, depth, x: cx + radius * Math.cos(lat) * Math.sin(lon), y: cy - radius * Math.sin(lat) };
     }).filter((city) => city.depth > 0.18).sort((a, b) => b.depth - a.depth);
-    if (demoTime >= 3200 && !demoCity) demoCity = markers[0] || null;
+    if (demoTime >= 3200 && !demoCity) {
+      demoCity = markers[0] || null;
+      if (demoCity) [0, 1].forEach(index => cityPhoto(demoCity.name, index));
+    }
     markers.forEach((city) => {
       context.save();
       const glow = context.createRadialGradient(city.x, city.y, 1, city.x, city.y, 13);

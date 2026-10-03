@@ -51,6 +51,16 @@
       state.calendarStatus.textContent = ['查看日程', '已加入关注', '提醒已就绪'][step];
     } else if (state.toolsStatus) {
       const step = cycle < 3200 ? 0 : cycle < 6500 ? 1 : 2;
+      if (state.element.classList.contains('coffee-learning')) {
+        const phase = ['beans', 'drinks', 'brew'][step];
+        if (state.phase === phase) return;
+        state.phase = phase;
+        state.element.dataset.toolsPhase = phase;
+        state.element.querySelectorAll('[data-coffee-topic]').forEach(topic => topic.classList.toggle('is-current', topic.dataset.coffeeTopic === phase));
+        state.toolsStatus.textContent = ['从一颗咖啡豆开始', '找到喜欢的那一杯', '试着安排一杯咖啡'][step];
+        state.toolsDetail.textContent = ['探索品种与烘焙程度', '认识浓缩、奶咖与冷萃', '用粉水比计算器练习'][step];
+        return;
+      }
       const phase = ['order', 'reminder', 'done'][step];
       if (state.phase === phase) return;
       state.phase = phase;
