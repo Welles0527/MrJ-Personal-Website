@@ -1,7 +1,8 @@
+import { signInWithPassword, signOut } from './site-auth';
 import { getCloudSession, getRememberedSession, loadCloudTodos, watchCloudTodos } from './todo-cloud';
 import type { CloudTodoWatcher } from './todo-cloud';
 
-/** Read-only bridge for the same-origin life calendar; task editing stays in Personal Plan. */
+/** Shared account login and read-only Personal Plan bridge for the same-origin calendar. */
 export function mountCalendarTodoSource() {
   if (window.parent === window) return;
   try {
@@ -9,6 +10,59 @@ export function mountCalendarTodoSource() {
       || !window.parent.location.pathname.endsWith('/super-calendar/index.html')) return;
   } catch { return; }
 
+  const planPalette: Record<string, string> = {};
+  const planShell = document.querySelector<HTMLElement>('[data-todo-app]');
+  if (planShell) {
+    const styles = getComputedStyle(planShell);
+    for (const category of ['work', 'study', 'life', 'health', 'other']) {
+      const sample = document.createElement('div');
+      sample.dataset.taskCategory = category;
+      planShell.append(sample);
+      planPalette[category] = getComputedStyle(sample).getPropertyValue('--task-background').trim()
+        || styles.getPropertyValue(`--category-${category}`).trim();
+      sample.remove();
+    }
+  }
+  document.head.querySelectorAll('link[rel="stylesheet"], style').forEach(element => element.remove());
+  document.body.innerHTML = `<style>body{margin:0;padding:24px;background:var(--account-bg,#fffdf8);color:var(--account-text,#232323);font:15px system-ui;box-sizing:border-box}*{box-sizing:border-box}h2{margin:0 0 12px;font-size:24px}p{line-height:1.6}label{display:block;margin:16px 0}input,button{font:inherit;width:100%;padding:12px;border:1px solid #bbb;border-radius:10px}input{margin-top:7px;background:var(--account-cell,#fff);color:var(--account-text,#232323)}button{cursor:pointer;background:var(--account-accent,#242424);color:var(--account-ink,white)}button:disabled{opacity:.6}#auth-message{min-height:24px;color:#a22836;overflow-wrap:anywhere}[hidden]{display:none!important}</style><h2>登录超级日历</h2><p>使用网站统一账号，登录后自动同步个人计划。</p><form id="calendar-login"><label>邮箱<input name="email" type="email" autocomplete="username" required></label><label>密码<input name="password" type="password" autocomplete="current-password" required></label><button type="submit">登录并同步</button></form><p id="auth-account" hidden></p><button id="auth-logout" hidden>退出登录</button><p id="auth-message" role="status" aria-live="polite"></p>`;
+  const form = document.querySelector<HTMLFormElement>('#calendar-login')!;
+  const message = document.querySelector<HTMLElement>('#auth-message')!;
+  const account = document.querySelector<HTMLElement>('#auth-account')!;
+  const logout = document.querySelector<HTMLButtonElement>('#auth-logout')!;
+  const publishAccount = (session: { account: string } | null) => {
+    form.hidden = !!session;
+    account.hidden = logout.hidden = !session;
+    account.textContent = session ? `当前账号：${session.account}` : '';
+    window.parent.postMessage({ type: 'calendar-account', account: session?.account || '' }, location.origin);
+  };
+  const showAccount = () => {
+    const colors = getComputedStyle(window.parent.document.documentElement);
+    for (const [name, source] of Object.entries({ bg: '--card', text: '--text', cell: '--cell', accent: '--purple', ink: '--accent-ink' })) {
+      document.documentElement.style.setProperty(`--account-${name}`, colors.getPropertyValue(source));
+    }
+    if (!form.hidden) form.querySelector<HTMLInputElement>('input')?.focus();
+  };
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    const submit = form.querySelector<HTMLButtonElement>('button')!;
+    submit.disabled = true;
+    message.textContent = '正在登录…';
+    try {
+      const values = new FormData(form);
+      const session = await signInWithPassword(String(values.get('email')).trim(), String(values.get('password')));
+      form.reset();
+      publishAccount(session);
+      message.textContent = '登录成功';
+      void refresh();
+    } catch (error) { message.textContent = error instanceof Error ? error.message : '登录失败，请重试。'; }
+    finally { submit.disabled = false; }
+  });
+  logout.addEventListener('click', async () => {
+    logout.disabled = true;
+    try { await signOut(); message.textContent = ''; }
+    catch { message.textContent = '退出失败，请重试。'; }
+    finally { logout.disabled = false; }
+  });
   let watcher: CloudTodoWatcher | null = null;
   let ownerId = '';
   let revision = 0;
@@ -17,7 +71,7 @@ export function mountCalendarTodoSource() {
   let stopped = false;
   let debounce: ReturnType<typeof setTimeout> | undefined;
   const send = (status: string, todos: unknown[] = []) => window.parent.postMessage({
-    type: 'personal-plan-calendar', status, todos
+    type: 'personal-plan-calendar', status, todos, palette: planPalette
   }, location.origin);
   const closeWatcher = () => {
     const old = watcher;
@@ -37,6 +91,7 @@ export function mountCalendarTodoSource() {
       const remembered = getRememberedSession();
       const session = remembered ? await getCloudSession() : null;
       if (currentRevision !== revision || stopped) return;
+      publishAccount(session);
       if (!session) {
         ownerId = '';
         closeWatcher();
@@ -66,7 +121,17 @@ export function mountCalendarTodoSource() {
       if (pending && !stopped) { pending = false; schedule(); }
     }
   };
+  window.addEventListener('site-auth-change', () => {
+    revision += 1;
+    ownerId = '';
+    closeWatcher();
+    const session = getRememberedSession();
+    publishAccount(session);
+    send(session ? 'loading' : 'signed-out');
+    void refresh();
+  });
   window.addEventListener('storage', event => {
+    if (event.key === 'mywebsite.todo-theme.v1') { location.reload(); return; }
     if (event.key !== null && event.key !== 'mywebsite.site-auth-session.v1') return;
     revision += 1;
     ownerId = '';
@@ -75,8 +140,9 @@ export function mountCalendarTodoSource() {
     void refresh();
   });
   window.addEventListener('message', event => {
-    if (event.origin === location.origin && event.source === window.parent
-      && event.data?.type === 'personal-plan-calendar-refresh') void refresh();
+    if (event.origin !== location.origin || event.source !== window.parent) return;
+    if (event.data?.type === 'personal-plan-calendar-refresh') void refresh();
+    if (event.data?.type === 'calendar-account-open') showAccount();
   });
   const timer = setInterval(() => { void refresh(); }, 30000);
   window.addEventListener('pagehide', () => {
@@ -86,5 +152,6 @@ export function mountCalendarTodoSource() {
     clearTimeout(debounce);
     closeWatcher();
   });
+  showAccount();
   void refresh();
 }

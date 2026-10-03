@@ -33,7 +33,15 @@ const navItems: NavItem[] = [
     <script is:inline>
       (() => {
         try {
-          const savedTheme = localStorage.getItem('mywebsite.todo-theme.v1');
+          const params = new URLSearchParams(location.search);
+          const calendarWeek = params.get('calendar-week') === '1' && window.parent !== window
+            && window.parent.location.origin === location.origin
+            && window.parent.location.pathname.endsWith('/super-calendar/index.html');
+          document.documentElement.classList.toggle('calendar-week-mode', calendarWeek);
+          const calendarTheme = params.get('calendar-theme');
+          const savedTheme = calendarWeek && calendarTheme
+            ? (calendarTheme === 'cream' || calendarTheme === 'blue' ? 'light' : calendarTheme === 'gold' ? 'noir-amber' : 'dark')
+            : localStorage.getItem('mywebsite.todo-theme.v1');
           const isNoirAmber = savedTheme === 'noir-amber';
           document.documentElement.dataset.todoTheme = savedTheme === 'light' ? 'light' : 'dark';
           document.documentElement.classList.toggle('theme-noir-amber', isNoirAmber);
@@ -120,6 +128,10 @@ const navItems: NavItem[] = [
         <section class="todo-filter-section" aria-label="待办分类筛选与数据工具">
           <div class="todo-filter-list" data-category-filters></div>
           <div class="todo-data-tools">
+            <template id="calendar-week-tools">
+              <button class="todo-data-button calendar-week-tool" type="button" data-action="open-search">搜索任务</button>
+              <button class="todo-data-button calendar-week-tool" type="button" data-action="open-trash">回收站</button>
+            </template>
             <button class="todo-data-button" type="button" data-action="export-backup">
               <span aria-hidden="true">⇩</span>
               导出 Excel 备份
@@ -406,6 +418,15 @@ const navItems: NavItem[] = [
     <script>
       import { mountTodoWorkspace } from '../scripts/todo-workspace';
 
+      if (document.documentElement.classList.contains('calendar-week-mode')) {
+        const tools = document.querySelector<HTMLTemplateElement>('#calendar-week-tools');
+        if (tools) document.querySelector('.todo-data-tools')?.prepend(tools.content.cloneNode(true));
+        const panel = document.querySelector('.todo-week-overview-panel');
+        const inspiration = document.querySelector('[data-ai-inspiration-list]');
+        const label = panel?.querySelector('.todo-section-label-copy > span');
+        if (label) label.textContent = 'AI 灵感';
+        if (panel && inspiration) panel.append(inspiration);
+      }
       const todoRoot = document.querySelector<HTMLElement>('[data-todo-app]');
       if (todoRoot) mountTodoWorkspace(todoRoot);
 
@@ -439,6 +460,23 @@ const navItems: NavItem[] = [
         themeToggle.setAttribute('aria-pressed', String(theme !== 'light'));
       };
 
+      if (document.documentElement.classList.contains('calendar-week-mode')) {
+        const sessionKey = 'mywebsite.site-auth-session.v1';
+        const readAccountUid = () => {
+          try { return JSON.parse(localStorage.getItem(sessionKey) || 'null')?.uid || ''; }
+          catch { return ''; }
+        };
+        const initialAccountUid = readAccountUid();
+        window.addEventListener('storage', event => {
+          if ((event.key === sessionKey || event.key === null) && readAccountUid() !== initialAccountUid) location.reload();
+        });
+        window.addEventListener('message', event => {
+          if (event.origin !== location.origin || event.source !== window.parent || event.data?.type !== 'calendar-week-theme') return;
+          const theme = event.data.theme;
+          if (!['cream', 'blue', 'gold', 'purple', 'neon'].includes(theme)) return;
+          applyTheme(theme === 'cream' || theme === 'blue' ? 'light' : theme === 'gold' ? 'noir-amber' : 'dark');
+        });
+      }
       applyTheme(activeTheme);
       themeToggle?.addEventListener('click', () => {
         const nextTheme = themeOrder[(themeOrder.indexOf(activeTheme) + 1) % themeOrder.length];
@@ -5332,6 +5370,55 @@ html .todo-shell [data-task-category] :is(.todo-delete-button,.todo-overview-men
 }
 html .todo-shell [data-task-category] .todo-checkbox {
   accent-color: #17212b;
+}
+
+/* Calendar embedding retains the existing workspace actions and hides only its duplicate navigation and weekly lane. */
+.calendar-week-tool { display: none; }
+html.calendar-week-mode .calendar-week-tool { display: inline-flex; }
+html.calendar-week-mode .todo-sidebar,
+html.calendar-week-mode .todo-backdrop,
+html.calendar-week-mode .todo-menu-button,
+html.calendar-week-mode .todo-header-actions > .todo-utility,
+html.calendar-week-mode [data-overview-lanes],
+html.calendar-week-mode .todo-header-actions > [data-login-open],
+html.calendar-week-mode .todo-header-actions > [data-sign-out] { display: none !important; }
+html.calendar-week-mode .todo-shell { display: block; min-height: 100dvh; }
+html.calendar-week-mode .todo-main { width: 100%; max-width: none; margin: 0; padding: 24px; }
+html.calendar-week-mode .todo-planner-card { grid-template-columns: 280px minmax(0, 1fr); }
+html.calendar-week-mode .todo-data-tools { flex-wrap: wrap; }
+html.calendar-week-mode .todo-board-scroll { overflow-x: auto; }
+html.calendar-week-mode .todo-weekly-board { grid-template-columns: repeat(7, minmax(140px, 1fr)); min-width: 1050px; }
+html.calendar-week-mode .todo-item-title { text-decoration: none !important; }
+html.calendar-week-mode .todo-modal { max-height: calc(100dvh - 24px); overflow-y: auto; }
+html.calendar-week-mode .todo-form .todo-modal-actions { position: sticky; bottom: 0; z-index: 2; padding: 10px 0; background: var(--paper, #f8e6c8); }
+@media (max-width: 760px) {
+  html.calendar-week-mode .todo-main { padding: 20px 14px; }
+  html.calendar-week-mode .todo-planner-card { grid-template-columns: 1fr; }
+  html.calendar-week-mode .todo-weekly-board { grid-template-columns: 1fr; min-width: 0; }
+}
+/* Readable native menus and contained calendar columns across themes. */
+html { color-scheme: light; }
+html[data-todo-theme=dark] { color-scheme: dark; }
+html .todo-shell select option, html .todo-shell select optgroup { background: #fff; color: #29333d; }
+html[data-todo-theme=dark] .todo-shell select option, html[data-todo-theme=dark] .todo-shell select optgroup { background: #252d36; color: #e8ecf0; }
+html.theme-noir-amber .todo-shell select option, html.theme-noir-amber .todo-shell select optgroup { background: #2b2823; color: #eee9df; }
+html.calendar-week-mode .todo-planner-card { grid-template-columns: 320px minmax(0, 1fr); }
+html.calendar-week-mode .todo-calendar-panel { min-width: 0; }
+html.calendar-week-mode .todo-select-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+html.calendar-week-mode .todo-select-row select { min-width: 0; color: var(--ref-text); }
+html.calendar-week-mode .todo-select-row [data-control=week] { grid-column: 1 / -1; }
+html.calendar-week-mode :is(.todo-weekday-row,.todo-month-grid) { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+html.calendar-week-mode .todo-month-day { min-width: 0; width: 100%; padding-inline: 0; }
+html.calendar-week-mode .todo-week-overview-panel { min-width: 0; }
+html.calendar-week-mode :is(.todo-week-overview-scroll,[data-week-range],[data-action=open-ai-inspiration]) { display: none; }
+html.calendar-week-mode .todo-ai-lanes { display: grid; grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(180px, 1fr); gap: 12px; align-items: start; overflow-x: auto; padding-bottom: 12px; }
+html.calendar-week-mode .todo-ai-lanes .todo-overview-lane { min-width: 0; min-height: 0; padding: 12px; background: var(--ref-soft); border: 1px solid var(--ref-line); border-radius: 10px; }
+html.calendar-week-mode .todo-ai-lanes :is(.todo-overview-lane-title,.todo-overview-title) { overflow-wrap: anywhere; }
+html.calendar-week-mode .todo-ai-lanes .todo-overview-empty { color: var(--ref-muted); }
+html.calendar-week-mode .todo-item-note { color: var(--task-foreground, #17212b); }
+@media (max-width: 760px) {
+  html.calendar-week-mode .todo-planner-card { grid-template-columns: minmax(0, 1fr); }
+  html.calendar-week-mode .todo-ai-lanes { grid-auto-columns: minmax(240px, 1fr); }
 }
     </style>
   </body>

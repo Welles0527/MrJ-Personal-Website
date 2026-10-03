@@ -572,6 +572,22 @@ export function mountTodoWorkspace(root: HTMLElement) {
   const aiPlacements = placements.filter((placement) => placement.value === 'ai-investing' || placement.value === 'ai-life');
 
   const renderAiInspiration = () => {
+    if (document.documentElement.classList.contains('calendar-week-mode')) {
+      const aiTodos = aiPlacements.flatMap((placement) => allTodosForPlacement(placement.value));
+      aiInspirationList.innerHTML = categories.filter((category) => (state.filter === 'all' || state.filter === category.value) && aiTodos.some((todo) => todo.category === category.value)).map((category) => {
+        const todos = aiTodos.filter((todo) => todo.category === category.value);
+        const placement = category.value === 'study' ? 'ai-investing' : 'ai-life';
+        return `<section class="todo-overview-lane" aria-label="AI灵感 · ${category.label}">
+          <header class="todo-overview-lane-header"><div><h3 class="todo-overview-lane-title">${category.label}</h3><span class="todo-overview-lane-count">${todos.length} 项</span></div>
+          <button class="todo-lane-add" type="button" data-action="open-create" data-category="${category.value}" data-placement="${placement}" aria-label="新增${category.label}灵感">＋</button></header>
+          ${todos.length ? `<ul class="todo-overview-list">${todos.map((todo) => {
+            const ordered = allTodosForPlacement(todo.placement);
+            return renderOverviewTodo(todo, ordered.findIndex((item) => item.id === todo.id), ordered.length, { compactActions: true });
+          }).join('')}</ul>` : '<p class="todo-overview-empty">暂无灵感</p>'}
+        </section>`;
+      }).join('');
+      return;
+    }
     aiInspirationList.innerHTML = aiPlacements.map((placement) => {
       const todos = allTodosForPlacement(placement.value);
       return `<section class="todo-overview-lane" aria-label="${placement.label}" data-drop-placement="${placement.value}">
@@ -1898,6 +1914,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
       const date = parseDateKey(trigger.dataset.date ?? '');
       const placement = isPlacement(trigger.dataset.placement) ? trigger.dataset.placement : 'upcoming';
       openForm(date ?? undefined, undefined, placement);
+      if (isCategory(trigger.dataset.category)) categoryInput.value = trigger.dataset.category;
     }
     if (action === 'start-migration') startMigration();
     if (action === 'cancel-migration') closeMigrationDialog();
