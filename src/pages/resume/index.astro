@@ -8,7 +8,8 @@ const experiences = [
     company: 'IHG China',
     logo: 'resume/logos/ihg.png',
     logoAlt: 'IHG Hotels & Resorts',
-    role: 'Sr. Manager Finance & Business Support',
+    roleZh: '大中华区财务支持高级经理',
+    roleEn: 'Sr. Manager Finance & Business Support',
     metaZh: '酒店业 · 外企 · 10,000+ 人',
     metaEn: 'Hospitality · Global company · 10,000+ people',
     summaryZh: '以财务洞察推动加盟酒店效率提升，并识别 KPI 相关问题与机会。',
@@ -34,7 +35,8 @@ const experiences = [
     company: 'OYO China',
     logo: 'resume/logos/oyo.png',
     logoAlt: 'OYO',
-    role: 'Senior Analytical Manager · CXO Office',
+    roleZh: '战略运营分析高级经理',
+    roleEn: 'Senior Analytical Manager · CXO Office',
     metaZh: '酒店业 · 中国业务覆盖约 8,000 家酒店 · 带领 2 人',
     metaEn: 'Hospitality · China scope of about 8,000 hotels · Led 2 people',
     summaryZh: '负责全国业务分析与 CXO Office PMO，覆盖 8 个区域和约 8,000 家酒店。',
@@ -60,7 +62,8 @@ const experiences = [
     company: 'WeWork China',
     logo: 'resume/logos/wework.png',
     logoAlt: 'WeWork',
-    role: 'Senior FP&A Manager',
+    roleZh: '财务分析高级经理',
+    roleEn: 'Senior FP&A Manager',
     metaZh: '联合办公 · 外企 · 覆盖 100+ 中国项目 · 带领 2 人',
     metaEn: 'Co-working · Global company · 100+ China locations · Led 2 people',
     summaryZh: '负责中国区预算、预测与 100+ 项目的 P&L 分析，支持管理层经营决策。',
@@ -90,7 +93,8 @@ const experiences = [
     company: 'C&A China',
     logo: 'resume/logos/c-and-a.png',
     logoAlt: 'C&A',
-    role: 'Financial Analysis Manager',
+    roleZh: '财务分析经理',
+    roleEn: 'Financial Analysis Manager',
     metaZh: '服装零售 · 外企 · 约 80 家门店 · 带领 1 人',
     metaEn: 'Apparel retail · Global company · About 80 stores · Led 1 person',
     summaryZh: '主导约 80 家门店的预算预测、经营复盘与门店投资决策分析。',
@@ -118,7 +122,9 @@ const experiences = [
     company: 'Costa Coffee China',
     logo: 'resume/logos/costa-coffee.png',
     logoAlt: 'Costa Coffee',
-    role: 'Senior FP&A',
+    roleZh: '高级财务分析师',
+    roleEn: 'Senior FP&A',
+    roleOwnLine: true,
     metaZh: '餐饮连锁 · 外企 · 约 300 家门店',
     metaEn: 'Food & beverage retail · Global company · About 300 stores',
     summaryZh: '负责约 300 家门店的预算与战略规划，并支持新店投资可行性决策。',
@@ -144,7 +150,8 @@ const experiences = [
     company: 'China Lodging Group',
     logo: 'resume/logos/h-world.png',
     logoAlt: 'H World Group',
-    role: 'Financial Analyst',
+    roleZh: '财务分析师',
+    roleEn: 'Financial Analyst',
     metaZh: '酒店业 · 民营企业 · 覆盖约 800 家酒店',
     metaEn: 'Hospitality · Private company · About 800 hotels',
     summaryZh: '支持约 800 家酒店的区域预算、销售差异、核心经营指标与成本分析。',
@@ -172,7 +179,8 @@ const experiences = [
     company: 'HP China',
     logo: 'resume/logos/hp.png',
     logoAlt: 'HP',
-    role: 'Intercompany / Fixed Assets Team Leader',
+    roleZh: '固定资产与内部往来',
+    roleEn: 'Intercompany / Fixed Assets Team Leader',
     metaZh: '科技硬件 · 合资企业 · 带领 3 人',
     metaEn: 'Technology hardware · Joint venture · Led 3 people',
     summaryZh: '负责关联公司结算与对账，并带领中国区固定资产盘点及内控培训。',
@@ -1044,6 +1052,10 @@ const tools = [
         font-weight: 700;
       }
 
+      .experience-role.is-own-line {
+        flex-basis: 100%;
+      }
+
       .experience-meta {
         margin-top: 5px;
         color: var(--subtle);
@@ -1851,7 +1863,7 @@ const tools = [
         </aside>
 
         <section class="experience-column" aria-labelledby="experience-title">
-          <p class="section-eyebrow">Career & Ventures</p>
+          <p class="section-eyebrow i18n" data-zh="职业与创业" data-en="Career & Ventures">职业与创业</p>
           <h2 class="visually-hidden i18n" id="experience-title" data-zh="经历" data-en="Experience">经历</h2>
           <div class="experience-tabs" role="tablist" aria-labelledby="experience-title">
             <button class="experience-tab" id="work-tab" type="button" role="tab" aria-selected="true" aria-controls="work-experience-panel" data-experience-tab="work">
@@ -1880,7 +1892,11 @@ const tools = [
                       <div class="experience-copy">
                         <div class="experience-company">
                           <span>{experience.company}</span>
-                          <span class="experience-role">{experience.role}</span>
+                          <span
+                            class={`experience-role${experience.roleOwnLine ? ' is-own-line' : ''} i18n`}
+                            data-zh={experience.roleZh}
+                            data-en={experience.roleEn}
+                          >{experience.roleZh}</span>
                         </div>
                         <div class="experience-meta i18n" data-zh={experience.metaZh} data-en={experience.metaEn}>{experience.metaZh}</div>
                         <p class="experience-summary i18n" data-zh={experience.summaryZh} data-en={experience.summaryEn}>{experience.summaryZh}</p>
@@ -1948,7 +1964,7 @@ const tools = [
         </section>
 
         <section class="panel skills-panel" aria-labelledby="skills-title">
-          <p class="section-eyebrow">Self Assessment</p>
+          <p class="section-eyebrow i18n" data-zh="自我评估" data-en="Self Assessment">自我评估</p>
           <h2 class="section-title" id="skills-title">
             <span class="i18n" data-zh="能力图谱" data-en="Capabilities">能力图谱</span>
           </h2>
@@ -2015,14 +2031,14 @@ const tools = [
         </section>
 
         <section class="panel education-panel" aria-labelledby="education-title">
-          <p class="section-eyebrow">Foundation</p>
+          <p class="section-eyebrow i18n" data-zh="教育资历" data-en="Foundation">教育资历</p>
           <h2 class="section-title" id="education-title">
             <span class="i18n" data-zh="教育背景" data-en="Education">教育背景</span>
           </h2>
           <div class="education-grid">
             <article class="education-item">
               <strong class="i18n" data-zh="上海财经大学" data-en="Shanghai University of Finance and Economics">上海财经大学</strong>
-              <p class="i18n" data-zh="2000/09 - 2004/06 · Bachelor / Economics" data-en="Sep 2000 - Jun 2004 · Bachelor / Economics">2000/09 - 2004/06 · Bachelor / Economics</p>
+              <p class="i18n" data-zh="2000/09 - 2004/06 · 经济学学士" data-en="Sep 2000 - Jun 2004 · Bachelor / Economics">2000/09 - 2004/06 · 经济学学士</p>
             </article>
             <article class="education-item">
               <strong>CET-6</strong>
@@ -2032,7 +2048,7 @@ const tools = [
         </section>
 
         <section class="panel tools-panel" aria-labelledby="tools-title">
-          <p class="section-eyebrow">Toolkit</p>
+          <p class="section-eyebrow i18n" data-zh="专业工具" data-en="Toolkit">专业工具</p>
           <h2 class="section-title" id="tools-title">
             <span class="i18n" data-zh="工具与系统" data-en="Tools & Systems">工具与系统</span>
           </h2>
