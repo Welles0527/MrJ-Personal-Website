@@ -44,7 +44,7 @@
     .redesign-panel .match-date-all{order:2;flex:0 0 100px;border:0;border-left:1px solid var(--line);border-radius:0;background:transparent;font-size:11px;margin-left:3px;color:var(--muted);height:auto}
     .redesign-panel .match-date-all.is-selected{color:var(--selection);background:color-mix(in srgb,var(--selection) 7%,transparent)}
     .redesign-content-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:22px;align-items:start}.redesign-match-main{min-width:0}
-    .redesign-list-top{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;margin-bottom:12px}.redesign-list-title h3{margin:0 0 5px;font-size:21px;line-height:1.3}.redesign-list-title p{font-size:12px;color:var(--muted);margin:0}
+    .results-upcoming{grid-column:1/-1}.results-upcoming>summary{cursor:pointer;color:var(--purple);padding:14px 0}.results-upcoming>.event-row-card{margin-top:14px}.redesign-list-top{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;margin-bottom:12px}.redesign-list-title h3{margin:0 0 5px;font-size:21px;line-height:1.3}.redesign-list-title p{font-size:12px;color:var(--muted);margin:0}
     .redesign-panel .match-controls-row{margin:0 0 10px;gap:8px;align-items:center;flex-direction:row;flex-wrap:wrap}
     .redesign-panel .match-status-filters{border:0;background:transparent;gap:7px;overflow:visible;flex:1 1 auto;flex-wrap:wrap}
     .redesign-panel .match-status-filters button{display:flex;gap:7px;min-height:38px;padding:0 12px;border:1px solid var(--line);border-radius:8px;font-size:12px;background:var(--card);color:var(--muted)}
@@ -106,8 +106,6 @@
       return (!date || row.dataset.matchDate === date) && (!query || names.includes(query.replace(/[’‘]/g, "'"))) &&
         (!selectedPlayer || aliases.some(name => names.includes(name)));
     });
-    panel.querySelector('[data-redesign-date-title]').textContent = date ? dateLabel(date).replace(' ', ' / ') : '全部日期 / 比赛安排';
-    panel.querySelector('[data-redesign-total-caption]').textContent = `共 ${eligible.length} 场比赛 · 北京时间 UTC+8`;
     panel.querySelectorAll('[data-match-filter]').forEach(button => {
       if (button.dataset.matchFilter === 'all') button.childNodes[0].textContent = '全部';
     });
@@ -178,9 +176,7 @@
     panel.querySelectorAll('.later-matches').forEach(section => section.remove());
     const grid = document.createElement('div'); grid.className = 'redesign-content-grid';
     const main = document.createElement('div'); main.className = 'redesign-match-main';
-    const top = document.createElement('div'); top.className = 'redesign-list-top';
-    top.innerHTML = `<div class="redesign-list-title"><h3 data-redesign-date-title></h3><p data-redesign-total-caption></p></div>`;
-    main.append(top, panel.querySelector('.match-controls-row'), content);
+    main.append(panel.querySelector('.match-controls-row'), content);
     const history = panel.querySelector('.earlier-matches'); if (history) main.append(history);
     const empty = panel.querySelector('.match-filter-empty'); if (empty) main.append(empty);
     const note = panel.querySelector('.bracket-note'); if (note) main.append(note);
@@ -197,6 +193,21 @@
         const event = events.find(event => event.id === card.querySelector('[data-inline-event]')?.dataset.inlineEvent);
         if (event) card.dataset.eventStatus = status(event);
       });
+    }
+    if (state.nav === 'results') {
+      const list = document.querySelector('.details-list');
+      if (list) {
+        const cards = Array.from(list.querySelectorAll(':scope > .event-row-card'));
+        const eventFor = card => events.find(event => event.id === card.querySelector('[data-inline-event]')?.dataset.inlineEvent);
+        cards.sort((a,b) => (eventFor(a)?.start || '').localeCompare(eventFor(b)?.start || ''));
+        const upcoming = cards.filter(card => card.dataset.eventStatus === 'upcoming');
+        cards.filter(card => card.dataset.eventStatus !== 'upcoming').forEach(card => list.append(card));
+        if (upcoming.length) {
+          const folded = document.createElement('details'); folded.className = 'results-upcoming';
+          const summary = document.createElement('summary'); summary.textContent = '未开始的赛事 · '+upcoming.length+' 场';
+          folded.append(summary); upcoming.forEach(card => folded.append(card)); list.append(folded);
+        }
+      }
     }
     if (state.nav !== 'schedule') return;
     document.querySelectorAll('.details-list>.event-row-card').forEach(card => {
