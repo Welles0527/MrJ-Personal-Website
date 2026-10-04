@@ -29,19 +29,36 @@
   let lastPaint = 0;
   let demoTime = 0;
   let demoCity = null;
+  const visitedCities = new Set();
+  const photoCount = 8;
   // Shanghai reference photos: CC0, Wikimedia Commons.
   // https://commons.wikimedia.org/wiki/File:Shanghai_Skyline1.jpg
-  // https://commons.wikimedia.org/wiki/File:Shanghai_Skyline_2025.jpg
+  // https://commons.wikimedia.org/wiki/File:Shanghai,_Yu_Garden.jpg
+  // https://commons.wikimedia.org/wiki/File:2014.11.17.121615_Jing%27an_Temple_Shanghai.jpg
+  // https://commons.wikimedia.org/wiki/File:Waibaidu_Bridge_20250501-1.jpg
+  // https://commons.wikimedia.org/wiki/File:2010_Shanghai_Museum.jpg
+  // https://commons.wikimedia.org/wiki/File:20191114_Oriental_Pearl_Tower-1.jpg
+  // https://commons.wikimedia.org/wiki/File:2010_Shanghai_Expo_World%27s_Fair_-_China_Pavilion_01.jpg
+  // https://commons.wikimedia.org/wiki/File:Shanghai_Museum_East_balcony.jpg
   const cityPhotos = {
-    '三亚': ['sanya-2016/3034dfd5-4bf2-49d6-bd70-91ef861daeb1.webp', 'sanya-2016/372c0e0e-bed5-47fb-b89e-053ccf546362.webp'],
-    '北京': ['beijing-2019/23d41b97-4154-476f-be12-296677774d52.webp', 'beijing-2019/42639a72-3573-4385-b247-5030e0ffa901.webp'],
-    '上海': ['/officialwebsite/images/travel-shanghai-1.jpg', '/officialwebsite/images/travel-shanghai-2.jpg'],
-    '伦敦': ['london-2018/e4398502-63a1-4fda-be13-7e1e82e8fdda.webp', 'london-2018/7a973e2d-04a4-4cba-972f-008cac1d3859.webp'],
-    '湖州': ['huzhou-2018/09f5a985-2b61-42d3-b3dd-5b0352ddeb18.webp', 'huzhou-2018/2f0f7cb5-1100-4b8b-97e5-42f4f45a6e76.webp'],
-    '洛杉矶': ['california-2019/5e476be5-6f91-415a-9d4c-d5f3699d0169.webp', 'california-2019/a05981c5-8678-485c-a42e-440befcf4ece.webp'],
-    '旧金山': ['california-2019/67572867-1370-4c4a-9e41-5ed3131538e7.webp', 'california-2019/f0013edc-1dd1-4950-a414-61a889ba0016.webp'],
+    '三亚': ['sanya-2016/1ac0d1fd-2cc5-46fb-827d-8e875d4b0fe2.webp', 'sanya-2016/3a4bc483-aca5-4461-a358-0be6d64e7fa2.webp', 'sanya-2016/46d1dc31-628f-43c3-a529-ea7044822c3e.webp', 'sanya-2016/99d81330-267b-4c88-9f9b-796a61782168.webp', 'sanya-2016/c43a08af-e341-4c2e-b0f2-9c6fb18d8f01.webp', 'sanya-2016/3f129b41-db1f-4a44-8752-6599a1c5685c.webp', 'sanya-2016/bb1d9ebf-b3e7-419d-9c3d-bc09096bfb86.webp', 'sanya-2016/94ab178c-6b37-40c7-ae21-63a51148f564.webp'],
+    '北京': ['beijing-2019/714a5b13-d5b9-4ca9-af35-762281c2478b.webp', 'beijing-2019/23d41b97-4154-476f-be12-296677774d52.webp', 'beijing-2019/db60b2db-8841-4dad-b889-18535d8429c4.webp', 'beijing-2019/f39fa623-96bb-4179-b680-dd89755bb643.webp', 'beijing-2019/0b48faa1-a21f-40dc-a12b-5d0b7171886d.webp', 'beijing-2019/b3116a8a-e910-41de-bb49-4f7b7a0253e5.webp', 'beijing-2019/247d03cd-b47f-4a8e-8a08-5bf1a30e01fc.webp', 'beijing-2019/440cd69c-7e3e-460a-9741-713923238066.webp'],
+    '上海': ['/officialwebsite/images/travel-shanghai-1.jpg', '/officialwebsite/images/travel-shanghai-3.jpg', '/officialwebsite/images/travel-shanghai-4.jpg', '/officialwebsite/images/travel-shanghai-5.jpg', '/officialwebsite/images/travel-shanghai-6.jpg', '/officialwebsite/images/travel-shanghai-7.jpg', '/officialwebsite/images/travel-shanghai-8.jpg', '/officialwebsite/images/travel-shanghai-9.jpg'],
+    '伦敦': ['london-2018/ae2aebd2-3d1f-47f4-939d-530897be24b7.webp', 'london-2018/cf68d733-8b30-4eb6-a78c-d19b33cb6927.webp', 'london-2018/677669ab-9a01-4467-966d-573ff57c77a0.webp', 'london-2018/7a973e2d-04a4-4cba-972f-008cac1d3859.webp', 'london-2018/8821742a-686a-4f75-a2c7-d5cd48598cfd.webp', 'london-2018/2b340699-bc30-4d37-abb9-7dcbd4dfee93.webp', 'london-2018/e87e0a75-ca3a-4c2c-a2f6-c3836c139722.webp', 'london-2018/f26a1153-d456-4cc1-82ef-01a027521638.webp'],
+    '湖州': ['huzhou-2018/01c2627b-a5ea-4b09-81d3-7847df24855b.webp', 'huzhou-2018/2ecdd2b9-f3cb-44b9-ad39-614f159000f6.webp', 'huzhou-2018/3e87e7d7-5e14-4f80-a9b9-a46abb01f3e0.webp', 'huzhou-2018/4cf96003-53ae-42d6-bfbe-fbd0a2f12408.webp', 'huzhou-2018/5b62712b-c686-4f97-bdf2-ecefda560954.webp', 'huzhou-2018/610ce4d8-1a85-48aa-9dec-10d6e1ff6c85.webp', 'huzhou-2018/b535e59d-4d79-4030-8d3c-643e35266114.webp', 'huzhou-2018/d2de3d2b-6dae-4a64-8344-a756c7d85a92.webp'],
+    '洛杉矶': ['california-2019/8814944a-c138-4958-896e-3f28167e8420.webp', 'california-2019/c3ee6a0b-3764-433a-9d08-a52ff7cf0131.webp', 'california-2019/d63dab60-bb3a-4017-961e-de94bfea96a4.webp', 'california-2019/07ec4b1d-bd32-41b1-8ed6-a36d3d66ca7d.webp', 'california-2019/b73ade77-9d1c-4e88-bde9-56b26b7f4da1.webp', 'california-2019/bd19bb69-79df-4dac-948a-039ca7807e51.webp', 'california-2019/ca7edc85-0e0e-420b-b7db-de5fcc1b8e8f.webp', 'california-2019/697eb0d9-49f7-4de8-9b59-86fedc10d4d1.webp'],
+    '旧金山': ['california-2019/8dd11cee-fff0-413d-81cb-2a554c669482.webp', 'california-2019/9e3110f5-591d-4b46-92b9-032b0ad26c35.webp', 'california-2019/5cdfca34-0672-44fd-b87c-50134f60b98d.webp', 'california-2019/9a687097-a895-4602-b528-b981e006537b.webp', 'california-2019/07ef4696-328f-45df-8305-a67082e2f6ec.webp', 'california-2019/2d9ab476-dfbf-4ac4-8d54-4573a256b9bc.webp', 'california-2019/010225dc-7d7e-4018-a9e2-ca95c8dc89e5.webp', 'california-2019/a1256318-4676-42ba-a7be-7ba3582fbca0.webp'],
   };
   const photoCache = new Map();
+  // Normalized framing keeps passing visitors outside the displayed landscape.
+  const photoCrops = {
+    '三亚': { 4: [0, .55, 1, .45], 7: [0, 0, 1, .78] },
+    '北京': { 1: [.2, .4, .7, .28], 2: [0, 0, 1, .74], 5: [0, 0, 1, .58] },
+    '上海': { 1: [0, 0, 1, .43], 2: [0, 0, 1, .66], 3: [0, .43, 1, .38], 4: [0, 0, 1, .78], 6: [0, 0, .92, .7] },
+    '伦敦': { 2: [.45, 0, .55, .9], 3: [.56, .62, .28, .18], 5: [0, 0, 1, .75], 6: [0, 0, 1, .84], 7: [.55, 0, .45, .73] },
+    '洛杉矶': { 1: [0, 0, 1, .83], 3: [0, 0, 1, .72], 6: [0, 0, 1, .82], 7: [0, 0, 1, .86] },
+    '旧金山': { 0: [0, 0, 1, .78], 4: [0, .48, 1, .5] },
+  };
   function cityPhoto(name, index) {
     const path = cityPhotos[name][index];
     if (!photoCache.has(path)) {
@@ -57,19 +74,19 @@
   canvas.style.cursor = 'pointer';
 
   function drawDemo(markers) {
-    if (!demoCity || demoTime < 3200) return;
+    if (!demoCity || demoTime < 1000) return;
     const city = markers.find(marker => marker.name === demoCity.name);
     if (!city) return;
-    const fade = Math.min(1, (demoTime - 3200) / 250, (9000 - demoTime) / 600);
+    const fade = Math.min(1, (demoTime - 1000) / 200, (3000 - demoTime) / 300);
     context.save();
     context.globalAlpha = Math.max(0, fade);
     // A simulated pointer approaches the city before the click pulse.
-    const progress = Math.min(1, (demoTime - 3200) / 1100);
+    const progress = Math.min(1, (demoTime - 1000) / 450);
     const ease = 1 - Math.pow(1 - progress, 3);
     const px = city.x + (1 - ease) * 55;
     const py = city.y + (1 - ease) * 65;
-    if (demoTime >= 4300 && demoTime < 4950) {
-      const pulse = (demoTime - 4300) / 650;
+    if (demoTime >= 1450 && demoTime < 1950) {
+      const pulse = (demoTime - 1450) / 500;
       context.strokeStyle = 'rgba(255,190,120,' + (1 - pulse) + ')';
       context.lineWidth = 2;
       context.beginPath();
@@ -78,7 +95,7 @@
     }
     context.save();
     context.translate(px, py);
-    const press = demoTime > 4300 && demoTime < 4470 ? .8 : 1;
+    const press = demoTime > 1450 && demoTime < 1620 ? .8 : 1;
     context.scale(press, press);
     context.beginPath();
     context.moveTo(0, 0); context.lineTo(2, 21); context.lineTo(7, 16);
@@ -87,8 +104,8 @@
     context.fillStyle = '#fff5e7'; context.fill();
     context.strokeStyle = '#493529'; context.lineWidth = 1.5; context.stroke();
     context.restore();
-    if (demoTime >= 4650) {
-      const appear = Math.min(1, (demoTime - 4650) / 550);
+    if (demoTime >= 1650) {
+      const appear = Math.min(1, (demoTime - 1650) / 300);
       const albumWidth = Math.min(148, width * .76);
       const albumHeight = albumWidth * .7;
       const x = Math.max(5, Math.min(width - albumWidth - 5, city.x - albumWidth * .3));
@@ -98,22 +115,32 @@
       context.scale(.7 + .3 * appear, .7 + .3 * appear);
       context.translate(-albumWidth / 2, (1 - appear) * 14);
       context.shadowColor = '#0008'; context.shadowBlur = 12;
-      context.fillStyle = '#f8eddd';
+      context.fillStyle = '#141210';
       context.beginPath(); context.roundRect(0, 0, albumWidth, albumHeight, 7); context.fill();
       context.shadowBlur = 0;
-      [0, 1].forEach(index => {
-        const x = 7 + index * (albumWidth - 10) / 2;
-        const w = (albumWidth - 20) / 2, h = albumHeight - 31;
+      const gold = context.createLinearGradient(0, 0, albumWidth, albumHeight);
+      gold.addColorStop(0, '#f4d4a0');
+      gold.addColorStop(.5, '#ad743e');
+      gold.addColorStop(1, '#d4a562');
+      context.strokeStyle = gold; context.lineWidth = 1; context.stroke();
+      Array.from({ length: photoCount }, (_, index) => index).forEach(index => {
+        const w = (albumWidth - 23) / 4, h = (albumHeight - 34) / 2;
+        const x = 7 + (index % 4) * (w + 3);
+        const y = 7 + Math.floor(index / 4) * (h + 3);
         const photo = cityPhoto(city.name, index);
-        context.fillStyle = '#d9d2c7';
-        context.fillRect(x, 7, w, h);
+        context.fillStyle = '#25211b';
+        context.fillRect(x, y, w, h);
         if (photo.complete && photo.naturalWidth) {
-          const scale = Math.max(w / photo.naturalWidth, h / photo.naturalHeight);
+          const crop = photoCrops[city.name]?.[index] || [0, 0, 1, 1];
+          const cropWidth = photo.naturalWidth * crop[2], cropHeight = photo.naturalHeight * crop[3];
+          const scale = Math.max(w / cropWidth, h / cropHeight);
           const sw = w / scale, sh = h / scale;
-          context.drawImage(photo, (photo.naturalWidth - sw) / 2, (photo.naturalHeight - sh) / 2, sw, sh, x, 7, w, h);
+          const sx = photo.naturalWidth * crop[0] + (cropWidth - sw) / 2;
+          const sy = photo.naturalHeight * crop[1] + (cropHeight - sh) / 2;
+          context.drawImage(photo, sx, sy, sw, sh, x, y, w, h);
         }
       });
-      context.fillStyle = '#624630';
+      context.fillStyle = '#e8bd83';
       context.font = '10px "Microsoft YaHei", sans-serif';
       context.textAlign = 'center';
       context.fillText(city.name + ' · 旅行相册', albumWidth / 2, albumHeight - 10);
@@ -292,9 +319,12 @@
       const depth = Math.cos(lat) * Math.cos(lon);
       return { ...city, depth, x: cx + radius * Math.cos(lat) * Math.sin(lon), y: cy - radius * Math.sin(lat) };
     }).filter((city) => city.depth > 0.18).sort((a, b) => b.depth - a.depth);
-    if (demoTime >= 3200 && !demoCity) {
-      demoCity = markers[0] || null;
-      if (demoCity) [0, 1].forEach(index => cityPhoto(demoCity.name, index));
+    if (demoTime >= 1000 && !demoCity) {
+      demoCity = markers.find(city => !visitedCities.has(city.name)) || null;
+      if (demoCity) {
+        visitedCities.add(demoCity.name);
+        for (let index = 0; index < photoCount; index++) cityPhoto(demoCity.name, index);
+      }
     }
     markers.forEach((city) => {
       context.save();
@@ -319,7 +349,10 @@
       context.stroke();
       context.restore();
     });
-    drawCityLabels(markers, dark, cx);
+    const labelMarkers = demoCity
+      ? [...markers.filter(city => city.name === demoCity.name), ...markers.filter(city => city.name !== demoCity.name)]
+      : markers;
+    drawCityLabels(labelMarkers, dark, cx);
     drawDemo(markers);
   }
 
@@ -328,9 +361,13 @@
     if (time - lastPaint > 50) {
       lastPaint = time;
       if (visible && !document.hidden && !reducedMotion.matches) {
-        demoTime += delta;
-        if (demoTime >= 9000) { demoTime = 0; demoCity = null; }
-        if (demoTime < 3200) {
+        // Hold the pointer stage until an unvisited city rotates into view.
+        demoTime = demoCity ? demoTime + delta : Math.min(1000, demoTime + delta);
+        if (demoTime >= 3000) {
+          demoTime -= 3000;
+          demoCity = null;
+        }
+        if (!demoCity) {
           rotation += delta * 0.00032;
           if (rotation > Math.PI) rotation -= 2 * Math.PI;
         }
