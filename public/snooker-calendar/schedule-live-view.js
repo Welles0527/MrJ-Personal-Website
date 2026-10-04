@@ -222,6 +222,11 @@
     const eventId = event.id;
     const template = document.createElement('template');
     template.innerHTML = html;
+    template.content.querySelectorAll('.bracket-player > span').forEach(node => {
+      const name = node.textContent.trim();
+      const alias = name === 'Mark J Williams' ? 'Mark Williams' : name;
+      node.textContent = window.CUE_PLAYER_NAME?.(alias) || playerMeta[alias]?.[0] || name;
+    });
     template.content.querySelectorAll('.bracket-match:not(.bracket-missing)').forEach(match => {
       const players = [...match.querySelectorAll(':scope > .bracket-player')];
       if (players.length === 2 && players[1].classList.contains('won')) match.insertBefore(players[1], players[0]);
@@ -415,6 +420,15 @@
 
   document.addEventListener('click', event => {
     const target = event.target instanceof Element ? event.target : null;
+    const drawButton = target?.closest('[data-match-bracket]');
+    if (drawButton) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      const id = drawButton.dataset.matchBracket;
+      state.matchBracketByEvent[id] = !state.matchBracketByEvent[id];
+      render();
+      return;
+    }
     document.querySelectorAll('.match-player-filters[open]').forEach(picker => {
       if (!picker.contains(target)) picker.open = false;
     });

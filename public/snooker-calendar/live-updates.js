@@ -23,9 +23,17 @@
     'Gary Wilson': '加里·威尔逊', 'Hossein Vafaei': '侯赛因·瓦菲',
     'Jackson Page': '杰克逊·佩奇', 'Stephen Maguire': '斯蒂芬·马奎尔',
     'Stuart Bingham': '斯图尔特·宾汉姆', 'Thepchaiya Un-Nooh': '塔猜亚·乌诺',
-    'Xu Si': '徐思', 'Yuan Sijun': '袁思俊' };
+    'Xu Si': '徐思', 'Yuan Sijun': '袁思俊', 'Gong Chenzhi': '龚晨智',
+    'Zhou Yuelong': '周跃龙', "Joe O'Connor": '乔·奥康纳', 'Mark J Williams': '马克·威廉姆斯',
+    'Ishpreet Singh Chadha': '伊什普里特·辛格·查达', 'Chang Bingyu': '常冰玉',
+    'Aaron Hill': '阿伦·希尔', 'Robbie Williams': '罗比·威廉姆斯',
+    'Artemijs Zizins': '阿尔泰米斯·齐津斯', 'Noppon Saengkham': '诺鹏·桑坎姆',
+    'Daniel Wells': '丹尼尔·威尔斯', 'Mark Joyce': '马克·乔伊斯',
+    'Iulian Boiko': '尤里安·博伊科', 'Lyu Haotian': '吕昊天', 'Long Zehuang': '龙泽煌',
+    'Stan Moody': '斯坦·穆迪' };
   const player = name => names[name] || playerMeta[name]?.[0] ||
     (/^Winner of Match (\d+)$/i.test(name) ? name.replace(/^Winner of Match (\d+)$/i, '第 $1 场胜者') : name);
+  window.CUE_PLAYER_NAME = player;
   const roundName = name => ({ Final: '决赛', 'Semi Finals': '半决赛', 'Semi-finals': '半决赛',
     'Quarter Finals': '1/4决赛', 'Quarter-finals': '1/4决赛' })[name] ||
     name.replace(/^Round (\d+) \(Held Over\)$/i, '延期资格赛第 $1 轮').replace(/^Round (\d+)$/i, '第 $1 轮');
@@ -130,9 +138,74 @@
   const previousStatus = status;
   status = event => snapshot?.events?.[event.id]?.status || previousStatus(event);
   const previousBracket = inlineBracket;
+  state.matchBracketByEvent ||= Object.create(null);
+  const knockoutRound = name => !/held over|group|round robin|league/i.test(name || '') &&
+    /^Round ([3-9]|[1-9]\d+)(?:\b|$)|Quarter|Semi|Final/i.test(name || '');
+  const draw = (event, data) => {
+    const matches = data.matches.filter(match => knockoutRound(match.round));
+    const rounds = [...new Set(matches.map(match => match.round))].sort((a, b) => {
+      const order = name => /Semi/i.test(name) ? 1001 : /Quarter/i.test(name) ? 1000 : /^Final$/i.test(name) ? 1002 : Number(name.match(/\d+/)?.[0]) || 0;
+      return order(a) - order(b);
+    });
+    const groups = rounds.map(round => matches.filter(match => match.round === round).sort((a, b) => a.number - b.number));
+    const count = Math.max(...groups.map((group, index) => group.length * 2 ** index), 1);
+    const slots = groups.map((group, index) => Array.from({length: Math.ceil(count / 2 ** index)}, (_, slot) => group[slot] || null));
+    // Align earlier matches with their published next-round players or match references.
+    for (let round = slots.length - 2; round >= 0; round--) {
+      const available = [...groups[round]];
+      const aligned = slots[round].map(() => null);
+      slots[round + 1].forEach((parent, index) => {
+        if (!parent) return;
+        [parent.home, parent.away].forEach((name, side) => {
+          const reference = name?.match(/^Winner of Match (\d+)$/i);
+          const found = available.findIndex(match => reference ? match.number === Number(reference[1]) :
+            (match.status === 'ended' && Number(match.homeScore) !== Number(match.awayScore) &&
+              (Number(match.homeScore) > Number(match.awayScore) ? match.home : match.away) === name) ||
+            (match.status !== 'ended' && [match.home, match.away].includes(name)));
+          if (index * 2 + side < aligned.length) {
+            aligned[index * 2 + side] = found >= 0 ? available.splice(found, 1)[0] :
+              name ? { missing: true, entrant: name, reference: reference?.[1] } : null;
+          }
+        });
+      });
+      slots[round] = aligned.map(match => match || available.shift() || null);
+    }
+    const paths = [];
+    for (let round = 0; round < slots.length - 1; round++) {
+      slots[round + 1].forEach((_, slot) => {
+        const x = round * 228 + 190, middle = x + 19, next = (round + 1) * 228;
+        const first = bracketCenter(round, slot * 2), second = bracketCenter(round, slot * 2 + 1), y = bracketCenter(round + 1, slot);
+        paths.push(`M ${x} ${first} H ${middle} V ${y} H ${next} M ${x} ${second} H ${middle} V ${y}`);
+      });
+    }
+    const width = (rounds.length - 1) * 228 + 190, height = count * 76;
+    const card = match => {
+      if (!match) return '<article class="bracket-match bracket-missing"><span>对阵待公布</span></article>';
+      if (match.missing) {
+        const knownPlayer = !match.reference;
+        return `<article class="bracket-match bracket-missing" data-missing-result><span>${escape(player(match.entrant))}${knownPlayer ? ' · 已晋级' : ''}</span><span>${knownPlayer ? '上一轮对阵与赛果未同步' : '上一轮赛果待同步'}</span></article>`;
+      }
+      const scored = ['ended', 'live', 'suspended'].includes(match.status);
+      const winner = match.status === 'ended' && match.homeScore !== match.awayScore ?
+        Number(match.homeScore) > Number(match.awayScore) ? match.home : match.away : '';
+      const startTime = match.status === 'upcoming' ? Number.isFinite(Date.parse(match.startsAt)) ?
+        ` · <time datetime="${escape(match.startsAt)}" title="北京时间">${escape(time(match.startsAt))}</time>` : ' · 时间待公布' : '';
+      return `<article class="bracket-match"><small>第 ${escape(match.number || '—')} 场${startTime}${match.status === 'live' ? ' · 进行中' : ''}</small>${[
+        [match.home, match.homeScore], [match.away, match.awayScore],
+      ].map(([name, score]) => `<div class="bracket-player ${name === winner ? 'won' : ''}"><span>${escape(player(name))}</span><b>${scored ? escape(score ?? '—') : '—'}</b></div>`).join('')}</article>`;
+    };
+    return `<section class="inline-bracket" data-inline-event-id="${escape(event.id)}" style="--event-color:${color(event)}"><div class="inline-bracket-heading"><strong>赛事对阵</strong>${status(event) === 'live' ? `<button type="button" data-match-bracket="${escape(event.id)}">返回比赛明细</button>` : ''}</div><div class="bracket-scroll"><div class="bracket-stage" style="width:${width}px;height:${height + 32}px"><svg class="bracket-lines" width="${width}" height="${height}" aria-hidden="true"><path d="${paths.join(' ')}"/></svg>${rounds.map((round, index) => `<section class="bracket-round" style="left:${index * 228}px"><h4>${escape(roundName(round))}</h4>${slots[index].map((match, slot) => `<div class="bracket-slot" style="top:${bracketCenter(index, slot)}px">${card(match)}</div>`).join('')}</section>`).join('')}</div></div><p class="bracket-note">对阵与比分随官方数据自动更新 · 同步于 ${escape(time(data.fetchedAt))}（北京时间）</p></section>`;
+  };
   inlineBracket = event => {
     const data = snapshot?.events?.[event.id];
     const resultsPage = state.nav === 'results';
+    if (status(event) === 'ended') {
+      if (data?.matches?.some(match => knockoutRound(match.round))) return draw(event, data);
+      return previousBracket(event);
+    }
+    const drawAvailable = status(event) === 'live' && data?.matches?.some(match =>
+      knockoutRound(match.round) && ['ended', 'live', 'suspended'].includes(match.status));
+    if (drawAvailable && state.matchBracketByEvent[event.id]) return draw(event, data);
     if (!data?.matches?.length) {
       if (!resultsPage) return previousBracket(event);
       const rows = (event.result?.length ? event.result : event.matches || []).map((row, index) => ({ row, index })).filter(({ row }) =>
@@ -251,6 +324,7 @@
     };
     const note = stale(data) ? '暂未取得最新数据，以下为上次同步记录' : '自动更新中 · 每 20 分钟采集';
     return `<section class="inline-bracket" data-inline-event-id="${escape(event.id)}" style="--event-color:${color(event)}" aria-label="${escape(event.name)}对阵信息">
+      ${drawAvailable ? `<div class="inline-bracket-heading"><button type="button" data-match-bracket="${escape(event.id)}">对阵图</button></div>` : ''}
       ${knockout ? bracket() : `<div class="inline-bracket-rounds live-score-rounds">${groups.map(renderGroup).join('')}</div>
       ${later.length ? `<details class="later-matches"><summary>其他待赛对阵 · ${later.length} 场（不在未来48小时内或时间待确认）</summary>${later.map(matchRow).join('')}</details>` : ''}`}
       ${earlier.length ? `<details class="earlier-matches"><summary>展开当天以前已结束的比赛 · ${earlier.length} 场</summary>

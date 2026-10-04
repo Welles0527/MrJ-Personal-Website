@@ -176,6 +176,12 @@
     panel.querySelectorAll('.later-matches').forEach(section => section.remove());
     const grid = document.createElement('div'); grid.className = 'redesign-content-grid';
     const main = document.createElement('div'); main.className = 'redesign-match-main';
+    const drawButton = panel.querySelector('[data-match-bracket]');
+    if (drawButton) {
+      const heading = drawButton.parentElement;
+      panel.querySelector('.match-status-filters').append(drawButton);
+      if (!heading.children.length) heading.remove();
+    }
     main.append(panel.querySelector('.match-controls-row'), content);
     const history = panel.querySelector('.earlier-matches'); if (history) main.append(history);
     const empty = panel.querySelector('.match-filter-empty'); if (empty) main.append(empty);
@@ -210,6 +216,7 @@
       }
     }
     if (state.nav !== 'schedule') return;
+    document.querySelector('main > .pending-events')?.remove();
     document.querySelectorAll('.details-list>.event-row-card').forEach(card => {
       const event = events.find(event => event.id === card.querySelector('[data-inline-event]')?.dataset.inlineEvent);
       if (!event || status(event) !== 'live') return;
