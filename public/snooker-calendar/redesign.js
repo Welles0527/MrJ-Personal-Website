@@ -203,15 +203,22 @@
     if (state.nav === 'results') {
       const list = document.querySelector('.details-list');
       if (list) {
-        const cards = Array.from(list.querySelectorAll(':scope > .event-row-card'));
+        const cards = Array.from(list.querySelectorAll(':scope > .event-row-card')).map(card => ({
+          card,
+          bracket: card.nextElementSibling?.matches('.inline-bracket') ? card.nextElementSibling : null,
+        }));
         const eventFor = card => events.find(event => event.id === card.querySelector('[data-inline-event]')?.dataset.inlineEvent);
-        cards.sort((a,b) => (eventFor(a)?.start || '').localeCompare(eventFor(b)?.start || ''));
-        const upcoming = cards.filter(card => card.dataset.eventStatus === 'upcoming');
-        cards.filter(card => card.dataset.eventStatus !== 'upcoming').forEach(card => list.append(card));
+        cards.sort((a,b) => (eventFor(b.card)?.start || '').localeCompare(eventFor(a.card)?.start || ''));
+        const appendPair = (parent, pair) => {
+          parent.append(pair.card);
+          if (pair.bracket) parent.append(pair.bracket);
+        };
+        const upcoming = cards.filter(pair => pair.card.dataset.eventStatus === 'upcoming');
+        cards.filter(pair => pair.card.dataset.eventStatus !== 'upcoming').forEach(pair => appendPair(list, pair));
         if (upcoming.length) {
           const folded = document.createElement('details'); folded.className = 'results-upcoming';
           const summary = document.createElement('summary'); summary.textContent = '未开始的赛事 · '+upcoming.length+' 场';
-          folded.append(summary); upcoming.forEach(card => folded.append(card)); list.append(folded);
+          folded.append(summary); upcoming.forEach(pair => appendPair(folded, pair)); list.append(folded);
         }
       }
     }

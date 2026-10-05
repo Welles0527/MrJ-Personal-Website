@@ -3,7 +3,31 @@ import assert from 'node:assert/strict';
 import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { readEvents, findTournament, normalizeTournament, synchronize } from '../scripts/sync-snooker-scores.mjs';
+import { readEvents, findTournament, normalizeTournament, normalizeRankings, rankingsEndpoint, synchronize } from '../scripts/sync-snooker-scores.mjs';
+
+test('official rankings validate all sixteen positions and retain the last success on failure', async () => {
+  const board = { data: [{ id: 'abfba8fe-1423-5a2a-a96b-d77e8b413ca8', attributes: {
+    live: false, published: true, recalculateAfter: 'After tournament', positions: Array.from({ length: 16 }, (_, i) => ({
+      position: i + 1, playerID: String(i), prizeMoney: 100000 - i * 1000, player: { firstName: 'Player', surname: String(i) }
+    })).reverse()
+  } }] };
+  assert.equal(normalizeRankings(board, now.toISOString()).players[0].rank, 1);
+  const invalid = structuredClone(board);
+  invalid.data[0].attributes.positions.pop();
+  assert.throws(() => normalizeRankings(invalid, now.toISOString()));
+  const root = await mkdtemp(path.join(tmpdir(), 'cue-rank-test-'));
+  try {
+    await writeFile(path.join(root, 'index.html'), '');
+    const request = async url => url === rankingsEndpoint ? board : { data: [] };
+    await synchronize({ root, now, request });
+    const read = async () => JSON.parse((await readFile(path.join(root, 'live-scores.js'), 'utf8')).replace('window.CUE_LIVE_SCORES = ', '').trim().replace(/;$/, ''));
+    const valid = (await read()).rankings;
+    await synchronize({ root, now: new Date(+now + 1800000), request: async () => { throw new Error('offline'); } });
+    const failed = await read();
+    assert.deepEqual(failed.rankings, valid);
+    assert.equal(failed.failures.rankings.message, 'offline');
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
 
 const now = new Date('2026-09-28T09:00:00Z');
 const event = { id: 'shenzhen', name: 'Shenzhen Open', start: '2026-09-28', end: '2026-10-04' };

@@ -4,6 +4,26 @@
   let lastPayload = '';
   let loading = false;
   let readFailed = false;
+  let rankingSnapshot = null;
+  let rankingFailed = false;
+  function applyRankings(data) {
+    if (!data?.rankings?.players?.length) return;
+    if (rankingSnapshot && data.rankings.fetchedAt < rankingSnapshot.fetchedAt) return;
+    rankingSnapshot = data.rankings;
+    rankingFailed = Boolean(data.failures?.rankings);
+    const canonical = name => Object.keys(playerMeta).find(key => key.replace(/[’]/g, "'") === name.replace(/[’]/g, "'")) ||
+      (name === 'Mark J Williams' ? 'Mark Williams' : name);
+    rankingYears[2026] = { label: '最新排名', players: rankingSnapshot.players.map(row => canonical(row.name)),
+      prizes: rankingSnapshot.players.map(row => '£' + row.amount.toLocaleString('en-GB')) };
+  }
+  const originalPlayersView = playersView;
+  playersView = () => {
+    const html = originalPlayersView();
+    if (state.rankingYear !== 2026) return html;
+    return html.replace(/按 WPBSA 最新奖金排名；同步日期 [^<]+/,
+      rankingSnapshot ? `WST Official 官方排名 · 最后成功同步 ${escape(time(rankingSnapshot.fetchedAt))}（北京时间）` : '历史缓存 · 尚未成功同步 WST 官方排名')
+      .replace('当前奖金与名次来自 WPBSA 最新榜单。', '名次与奖金按 WST Official 官方世界排名更新。');
+  };
   const labels = { upcoming: '待赛', live: '正在进行', ended: '已结束',
     postponed: '延期', suspended: '暂停', cancelled: '取消' };
   const escape = value => String(value ?? '').replace(/[&<>"']/g,
@@ -346,6 +366,14 @@
   const previousRender = render;
   render = () => {
     previousRender();
+    if (state.nav === 'rankings' && state.rankingYear === 2026) {
+      const badge = document.querySelector('.snapshot');
+      const delayed = rankingFailed || !rankingSnapshot || Date.now() - Date.parse(rankingSnapshot.fetchedAt) > 60 * 60 * 1000;
+      if (badge) {
+        badge.textContent = rankingSnapshot ? `${delayed ? '排名同步延迟' : '排名已同步'} · ${time(rankingSnapshot.fetchedAt)}` : '排名等待同步';
+        badge.title = 'WST Official 官方世界排名；仅成功获取后更新同步时间';
+      }
+    }
     const records = Object.values(snapshot?.events || {});
     const latest = records.sort((a, b) => b.fetchedAt.localeCompare(a.fetchedAt))[0];
     const delayed = records.some(stale);
@@ -388,16 +416,16 @@
     try {
       const cloudData = await window.CUE_LOAD_CLOUD_SCORES?.();
       if (cloudData?.version === 1 && cloudData.events) {
+        applyRankings(cloudData);
         const payload = JSON.stringify(cloudData);
         const oldFailure = readFailed;
         readFailed = false;
         snapshot = cloudData;
-        loading = false;
         if (payload !== lastPayload || oldFailure || changedDay) {
           lastPayload = payload;
           refreshView();
         }
-        return;
+        if (cloudData.rankings) { loading = false; return; }
       }
     } catch (error) {
       console.debug('[snooker] cloud snapshot unavailable, using static fallback', error);
@@ -416,6 +444,13 @@
       readFailed = !ok;
       const data = window.CUE_LIVE_SCORES;
       if (ok && data?.version === 1 && data.events) {
+        applyRankings(data);
+        // The cloud may still serve the older score-only schema. Keep its newer match records.
+        if (snapshot?.events) {
+          for (const [id, record] of Object.entries(snapshot.events)) {
+            if (!data.events[id] || record.fetchedAt > data.events[id].fetchedAt) data.events[id] = record;
+          }
+        }
         const payload = JSON.stringify(data);
         snapshot = data;
         if (payload !== lastPayload || oldFailure || changedDay) {

@@ -206,7 +206,7 @@
 
   filtered = () => baseFiltered().filter(event => {
     if (state.nav !== 'schedule') return true;
-    return status(event) === 'live' || (state.scheduleShowUpcoming && status(event) === 'upcoming');
+    return inMonth(event, CURRENT_MONTH);
   });
 
   const bracketWinnerIndex = score => {
@@ -399,13 +399,10 @@
 
   const scheduleControl = () => {
     const available = event => state.types.has(event.type) && state.regions.has(event.region);
-    const liveCount = events.filter(event => available(event) && status(event) === 'live').length;
-    const upcomingCount = events.filter(event => available(event) && status(event) === 'upcoming').length;
+    const monthlyEvents = events.filter(event => available(event) && inMonth(event, CURRENT_MONTH));
+    const counts = ['ended', 'live', 'upcoming'].map(kind => monthlyEvents.filter(event => status(event) === kind).length);
     return `<div class="schedule-control" role="region" aria-label="赛程显示范围">
-      <div><strong>正在进行的赛事</strong><span>${liveCount} 场赛事详情已默认展开${state.scheduleShowUpcoming ? ` · 已显示 ${upcomingCount} 场未开始赛事` : ''}</span></div>
-      <button type="button" data-schedule-upcoming aria-expanded="${state.scheduleShowUpcoming}" ${upcomingCount ? '' : 'disabled'}>
-        ${state.scheduleShowUpcoming ? '收起未开始赛事' : '展开未开始赛事'}${upcomingCount ? ` · ${upcomingCount}` : ''}
-      </button>
+      <div><strong>${CURRENT_MONTH + 1}月赛事</strong><span>共 ${monthlyEvents.length} 场 · 已结束 ${counts[0]} · 进行中 ${counts[1]} · 未开始 ${counts[2]}</span></div>
     </div>`;
   };
 
@@ -438,8 +435,8 @@
       event.stopImmediatePropagation();
       state.nav = 'schedule';
       state.view = 'year';
-      state.statuses = new Set(['live']);
-      state.scheduleShowUpcoming = false;
+      state.statuses = new Set(['upcoming', 'live', 'ended']);
+      state.scheduleShowUpcoming = true;
       state.scheduleCollapsedEvents.clear();
       state.expandedEvent = null;
       document.body.classList.remove('menu-open');
@@ -529,8 +526,8 @@
       if (toggle) {
         event.preventDefault();
         event.stopImmediatePropagation();
-        state.scheduleShowUpcoming = !state.scheduleShowUpcoming;
-        state.statuses = state.scheduleShowUpcoming ? new Set(['live', 'upcoming']) : new Set(['live']);
+        state.scheduleShowUpcoming = true;
+        state.statuses = new Set(['upcoming', 'live', 'ended']);
         state.expandedEvent = null;
         render();
         return;
@@ -542,7 +539,7 @@
         event.stopImmediatePropagation();
         state.types = new Set(Object.keys(types).filter(key => key !== 'qualifier'));
         state.regions = new Set(Object.keys(regions));
-        state.statuses = state.scheduleShowUpcoming ? new Set(['live', 'upcoming']) : new Set(['live']);
+        state.statuses = new Set(['upcoming', 'live', 'ended']);
         render();
         return;
       }

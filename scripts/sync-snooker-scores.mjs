@@ -7,6 +7,18 @@ import path from 'node:path';
 
 const directory = fileURLToPath(new URL('../public/snooker-calendar/', import.meta.url));
 const endpoint = 'https://tournaments.snooker.web.gc.wstservices.co.uk/v2/';
+export const rankingsEndpoint = 'https://rankings.snooker.web.gc.wstservices.co.uk/v2?rankingsLimit=200&showOfficial=true';
+export function normalizeRankings(payload, fetchedAt) {
+  const board = payload?.data?.find(item => item.id === 'abfba8fe-1423-5a2a-a96b-d77e8b413ca8');
+  if (!board || board.attributes.live !== false || board.attributes.published !== true) throw new Error('Official world rankings unavailable');
+  const rows = [...board.attributes.positions].sort((a, b) => a.position - b.position).slice(0, 16);
+  if (rows.length !== 16 || rows.some((row, i) => row.position !== i + 1 || !row.playerID ||
+      !row.player?.firstName || !row.player?.surname || !Number.isFinite(row.prizeMoney) || row.prizeMoney < 0) ||
+      new Set(rows.map(row => row.playerID)).size !== 16) throw new Error('Invalid official top 16');
+  return { fetchedAt, basis: board.attributes.recalculateAfter, source: 'https://www.wst.tv/rankings/',
+    players: rows.map(row => ({ id: row.playerID, rank: row.position,
+      name: `${row.player.firstName} ${row.player.surname}`, amount: row.prizeMoney })) };
+}
 const prefix = 'window.CUE_LIVE_SCORES = ';
 export const intervalMs = 5 * 60 * 1000;
 
@@ -59,7 +71,7 @@ export function normalizeTournament(id, tournament, fetchedAt) {
 
 async function getJson(url) {
   const target = new URL(url);
-  if (target.origin !== new URL(endpoint).origin) throw new Error('Unexpected WST pagination host');
+  if (![new URL(endpoint).origin, new URL(rankingsEndpoint).origin].includes(target.origin)) throw new Error('Unexpected WST pagination host');
   const response = await fetch(target, { signal: AbortSignal.timeout(25000),
     headers: { Accept: 'application/json' } });
   if (!response.ok) throw new Error(`WST HTTP ${response.status}`);
@@ -94,6 +106,13 @@ export async function synchronize({ now = new Date(), request = getJson, root = 
     const previous = await readPrevious(destination);
     const next = { ...previous, intervalMs, checkedAt: now.toISOString(), failures: {} };
     next.events = { ...previous.events };
+    if (!previous.rankings || now - Date.parse(previous.rankings.fetchedAt) >= 30 * 60 * 1000) {
+      try {
+        next.rankings = normalizeRankings(await request(rankingsEndpoint), now.toISOString());
+      } catch (error) {
+        next.failures.rankings = { checkedAt: now.toISOString(), message: error.message };
+      }
+    }
     const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai' }).format(now);
     const cutoff = new Date(Date.parse(today) - 2 * 86400000).toISOString().slice(0, 10);
     const horizon = new Date(Date.parse(today) + 30 * 86400000).toISOString().slice(0, 10);
