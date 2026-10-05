@@ -493,6 +493,12 @@ export function mountTodoWorkspace(root: HTMLElement) {
 
   const renderFilters = () => {
     const all = [{ value: 'all' as TodoFilter, label: '全部' }, ...categories];
+    if (document.documentElement.classList.contains('calendar-week-mode')) {
+      const colors: Record<string, string> = { all: '#c7b58d', work: '#91bafa', study: '#d8b4fe', life: '#f1a5da', health: '#71d6b4', other: '#f5cd81' };
+      const selected = all.find(category => category.value === state.filter)!;
+      filterContainer.innerHTML = `<details class="todo-category-menu"><summary aria-label="待办分类"><i style="--category-color:${colors[state.filter]}"></i>${selected.label}</summary><div class="todo-category-options">${all.map(category => `<button class="todo-filter ${state.filter === category.value ? 'is-active' : ''}" type="button" data-action="set-filter" data-category="${category.value}" aria-pressed="${state.filter === category.value}"><i style="--category-color:${colors[category.value]}"></i>${category.label}</button>`).join('')}</div></details>`;
+      return;
+    }
     filterContainer.innerHTML = all.map((category) => `<button class="todo-filter ${state.filter === category.value ? 'is-active' : ''}" type="button" data-action="set-filter" data-category="${category.value}">${category.label}</button>`).join('');
   };
 

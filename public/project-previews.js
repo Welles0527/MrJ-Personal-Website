@@ -28,11 +28,13 @@
     const cycle = state.elapsed % 10000;
     if (state.progress) {
       const progress = Math.round(42 + Math.min(cycle / 8000, 1) * 26);
-      const phase = cycle < 2800 ? 'reading' : cycle < 6800 ? 'audio' : 'notes';
+      const phase = cycle < 1400 ? 'reading' : cycle < 3800 ? 'saved' : cycle < 7000 ? 'notes' : 'audio';
       state.element.dataset.readingPhase = phase;
       state.element.style.setProperty('--reading-progress', String(progress / 100));
       state.progress.textContent = `${progress}%`;
-      if (state.readingStatus) state.readingStatus.textContent = { reading: '阅读进度 · 智能阅读分析', audio: '语音播报 · 跟随阅读', notes: '个性化笔记 · 已记录' }[phase];
+      const saved = state.element.querySelector('[data-reading-save]');
+      if (saved) saved.textContent = phase === 'reading' ? '收藏本章' : '已收藏';
+      if (state.readingStatus) state.readingStatus.textContent = { reading: '继续阅读 · 第 11 章', saved: '收藏成功 · 随时重温', audio: '阅读进度已同步 · 语音跟读', notes: '记录感悟 · 笔记自动保存' }[phase];
     } else if (state.status) {
       const phase = cycle < 3200 ? 'screening' : cycle < 6500 ? 'evaluating' : 'matched';
       state.element.dataset.investingPhase = phase;

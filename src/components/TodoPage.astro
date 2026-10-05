@@ -384,6 +384,8 @@ const navItems: NavItem[] = [
 
       <dialog class="todo-modal todo-login-modal" aria-labelledby="todo-login-title" data-login-modal>
         <form class="todo-form" data-login-form novalidate>
+          <div class="login-neu-top"><span>J. WORKSPACE</span><small>安全登录</small></div>
+          <div class="login-neu-emblem" aria-hidden="true"><span>J<span class="login-neu-star">✦</span></span></div>
           <div class="todo-modal-header">
             <div>
               <p class="todo-kicker">云端待办</p>
@@ -421,6 +423,8 @@ const navItems: NavItem[] = [
       if (document.documentElement.classList.contains('calendar-week-mode')) {
         const tools = document.querySelector<HTMLTemplateElement>('#calendar-week-tools');
         if (tools) document.querySelector('.todo-data-tools')?.prepend(tools.content.cloneNode(true));
+        const create = document.querySelector('.todo-header-actions [data-action="open-create"]');
+        if (create) document.querySelector('.todo-data-tools')?.append(create);
         const panel = document.querySelector('.todo-week-overview-panel');
         const inspiration = document.querySelector('[data-ai-inspiration-list]');
         const label = panel?.querySelector('.todo-section-label-copy > span');
@@ -471,6 +475,10 @@ const navItems: NavItem[] = [
           if ((event.key === sessionKey || event.key === null) && readAccountUid() !== initialAccountUid) location.reload();
         });
         window.addEventListener('message', event => {
+          if (event.origin === location.origin && event.source === window.parent && event.data?.type === 'calendar-week-sync') {
+            document.querySelector<HTMLButtonElement>('[data-action="retry-sync"]')?.click();
+            return;
+          }
           if (event.origin !== location.origin || event.source !== window.parent || event.data?.type !== 'calendar-week-theme') return;
           const theme = event.data.theme;
           if (!['cream', 'blue', 'gold', 'purple', 'neon'].includes(theme)) return;
@@ -5383,7 +5391,16 @@ html.calendar-week-mode [data-overview-lanes],
 html.calendar-week-mode .todo-header-actions > [data-login-open],
 html.calendar-week-mode .todo-header-actions > [data-sign-out] { display: none !important; }
 html.calendar-week-mode .todo-shell { display: block; min-height: 100dvh; }
-html.calendar-week-mode .todo-main { width: 100%; max-width: none; margin: 0; padding: 24px; }
+html.calendar-week-mode .todo-main { width: 100%; max-width: none; margin: 0; padding: 0; border: 0; box-shadow: none; }
+html.calendar-week-mode .todo-heading,html.calendar-week-mode .todo-sync-summary { display: none; }
+html.calendar-week-mode .todo-header { margin: 0; gap: 0; }
+html.calendar-week-mode .todo-filter-section { align-items: center; gap: 12px; }
+html.calendar-week-mode .todo-filter-list { width: auto; overflow: visible; }
+html.calendar-week-mode .todo-category-menu { position: relative; min-width: 110px; }
+html.calendar-week-mode .todo-category-menu summary { cursor: pointer; padding: 9px 12px; border: 1px solid var(--ref-line); border-radius: 8px; color: var(--ref-text,#eee9df); }
+html.calendar-week-mode .todo-category-menu i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--category-color,var(--ref-muted)); margin-right: 8px; }
+html.calendar-week-mode .todo-category-options { position: absolute; top: calc(100% + 6px); left: 0; z-index: 10; display: grid; min-width: 130px; padding: 6px; border: 1px solid var(--ref-line); border-radius: 8px; background: var(--paper,#191713); box-shadow: 0 8px 24px #0004; }
+html.calendar-week-mode .todo-category-options button { text-align: left; }
 html.calendar-week-mode .todo-planner-card { grid-template-columns: 280px minmax(0, 1fr); }
 html.calendar-week-mode .todo-data-tools { flex-wrap: wrap; }
 html.calendar-week-mode .todo-board-scroll { overflow-x: auto; }
@@ -5392,7 +5409,7 @@ html.calendar-week-mode .todo-item-title { text-decoration: none !important; }
 html.calendar-week-mode .todo-modal { max-height: calc(100dvh - 24px); overflow-y: auto; }
 html.calendar-week-mode .todo-form .todo-modal-actions { position: sticky; bottom: 0; z-index: 2; padding: 10px 0; background: var(--paper, #f8e6c8); }
 @media (max-width: 760px) {
-  html.calendar-week-mode .todo-main { padding: 20px 14px; }
+  html.calendar-week-mode .todo-main { padding: 0; }
   html.calendar-week-mode .todo-planner-card { grid-template-columns: 1fr; }
   html.calendar-week-mode .todo-weekly-board { grid-template-columns: 1fr; min-width: 0; }
 }
@@ -5420,6 +5437,43 @@ html.calendar-week-mode .todo-item-note { color: var(--task-foreground, #17212b)
   html.calendar-week-mode .todo-planner-card { grid-template-columns: minmax(0, 1fr); }
   html.calendar-week-mode .todo-ai-lanes { grid-auto-columns: minmax(240px, 1fr); }
 }
+/* Sculpted charcoal login, isolated from the workspace and other dialogs. */
+html body .todo-login-modal {
+  width: min(440px, calc(100vw - 32px)); max-height: calc(100dvh - 32px);
+  padding: 14px; border: 2px solid #ddd; border-radius: 32px;
+  background: #3c3c3c; color: #eee; overflow-y: auto;
+  box-shadow: 0 24px 70px #0008; color-scheme: dark;
+}
+html body .todo-login-modal::backdrop { background: #151515b8; backdrop-filter: blur(8px); }
+html body .todo-login-modal .todo-form {
+  display: flex; flex-direction: column; gap: 18px; padding: 24px 28px;
+  border-radius: 23px; background: #3c3c3c;
+  box-shadow: 8px 8px 18px #292929, -6px -6px 16px #535353;
+}
+html body .login-neu-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+html body .login-neu-top>span { padding: 9px 13px; border-radius: 30px; font-size: 10px; letter-spacing: 1px; box-shadow: 3px 3px 7px #292929,-3px -3px 7px #4f4f4f; }
+html body .login-neu-top small { color: #ccc; font-size: 11px; }
+html body .login-neu-emblem { display: grid; place-items: center; flex: none; width: 94px; height: 94px; margin: 6px auto 0; border-radius: 50%; box-shadow: 7px 7px 16px #292929,-7px -7px 16px #535353; }
+html body .login-neu-emblem>span { position: relative; display: grid; place-items: center; width: 72px; height: 72px; border: 1px solid #aaa; border-radius: 50%; background: linear-gradient(145deg,#494949,#262626); font: italic 44px Georgia,serif; color: #eee; }
+html body .login-neu-star { position: absolute; right: 10px; top: 8px; font-size: 17px; }
+html body .todo-login-modal .todo-modal-header { display: block; margin: 0; text-align: center; }
+html body .todo-login-modal .todo-kicker { display: none; }
+html body .todo-login-modal h2 { margin: 0; font: inherit; font-size: 22px; font-weight: 600; line-height: 1.4; color: #eee; letter-spacing: .02em; }
+html body .todo-login-modal .todo-login-copy { margin: 0; color: #bbb; font-size: 11px; line-height: 1.6; text-align: center; }
+html body .todo-login-modal .todo-field { display: flex; flex-direction: column; gap: 9px; margin: 0; }
+html body .todo-login-modal .todo-field>span { padding-left: 13px; color: #ddd; font-size: 12px; }
+html body .todo-login-modal .todo-field input { width: 100%; min-height: 49px; padding: 13px 20px; border: 1px solid transparent; border-radius: 30px; background: #393939; color: #f5f5f5; box-shadow: inset 6px 6px 12px #202020,inset -5px -5px 10px #4a4a4a; font-size: 14px; }
+html body .todo-login-modal .todo-field input::placeholder { color: #aaa; }
+html body .todo-login-modal .todo-field input:focus { border-color: #aaa; outline: 2px solid #ddd; outline-offset: 3px; }
+html body .todo-login-modal .todo-login-message { margin: 0; color: #ebc5a6; font-size: 12px; line-height: 1.5; }
+html body .todo-login-modal .todo-modal-actions { position: static; display: grid; grid-template-columns: 1fr 1fr; gap: 14px 8px; padding: 0; margin: 0; border: 0; background: transparent; }
+html body .todo-login-modal .todo-modal-actions .todo-primary-button { grid-column: 1/-1; grid-row: 1; min-height: 52px; border: 1px solid #ffffff06; border-radius: 30px; background: #3c3c3c; color: #eee; box-shadow: 5px 5px 12px #292929,-5px -5px 12px #525252; font-size: 18px; font-weight: 700; }
+html body .todo-login-modal .todo-modal-actions .todo-secondary-button { min-width: 0; padding: 10px 2px; border: 0; background: transparent; color: #ddd; box-shadow: none; font-size: 12px; }
+html body .todo-login-modal button:focus-visible { outline: 2px solid #eee; outline-offset: 3px; }
+html body .todo-login-modal .todo-primary-button { justify-content: center; text-align: center; }
+html body .todo-login-modal .todo-primary-button:active { box-shadow: inset 4px 4px 9px #292929,inset -4px -4px 9px #525252; }
+html body .todo-login-modal [hidden] { display: none !important; }
+@media(max-width:480px) { html body .todo-login-modal .todo-form { padding: 20px 16px; gap: 16px; } }
     </style>
   </body>
 </html>

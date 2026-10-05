@@ -837,8 +837,9 @@ html:not(.dark) .mrj-featured .reading-book-pages{background:repeating-linear-gr
   function preview(p){
     if(p.id==='calendar')return calendarOverlay();
     if(p.id==='travel')return '<div class="travel-preview"><canvas class="travel-globe" role="img" aria-label="可转动的旅行地球仪，标记去过的城市"></canvas><div class="travel-preview-copy"><small>旅行记录 · 地图相册</small><strong>在地球上记录你去过的地方</strong></div></div>';
-    if(p.id==='bible')return `<div class="reader-demo project-motion" data-preview-motion="reading" data-reading-phase="reading" role="img" aria-label="今日阅读：信就是所望之事的实底，是未见之事的确据。希伯来书 11:1。阅读进度和语音波形动效演示">
-      <div class="reader-open-book" aria-hidden="true"><img src="/officialwebsite/images/reader-open-book.png" alt="" loading="lazy"></div>
+    if(p.id==='bible')return `<div class="reader-demo project-motion" data-preview-motion="reading" data-reading-phase="reading" role="img" aria-label="今日阅读：信就是所望之事的实底，是未见之事的确据。希伯来书 11:1。收藏本章、保存笔记、阅读进度及语音跟读的自动演示">
+      <div class="reader-open-book" aria-hidden="true"><img src="/officialwebsite/images/reader-open-book.png" alt="" loading="lazy"><div class="reader-note-card"><small>我的笔记 <span>✓ 已保存</span></small><p>把今天的感悟，留给明天的自己。</p></div></div>
+      <div class="reader-actions" aria-hidden="true"><span class="reader-save"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg><em data-reading-save>收藏本章</em></span><span class="reader-note-action"><svg viewBox="0 0 24 24"><path d="m15 4 5 5M4 20l5-1L21 7l-4-4L5 15z"/></svg>记笔记</span><small>在线阅读 · 功能演示</small><i class="reader-demo-pointer">➤</i></div>
       <div class="reader-context" aria-hidden="true"><i class="reader-context-dot"></i><span data-reading-status>阅读进度 · 智能阅读分析</span><span class="reader-note-ink"><i></i><i></i><i></i></span></div>
       <div class="reader-player" aria-hidden="true"><span class="reader-play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5c0-.8.9-1.3 1.6-.9l10 6.5c.7.4.7 1.4 0 1.8l-10 6.5c-.7.4-1.6-.1-1.6-.9z"/></svg></span><span class="reader-wave">${Array.from({length:25},(_,i)=>`<i style="--bar:${i};--height:${[.2,.35,.5,.75,.95,.65,.4,.3,.22,.35,.55,.8,1,.75,.5,.3,.22,.18,.3,.2,.15,.25,.2,.14,.18][i]}"></i>`).join('')}</span><span class="reader-progress-track"><i></i></span><strong data-reading-progress>42%</strong></div>
     </div>`;
