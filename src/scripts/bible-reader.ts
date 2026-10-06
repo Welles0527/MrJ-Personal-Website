@@ -1,5 +1,6 @@
-import { cloudErrorMessage, getCloudDb, getCloudSession, signInWithPassword, startEmailSignUp } from './site-auth';
+import { cloudErrorMessage, getCloudDb, getCloudSession, getRememberedSession, signInWithPassword, startEmailSignUp } from './site-auth';
 import type { CloudSession } from './site-auth';
+import { accountStorageKey, resolveAccountSnapshot } from './bible-reader-account-state';
 
 type BibleBook = {
   slug: string;
@@ -91,6 +92,7 @@ type ReaderState = {
   bookmarks: Bookmark[];
   notes: Note[];
   readVerses?: string[];
+  bookStatuses?: Record<string, BookReadingStatus>;
   updatedAt: string;
 };
 
@@ -123,6 +125,7 @@ const STORAGE_KEY = 'mywebsite.bible-reader.v1';
 const DAILY_PRAYER_KEY = 'mywebsite.bible-daily-prayer.v1';
 const READ_VERSES_KEY = 'mywebsite.bible-read-verses.v1';
 const BOOK_STATUS_KEY = 'mywebsite.bible-book-status.v1';
+const LEGACY_OWNER_KEY = 'mywebsite.bible-reader.legacy-owner.v1';
 const READING_THEME_KEY = 'mywebsite.bible-reading-theme.v1';
 const SPEECH_RATE_KEY = 'mywebsite.bible-speech-rate.v1';
 const SPEECH_RATES = [1, 1.2, 1.5, 2, 3];
@@ -142,35 +145,42 @@ const escapeHtml = (value: string) => value
   .replaceAll('"', '&quot;')
   .replaceAll("'", '&#039;');
 
-const readLocalState = (fallback: ReaderState): ReaderState => {
+const readStoredState = (storageKey: string): ReaderState | null => {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return fallback;
+    const raw = window.localStorage.getItem(storageKey);
+    if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<ReaderState>;
-    if (!parsed || !parsed.lastRead || !Array.isArray(parsed.bookmarks) || !Array.isArray(parsed.notes)) return fallback;
+    if (!parsed || !parsed.lastRead || !Array.isArray(parsed.bookmarks) || !Array.isArray(parsed.notes)) return null;
     return {
       lastRead: parsed.lastRead,
       bookmarks: parsed.bookmarks.filter((item): item is Bookmark => Boolean(item?.id && item.book && item.chapter && item.verse)),
       notes: parsed.notes.filter((item): item is Note => Boolean(item?.id && item.book && item.chapter && item.verse)),
-      updatedAt: typeof parsed.updatedAt === 'string' ? parsed.updatedAt : fallback.updatedAt
+      readVerses: Array.isArray(parsed.readVerses) ? parsed.readVerses.filter((item): item is string => typeof item === 'string') : undefined,
+      bookStatuses: parsed.bookStatuses && typeof parsed.bookStatuses === 'object' && !Array.isArray(parsed.bookStatuses)
+        ? Object.fromEntries(Object.entries(parsed.bookStatuses).filter((item): item is [string, BookReadingStatus] => item[1] === 'reading' || item[1] === 'read' || item[1] === 'none'))
+        : undefined,
+      updatedAt: typeof parsed.updatedAt === 'string' ? parsed.updatedAt : parsed.lastRead.updatedAt
     };
   } catch {
-    return fallback;
+    return null;
   }
 };
 
-const writeLocalState = (state: ReaderState) => {
+const readLocalState = (fallback: ReaderState, storageKey = STORAGE_KEY): ReaderState =>
+  readStoredState(storageKey) ?? fallback;
+
+const writeLocalState = (state: ReaderState, storageKey = STORAGE_KEY) => {
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    window.localStorage.setItem(storageKey, JSON.stringify(state));
     return true;
   } catch {
     return false;
   }
 };
 
-const readReadVerses = () => {
+const readReadVerses = (storageKey = READ_VERSES_KEY) => {
   try {
-    const raw = window.localStorage.getItem(READ_VERSES_KEY);
+    const raw = window.localStorage.getItem(storageKey);
     const parsed = raw ? JSON.parse(raw) : [];
     return new Set(Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string') : []);
   } catch {
@@ -178,18 +188,18 @@ const readReadVerses = () => {
   }
 };
 
-const writeReadVerses = (readVerses: Set<string>) => {
+const writeReadVerses = (readVerses: Set<string>, storageKey = READ_VERSES_KEY) => {
   try {
-    window.localStorage.setItem(READ_VERSES_KEY, JSON.stringify([...readVerses]));
+    window.localStorage.setItem(storageKey, JSON.stringify([...readVerses]));
     return true;
   } catch {
     return false;
   }
 };
 
-const readBookStatuses = () => {
+const readBookStatuses = (storageKey = BOOK_STATUS_KEY) => {
   try {
-    const raw = window.localStorage.getItem(BOOK_STATUS_KEY);
+    const raw = window.localStorage.getItem(storageKey);
     const parsed = raw ? JSON.parse(raw) : {};
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {} as Record<string, BookReadingStatus>;
     return Object.fromEntries(Object.entries(parsed).filter((item): item is [string, BookReadingStatus] => item[1] === 'reading' || item[1] === 'read' || item[1] === 'none'));
@@ -198,12 +208,28 @@ const readBookStatuses = () => {
   }
 };
 
-const writeBookStatuses = (statuses: Record<string, BookReadingStatus>) => {
+const writeBookStatuses = (statuses: Record<string, BookReadingStatus>, storageKey = BOOK_STATUS_KEY) => {
   try {
-    window.localStorage.setItem(BOOK_STATUS_KEY, JSON.stringify(statuses));
+    window.localStorage.setItem(storageKey, JSON.stringify(statuses));
     return true;
   } catch {
     return false;
+  }
+};
+
+const readLegacyOwner = () => {
+  try {
+    return window.localStorage.getItem(LEGACY_OWNER_KEY);
+  } catch {
+    return null;
+  }
+};
+
+const writeLegacyOwner = (uid: string) => {
+  try {
+    window.localStorage.setItem(LEGACY_OWNER_KEY, uid);
+  } catch {
+    // Account-scoped cloud state remains authoritative when local storage is unavailable.
   }
 };
 
@@ -247,31 +273,6 @@ const assertCloudResult = <T>(result: CloudResult<T>, fallback: string) => {
   if (!result) throw new Error(fallback);
   if (result.error) throw new Error(result.error.message || fallback);
   return result.data;
-};
-
-const mergeState = (local: ReaderState, cloud: ReaderState): ReaderState => {
-  const bookmarks = new Map<string, Bookmark>();
-  [...local.bookmarks, ...cloud.bookmarks].forEach((item) => {
-    const current = bookmarks.get(item.id);
-    if (!current || Date.parse(item.updatedAt) >= Date.parse(current.updatedAt)) bookmarks.set(item.id, item);
-  });
-
-  const notes = new Map<string, Note>();
-  [...local.notes, ...cloud.notes].forEach((item) => {
-    const current = notes.get(item.id);
-    if (!current || Date.parse(item.updatedAt) >= Date.parse(current.updatedAt)) notes.set(item.id, item);
-  });
-
-  const localReadTime = Date.parse(local.lastRead.updatedAt);
-  const cloudReadTime = Date.parse(cloud.lastRead.updatedAt);
-  const updatedAt = Date.parse(local.updatedAt) >= Date.parse(cloud.updatedAt) ? local.updatedAt : cloud.updatedAt;
-
-  return {
-    lastRead: cloudReadTime > localReadTime ? cloud.lastRead : local.lastRead,
-    bookmarks: [...bookmarks.values()].sort((first, second) => Date.parse(second.updatedAt) - Date.parse(first.updatedAt)),
-    notes: [...notes.values()].sort((first, second) => Date.parse(second.updatedAt) - Date.parse(first.updatedAt)),
-    updatedAt
-  };
 };
 
 export function mountBibleReader(root: HTMLElement, data: BibleData) {
@@ -365,9 +366,16 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   let viewMode: 'grid' | 'list' = 'grid';
   let currentBook = fallbackBook;
   let currentChapter = fallbackChapter;
-  let state = readLocalState(fallbackState);
-  let readVerses = readReadVerses();
-  let bookStatuses = readBookStatuses();
+  const legacyLocalState = readLocalState(fallbackState);
+  const legacyReadVerses = readReadVerses();
+  const legacyBookStatuses = readBookStatuses();
+  const rememberedSession = getRememberedSession();
+  let state = rememberedSession ? fallbackState : legacyLocalState;
+  let readVerses = rememberedSession ? new Set<string>() : legacyReadVerses;
+  let bookStatuses = rememberedSession ? {} as Record<string, BookReadingStatus> : legacyBookStatuses;
+  let stateStorageKey = STORAGE_KEY;
+  let readVersesStorageKey = READ_VERSES_KEY;
+  let bookStatusStorageKey = BOOK_STATUS_KEY;
   let isDarkReading = readReadingTheme();
   let speechRate = readSpeechRate();
   speechRateSelect.value = String(speechRate);
@@ -379,10 +387,6 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     if (!readingSyncStatus) return;
     readingSyncStatus.textContent = message;
     readingSyncStatus.dataset.status = status;
-  };
-  const mergeCloudReadVerses = (cloudState: ReaderState | null) => {
-    if (!cloudState?.readVerses?.length) return;
-    readVerses = new Set([...readVerses, ...cloudState.readVerses]);
   };
   let session: CloudSession | null = null;
   let automaticCloudSyncEnabled = true;
@@ -429,9 +433,21 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   };
 
   window.addEventListener('site-auth-change', (event) => {
-    session = event instanceof CustomEvent ? event.detail as CloudSession | null : null;
-    automaticCloudSyncEnabled = Boolean(session);
-    renderLoginState(session);
+    const nextSession = event instanceof CustomEvent ? event.detail as CloudSession | null : null;
+    session = nextSession;
+    automaticCloudSyncEnabled = Boolean(nextSession);
+    renderLoginState(nextSession);
+    if (nextSession) return;
+    stateStorageKey = STORAGE_KEY;
+    readVersesStorageKey = READ_VERSES_KEY;
+    bookStatusStorageKey = BOOK_STATUS_KEY;
+    state = fallbackState;
+    readVerses = new Set<string>();
+    bookStatuses = {};
+    currentBook = state.lastRead.book;
+    currentChapter = state.lastRead.chapter;
+    selectedTestament = currentBookInfo().testament;
+    renderAll(state.lastRead.verse, { updateLastRead: false });
   });
 
   if (!params.get('book') && state.lastRead.book) {
@@ -505,9 +521,12 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   };
 
   const cacheSyncedState = () => {
-    const stateSaved = writeLocalState(state);
-    const versesSaved = writeReadVerses(readVerses);
-    const cached = stateSaved && versesSaved;
+    state.readVerses = [...readVerses];
+    state.bookStatuses = { ...bookStatuses };
+    const stateSaved = writeLocalState(state, stateStorageKey);
+    const versesSaved = writeReadVerses(readVerses, readVersesStorageKey);
+    const statusesSaved = writeBookStatuses(bookStatuses, bookStatusStorageKey);
+    const cached = stateSaved && versesSaved && statusesSaved;
     setReadingSyncStatus(cached ? '已同步到云端和本地。' : '云端已保存，本地缓存更新失败。', cached ? 'saved' : 'error');
     return cached;
   };
@@ -618,14 +637,25 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     if (!activeBookStatusSlug) return;
     const book = bookBySlug(activeBookStatusSlug);
     if (!book) return;
+    if (!session) {
+      setReadingSyncStatus('请先登录，经卷状态才会保存到账号。', 'error');
+      notify('请先登录后再设置经卷阅读状态。');
+      return;
+    }
+    if (!automaticCloudSyncEnabled) {
+      setReadingSyncStatus('云端同步不可用，请先重试同步。', 'error');
+      notify('云端同步不可用，经卷状态未保存。');
+      return;
+    }
     bookStatuses = { ...bookStatuses, [book.slug]: status };
-    const saved = writeBookStatuses(bookStatuses);
+    state.bookStatuses = { ...bookStatuses };
+    writeBookStatuses(bookStatuses, bookStatusStorageKey);
     renderBooks();
     bookStatusModal.close();
     const message = status === 'none'
       ? `${book.title}已取消阅读标记。`
       : `${book.title}已标记为${status === 'reading' ? '在读' : '已读'}。`;
-    notify(saved ? message : `${book.title}状态已更新，但当前浏览器无法长期保存。`);
+    persist(message);
   };
 
   const selectBook = (bookSlug: string) => {
@@ -1713,7 +1743,8 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     else nextReadVerses.delete(key);
 
     readVerses = nextReadVerses;
-    writeReadVerses(readVerses);
+    state.readVerses = [...readVerses];
+    writeReadVerses(readVerses, readVersesStorageKey);
     const verseElement = root.querySelector<HTMLElement>(`#${CSS.escape(key)}`);
     verseElement?.classList.toggle('is-read', nextRead);
     trigger.setAttribute('aria-pressed', String(nextRead));
@@ -1799,6 +1830,9 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       bookmarks: Array.isArray(item.bookmarks) ? item.bookmarks : [],
       notes: Array.isArray(item.notes) ? item.notes : [],
       readVerses: Array.isArray(item.readVerses) ? item.readVerses.filter((verse: unknown): verse is string => typeof verse === 'string') : [],
+      bookStatuses: item.bookStatuses && typeof item.bookStatuses === 'object' && !Array.isArray(item.bookStatuses)
+        ? Object.fromEntries(Object.entries(item.bookStatuses).filter((entry): entry is [string, BookReadingStatus] => entry[1] === 'reading' || entry[1] === 'read' || entry[1] === 'none'))
+        : undefined,
       updatedAt: typeof item.updatedAt === 'string' ? item.updatedAt : nowIso()
     };
   };
@@ -1806,7 +1840,12 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   const syncCloudState = async (nextReadVerses = readVerses) => {
     if (!session) return;
     const db = getCloudDb();
-    const payload = { ...state, readVerses: [...nextReadVerses], ownerId: session.uid };
+    const payload = {
+      ...state,
+      readVerses: [...nextReadVerses],
+      bookStatuses: { ...bookStatuses },
+      ownerId: session.uid
+    };
     const result = await db.collection(COLLECTION).doc(session.uid).set(payload) as CloudResult<unknown>;
     assertCloudResult(result, '保存云端阅读进度失败。');
   };
@@ -1818,19 +1857,53 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     setReadingSyncStatus('正在读取云端阅读进度…', 'saving');
 
     const cloudState = await loadCloudState(session.uid);
-    if (cloudState) {
-      state = mergeState(state, cloudState);
-      mergeCloudReadVerses(cloudState);
-      currentBook = state.lastRead.book;
-      currentChapter = state.lastRead.chapter;
-      selectedTestament = currentBookInfo().testament;
+    const accountStateKey = accountStorageKey(STORAGE_KEY, session.uid);
+    const accountReadVersesKey = accountStorageKey(READ_VERSES_KEY, session.uid);
+    const accountBookStatusKey = accountStorageKey(BOOK_STATUS_KEY, session.uid);
+    const accountCache = readStoredState(accountStateKey);
+    if (accountCache) {
+      const cachedVerses = readReadVerses(accountReadVersesKey);
+      const cachedStatuses = readBookStatuses(accountBookStatusKey);
+      accountCache.readVerses = cachedVerses.size ? [...cachedVerses] : accountCache.readVerses;
+      accountCache.bookStatuses = Object.keys(cachedStatuses).length ? cachedStatuses : accountCache.bookStatuses;
     }
+    const legacySnapshot: ReaderState = {
+      ...legacyLocalState,
+      readVerses: [...legacyReadVerses],
+      bookStatuses: { ...legacyBookStatuses }
+    };
+    const fallbackSnapshot: ReaderState = {
+      ...fallbackState,
+      readVerses: [],
+      bookStatuses: {}
+    };
+    const resolved = resolveAccountSnapshot({
+      uid: session.uid,
+      cloud: cloudState,
+      accountCache,
+      legacy: legacySnapshot,
+      legacyOwner: readLegacyOwner(),
+      fallback: fallbackSnapshot
+    });
 
-    state.updatedAt = nowIso();
-    setReadingSyncStatus('正在保存云端同步结果…', 'saving');
-    await syncCloudState();
+    state = resolved.snapshot as ReaderState;
+    readVerses = new Set(state.readVerses ?? []);
+    bookStatuses = { ...(state.bookStatuses ?? {}) };
+    stateStorageKey = accountStateKey;
+    readVersesStorageKey = accountReadVersesKey;
+    bookStatusStorageKey = accountBookStatusKey;
+    writeLegacyOwner(session.uid);
+    currentBook = state.lastRead.book;
+    currentChapter = state.lastRead.chapter;
+    selectedTestament = currentBookInfo().testament;
+
+    if (resolved.shouldWriteCloud) {
+      state.updatedAt = nowIso();
+      setReadingSyncStatus('正在建立账号阅读档案…', 'saving');
+      await syncCloudState();
+    }
     const cached = cacheSyncedState();
-    renderAll(state.lastRead.verse);
+    renderAll(state.lastRead.verse, { updateLastRead: false });
     setReadingSyncStatus(cached ? '已同步到云端和本地。' : '云端已保存，本地缓存更新失败。', cached ? 'saved' : 'error');
     if (options.notifySuccess) notify(cached ? '已登录并同步阅读数据。' : '云端已保存，但本地缓存更新失败。');
     if (options.closeLogin && loginModal.open) loginModal.close();
