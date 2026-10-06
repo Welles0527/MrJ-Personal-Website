@@ -376,7 +376,7 @@ const hymnCards = [
 ---
 
 <section class="bible-app" data-bible-app>
-  <section class="bible-stage" aria-label="J-Space">
+  <section class="bible-stage" aria-label="J-Space" hidden>
     <div class="bible-stage-copy">
       <p>J-Space</p>
     </div>
@@ -548,7 +548,7 @@ const hymnCards = [
     </div>
   </section>
 
-  <section class="bible-feature-section" id="bible-daily" aria-labelledby="bible-daily-title">
+  <section class="bible-feature-section" id="bible-daily" aria-labelledby="bible-daily-title" hidden>
     <div class="bible-section-shell">
       <p class="bible-section-kicker">DAILY PRAYER</p>
       <h2 id="bible-daily-title">每日祷告</h2>
@@ -576,7 +576,7 @@ const hymnCards = [
     </div>
   </section>
 
-  <section class="bible-feature-section" id="bible-people" aria-labelledby="bible-people-title">
+  <section class="bible-feature-section" id="bible-people" aria-labelledby="bible-people-title" hidden>
     <div class="bible-section-shell">
       <p class="bible-section-kicker">PEOPLE</p>
       <h2 id="bible-people-title">圣经人物</h2>
@@ -599,7 +599,7 @@ const hymnCards = [
     </div>
   </section>
 
-  <section class="bible-feature-section" id="bible-groups" aria-labelledby="bible-groups-title">
+  <section class="bible-feature-section" id="bible-groups" aria-labelledby="bible-groups-title" hidden>
     <div class="bible-section-shell">
       <p class="bible-section-kicker">GROUP</p>
       <h2 id="bible-groups-title">小组聚会</h2>
@@ -633,11 +633,8 @@ const hymnCards = [
     </div>
   </section>
 
-  <section class="bible-feature-section" id="bible-hymns" aria-labelledby="bible-hymns-title">
+  <section class="bible-feature-section" id="bible-hymns" aria-label="赞美诗歌">
     <div class="bible-section-shell">
-      <p class="bible-section-kicker">HYMN</p>
-      <h2 id="bible-hymns-title">赞美诗歌</h2>
-      <p class="bible-section-lede">按主题、经文和聚会流程整理诗歌索引；这里只提供使用建议，不展示完整歌词。</p>
       <a class="bible-worship-entry" href={worshipMusicHref}>
         <span class="bible-worship-entry-icon" aria-hidden="true">♫</span>
         <span class="bible-worship-entry-copy">
@@ -646,17 +643,6 @@ const hymnCards = [
         </span>
         <i aria-hidden="true">↗</i>
       </a>
-      <div class="bible-card-grid">
-        {hymnCards.map((hymn) => (
-          <article class="bible-board-card">
-            <span>{hymn.theme}</span>
-            <h3>{hymn.title}</h3>
-            <p>{hymn.use}</p>
-            <small>{hymn.scripture}</small>
-            <em>{hymn.flow}</em>
-          </article>
-        ))}
-      </div>
     </div>
   </section>
 
