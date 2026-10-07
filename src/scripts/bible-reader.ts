@@ -326,7 +326,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   const loginForm = get<HTMLFormElement>('[data-login-form]');
   const verifyField = get<HTMLElement>('[data-verify-field]');
   const loginStatus = get<HTMLElement>('[data-login-status]');
-  const cloudLoginButton = root.querySelector<HTMLButtonElement>('[data-action="cloud-login"]');
+  const cloudLoginButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-action="cloud-login"]')];
   const readChapterButton = get<HTMLButtonElement>('[data-action="read-chapter"]');
   const pauseReadingButton = get<HTMLButtonElement>('[data-action="toggle-speech-pause"]');
   const speechRateSelect = get<HTMLSelectElement>('[data-speech-rate]');
@@ -415,7 +415,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
 
   const renderLoginState = (nextSession: CloudSession | null) => {
     loginStatus.textContent = nextSession ? `已登录：${nextSession.account}` : '未登录时会先保存到本机浏览器。';
-    if (cloudLoginButton) cloudLoginButton.textContent = nextSession ? '已登录同步' : '登录同步';
+    cloudLoginButtons.forEach((button) => { button.textContent = nextSession ? '同步账号' : '账号登录'; });
     if (loginAccount) {
       loginAccount.hidden = !nextSession;
       loginAccount.textContent = nextSession?.account ?? '';
@@ -432,7 +432,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       return;
     }
     loginStatus.textContent = `已登录：${session.account}；${detail}`;
-    if (cloudLoginButton) cloudLoginButton.textContent = '重试同步';
+    cloudLoginButtons.forEach((button) => { button.textContent = '重试同步'; });
   };
 
   const resetReaderForSignedOutSession = () => {
@@ -888,6 +888,8 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       if (!target) return;
       const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
       if (window.matchMedia('(max-width: 760px)').matches) {
+        const readerBounds = verseList.getBoundingClientRect();
+        if (readerBounds.top >= window.innerHeight || readerBounds.bottom <= 0) return;
         target.scrollIntoView({ block: 'center', behavior });
         return;
       }
@@ -2131,7 +2133,15 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       const activeSession = session;
       if (activeSession) {
         setReadingSyncStatus('正在重试云端同步…', 'saving');
-        synchronizeCloudSession(activeSession, { notifySuccess: true })
+        getCloudSession()
+          .then((verifiedSession) => {
+            if (!verifiedSession) {
+              setReadingSyncStatus('登录已失效，请重新登录后同步。', 'error');
+              loginModal.showModal();
+              return;
+            }
+            return synchronizeCloudSession(verifiedSession, { notifySuccess: true });
+          })
           .catch(markCloudSyncUnavailable);
       } else {
         loginModal.showModal();

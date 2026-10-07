@@ -376,9 +376,10 @@ const hymnCards = [
 ---
 
 <section class="bible-app" data-bible-app>
-  <section class="bible-stage" aria-label="J-Space" hidden>
+  <section class="bible-stage" aria-label="J-Space">
     <div class="bible-stage-copy">
       <p>J-Space</p>
+      <button class="bible-stage-login" type="button" data-action="cloud-login">账号登录</button>
     </div>
 
     <div class="bible-book-shell" data-feature-book aria-live="polite">
@@ -473,7 +474,7 @@ const hymnCards = [
           </div>
           <div class="bible-reading-actions">
             <button type="button" class="bible-theme-toggle" data-action="toggle-reading-theme" aria-pressed="false">深色阅读</button>
-            <button type="button" data-action="cloud-login">登录同步</button>
+            <button type="button" data-action="cloud-login">账号登录</button>
             <div class="bible-speech-actions" aria-label="章节朗读控制">
               <select class="bible-speech-rate" data-speech-rate aria-label="朗读倍速" title="朗读倍速">
                 <option value="1">1×</option>
@@ -859,8 +860,21 @@ const hymnCards = [
   .bible-stage-copy {
     position: relative;
     z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     max-width: 31rem;
     padding-top: clamp(1.3rem, 2.4vw, 2.2rem);
+  }
+
+  .bible-stage-login {
+    min-height: 2.5rem;
+    padding: 0.45rem 0.8rem;
+    border: 1px solid rgba(216, 179, 95, 0.55);
+    border-radius: 999px;
+    background: rgba(38, 29, 13, 0.92);
+    color: #f6d78b;
+    cursor: pointer;
   }
 
   .bible-stage-copy p,
@@ -3397,6 +3411,12 @@ const hymnCards = [
 
     .bible-login-account,
     .bible-reading-sync-status {
+      flex-basis: 100%;
+      max-width: none;
+      text-align: left;
+    }
+
+    .bible-reading-sync-status:empty {
       display: none;
     }
 

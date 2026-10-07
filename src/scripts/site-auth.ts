@@ -11,6 +11,7 @@ type CloudResult<T> = {
 };
 
 type CloudUser = {
+  id?: string;
   uid?: string;
   username?: string;
   email?: string;
@@ -31,9 +32,15 @@ type VerificationData = {
   verificationToken?: string;
 };
 
-type LoginState = {
+type CloudAuthSession = {
+  sub?: string;
   user?: CloudUser | null;
-} | null;
+};
+
+type CloudSessionResult = {
+  session?: CloudAuthSession | null;
+  user?: CloudUser | null;
+};
 
 type RememberedSession = CloudSession & {
   expiresAt: number;
@@ -89,10 +96,10 @@ const forgetSession = () => {
   window.dispatchEvent(new CustomEvent('site-auth-change', { detail: null }));
 };
 
-const sessionFromCurrentUser = (loginState?: LoginState) => {
-  const currentUser = loginState?.user ?? auth.currentUser as CloudUser | null;
-  if (!currentUser?.uid) return null;
-  return { uid: currentUser.uid, account: currentUser.email || currentUser.username || '我的账号' } satisfies CloudSession;
+const sessionFromCurrentUser = (currentUser: CloudUser | null | undefined, session?: CloudAuthSession | null) => {
+  const uid = currentUser?.id || currentUser?.uid || session?.sub;
+  if (!uid) return null;
+  return { uid, account: currentUser?.email || currentUser?.username || '我的账号' } satisfies CloudSession;
 };
 
 const assertCloudResult = <T>(result: CloudResult<T>, fallback: string) => {
@@ -121,15 +128,19 @@ export const getRememberedSession = () => {
 export const getCloudSession = async () => {
   const remembered = getRememberedSession();
   const revisionAtStart = sessionRevision;
-  const loginState = await auth.getLoginState() as LoginState;
-  const session = sessionFromCurrentUser(loginState);
+  const result = await auth.getSession() as CloudResult<CloudSessionResult>;
+  const sessionData = assertCloudResult(result, '无法核实登录状态。');
+  const authenticatedSession = sessionData?.session;
+  const session = authenticatedSession
+    ? sessionFromCurrentUser(sessionData?.user || authenticatedSession.user, authenticatedSession)
+    : null;
   if (!session) {
     if (sessionRevision !== revisionAtStart) return getRememberedSession();
     if (remembered) forgetSession();
     return null;
   }
 
-  if (!remembered || remembered.uid !== session.uid) {
+  if (!remembered || remembered.uid !== session.uid || remembered.account !== session.account) {
     rememberSession(session);
     return session;
   }
@@ -144,8 +155,8 @@ export const startEmailSignUp = async (email: string, password: string) => {
 
   return async (verificationCode: string) => {
     const verifyResult = await verifyOtp({ token: verificationCode });
-    const verificationData = assertCloudResult(verifyResult, '邮箱验证码无效或已过期。');
-    const session = sessionFromCurrentUser({ user: verificationData?.user }) || await getCloudSession();
+    assertCloudResult(verifyResult, '邮箱验证码无效或已过期。');
+    const session = await getCloudSession();
     if (!session) throw new Error('验证成功，但未取得登录会话。请重新登录。');
     rememberSession(session);
     return session;
@@ -154,8 +165,8 @@ export const startEmailSignUp = async (email: string, password: string) => {
 
 export const signInWithPassword = async (email: string, password: string) => {
   const result = await auth.signInWithPassword({ email, password }) as CloudResult<SignInData>;
-  const loginData = assertCloudResult(result, '登录失败。');
-  const session = sessionFromCurrentUser({ user: loginData?.user }) || await getCloudSession();
+  assertCloudResult(result, '登录失败。');
+  const session = await getCloudSession();
   if (!session) throw new Error('登录成功，但未取得登录会话。请重试。');
   rememberSession(session);
   return session;
