@@ -466,17 +466,12 @@ const navItems: NavItem[] = [
 
       if (document.documentElement.classList.contains('calendar-week-mode')) {
         const sessionKey = 'mywebsite.site-auth-session.v1';
-        const readAccountUid = () => {
-          try { return JSON.parse(localStorage.getItem(sessionKey) || 'null')?.uid || ''; }
-          catch { return ''; }
-        };
-        const initialAccountUid = readAccountUid();
         window.addEventListener('storage', event => {
-          if ((event.key === sessionKey || event.key === null) && readAccountUid() !== initialAccountUid) location.reload();
+          if (event.key === null || (event.key === sessionKey && event.newValue !== event.oldValue)) location.reload();
         });
         window.addEventListener('message', event => {
           if (event.origin === location.origin && event.source === window.parent && event.data?.type === 'calendar-week-sync') {
-            document.querySelector<HTMLButtonElement>('[data-action="retry-sync"]')?.click();
+            location.reload();
             return;
           }
           if (event.origin !== location.origin || event.source !== window.parent || event.data?.type !== 'calendar-week-theme') return;

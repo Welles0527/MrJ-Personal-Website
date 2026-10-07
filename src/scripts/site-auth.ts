@@ -128,14 +128,21 @@ export const getRememberedSession = () => {
 export const getCloudSession = async () => {
   const remembered = getRememberedSession();
   const revisionAtStart = sessionRevision;
-  const result = await auth.getSession() as CloudResult<CloudSessionResult>;
-  const sessionData = assertCloudResult(result, '无法核实登录状态。');
-  const authenticatedSession = sessionData?.session;
-  const session = authenticatedSession
-    ? sessionFromCurrentUser(sessionData?.user || authenticatedSession.user, authenticatedSession)
-    : null;
-  if (!session) {
+  let session: CloudSession | null = null;
+  const maxAttempts = remembered ? 10 : 1;
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const result = await auth.getSession() as CloudResult<CloudSessionResult>;
     if (sessionRevision !== revisionAtStart) return getRememberedSession();
+    const sessionData = assertCloudResult(result, '无法核实登录状态。');
+    const authenticatedSession = sessionData?.session;
+    session = authenticatedSession
+      ? sessionFromCurrentUser(sessionData?.user || authenticatedSession.user, authenticatedSession)
+      : null;
+    if (session || attempt === maxAttempts - 1) break;
+    await new Promise<void>(resolve => setTimeout(resolve, 500));
+    if (sessionRevision !== revisionAtStart) return getRememberedSession();
+  }
+  if (!session) {
     if (remembered) forgetSession();
     return null;
   }

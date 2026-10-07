@@ -91,8 +91,7 @@ export function mountCalendarTodoSource() {
     busy = true;
     const currentRevision = revision;
     try {
-      const remembered = getRememberedSession();
-      const session = remembered ? await getCloudSession() : null;
+      const session = await getCloudSession();
       if (currentRevision !== revision || stopped) return;
       publishAccount(session);
       if (!session) {
