@@ -59,6 +59,58 @@
     name.replace(/^Round (\d+) \(Held Over\)$/i, '延期资格赛第 $1 轮').replace(/^Round (\d+)$/i, '第 $1 轮');
   // WST tournament player media and country codes for the published Shenzhen draw.
   const assets = {
+    'Duane Jones': ['WA', '1d613d40-6fe2-11f1-b7f7-63a631279f9c.png'],
+    "Wang Xinbo": ["CN","1cc60eb0-6fe2-11f1-8c35-a19c890e22a2.png"],
+    "Jack Lisowski": ["GB","f6af7d40-944e-11ee-af67-657885272a7d.png"],
+    "Anthony McGill": ["SC","1d5e3000-6fe2-11f1-a36a-c5a991b02cb1.png"],
+    "Aaron Hill": ["IE","1c836060-6fe2-11f1-8c35-a19c890e22a2.png"],
+    "Mateusz Baranowski": ["PL","ce36ab40-5261-11f0-ae96-7d412eca461f.png"],
+    "Louis Heathcote": ["GB","1cd68970-6fe2-11f1-99da-8bc343e463ff.png"],
+    "Matthew Selt": ["GB","a93abdf0-9b8c-11ee-892e-f33498381d67.png"],
+    "Joe O'Connor": ["GB","1ca7d850-6fe2-11f1-808c-3b7be438bbf8.png"],
+    "Matthew Stevens": ["WA","0b9fe180-9b8f-11ee-a5fd-c901b6d2a739.png"],
+    "He Guoqiang": ["CN","1cf200b0-6fe2-11f1-99da-8bc343e463ff.png"],
+    "Alfie Burden": ["GB","abdea4c0-9a8f-11ee-a69b-29b77f2b676c.png"],
+    "Jamie Jones": ["WA","1d67a5e0-6fe2-11f1-8980-b5cad0377074.png"],
+    "Luca Brecel": ["BE","1d63d550-6fe2-11f1-b55b-cf3a17e482d3.png"],
+    "Daniel Wells": ["WA","1cda8110-6fe2-11f1-bfb4-b7d1bd16cfb8.png"],
+    "Oliver Sykes": ["GB","1ce30c90-6fe2-11f1-937a-95ea892c01ea.png"],
+    "Cheung Ka Wai": ["HK","7ce6e5a0-588b-11ef-a176-bf24d2006d98.png"],
+    "Yao Pengcheng": ["CN","8f5e9b20-5262-11f0-ae96-7d412eca461f.png"],
+    "Martin O'Donnell": ["GB","2dd3fad0-9b75-11ee-8476-6bda6da718a2.png"],
+    "Jak Jones": ["WA","7d773ec0-588b-11ef-8896-f9bd1bf1a8a7.png"],
+    "Tom Ford": ["GB","ec9e79c0-9f46-11ee-b7d4-9558cdaa2798.png"],
+    "Zhang Anda": ["CN","e7c5d2e0-5278-11f0-a4c9-b9b25c5033ab.png"],
+    "Liam Pullen": ["GB","1ce97530-6fe2-11f1-9814-b131a3d490dd.png"],
+    "Robbie Williams": ["GB","eea5b780-9c3d-11ee-abc3-975d3331cd8f.png"],
+    "Chang Bingyu": ["CN","06deb260-5273-11f0-908f-bf8b8c2b8553.png"],
+    "Ryan Day": ["WA","45a45420-9acb-11ee-a1c1-b90afa0eafca.png"],
+    "Zhou Yuelong": ["CN","1d5a8680-6fe2-11f1-bfb3-8dd882dacc28.png"],
+    "Jordan Brown": ["NI","1d581580-6fe2-11f1-9814-b131a3d490dd.png"],
+    "Gao Yang": ["CN","874a2a70-5263-11f0-ae96-7d412eca461f.png"],
+    "Noppon Saengkham": ["TH","1c57bc80-6fe2-11f1-bfb4-b7d1bd16cfb8.png"],
+    "Thanawat Tirapongpaiboon": ["TH","1c90a6d0-6fe2-11f1-bfb3-8dd882dacc28.png"],
+    "Michal Szubarczyk": ["PL","4346c730-5262-11f0-ae96-7d412eca461f.png"],
+    "Liu Wenwei": ["CN","e2269f60-5262-11f0-ae96-7d412eca461f.png"],
+    "Steven Hallworth": ["GB","1ce110c0-6fe2-11f1-8c35-a19c890e22a2.png"],
+    "Jimmy White": ["GB","1d5de1e0-6fe2-11f1-a0e6-3d8d1cf6cccd.png"],
+    "Mitchell Mann": ["GB","1cafa080-6fe2-11f1-b9de-b3ad8a1f48e9.png"],
+    "Sahil Nayyar": ["CA","caed5730-5262-11f0-ae96-7d412eca461f.png"],
+    "Ben Woollaston": ["GB","d8ff0b20-9c1a-11ee-a165-1d18635d4dab.png"],
+    "Stuart Carrington": ["GB","ba5f3d40-9aa1-11ee-985a-dba00ac0435c.png"],
+    "Hammad Miah": ["GB","5c7359d0-9b70-11ee-8947-393ebe620596.png"],
+    "Ian Burns": ["GB","3fe4c730-9a90-11ee-962f-256741a0b349.png"],
+    "Dylan Emery": ["WA","1cd1ce80-6fe2-11f1-a36a-c5a991b02cb1.png"],
+    "Ashley Carty": ["GB","1cd529e0-6fe2-11f1-b5ab-9f9007ededc8.png"],
+    "Julien Leclercq": ["BE","1d655bf0-6fe2-11f1-808c-3b7be438bbf8.png"],
+    "Ishpreet Singh Chadha": ["IN","1d494870-6fe2-11f1-afe4-574166df348b.png"],
+    "Lyu Haotian": ["CN","1cdf8a20-6fe2-11f1-808c-3b7be438bbf8.png"],
+    "Ross Muir": ["SC","1ced1eb0-6fe2-11f1-b5ab-9f9007ededc8.png"],
+    "Anton Kazakov": ["UA","1ccdd6e0-6fe2-11f1-9814-b131a3d490dd.png"],
+    "Mina Awad": ["EG","5f4d7c90-aa08-11f1-a69a-7dbd67bfd943.png"],
+    "Long Zehuang": ["CN","93b41670-9c4a-11ee-8ffb-11cca5635d5c.png"],
+    "Stan Moody": ["GB","1c94ec90-6fe2-11f1-a36a-c5a991b02cb1.png"],
+    "David Lilley": ["GB","beb161a0-9b57-11ee-be2c-5702d76fd04c.png"],
     'Andrew Higginson': ['GB', '39d5b7a0-9b3a-11ee-aad9-bff8f06264c6.png'],
     'Ali Carter': ['GB', 'e812e740-9a9d-11ee-a948-97d7b3f53272.png'],
     'Barry Hawkins': ['GB', 'b45d1ca0-a5da-11f0-84ad-b918c09a48da.png'],
@@ -122,8 +174,8 @@
   const portrait = name => {
     const photo = assets[name]?.[1] ? `https://images.gc.wstservices.co.uk/600x600/${assets[name][1]}` :
       playerPhotos[name] || playerPhotos[name?.replace(/'/g, '’')];
-    return `<span class="match-portrait">${photo ?
-      `<img src="${escape(photo)}" alt="${escape(player(name))}的官方照片" loading="lazy" referrerpolicy="no-referrer">` : ''}</span>`;
+    const fallback = /^(Wildcard|Qualifier|Winner of Match|To be decided)/i.test(name) ? '球员待定' : '暂无官方照片';
+    return `<span class="match-portrait"><img src="${escape(photo || './player-placeholder.svg')}" alt="${escape(photo ? player(name) + '的官方照片' : fallback)}" title="${escape(photo ? player(name) : fallback)}" loading="lazy" referrerpolicy="no-referrer"></span>`;
   };
   const entrant = (name, side, eliminated = false) => {
     const code = assets[name]?.[0] || playerMeta[name]?.[3];
@@ -393,7 +445,11 @@
   style.textContent = '.live-score-rounds{max-height:none;overflow:visible;align-items:start}.match-entrant .match-name>small{display:none!important}.match-flag{filter:none!important;opacity:1!important;mix-blend-mode:normal!important;isolation:isolate}.match-flag svg,.match-flag svg *{filter:none!important;opacity:1!important;forced-color-adjust:none}@media(max-width:680px){.live-score-rounds{flex-direction:column}.live-score-rounds .inline-bracket-round{flex:none;min-width:0;width:100%}}';
   document.head.append(style);
   document.addEventListener('error', event => {
-    if (event.target instanceof HTMLImageElement && event.target.closest('.match-portrait')) event.target.remove();
+    if (event.target instanceof HTMLImageElement && event.target.closest('.match-portrait') && !event.target.src.endsWith('/player-placeholder.svg')) {
+      event.target.src = './player-placeholder.svg';
+      event.target.alt = '暂无可用官方照片';
+      event.target.title = '暂无可用官方照片';
+    }
   }, true);
 
   function refreshView() {
