@@ -15,7 +15,9 @@ if (!events.length || events.some(e => !['usage', 'banked'].includes(e.resetType
 let previous;
 try { previous = JSON.parse(await readFile(target, 'utf8')); } catch {}
 if (previous && (Date.parse(data.updatedAt) < Date.parse(previous.sourceUpdatedAt) || previous.events.some(e => !events.some(next => next.id === e.id)))) throw new Error('Source regressed; preserving last snapshot for review');
-const snapshot = { source: 'https://willcodexreset.com/zh', syncedAt: new Date().toISOString(), sourceUpdatedAt: data.updatedAt, timeZone: 'Asia/Shanghai', startDate: '2026-06-01', probability24h: data.probability24h, probability48h: data.probability48h, events, timeline: data.timeline.filter(p => Number.isFinite(Date.parse(p.time)) && Number.isFinite(p.probability48h)), signals: data.events.filter(e => e.kind !== 'reset' && Number.isFinite(Date.parse(e.occurredAt)) && day(e.occurredAt) >= '2026-06-01') };
+if (!Array.isArray(data.tiboPosts) || !Array.isArray(data.tiboRelevantPosts)) throw new Error('Missing Tibo feeds; preserving last snapshot');
+const latestFactors = data.events.filter(e => e.kind !== 'tibo' && Number.isFinite(Date.parse(e.occurredAt))).sort((a, b) => Date.parse(b.occurredAt) - Date.parse(a.occurredAt)).slice(0, 20);
+const snapshot = { latestFactors, tiboPosts: data.tiboPosts, tiboRelevantPosts: data.tiboRelevantPosts, source: 'https://willcodexreset.com/zh', syncedAt: new Date().toISOString(), sourceUpdatedAt: data.updatedAt, timeZone: 'Asia/Shanghai', startDate: '2026-06-01', probability24h: data.probability24h, probability48h: data.probability48h, events, timeline: data.timeline.filter(p => Number.isFinite(Date.parse(p.time)) && Number.isFinite(p.probability48h)), signals: data.events.filter(e => e.kind !== 'reset' && Number.isFinite(Date.parse(e.occurredAt)) && day(e.occurredAt) >= '2026-06-01') };
 await mkdir(dirname(target), { recursive: true });
 await writeFile(target + '.tmp', JSON.stringify(snapshot), 'utf8');
 await rename(target + '.tmp', target);
