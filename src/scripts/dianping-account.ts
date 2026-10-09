@@ -7,7 +7,7 @@ type FavoritesPayload = {
   positions: Record<string, unknown>;
   home: Record<string, unknown>;
   notes: Record<string, string>;
-  arranged: Record<string, boolean>;
+  arranged: Record<string, boolean | { solo: boolean; family: boolean }>;
   trash: Record<string, number>;
   deleted: Record<string, boolean>;
   categoryResearch: Record<string, unknown>;
@@ -29,7 +29,7 @@ style.textContent = `.account-locked .topbar,.account-locked .layout,.account-lo
 document.head.append(style);
 const login = document.createElement('section');
 login.className = 'account-login';
-login.innerHTML = `<form><h1>我的大众点评收藏</h1><p>使用网站账号登录，查看和管理自己的收藏。</p><label>邮箱<input name="email" type="email" autocomplete="username" required></label><label>密码<input name="password" type="password" autocomplete="current-password" required></label><button type="submit">登录</button><p role="status" aria-live="polite">正在检查网站登录状态…</p><a href="/officialwebsite/topics/space/planning/todo/">注册或找回网站账号密码</a></form>`;
+login.innerHTML = `<form><h1>我的大众点评收藏</h1><p>使用网站账号登录，查看和管理自己的收藏。登录状态保留 7 天。</p><label>邮箱<input name="email" type="email" autocomplete="username" required></label><label>密码<input name="password" type="password" autocomplete="current-password" required></label><button type="submit">登录</button><p role="status" aria-live="polite">正在检查网站登录状态…</p><a href="/officialwebsite/topics/space/planning/todo/">注册或找回网站账号密码</a></form>`;
 document.body.append(login);
 const badge = document.createElement('div');
 badge.className = 'account-badge';

@@ -50,9 +50,9 @@ type RememberedSession = CloudSession & {
 
 const ENV_ID = 'magicj-web-d5g9yvowj6862f7a2';
 const SESSION_KEY = 'mywebsite.site-auth-session.v1';
-const SESSION_TTL_MS = 3 * 24 * 60 * 60 * 1000;
+const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const app = cloudbase.init({ env: ENV_ID });
-const auth = app.auth();
+const auth = app.auth({ persistence: 'local' });
 const db = app.database();
 let sessionRevision = 0;
 
@@ -82,7 +82,7 @@ const rememberSession = (session: CloudSession) => {
   try {
     window.localStorage.setItem(SESSION_KEY, JSON.stringify({ ...session, expiresAt: Date.now() + SESSION_TTL_MS }));
   } catch {
-    // CloudBase auth still owns the real session; this only controls the three-day local default.
+    // CloudBase auth still owns the real session; this only controls the seven-day local default.
   }
   sessionRevision += 1;
   window.dispatchEvent(new CustomEvent('site-auth-change', { detail: session }));
@@ -121,13 +121,18 @@ export const getRememberedSession = () => {
   const remembered = readRememberedSession();
   if (!remembered) return null;
   if (remembered.expiresAt <= Date.now()) {
-    forgetSession();
     return null;
   }
   return { uid: remembered.uid, account: remembered.account } satisfies CloudSession;
 };
 
 export const getCloudSession = async () => {
+  const storedSession = readRememberedSession();
+  if (storedSession && storedSession.expiresAt <= Date.now()) {
+    forgetSession();
+    await auth.signOut();
+    return null;
+  }
   const remembered = getRememberedSession();
   const revisionAtStart = sessionRevision;
   let session: CloudSession | null = null;
@@ -229,6 +234,6 @@ export const signOut = async () => {
   await auth.signOut();
 };
 
-export const describeSessionExpiry = () => '登录状态默认保留 3 天。';
+export const describeSessionExpiry = () => '登录状态默认保留 7 天。';
 
 export const cloudErrorMessage = errorMessage;
