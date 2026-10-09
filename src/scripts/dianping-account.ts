@@ -53,6 +53,7 @@ function readRecord(result: any): Record<string, any> | null {
 const canonical = (value: any): any => Array.isArray(value) ? value.map(canonical)
   : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
 function lock(text: string) {
+  if (!login.isConnected) document.body.append(login);
   document.body.classList.add('account-locked');
   login.hidden = false;
   message.textContent = text;
@@ -82,6 +83,7 @@ async function activate(next: CloudSession | null) {
     badge.querySelector<HTMLElement>('[data-account]')!.textContent = current.account;
     showSync('已从云端加载');
     login.hidden = true;
+    login.remove();
     document.body.classList.remove('account-locked');
   } catch (error) { if (revision === generation) lock(cloudErrorMessage(error, '账号收藏加载失败，请重试登录。')); }
 }
