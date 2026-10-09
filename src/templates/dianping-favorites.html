@@ -341,6 +341,29 @@ body.theme-dark{overflow:auto;font-size:14px;line-height:1.55}
 @media(max-width:560px){.theme-dark .main{padding:21px 17px}.collection-title{font-size:25px}.collection-eyebrow{font-size:9px}.collection-header-actions{gap:10px}.collection-add{font-size:11px;padding:0 13px}.theme-dark .result-search{min-width:0}.theme-dark .result-search input{font-size:11px}.theme-dark .board{grid-template-columns:1fr;gap:14px}.theme-dark .card{grid-template-columns:95px minmax(0,1fr);grid-template-rows:auto 101px auto;padding:17px 18px 14px;gap:14px 15px}.theme-dark .card-photo{width:95px;height:95px}.theme-dark .card h2{font-size:16px}.collection-results{gap:10px}.collection-results .home-distance-tools{margin-right:auto}.theme-dark .result-summary{font-size:10px;flex-wrap:wrap}.theme-dark .card-foot{gap:5px}.theme-dark .mode-switch button{font-size:10px}.collection-manage{font-size:10px}}
 
 .theme-dark .collection-count-pill{display:inline-block;padding:3px 7px;margin:0 10px;background:#414b44;border-radius:7px;color:#c1dfce}.collection-result-secondary{font-size:10px;color:var(--muted);border-left:1px solid #555;padding-left:10px}.theme-dark .result-summary strong{font-size:14px}.theme-dark .sidebar-bottom{padding-top:25px}.theme-dark .source-note{display:none}.theme-dark .sidebar-bottom:before{font-size:8px;letter-spacing:1.5px}.theme-dark .sidebar-bottom>p:not(.source-note){margin:10px 0 12px}.collection-skyline{width:153px;height:45px;color:#aaa;opacity:.45}.theme-dark .account-badge{margin-top:14px}.theme-dark .account-identity span{display:block;overflow-wrap:anywhere}.theme-dark .card [data-arrange]{background:#454e47;color:#c1dfce}.theme-dark .board-note-status:empty{display:none}@media(max-width:560px){.theme-dark .result-summary #summary{flex:1 1 auto}.theme-dark .result-summary strong{font-size:13px}.collection-result-secondary{font-size:9px;padding-left:6px}.theme-dark .collection-count-pill{margin:0 6px}.theme-dark .result-summary #reset{margin-left:auto}}
+
+/* Arranged cards highlight the complete lower action area. */
+.theme-dark .card-foot{border-radius:0 0 21px 21px;transition:background-color .18s,color .18s}
+.theme-dark .card-foot:has([data-arrange][aria-pressed="true"]){background:#c1dfce;color:#22372c;border-top-color:#9cc4ac;margin:0 -18px -15px;padding:12px 18px 15px}
+.theme-dark .card-foot:has([data-arrange][aria-pressed="true"]) button,.theme-dark .card-foot:has([data-arrange][aria-pressed="true"]) .board-note-status{color:#22372c;background:transparent;border-color:transparent}
+.theme-dark .card-foot:has([data-arrange][aria-pressed="true"]) button:hover{background:#aac9b6}
+@media(min-width:561px) and (max-width:1020px){.theme-dark .card-foot:has([data-arrange][aria-pressed="true"]){margin:0 -15px -13px;padding:12px 15px 13px}}
+@media(max-width:560px){.theme-dark .card-foot:has([data-arrange][aria-pressed="true"]){margin-bottom:-14px;padding-bottom:14px}}
+
+/* Each navigation category keeps its own selected color. */
+.theme-dark .nav-item[data-nav-icon="grid"]{--nav-selected:#c5d8f3;--nav-ink:#283e5a}
+.theme-dark .nav-item[data-nav-icon="calendar"]{--nav-selected:#eddfb4;--nav-ink:#534520}
+.theme-dark .nav-item[data-nav-icon="food"]{--nav-selected:#efd0c1;--nav-ink:#633f32}
+.theme-dark .nav-item[data-nav-icon="mall"]{--nav-selected:#c2e0e9;--nav-ink:#28505d}
+.theme-dark .nav-item[data-nav-icon="tree"]{--nav-selected:#c8dfc5;--nav-ink:#335332}
+.theme-dark .nav-item[data-nav-icon="bar"]{--nav-selected:#d9ccea;--nav-ink:#503b67}
+.theme-dark .nav-item[data-nav-icon="sun"]{--nav-selected:#eed5ae;--nav-ink:#654b25}
+.theme-dark .nav-item[data-nav-icon="bag"]{--nav-selected:#e9c9dc;--nav-ink:#643e55}
+.theme-dark .nav-item[data-nav-icon="more"]{--nav-selected:#cfd9e0;--nav-ink:#3d4e5c}
+.theme-dark .nav-item.active{background:var(--nav-selected);color:var(--nav-ink);border-color:var(--nav-selected);box-shadow:inset 0 1px 0 #ffffff35}
+.theme-dark .nav-item.active .ico{color:var(--nav-ink);filter:none}
+.theme-dark .nav-item.active .count{color:var(--nav-ink);background:#0000000e}
+.theme-dark .collection-card-meta{flex-wrap:wrap;gap:3px 8px}.theme-dark .average-price{font-size:10px;color:#d8d1c7;white-space:nowrap}
 </style>
 </head>
 <body class="theme-dark">
@@ -362,7 +385,7 @@ document.querySelectorAll('[data-icon]').forEach(el=>el.innerHTML=icon(el.datase
 document.querySelector('.attribution').innerHTML='© <a href="https://www.esri.com/" target="_blank" rel="noopener noreferrer">Esri</a> · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">道路数据</a>';
 const categories=[['全部收藏','grid','#c9c4c0'],['美食','food','#f9b7ab'],['商场','mall','#c0daeb'],['公园','tree','#c8e4d8'],['酒吧','bar','#d7cfe4'],['休闲度假','sun','#f5e6ad'],['购物','bag','#c0daeb'],['其他','more','#c9c4c0']];
 
-const foodTypes=['中餐','西餐','东南亚','日料','烧烤','其他'];
+const foodTypes=['中餐','西餐','东南亚','日料','韩餐','烧烤','咖啡','甜品烘焙','自助餐','快餐小吃','其他'];
 const districtById={};
 const districtNames=['黄浦区','徐汇区','长宁区','静安区','普陀区','虹口区','杨浦区','闵行区','宝山区','嘉定区','浦东新区','金山区','松江区','青浦区','奉贤区','崇明区'];
 const metroLines=[...Array.from({length:18},(_,i)=>(i+1)+'号线'),'浦江线','磁浮线','市域机场线'];
@@ -401,18 +424,27 @@ for(const x of items){
   if(edit&&Array.isArray(edit.walks))x.walks=edit.walks.filter(validWalk);
 }
 function importedFoodSub(row){
-  const detail=`${row.detailCategory||''} ${row.name||''}`;
-  if(/咖啡/.test(detail))return '其他';
-  if(/日本|日料|寿司|刺身|居酒屋|烧鸟|拉面/.test(detail))return '日料';
-  if(/东南亚|泰国|越南|新加坡|马来西亚|印尼/.test(detail))return '东南亚';
-  if(/烧烤|烤肉|烧肉|串/.test(detail))return '烧烤';
-  if(/西餐|牛排|法国|意大利|披萨|比萨|汉堡|西式/.test(detail))return '西餐';
-  return row.detailCategory?'中餐':'其他';
+  // Prefer the source category. A shop name is not reliable classification evidence.
+  const detail=String(row.detailCategory||'').trim();
+  if(foodTypes.includes(detail))return detail;
+  if(/自助/.test(detail))return '自助餐';
+  if(/咖啡/.test(detail))return '咖啡';
+  if(/面包|蛋糕|甜品|甜点|冰淇淋|茶饮|奶茶|果汁|烘焙/.test(detail))return '甜品烘焙';
+  if(/韩国|韩式|韩餐/.test(detail))return '韩餐';
+  if(/烧烤|烤肉|烧肉|烤串/.test(detail))return '烧烤';
+  if(/日本|日式|日料|寿司|刺身|居酒屋|烧鸟/.test(detail))return '日料';
+  if(/东南亚|泰国|泰式|越南|新加坡|马来西亚|印尼|南洋/.test(detail))return '东南亚';
+  if(/西餐|牛排|法国|法式|意大利|意式|披萨|比萨|汉堡|西式|美式/.test(detail))return '西餐';
+  if(/快餐|小吃|面馆|粉面|锅贴|煎饺|馄饨|包子/.test(detail))return '快餐小吃';
+  if(/中餐|本帮|上海菜|粤|川菜|湘菜|浙菜|苏浙|江浙|淮扬|鲁菜|闽菜|徽菜|潮汕|顺德|广州菜|东北菜|云南菜|贵州菜|新疆菜|西北菜|绍兴|台州|火锅|点心|烤鸭|家常菜|农家菜/.test(detail))return '中餐';
+  return '其他';
 }
 function importedCategory(row){
-  if(row.category==='美食'&&/酒吧|威士忌|精酿/.test(`${row.detailCategory||''} ${row.name||''}`))return '酒吧';
-  if(row.category==='购物'&&/商场|购物中心|商业综合体/.test(row.detailCategory||''))return '商场';
-  return categories.some(entry=>entry[0]===row.category)?row.category:'其他';
+  const detail=String(row.detailCategory||'').trim();
+  if(/酒吧/.test(detail))return '酒吧';
+  if(row.category==='购物'&&/商场|购物中心|商业综合体/.test(detail))return '商场';
+  if(row.category==='咖啡')return '美食';
+  return categories.slice(1).some(entry=>entry[0]===row.category)?row.category:'其他';
 }
 function addressGeocodeQuery(address){
   const text=String(address||'').replace(/\s+/g,'').replace(/^上海(?:市)?[·,，]?/,'').replace(/^(?:黄浦|徐汇|长宁|静安|普陀|虹口|杨浦|闵行|宝山|嘉定|浦东新区|金山|松江|青浦|奉贤|崇明)(?:区)?/,'').replace(/^[\u4e00-\u9fff]+(?:街道|镇|乡|地区)/,'');
@@ -420,8 +452,8 @@ function addressGeocodeQuery(address){
   return match?match[1]:'';
 }
 function importedItem(row){
-  const category=importedCategory(row),coffee=category==='美食'&&/咖啡/.test(`${row.detailCategory||''} ${row.name||''}`);
-  return {n:0,name:row.name,address:row.address||row.city||'地址待补充',date:row.savedAt||'',originalType:coffee?'咖啡':'其他',id:row.id,category,sub:category==='美食'?importedFoodSub(row):(row.detailCategory||'其他'),status:'未去',query:addressGeocodeQuery(row.address),district:districtNames.includes(row.regionName)?row.regionName:'待核实',walks:[],score:row.score||'',photo:row.photo||'',url:row.url||`https://www.dianping.com/shop/${row.id}`,city:row.city||'',businessStatus:row.businessStatus||'unchecked',businessStatusText:row.businessStatusText||''};
+  const category=importedCategory(row),coffee=category==='美食'&&/咖啡/.test(row.detailCategory||'');
+  return {n:0,name:row.name,address:row.address||row.city||'地址待补充',date:row.savedAt||'',originalType:coffee?'咖啡':'其他',detailCategory:String(row.detailCategory||''),id:row.id,category,sub:category==='美食'?importedFoodSub(row):(row.detailCategory||'其他'),status:'未去',query:addressGeocodeQuery(row.address),district:districtNames.includes(row.regionName)?row.regionName:'待核实',walks:[],avgPrice:normalizedAveragePrice(row.avgPrice),score:row.score||'',photo:row.photo||'',url:row.url||`https://www.dianping.com/shop/${row.id}`,city:row.city||'',businessStatus:row.businessStatus||'unchecked',businessStatusText:row.businessStatusText||''};
 }
 async function loadImportedFavorites(){
   const payload={favorites:[]},existing=new Map(items.map(item=>[item.id,item]));
@@ -475,6 +507,8 @@ function notify(s){$('toast').textContent=s;$('toast').classList.remove('hidden'
 // Account-specific home location is loaded from the private cloud record.
 const homeLocation={label:'未设置家庭地址',lat:null,lon:null};
 function distanceFromHome(item){const point=positions[item.id];if(!Number.isFinite(homeLocation.lat)||!Number.isFinite(homeLocation.lon)||!point||!Number.isFinite(point.lat)||!Number.isFinite(point.lon)||Math.abs(point.lat)>90||Math.abs(point.lon)>180)return null;const rad=Math.PI/180,dLat=(point.lat-homeLocation.lat)*rad,dLon=(point.lon-homeLocation.lon)*rad,a=Math.sin(dLat/2)**2+Math.cos(homeLocation.lat*rad)*Math.cos(point.lat*rad)*Math.sin(dLon/2)**2;return 6371.0088*2*Math.asin(Math.sqrt(Math.min(1,Math.max(0,a))))}
+function normalizedAveragePrice(value){if(value===null||value===undefined||String(value).trim()==='')return null;const text=String(value).trim();if(!/^\d+(?:\.\d{1,2})?$/.test(text))return null;const amount=Number(text);return Number.isFinite(amount)&&amount>=0&&amount<=100000?amount:null}
+function averagePriceText(item){const amount=normalizedAveragePrice(item.avgPrice);return amount===null?'人均待补充':`人均 ¥${amount.toLocaleString('zh-CN',{maximumFractionDigits:2})}`}
 function homeDistanceText(item){const km=distanceFromHome(item);return km===null?'距家待定位':`距家约 ${km.toFixed(2)} 公里`}
 function sortByHomeDistance(rows){if(!['near','far'].includes(state.sort))return rows;const distances=new Map(rows.map(item=>[item.id,distanceFromHome(item)]));return rows.sort((a,b)=>{const da=distances.get(a.id),db=distances.get(b.id);if(da===null)return db===null?0:1;if(db===null)return -1;return state.sort==='near'?da-db:db-da})}
 function baseRows(){return items.filter(x=>!trash[x.id]&&!deleted[x.id]&&(state.cat==='安排'?!!arranged[x.id]:state.cat==='全部收藏'||x.category===state.cat))}
@@ -500,7 +534,7 @@ function render(){nav();filters();const rows=filtered(),located=rows.filter(x=>p
 $('list').innerHTML=rows.length?rows.map(x=>`<button class="list-item ${state.selected===x.id?'selected':''}" data-item="${x.id}" title="${esc(x.name)}" style="--item-color:${placeColor(x)}"><span class="num">${String(x.n).padStart(2,'0')}</span><span class="place-thumb type-${placeIcon(x)}" aria-hidden="true">${icon(placeIcon(x))}</span><span class="list-place"><span class="item-name">${esc(x.name)}</span><span class="home-distance">${homeDistanceText(x)}</span></span></button>`).join(''):'<div class="empty-result">没有符合条件的收藏<br><button class="text-btn" data-action="reset">清除筛选</button></div>';
 $('list-panel-delete')?.remove();const del=$('.list-panel')?.querySelector('.delete-selected');if(del)del.disabled=!state.selected||!rows.some(x=>x.id===state.selected);
 
-$('board').innerHTML=rows.length?rows.map(x=>`<article class="card" style="--item-color:${placeColor(x)}"><a class="card-photo type-${placeIcon(x)}" href="${esc(x.url||`https://www.dianping.com/shop/${x.id}`)}" target="_blank" rel="noopener noreferrer" aria-label="打开${esc(x.name)}的大众点评页面">${icon(foodDetailIcon(x))}<img src="${esc(thumbnailUrl(x))}" data-fallback="${esc(thumbnailUrl({...x,photo:''}))}" alt="" loading="lazy" referrerpolicy="no-referrer"></a><div class="card-top"><span class="cat">${esc(x.category)} / ${esc(x.sub)}</span><span class="saved">${x.date.slice(5).replace('-','.')} 收藏</span></div><div class="card-main"><h2 title="${esc(x.name)}">${esc(x.name)}</h2><div class="collection-card-meta">${x.score?`<span class="card-score">★ ${esc(x.score)}</span>`:''}<span>${esc(x.district||'')}</span></div><div class="addr">${esc([x.city,x.address].filter(Boolean).join(' · '))}</div><div class="home-distance">${homeDistanceText(x)}</div></div><div class="card-foot"><span class="card-status board-note-status" data-board-note-slot="${esc(x.id)}"></span><span class="card-actions"><button data-item="${x.id}">查看详情</button><button type="button" data-arrange="${esc(x.id)}" aria-pressed="${!!arranged[x.id]}">${arranged[x.id]?'已安排':'安排'}</button></span></div></article>`).join(''):state.cat==='安排'?'<div class="empty-result">当前没有符合条件的安排<br>在收藏卡片中点击“安排”，店铺就会显示在这里。<br><button class="text-btn" data-action="reset">查看全部收藏</button></div>':'<div class="empty-result">没有符合条件的收藏（地铁筛选按已记录或地址中明确出现的线路）<br><button class="text-btn" data-action="reset">清除筛选</button></div>';
+$('board').innerHTML=rows.length?rows.map(x=>`<article class="card" style="--item-color:${placeColor(x)}"><a class="card-photo type-${placeIcon(x)}" href="${esc(x.url||`https://www.dianping.com/shop/${x.id}`)}" target="_blank" rel="noopener noreferrer" aria-label="打开${esc(x.name)}的大众点评页面">${icon(foodDetailIcon(x))}<img src="${esc(thumbnailUrl(x))}" data-fallback="${esc(thumbnailUrl({...x,photo:''}))}" alt="" loading="lazy" referrerpolicy="no-referrer"></a><div class="card-top"><span class="cat">${esc(x.category)} / ${esc(x.sub)}</span><span class="saved">${x.date.slice(5).replace('-','.')} 收藏</span></div><div class="card-main"><h2 title="${esc(x.name)}">${esc(x.name)}</h2><div class="collection-card-meta">${x.score?`<span class="card-score">★ ${esc(x.score)}</span>`:''}<span>${esc(x.district||'')}</span><span class="average-price">${averagePriceText(x)}</span></div><div class="addr">${esc([x.city,x.address].filter(Boolean).join(' · '))}</div><div class="home-distance">${homeDistanceText(x)}</div></div><div class="card-foot"><span class="card-status board-note-status" data-board-note-slot="${esc(x.id)}"></span><span class="card-actions"><button data-item="${x.id}">查看详情</button><button type="button" data-arrange="${esc(x.id)}" aria-pressed="${!!arranged[x.id]}">${arranged[x.id]?'已安排':'安排'}</button></span></div></article>`).join(''):state.cat==='安排'?'<div class="empty-result">当前没有符合条件的安排<br>在收藏卡片中点击“安排”，店铺就会显示在这里。<br><button class="text-btn" data-action="reset">查看全部收藏</button></div>':'<div class="empty-result">没有符合条件的收藏（地铁筛选按已记录或地址中明确出现的线路）<br><button class="text-btn" data-action="reset">清除筛选</button></div>';
 $('legend').innerHTML=[...new Set(items.map(placeIcon))].map(type=>`<span><i style="background:${iconColors[type]}"></i>${({food:'餐厅',coffee:'咖啡',mall:'商场',tree:'公园',bar:'酒吧',sun:'休闲度假',bag:'购物',landmark:'地标',more:'其他'})[type]}</span>`).join('')+`<span class="tail">店铺坐标：大众点评 / OSM确认 · 底图：${baiduMap?'百度地图':'备用浅色底图'}</span>`;
 
 mapEmpty(rows,located);updateMapStatus();drawMap();if(state.selected&&!rows.some(x=>x.id===state.selected))closeDetails()}
@@ -511,13 +545,13 @@ function setMode(mode){state.mode=mode;closeDetails();render();requestAnimationF
 function closeDetails(){state.selected=null;$('details').classList.add('hidden');const del=document.querySelector('.delete-selected');if(del)del.disabled=true;document.querySelectorAll('.list-item.selected').forEach(e=>e.classList.remove('selected'));drawMarkers()}
 function deleteSelected(){const id=state.selected;if(!id||trash[id]){notify('请先选择一个收藏点');return}const x=items.find(row=>row.id===id);if(!x)return;if(!window.confirm(`确认将“${x.name}”移入回收站？\n回收站保留 7 天，之后自动清理。`))return;trash[id]=Date.now();try{accountStorage.setItem(trashKey,JSON.stringify(trash))}catch{}closeDetails();render();notify('已移入回收站，7 天后自动清理')}
 function arrangeFavorite(id){if(!items.some(x=>x.id===id))return;const added=!arranged[id];if(added)arranged[id]=true;else delete arranged[id];accountStorage.setItem('shanghai-collection-arranged-v1',JSON.stringify(arranged));render();if(state.selected===id)openDetails(id);notify(added?'已加入安排':'已取消安排')}
-function openDetails(id){const x=items.find(x=>x.id===id);if(!x)return;state.selected=id;$('details').dataset.view=state.mode;const del=document.querySelector('.delete-selected');if(del)del.disabled=false;const p=positions[id];$('details').classList.remove('hidden');$('details').innerHTML=`<div class="detail-top" style="--item-color:${placeColor(x)}"><span class="num">${String(x.n).padStart(2,'0')}</span><span>${esc(x.category)} / ${esc(x.sub)}</span><button class="close" data-action="close" aria-label="关闭详情">${icon('close')}</button></div><div class="detail-body"><div class="detail-title-line"><h2>${esc(x.name)}</h2><span class="detail-cuisine">（${esc((categoryResearch[x.id]&&categoryResearch[x.id].label)||x.sub)}）</span><button class="delete-inline danger" data-action="delete-selected">删除</button><a class="dianping-link" target="_blank" rel="noopener noreferrer" aria-label="打开大众点评" title="打开大众点评" href="${esc(x.url||`https://www.dianping.com/shop/${x.id}`)}">点评</a></div><div class="detail-field"><small>收藏地址 · ${esc(x.city||'上海')}</small><p>${esc(x.address)}</p></div><div class="detail-field"><small>距家直线距离 · 家庭基准为小区近似位置</small><p>${homeDistanceText(x)}</p></div><div class="detail-field"><small>地图位置</small><p>${p?esc(p.precision):x.query?`地址待定位 · ${esc(x.query)}`:'地址未包含可识别门牌'}</p></div>${!p?`<div class="detail-actions"><button class="primary" data-action="geocode-one" ${geoBusy?'disabled':''}>${icon('pin')} 搜索匹配结果</button></div>${geoMatchHtml(x)}`:''}<div class="detail-tags"><span>${x.status}</span><span>${esc(districtLabel(x.district))}</span><span>${x.date} 收藏</span></div>${editorHtml(x)}<div class="detail-actions"><button class="danger" data-action="delete-selected">删除收藏</button></div><p class="detail-info">坐标来自店铺页或手动确认的OpenStreetMap候选。区域按行政区边界匹配，可手动纠正。修改仅保存在当前浏览器；原有到访状态是本地记录。</p></div>`;document.querySelectorAll('.list-item').forEach(e=>e.classList.toggle('selected',e.dataset.item===id));if(p&&state.mode==='map'){if(baiduMap)focusBaiduShop(id);else{mapState.lon=p.lon;mapState.lat=p.lat;mapState.z=Math.max(mapState.z,16);drawMap()}}drawMarkers();$('details').querySelector('.close').focus({preventScroll:true})}
+function openDetails(id){const x=items.find(x=>x.id===id);if(!x)return;state.selected=id;$('details').dataset.view=state.mode;const del=document.querySelector('.delete-selected');if(del)del.disabled=false;const p=positions[id];$('details').classList.remove('hidden');$('details').innerHTML=`<div class="detail-top" style="--item-color:${placeColor(x)}"><span class="num">${String(x.n).padStart(2,'0')}</span><span>${esc(x.category)} / ${esc(x.sub)}</span><button class="close" data-action="close" aria-label="关闭详情">${icon('close')}</button></div><div class="detail-body"><div class="detail-title-line"><h2>${esc(x.name)}</h2><span class="detail-cuisine">（${esc((categoryResearch[x.id]&&categoryResearch[x.id].label)||x.sub)}）</span><button class="delete-inline danger" data-action="delete-selected">删除</button><a class="dianping-link" target="_blank" rel="noopener noreferrer" aria-label="打开大众点评" title="打开大众点评" href="${esc(x.url||`https://www.dianping.com/shop/${x.id}`)}">点评</a></div><div class="detail-field"><small>收藏地址 · ${esc(x.city||'上海')}</small><p>${esc(x.address)}</p></div><div class="detail-field"><small>距家直线距离 · 家庭基准为小区近似位置</small><p>${homeDistanceText(x)}</p></div><div class="detail-field"><small>人均消费（元/人）</small><p>${averagePriceText(x)}</p></div><div class="detail-field"><small>地图位置</small><p>${p?esc(p.precision):x.query?`地址待定位 · ${esc(x.query)}`:'地址未包含可识别门牌'}</p></div>${!p?`<div class="detail-actions"><button class="primary" data-action="geocode-one" ${geoBusy?'disabled':''}>${icon('pin')} 搜索匹配结果</button></div>${geoMatchHtml(x)}`:''}<div class="detail-tags"><span>${x.status}</span><span>${esc(districtLabel(x.district))}</span><span>${x.date} 收藏</span></div>${editorHtml(x)}<div class="detail-actions"><button class="danger" data-action="delete-selected">删除收藏</button></div><p class="detail-info">坐标来自店铺页或手动确认的OpenStreetMap候选。区域按行政区边界匹配，可手动纠正。修改仅保存在当前浏览器；原有到访状态是本地记录。</p></div>`;document.querySelectorAll('.list-item').forEach(e=>e.classList.toggle('selected',e.dataset.item===id));if(p&&state.mode==='map'){if(baiduMap)focusBaiduShop(id);else{mapState.lon=p.lon;mapState.lat=p.lat;mapState.z=Math.max(mapState.z,16);drawMap()}}drawMarkers();$('details').querySelector('.close').focus({preventScroll:true})}
 
 function classificationHtml(x){const r=categoryResearch[x.id];if(!r)return '';return `<div class="classification-source"><b>分类依据</b><p>大众点评：${esc(r.label)}${r.note?'。'+esc(r.note):''}</p><a target="_blank" rel="noopener noreferrer" href="${esc(r.source)}">查看店铺原始分类 ↗</a>${r.extra?` · <a target="_blank" rel="noopener noreferrer" href="${esc(r.extra)}">补充依据 ↗</a>`:''}<small>核对日期：2026-09-19；你仍可自行修改分类。</small></div>`}
 function options(values,selected,label=value=>value){return values.map(v=>`<option value="${esc(v)}" ${v===selected?'selected':''}>${esc(label(v))}</option>`).join('')}
 function subOptions(category,current){return category==='美食'?foodTypes:[...new Set([current==='待细分'?'其他':current,...items.filter(x=>x.category===category).map(x=>x.sub),'其他'])]}
 function walkRow(w={line:'1号线',station:'',meters:'',source:''}){return `<div class="metro-entry"><label>线路<select class="walk-line">${options(metroLines,w.line,metroLabel)}</select></label><label>地铁站 / 出入口<input class="walk-station" value="${esc(w.station)}" required maxlength="80" placeholder="站名及出入口"></label><label>步行距离（米）<input class="walk-meters" type="number" min="0" max="100000" step="1" required value="${esc(w.meters)}"></label><button type="button" data-action="remove-walk">移除此路线</button><label class="wide">步行路线来源链接<input class="walk-source" type="url" required value="${esc(w.source)}" placeholder="https://…"></label></div>`}
-function editorHtml(x){return `<form class="editor" id="place-editor"><h3>编辑收藏</h3><div class="edit-pair"><label>大分类<select id="edit-category">${options(categories.slice(1).map(c=>c[0]),x.category)}</select></label><label>细分类<select id="edit-sub">${options(subOptions(x.category,x.sub),x.sub)}</select></label></div><div class="edit-pair"><label>到访状态<select id="edit-status">${options(['未去','已去'],x.status)}</select></label><label>区域<select id="edit-district">${options(districtNames,x.district,districtLabel)}</select></label></div><details><summary>地铁步行路线 · ${x.walks.length} 条记录</summary><p>每条线路分别记录站点、实际步行米数和来源链接。保存后会参与地铁线路筛选；未核实的店铺不推测归类。</p><div id="walk-rows">${x.walks.map(walkRow).join('')}</div><button type="button" class="text-btn" data-action="add-walk">＋ 添加一条已核实路线</button></details><button type="submit" class="primary">保存分类与状态</button><p class="edit-note" id="edit-result" role="status">保存在当前浏览器，不修改大众点评。</p></form>`}
+function editorHtml(x){return `<form class="editor" id="place-editor"><h3>编辑收藏</h3><div class="edit-pair"><label>大分类<select id="edit-category">${options(categories.slice(1).map(c=>c[0]),x.category)}</select></label><label>细分类<select id="edit-sub">${options(subOptions(x.category,x.sub),x.sub)}</select></label></div><div class="edit-pair"><label>到访状态<select id="edit-status">${options(['未去','已去'],x.status)}</select></label><label>区域<select id="edit-district">${options(['待核实',...districtNames],x.district,districtLabel)}</select></label></div><label>人均消费（元/人）<input id="edit-avg-price" type="number" min="0" max="100000" step="0.01" inputmode="decimal" value="${normalizedAveragePrice(x.avgPrice)??''}" placeholder="待补充，留空表示未知"></label><details><summary>地铁步行路线 · ${x.walks.length} 条记录</summary><p>每条线路分别记录站点、实际步行米数和来源链接。保存后会参与地铁线路筛选；未核实的店铺不推测归类。</p><div id="walk-rows">${x.walks.map(walkRow).join('')}</div><button type="button" class="text-btn" data-action="add-walk">＋ 添加一条已核实路线</button></details><button type="submit" class="primary">保存收藏信息</button><p class="edit-note" id="edit-result" role="status">保存在当前浏览器，不修改大众点评。</p></form>`}
 document.addEventListener('change',e=>{
 if(e.target.id==='edit-category')$('edit-sub').innerHTML=options(subOptions(e.target.value,'其他'),'其他');
 const key=e.target.dataset.addMulti;if(['districts','metros'].includes(key)&&e.target.value){state[key]=[...new Set([...state[key],e.target.value])];closeDetails();render();requestAnimationFrame(()=>key==='districts'?fit():fitMetro())}
@@ -529,9 +563,10 @@ document.addEventListener('submit',e=>{
 if(e.target.id!=='place-editor')return;e.preventDefault();const x=items.find(x=>x.id===state.selected);if(!x)return;
 const walks=[...document.querySelectorAll('.metro-entry')].map(row=>({line:row.querySelector('.walk-line').value,station:row.querySelector('.walk-station').value.trim(),meters:Number(row.querySelector('.walk-meters').value),source:row.querySelector('.walk-source').value.trim()}));
 if(walks.some(w=>!validWalk(w))){$('edit-result').textContent='请填写完整的站点、步行米数和有效来源链接。';return}
-const edit={classificationRevision,statusRevision,category:$('edit-category').value,sub:$('edit-sub').value,status:$('edit-status').value,district:$('edit-district').value,walks};
+const priceInput=$('edit-avg-price').value.trim(),avgPrice=normalizedAveragePrice(priceInput);if(priceInput&&avgPrice===null){$('edit-result').textContent='请填写0至100000之间的金额，最多两位小数。';return}
+const edit={avgPrice,classificationRevision,statusRevision,category:$('edit-category').value,sub:$('edit-sub').value,status:$('edit-status').value,district:$('edit-district').value,walks};
 try{accountStorage.setItem(metadataKey,JSON.stringify({...savedEdits,[x.id]:edit}))}catch{$('edit-result').textContent='保存失败：浏览器存储不可用，修改尚未保存。';return}
-savedEdits[x.id]=edit;Object.assign(x,edit);render();notify('已保存分类、状态和路线记录');if(filtered().some(row=>row.id===x.id))openDetails(x.id);
+savedEdits[x.id]=edit;Object.assign(x,edit);render();notify('已保存收藏信息');if(filtered().some(row=>row.id===x.id))openDetails(x.id);
 });
 
 // Slippy-map tiles use WGS-84/Web Mercator coordinates.
@@ -686,7 +721,7 @@ let boardHelperReady=false;
 let boardAddedFavorites=[];
 try{const data=JSON.parse(accountStorage.getItem(boardNotesKey)||'{}');if(data&&typeof data==='object'&&!Array.isArray(data))boardNotes=data}catch{}
 try{const data=JSON.parse(accountStorage.getItem(boardAddedFavoritesKey)||'[]');if(Array.isArray(data))boardAddedFavorites=data.filter(row=>row&&typeof row==='object')}catch{}
-function addedFavoriteItem(row){const id=String(row.id||'').trim(),name=String(row.name||'').trim();if(!id||!name)return null;const category=categories.some(entry=>entry[0]===row.category)?row.category:'美食';return importedItem({id,name,address:String(row.address||'地址待补充'),city:String(row.city||'上海'),savedAt:String(row.savedAt||new Date().toISOString().slice(0,10)),category,detailCategory:String(row.detailCategory||row.sub||'其他'),score:String(row.score||''),photo:String(row.photo||''),url:String(row.url||`https://www.dianping.com/shop/${id}`),businessStatus:'unchecked'});}
+function addedFavoriteItem(row){const id=String(row.id||'').trim(),name=String(row.name||'').trim();if(!id||!name)return null;const category=categories.some(entry=>entry[0]===row.category)?row.category:'美食';return importedItem({id,name,address:String(row.address||'地址待补充'),city:String(row.city||'上海'),savedAt:String(row.savedAt||new Date().toISOString().slice(0,10)),category,detailCategory:String(row.detailCategory||row.sub||'其他'),avgPrice:normalizedAveragePrice(row.avgPrice),score:String(row.score||''),photo:String(row.photo||''),url:String(row.url||`https://www.dianping.com/shop/${id}`),businessStatus:'unchecked'});}
 const persistedAddedItems=boardAddedFavorites.map(addedFavoriteItem).filter(Boolean).filter(item=>!items.some(existing=>existing.id===item.id));
 if(persistedAddedItems.length)items.unshift(...persistedAddedItems);
 
