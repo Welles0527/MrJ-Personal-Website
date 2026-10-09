@@ -3,9 +3,9 @@ import albumData from '../../../../../data/coffee-latte-art-album.json';
 import { sitePath } from '../../../../../data/site';
 
 const photoWallHref = sitePath('/topics/space/travel/photo-wall');
-const years = albumData.album.yearOrder.map((year) => ({ year, count: albumData.album.countsByYear[year] }));
+const years = albumData.album.yearOrder.map((year) => ({ year, count: (albumData.album.countsByYear as Record<number, number>)[year] }));
 const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
-const monthMap = new Map();
+const monthMap = new Map<string, { key: string; year: number; label: string; photos: typeof albumData.photos }>();
 for (const photo of albumData.photos) {
   if (!monthMap.has(photo.monthKey)) {
     monthMap.set(photo.monthKey, {
@@ -15,7 +15,7 @@ for (const photo of albumData.photos) {
       photos: [],
     });
   }
-  monthMap.get(photo.monthKey).photos.push(photo);
+  monthMap.get(photo.monthKey)!.photos.push(photo);
 }
 const months = [...monthMap.values()];
 const mapBounds = { west: 95, east: 155, north: 45, south: -40 };

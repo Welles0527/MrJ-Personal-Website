@@ -5,14 +5,14 @@ import { sitePath } from '../../../../../data/site';
 const photoWallHref = sitePath('/topics/space/travel/photo-wall');
 const events = albumData.album.eventOrder.map((event) => ({
   name: event,
-  count: albumData.album.countsByEvent[event],
+  count: (albumData.album.countsByEvent as Record<string, number>)[event],
 }));
 const categories = [
   { value: 'all', label: '全部', count: albumData.album.count },
   { value: 'people', label: '人物', count: albumData.album.countsByCategory.people },
   { value: 'scenery', label: '风景', count: albumData.album.countsByCategory.scenery },
 ];
-const chapterMap = new Map();
+const chapterMap = new Map<string, { key: string; event: string; label: string; context: string; photos: typeof albumData.photos }>();
 for (const photo of albumData.photos) {
   const key = `${photo.event}\u0000${photo.chapter}`;
   if (!chapterMap.has(key)) {
@@ -22,7 +22,7 @@ for (const photo of albumData.photos) {
       : '事件根目录';
     chapterMap.set(key, { key, event: photo.event, label, context, photos: [] });
   }
-  chapterMap.get(key).photos.push(photo);
+  chapterMap.get(key)!.photos.push(photo);
 }
 const chapters = [...chapterMap.values()];
 ---

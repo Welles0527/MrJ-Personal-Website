@@ -5,7 +5,7 @@ import { sitePath } from '../../../../../data/site';
 const photoWallHref = sitePath('/topics/space/travel/photo-wall');
 const coverPhoto = albumData.photos.find((photo) => photo.id === albumData.album.coverId) ?? albumData.photos[0];
 const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-const formatDay = (dayKey) => {
+const formatDay = (dayKey: string) => {
   const [year, month, day] = dayKey.split('-').map(Number);
   return {
     short: `${month}月${day}日`,
@@ -16,7 +16,7 @@ const formatDay = (dayKey) => {
 const days = albumData.album.dayOrder.map((dayKey, index) => ({
   key: dayKey,
   index: index + 1,
-  count: albumData.album.countsByDay[dayKey],
+  count: (albumData.album.countsByDay as Record<string, number>)[dayKey],
   ...formatDay(dayKey),
   photos: albumData.photos.filter((photo) => photo.dayKey === dayKey),
 }));
@@ -480,7 +480,7 @@ const days = albumData.album.dayOrder.map((dayKey, index) => ({
       let visibleCards = cards;
       let activeIndex = 0;
 
-      const formatDateTime = (value) => {
+      const formatDateTime = (value: string) => {
         const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
         if (!match) return value;
         return `${Number(match[2])}月${Number(match[3])}日 · ${match[4]}:${match[5]}`;
@@ -496,14 +496,14 @@ const days = albumData.album.dayOrder.map((dayKey, index) => ({
         if (lightboxPosition) lightboxPosition.textContent = `${activeIndex + 1} / ${visibleCards.length}`;
       };
 
-      const openLightbox = (card) => {
+      const openLightbox = (card: Element) => {
         activeIndex = visibleCards.indexOf(card);
         if (activeIndex < 0) activeIndex = 0;
         renderLightbox();
         if (dialog instanceof HTMLDialogElement) dialog.showModal();
       };
 
-      const moveLightbox = (direction) => {
+      const moveLightbox = (direction: number) => {
         if (!visibleCards.length) return;
         activeIndex = (activeIndex + direction + visibleCards.length) % visibleCards.length;
         renderLightbox();

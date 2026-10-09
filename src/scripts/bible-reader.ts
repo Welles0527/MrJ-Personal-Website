@@ -406,6 +406,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   let activeSpeechController: AbortController | null = null;
   let speechRequestToken = 0;
   let speechState: 'idle' | 'playing' | 'paused' = 'idle';
+  const isSpeechPaused = () => speechState === 'paused';
   let activeBookStatusSlug: string | null = null;
   let pendingBookSlug: string | null = null;
   let bookClickTimer: number | undefined;
@@ -1677,7 +1678,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     try {
       await audio.play();
     } catch {
-      if (requestToken !== speechRequestToken || speechState === 'paused') return;
+      if (requestToken !== speechRequestToken || isSpeechPaused()) return;
       stopSpeech();
       notify('浏览器未能开始播放，请再次点击朗读。');
     }
