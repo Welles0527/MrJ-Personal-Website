@@ -150,7 +150,9 @@ export const getCloudSession = async () => {
     if (sessionRevision !== revisionAtStart) return null;
   }
   if (!session) {
-    if (remembered) forgetSession();
+    // An unavailable SDK session can occur during credential restoration or refresh.
+    // Keep account display/cache, but never authorize cloud writes from remembered data.
+    if (remembered) throw new Error('暂时无法核实登录会话，请稍后重试同步。');
     return null;
   }
 
