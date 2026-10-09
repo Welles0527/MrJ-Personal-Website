@@ -20,6 +20,7 @@ type CloudUser = {
 
 type SignInData = {
   user?: CloudUser | null;
+  session?: CloudAuthSession | null;
 };
 
 type SignUpData = {
@@ -178,8 +179,11 @@ export const startEmailSignUp = async (email: string, password: string) => {
 
 export const signInWithPassword = async (email: string, password: string) => {
   const result = await auth.signInWithPassword({ email, password }) as CloudResult<SignInData>;
-  assertCloudResult(result, '登录失败。');
-  const session = await getCloudSession();
+  const loginData = assertCloudResult(result, '登录失败。');
+  const authenticatedSession = loginData?.session;
+  const session = authenticatedSession
+    ? sessionFromCurrentUser(loginData?.user || authenticatedSession.user, authenticatedSession)
+    : await getCloudSession();
   if (!session) throw new Error('登录成功，但未取得登录会话。请重试。');
   rememberSession(session);
   return session;

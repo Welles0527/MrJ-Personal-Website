@@ -10,7 +10,7 @@ const compiled = ts.transpileModule(source.replace("import cloudbase from '@clou
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 }
 }).outputText;
 
-function createAuth(getLoginState) {
+function createAuth(getLoginState, loginResult) {
   const store = new Map([[key, JSON.stringify({ ...session, expiresAt: Date.now() + 60000 })]]);
   const changes = [];
   const exports = {};
@@ -20,7 +20,7 @@ function createAuth(getLoginState) {
     cloudbase: { init: () => ({ auth: () => ({ getSession: async () => {
       const state = await getLoginState();
       return { data: { session: state ? { user: state.user } : null } };
-    }, currentUser: { uid: 'stale-anonymous-id' }, signOut: async () => undefined }), database: () => ({}) }) },
+    }, signInWithPassword: async () => loginResult, currentUser: { uid: 'stale-anonymous-id' }, signOut: async () => undefined }), database: () => ({}) }) },
     window: {
       localStorage: { getItem: name => store.get(name) ?? null, setItem: (name, value) => store.set(name, value), removeItem: name => store.delete(name) },
       dispatchEvent: event => changes.push(event)
@@ -61,3 +61,11 @@ assert.equal(await unsigned.api.getCloudSession(), null, 'missing credentials me
 const networkFailure = createAuth(async () => { throw new Error('network unavailable'); });
 await assert.rejects(networkFailure.api.getCloudSession(), /network unavailable/, 'network errors must remain visible');
 console.log('PASS real account ID, account label, anonymous rejection, stale currentUser rejection');
+
+const authenticatedUser = { id: '2064712423935315968', email: '49001422@qq.com' };
+const responseLogin = createAuth(async () => { throw new Error('credentials not found'); }, {
+  data: { session: { user: authenticatedUser }, user: authenticatedUser }
+});
+assert.equal((await responseLogin.api.signInWithPassword('49001422@qq.com', 'test-password')).uid, authenticatedUser.id,
+  'successful authentication response must survive delayed session storage');
+assert.equal(responseLogin.api.getRememberedSession().account, authenticatedUser.email);

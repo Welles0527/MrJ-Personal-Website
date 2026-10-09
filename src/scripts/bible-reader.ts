@@ -326,6 +326,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   const directory = get<HTMLElement>('[data-bible-directory]');
   const loginModal = get<HTMLDialogElement>('[data-login-modal]');
   const loginForm = get<HTMLFormElement>('[data-login-form]');
+  const loginSubmit = get<HTMLButtonElement>('[data-login-submit]');
   const verifyField = get<HTMLElement>('[data-verify-field]');
   const loginStatus = get<HTMLElement>('[data-login-status]');
   const cloudLoginButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-action="cloud-login"]')];
@@ -1978,8 +1979,11 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   window.setInterval(refreshActiveCloudSession, 15_000);
 
   const finishLogin = async (nextSession: CloudSession) => {
+    session = nextSession;
+    renderLoginState(nextSession);
+    if (loginModal.open) loginModal.close();
     try {
-      await synchronizeCloudSession(nextSession, { notifySuccess: true, closeLogin: true });
+      await synchronizeCloudSession(nextSession, { notifySuccess: true });
     } catch (error) {
       markCloudSyncUnavailable(error);
       loginStatus.textContent = '已登录，但云端同步失败，请点击“重试同步”。';
@@ -2005,6 +2009,9 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
 
   loginForm.addEventListener('submit', async (event) => {
     event.preventDefault();
+    if (loginSubmit.disabled) return;
+    loginSubmit.disabled = true;
+    loginStatus.textContent = '正在登录…';
     const form = new FormData(loginForm);
     const email = String(form.get('email') || '').trim();
     const password = String(form.get('password') || '');
@@ -2022,6 +2029,8 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       await finishLogin(await signInWithPassword(email, password));
     } catch (error) {
       loginStatus.textContent = error instanceof Error ? error.message : '登录失败，请检查邮箱和密码。';
+    } finally {
+      loginSubmit.disabled = false;
     }
   });
 
