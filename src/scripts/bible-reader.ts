@@ -276,9 +276,11 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       const reference = getCloudDb().collection(COLLECTION).doc(ownerId);
       return {
         get: () => reference.get(),
+        update: (payload) => reference.update(payload),
         set: (payload) => reference.set(payload)
       };
-    }
+    },
+    getOwnedDocuments: (ownerId) => getCloudDb().collection(COLLECTION).where({ _openid: ownerId }).limit(1000).get()
   });
 
   const featureBook = get<HTMLElement>('[data-feature-book]');
@@ -534,6 +536,8 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
 
   const persist = (message?: string) => {
     state.updatedAt = nowIso();
+    writeLocalState(state);
+    writeReadVerses(readVerses);
     if (!session) {
       writeLocalState(state);
       if (message) notify(message);
@@ -1850,8 +1854,10 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       readVerses: [...nextReadVerses],
       bookStatuses: { ...bookStatuses }
     };
-    const write = async () => {
-      await cloudStore.save(activeSession.uid, activeSession.account, payload);
+      const write = async () => {
+        const actualSession = await getCloudSession();
+        if (!actualSession || actualSession.uid !== activeSession.uid || session?.uid !== activeSession.uid) throw new Error('登录账号已改变，请重新同步。');
+        await cloudStore.save(activeSession.uid, activeSession.account, payload);
     };
     const pending = cloudWriteQueue.then(write, write);
     cloudWriteQueue = pending.catch(() => undefined);

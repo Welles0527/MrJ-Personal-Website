@@ -173,11 +173,11 @@ const worshipAssets = {
       </form>
     </dialog>
     <script>
-      import { getCloudDb, getCloudSession, getRememberedSession } from '../scripts/site-auth';
+      import { getCloudDb, getCloudSession } from '../scripts/site-auth';
       import { initializeWorshipApp } from '../scripts/worship-app';
 
-      let identity = getRememberedSession();
-      try { identity = await getCloudSession() || identity; } catch { /* 本地回退由共享存储处理。 */ }
+      let identity: Awaited<ReturnType<typeof getCloudSession>> = null;
+      try { identity = await getCloudSession(); } catch { /* 会话无法确认时保留本地数据。 */ }
 
       const localStore = {
         async load(key: string, fallback: unknown) {
@@ -187,7 +187,6 @@ const worshipAssets = {
       };
       const readDocument = (result: any) => result?.data?.[0] || result?.data || {};
       const getIdentity = async () => {
-        if (identity?.uid) return identity;
         try { identity = await getCloudSession(); } catch { identity = null; }
         return identity;
       };

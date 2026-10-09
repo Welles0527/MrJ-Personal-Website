@@ -13,6 +13,7 @@ type CloudResult<T> = {
 type CloudUser = {
   id?: string;
   uid?: string;
+  is_anonymous?: boolean;
   username?: string;
   email?: string;
 };
@@ -98,7 +99,7 @@ const forgetSession = () => {
 
 const sessionFromCurrentUser = (currentUser: CloudUser | null | undefined, session?: CloudAuthSession | null) => {
   const uid = currentUser?.id || currentUser?.uid || session?.sub;
-  if (!uid) return null;
+  if (!uid || currentUser?.is_anonymous) return null;
   return { uid, account: currentUser?.email || currentUser?.username || '我的账号' } satisfies CloudSession;
 };
 
@@ -131,16 +132,21 @@ export const getCloudSession = async () => {
   let session: CloudSession | null = null;
   const maxAttempts = remembered ? 10 : 1;
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    const result = await auth.getSession() as CloudResult<CloudSessionResult>;
-    if (sessionRevision !== revisionAtStart) return getRememberedSession();
-    const sessionData = assertCloudResult(result, '无法核实登录状态。');
+    let sessionData: CloudSessionResult | undefined;
+    try {
+      const result = await auth.getSession() as CloudResult<CloudSessionResult>;
+      sessionData = assertCloudResult(result, '无法核实登录状态。');
+    } catch (error) {
+      if (errorMessage(error, '') !== 'credentials not found') throw error;
+    }
+    if (sessionRevision !== revisionAtStart) return null;
     const authenticatedSession = sessionData?.session;
     session = authenticatedSession
       ? sessionFromCurrentUser(sessionData?.user || authenticatedSession.user, authenticatedSession)
       : null;
     if (session || attempt === maxAttempts - 1) break;
     await new Promise<void>(resolve => setTimeout(resolve, 500));
-    if (sessionRevision !== revisionAtStart) return getRememberedSession();
+    if (sessionRevision !== revisionAtStart) return null;
   }
   if (!session) {
     if (remembered) forgetSession();

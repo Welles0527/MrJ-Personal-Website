@@ -33,9 +33,7 @@ const readDocument = (result: CloudResult<PreferenceDocument[] | PreferenceDocum
 };
 
 const currentSession = async () => {
-  const remembered = getRememberedSession();
-  if (remembered) return remembered;
-  if (location.protocol === 'file:' || ['127.0.0.1', 'localhost'].includes(location.hostname)) return null;
+  if (location.protocol === 'file:' || ['127.0.0.1', 'localhost'].includes(location.hostname)) return getRememberedSession();
   return await getCloudSession();
 };
 

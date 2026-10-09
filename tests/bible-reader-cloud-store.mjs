@@ -85,3 +85,34 @@ assert.match(readerSource, /window\.setInterval\(refreshActiveCloudSession, 15_0
 assert.match(readerSource, /cloudWritesInFlight > 0/, '本地云端写入期间不得用回读结果覆盖当前进度');
 
 console.log('Bible reader cloud-store regression test passed.');
+
+const canonical = { ...snapshot, _id: ownerId, _openid: ownerId, ownerId, bookmarks: [{ id: 'saved-bookmark', updatedAt: snapshot.updatedAt }], extraField: 'keep' };
+const historical = { ...snapshot, _id: 'legacy-id', _openid: ownerId, ownerId: 'legacy-id', lastRead: { ...snapshot.lastRead, chapter: 15, updatedAt: '2026-10-09T00:00:00.000Z' }, notes: [{ id: 'legacy-note', text: 'retain', updatedAt: snapshot.updatedAt }], readVerses: ['gen-15-1'], updatedAt: '2026-10-09T00:00:00.000Z' };
+const historicalBefore = structuredClone(historical);
+const migrationStore = createBibleReaderCloudStore({
+  getDocumentRef() {
+    return {
+      get: async () => ({ data: canonical }),
+      set: async () => { throw new Error('E11000 duplicate key'); },
+      update: async payload => {
+        assert.equal('_id' in payload, false);
+        assert.equal('_openid' in payload, false);
+        Object.assign(canonical, payload);
+        return { updated: 1 };
+      }
+    };
+  },
+  getOwnedDocuments: async () => ({ data: [canonical, historical] })
+});
+const merged = await migrationStore.load(ownerId);
+assert.equal(merged.lastRead.chapter, 15);
+assert.equal(merged.notes[0].text, 'retain');
+assert.equal(merged.bookmarks[0].id, 'saved-bookmark');
+assert.deepEqual([...merged.readVerses].sort(), ['gen-15-1', 'heb-5-1']);
+await migrationStore.save(ownerId, '49001422@qq.com', merged);
+await migrationStore.save(ownerId, '49001422@qq.com', merged);
+assert.equal(canonical.extraField, 'keep');
+assert.deepEqual(historical, historicalBefore, '历史记录必须完整保留');
+await migrationStore.save(ownerId, '49001422@qq.com', { ...merged, notes: [] });
+assert.equal((await migrationStore.load(ownerId)).notes.length, 0, '已合并历史记录不能反复恢复用户后续主动删除的内容');
+console.log('PASS same-account legacy merge, repeat update, metadata protection, historical document retention');
