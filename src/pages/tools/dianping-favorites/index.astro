@@ -1,0 +1,13 @@
+---
+import template from '../../../templates/dianping-favorites.html?raw';
+const head = template.split('<head>')[1].split('</head>')[0];
+const body = template.split('<body>')[1].split('</body>')[0];
+---
+<!doctype html>
+<html lang="zh-CN">
+  <head><Fragment set:html={head} /></head>
+  <body>
+    <Fragment set:html={body} />
+    <script>import '../../../scripts/dianping-account';</script>
+  </body>
+</html>
