@@ -1,4 +1,4 @@
-import { getCloudDb, getCloudSession, signInWithPassword, signOut, cloudErrorMessage } from './site-auth';
+import { getCloudDb, getCloudSession, getRememberedSession, signInWithPassword, signOut, cloudErrorMessage } from './site-auth';
 import type { CloudSession } from './site-auth';
 
 type FavoritesPayload = {
@@ -25,11 +25,11 @@ let pending = false;
 let timer: ReturnType<typeof setTimeout> | undefined;
 
 const style = document.createElement('style');
-style.textContent = `.account-locked .topbar,.account-locked .layout,.account-locked .account-badge{display:none!important}.account-login{min-height:100dvh;display:grid;place-items:center;padding:24px;background:var(--bg)}.account-login[hidden]{display:none}.account-login form{width:min(100%,390px);padding:28px;background:#fff;border:2px solid var(--ink);border-radius:14px;box-shadow:4px 4px 0 var(--ink)}.account-login h1{font-size:24px;margin:0 0 12px}.account-login p{font-size:14px;line-height:1.6}.account-login label{display:block;margin-top:16px;font-size:14px}.account-login input{display:block;width:100%;padding:10px;margin-top:6px;border:1px solid var(--line);border-radius:6px}.account-login button{width:100%;margin-top:20px;padding:11px;background:var(--ink);color:#fff;border-radius:6px}.account-login button:disabled{opacity:.6}.account-login [role=status]{min-height:24px;color:var(--muted)}.account-badge{position:relative;flex:0 0 auto;max-width:100%;justify-content:flex-start;padding:10px 14px;border:1px solid var(--line);border-radius:9px;background:#fff;box-shadow:0 3px 12px #0002;font-size:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}.account-badge button{border:1px solid var(--line);border-radius:5px;padding:3px 6px}.account-badge span{overflow-wrap:anywhere}.account-identity{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px;font-size:14px;font-weight:700;margin-right:auto}.account-identity small{font-size:12px;font-weight:400;color:var(--muted)}`;
+style.textContent = `.account-locked .topbar,.account-locked .layout,.account-locked .account-badge{display:none!important}.account-login{min-height:100dvh;display:grid;place-items:center;padding:24px;background:var(--bg)}.account-login[hidden],.account-login .credentials[hidden],.account-login [data-retry-session][hidden]{display:none!important}.account-login form{width:min(100%,390px);padding:28px;background:#fff;border:2px solid var(--ink);border-radius:14px;box-shadow:4px 4px 0 var(--ink)}.account-login h1{font-size:24px;margin:0 0 12px}.account-login p{font-size:14px;line-height:1.6}.account-login label{display:block;margin-top:16px;font-size:14px}.account-login input{display:block;width:100%;padding:10px;margin-top:6px;border:1px solid var(--line);border-radius:6px}.account-login button{width:100%;margin-top:20px;padding:11px;background:var(--ink);color:#fff;border-radius:6px}.account-login button:disabled{opacity:.6}.account-login [role=status]{min-height:24px;color:var(--muted)}.account-badge{position:relative;flex:0 0 auto;max-width:100%;justify-content:flex-start;padding:10px 14px;border:1px solid var(--line);border-radius:9px;background:#fff;box-shadow:0 3px 12px #0002}.account-badge button{border:1px solid var(--line);border-radius:5px;padding:3px 6px}.account-badge span{overflow-wrap:anywhere}.account-identity{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px;font-size:14px;font-weight:700;margin-right:auto}.account-identity small{font-size:12px;font-weight:400;color:var(--muted)}`;
 document.head.append(style);
 const login = document.createElement('section');
 login.className = 'account-login';
-login.innerHTML = `<form><h1>我的大众点评收藏</h1><p>使用网站账号登录，查看和管理自己的收藏。登录状态保留 7 天。</p><label>邮箱<input name="email" type="email" autocomplete="username" required></label><label>密码<input name="password" type="password" autocomplete="current-password" required></label><button type="submit">登录</button><p role="status" aria-live="polite">正在检查网站登录状态…</p><a href="/officialwebsite/topics/space/planning/todo/">注册或找回网站账号密码</a></form>`;
+login.innerHTML = `<form><h1>我的大众点评收藏</h1><p class="credentials" hidden>使用网站账号登录，查看和管理自己的收藏。登录状态保留 7 天。<label>邮箱<input name="email" type="email" autocomplete="username" required></label><label>密码<input name="password" type="password" autocomplete="current-password" required></label><button type="submit">登录</button></p><p role="status" aria-live="polite">正在检查网站登录状态…</p><button type="button" data-retry-session hidden>重试连接</button><a href="/officialwebsite/topics/space/planning/todo/">注册或找回网站账号密码</a></form>`;
 document.body.append(login);
 const badge = document.createElement('div');
 badge.className = 'account-badge';
@@ -39,6 +39,8 @@ if (content) content.append(badge);
 else document.body.prepend(badge);
 const form = login.querySelector('form')!;
 const message = login.querySelector<HTMLElement>('[role=status]')!;
+const credentials = login.querySelector<HTMLElement>('.credentials')!;
+const retrySession = login.querySelector<HTMLButtonElement>('[data-retry-session]')!;
 const sync = badge.querySelector<HTMLElement>('[data-sync]')!;
 const retry = badge.querySelector<HTMLButtonElement>('[data-retry]')!;
 
@@ -53,11 +55,13 @@ function readRecord(result: any): Record<string, any> | null {
 }
 const canonical = (value: any): any => Array.isArray(value) ? value.map(canonical)
   : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
-function lock(text: string) {
+function lock(text: string, mode: 'loading' | 'login' | 'retry') {
   if (!login.isConnected) document.body.append(login);
   document.body.classList.add('account-locked');
   login.hidden = false;
   message.textContent = text;
+  credentials.hidden = mode !== 'login';
+  retrySession.hidden = mode !== 'retry';
 }
 function showSync(text: string, failed = false) {
   sync.textContent = text;
@@ -70,23 +74,20 @@ async function activate(next: CloudSession | null) {
   pending = false;
   session = null;
   window.dianpingAccountUI.clear();
-  lock(next ? '正在加载账号收藏…' : '请登录网站账号。');
+  lock(next ? '正在加载账号收藏…' : getRememberedSession() ? '暂时无法核实登录状态，请重试连接。' : '请登录网站账号。', next ? 'loading' : getRememberedSession() ? 'retry' : 'login');
   if (!next) return;
   try {
-    const current = await getCloudSession();
+    const record = readRecord(await collection.doc(next.uid).get());
     if (revision !== generation) return;
-    if (!current || current.uid !== next.uid) throw new Error('网站登录已失效，请重新登录。');
-    const record = readRecord(await collection.doc(current.uid).get());
-    if (revision !== generation) return;
-    if (record && record.ownerId !== current.uid) throw new Error('收藏记录与当前账号不匹配。');
+    if (record && record.ownerId !== next.uid) throw new Error('收藏记录与当前账号不匹配。');
     window.dianpingAccountUI.load(record?.payload || {});
-    session = current;
-    badge.querySelector<HTMLElement>('[data-account]')!.textContent = current.account;
+    session = next;
+    badge.querySelector<HTMLElement>('[data-account]')!.textContent = next.account;
     showSync('已从云端加载');
     login.hidden = true;
     login.remove();
     document.body.classList.remove('account-locked');
-  } catch (error) { if (revision === generation) lock(cloudErrorMessage(error, '账号收藏加载失败，请重试登录。')); }
+  } catch (error) { if (revision === generation) lock(cloudErrorMessage(error, '账号收藏加载失败，请重试连接。'), 'retry'); }
 }
 
 async function save() {
@@ -143,9 +144,10 @@ window.addEventListener('site-auth-change', event => {
   const next = (event as CustomEvent<CloudSession | null>).detail;
   if (!next || (session && next.uid !== session.uid)) void activate(next);
 });
+retrySession.onclick = () => { lock('正在重新连接…', 'loading'); void getCloudSession().then(activate).catch(error => lock(cloudErrorMessage(error, '暂时无法核实登录状态，请重试连接。'), 'retry')); };
 window.addEventListener('beforeunload', event => { if (pending || saving) { event.preventDefault(); event.returnValue = ''; } });
-lock('正在检查网站登录状态…');
+lock('正在检查网站登录状态…', 'loading');
 void getCloudSession().then(activate).catch(error => {
   if (/credentials not found/i.test(cloudErrorMessage(error, ''))) void activate(null);
-  else lock('无法检查网站登录状态，请稍后重试。');
+  else lock(cloudErrorMessage(error, '无法检查网站登录状态，请重试连接。'), getRememberedSession() ? 'retry' : 'login');
 });
