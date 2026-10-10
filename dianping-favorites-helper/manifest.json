@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "沪上收藏 · 大众点评新增助手",
+  "version": "1.0.1",
+  "description": "从已登录的大众点评页面读取新增收藏所需的公开店铺资料。",
+  "permissions": [
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://www.dianping.com/*",
+    "https://m.dianping.com/*",
+    "https://www.magicj.cn/officialwebsite/tools/dianping-favorites/*",
+    "http://127.0.0.1:4174/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.dianping.com/*",
+        "https://m.dianping.com/*",
+        "https://www.magicj.cn/officialwebsite/tools/dianping-favorites/*",
+        "http://127.0.0.1:4174/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}
