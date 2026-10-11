@@ -11,6 +11,7 @@ type FavoritesPayload = {
   trash: Record<string, number>;
   deleted: Record<string, boolean>;
   categoryResearch: Record<string, unknown>;
+  categoryOrder: string[];
 };
 type AccountUI = { load(payload?: Partial<FavoritesPayload>): void; snapshot(): FavoritesPayload; clear(): void };
 declare global {
