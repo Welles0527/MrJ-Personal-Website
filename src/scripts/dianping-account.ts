@@ -6,7 +6,7 @@ type FavoritesPayload = {
   favorites: Array<Record<string, unknown>>;
   positions: Record<string, unknown>;
   home: Record<string, unknown>;
-  notes: Record<string, string>;
+  notes: Record<string, string | string[]>;
   arranged: Record<string, boolean | { solo: boolean; family: boolean }>;
   trash: Record<string, number>;
   deleted: Record<string, boolean>;
