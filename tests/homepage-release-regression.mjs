@@ -2,9 +2,8 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 
-// The user-selected 2026-10-12 homepage is preserved in homepage-root.html,
-// not the Astro portal index or the earlier portfolio.html.
-const expectedContentHash = '9bf5dfcc66460c89e10bf12f92fe1717c7e583c23701295e1411db6f47c49e3d';
+// The confirmed coffee-learning portfolio is preserved in homepage-root.html.
+const expectedContentHash = 'cc28041889463d76fe63c0c0003418fd082d0ee60b904b6af5efd89c9abf0e6a';
 const iconHref = '/officialwebsite/icons/personal-home-orange.png?v=20261012-reference';
 const targets = process.argv.slice(2);
 if (!targets.length) targets.push('public/homepage-root.html');
