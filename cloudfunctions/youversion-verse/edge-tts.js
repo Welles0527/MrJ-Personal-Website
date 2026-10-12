@@ -12,10 +12,11 @@ const EDGE_TTS = Object.freeze({
   trustedClientToken: "6A5AA1D4EAFF4E9FB37E23D68491D6F4",
   secMsGecVersion: "1-143.0.3650.75"
 });
-const EDGE_TTS_HOST = "speech.platform.bing.com";
-const EDGE_TTS_PATH = "/consumer/speech/synthesize/readaloud/edge/v1";
+const EDGE_TTS_HOST = "api.msedgeservices.com";
+const EDGE_TTS_PATH = "/tts/cognitiveservices/websocket/v1";
 const EDGE_TTS_TIMEOUT_MS = 13000;
 const WEB_SOCKET_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+let clockSkewMs = 0;
 
 function randomId() {
   return crypto.randomUUID().replaceAll("-", "");
@@ -29,7 +30,7 @@ function edgeTimestamp(date = new Date()) {
 }
 
 function generateSecMsGec() {
-  let seconds = BigInt(Math.floor(Date.now() / 1000));
+  let seconds = BigInt(Math.floor((Date.now() + clockSkewMs) / 1000));
   seconds -= seconds % 300n;
   const windowsFileTime = (seconds + 11644473600n) * 10000000n;
   return crypto
@@ -156,11 +157,11 @@ function extractAudioChunk(payload) {
   return audio.length ? audio : null;
 }
 
-function synthesizeEdgeSpeech(text) {
+function synthesizeEdgeSpeechAttempt(text, timeoutMs) {
   return new Promise((resolve, reject) => {
     const connectionId = randomId();
     const query = new URLSearchParams({
-      TrustedClientToken: EDGE_TTS.trustedClientToken,
+      "Ocp-Apim-Subscription-Key": EDGE_TTS.trustedClientToken,
       ConnectionId: connectionId,
       "Sec-MS-GEC": generateSecMsGec(),
       "Sec-MS-GEC-Version": EDGE_TTS.secMsGecVersion
@@ -191,7 +192,7 @@ function synthesizeEdgeSpeech(text) {
     let socket;
     let settled = false;
     const audioChunks = [];
-    const timeout = setTimeout(() => finish(new Error("Edge TTS request timed out")), EDGE_TTS_TIMEOUT_MS);
+    const timeout = setTimeout(() => finish(new Error("Edge TTS request timed out")), timeoutMs);
 
     function finish(error) {
       if (settled) return;
@@ -245,13 +246,32 @@ function synthesizeEdgeSpeech(text) {
       socket.write(clientFrame(ssmlMessage(text)));
     });
     request.on("response", response => {
-      finish(new Error(`Edge TTS websocket upgrade failed: ${response.statusCode}`));
+      finish(Object.assign(new Error(`Edge TTS websocket upgrade failed: ${response.statusCode}`), {
+        statusCode: response.statusCode,
+        serverDate: response.headers.date
+      }));
     });
     request.on("error", error => {
       if (!settled) finish(error);
     });
     request.end();
   });
+}
+
+async function synthesizeEdgeSpeech(text) {
+  const deadline = Date.now() + EDGE_TTS_TIMEOUT_MS;
+  try {
+    return await synthesizeEdgeSpeechAttempt(text, EDGE_TTS_TIMEOUT_MS);
+  } catch (error) {
+    const serverTime = Date.parse(error.serverDate);
+    if (error.statusCode !== 403 || !Number.isFinite(serverTime)) throw error;
+    // Edge validates a five-minute time signature. Use its Date header to
+    // recover from clock skew, as the maintained Edge TTS client does.
+    clockSkewMs = serverTime - Date.now();
+    const remainingMs = deadline - Date.now();
+    if (remainingMs <= 0) throw error;
+    return synthesizeEdgeSpeechAttempt(text, remainingMs);
+  }
 }
 
 module.exports = { EDGE_TTS, synthesizeEdgeSpeech };
