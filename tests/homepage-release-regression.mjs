@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 
-// The verified root release from 2026-10-08 used homepage-root.html,
+// The user-selected 2026-10-12 homepage is preserved in homepage-root.html,
 // not the Astro portal index or the earlier portfolio.html.
-const expectedContentHash = 'bb5204c66995ccf29323b8ddc94bf42ba0792504b6e380a00bbc10ab808825ca';
+const expectedContentHash = '9bf5dfcc66460c89e10bf12f92fe1717c7e583c23701295e1411db6f47c49e3d';
 const iconHref = '/officialwebsite/icons/personal-home-orange.png?v=20261012-reference';
 const targets = process.argv.slice(2);
 if (!targets.length) targets.push('public/homepage-root.html');

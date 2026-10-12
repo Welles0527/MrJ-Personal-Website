@@ -262,7 +262,7 @@
 .hobby-arrow{display:block;font-size:12px;color:#caab91;margin-top:25px}
 .hobby-card.is-selected{box-shadow:0 0 0 1px #eca15c77,0 0 20px #eb9f3710}
 .station-content{max-width:1220px;width:calc(100% - 80px);margin:26px auto 0}
-.station-content>.category-bar{grid-column:auto;justify-content:flex-start;margin:0 0 20px}
+.station-content>.category-bar{grid-column:auto;justify-content:center;margin:0 auto 20px}
 @media(min-width:1100px){body[data-page="station"]{padding-left:120px}body[data-page="station"] .category-bar{position:fixed;left:18px;top:50%;transform:translateY(-50%);z-index:60;flex-direction:column;align-items:stretch;gap:4px;width:104px;margin:0;padding:10px 8px;border:1px solid #ffffff20;border-radius:18px;background:#151311e8;box-shadow:0 16px 36px #0008;backdrop-filter:blur(18px)}body[data-page="station"] .category-bar button{justify-content:flex-start;width:100%;padding:9px 10px;border-radius:10px}body[data-page="station"] .category-bar .filter-all{margin:0;padding:9px 10px}body[data-page="station"] .brain-center{width:43%}}
 .station-heading{display:flex;justify-content:space-between;align-items:end;gap:30px;margin:10px 0 22px}
 .station-heading h1{font-size:35px;margin-top:8px}
@@ -400,7 +400,7 @@ body[data-page="station"] .category-bar .filter-check{display:none}@media(min-wi
   const categoryBar=q('.category-bar'),floatingCategories=matchMedia('(min-width:1100px)');
   if(categoryBar&&document.body.dataset.page==='station'){
     let categoryDrag=null,ignoreCategoryClickUntil=0,categoryBarMoved=false;
-    function defaultCategoryPosition(){if(!floatingCategories.matches)return;const project=q('.station-node')||q('.station-content'),heading=q('.station-heading');if(project&&heading)placeCategoryBar(project.getBoundingClientRect().left,heading.getBoundingClientRect().bottom+18)}
+    function defaultCategoryPosition(){if(!floatingCategories.matches)return;const heading=q('.station-heading'),title=q('h1',heading);if(heading&&title){const row=heading.getBoundingClientRect(),label=title.getBoundingClientRect(),bar=categoryBar.getBoundingClientRect();placeCategoryBar(row.left+(row.width-bar.width)/2,label.top+(label.height-bar.height)/2)}}
     function placeCategoryBar(x,y){const box=categoryBar.getBoundingClientRect();categoryBar.style.left=Math.max(8,Math.min(x,innerWidth-box.width-8))+'px';categoryBar.style.top=Math.max(8,Math.min(y,innerHeight-box.height-8))+'px';categoryBar.style.transform='none'}
     categoryBar.addEventListener('pointerdown',e=>{if(!floatingCategories.matches||e.button!==0)return;const box=categoryBar.getBoundingClientRect();categoryDrag={id:e.pointerId,x:e.clientX,y:e.clientY,left:box.left,top:box.top,moved:false};ignoreCategoryClickUntil=0});
     window.addEventListener('pointermove',e=>{if(!categoryDrag||categoryDrag.id!==e.pointerId)return;const dx=e.clientX-categoryDrag.x,dy=e.clientY-categoryDrag.y;if(!categoryDrag.moved&&Math.hypot(dx,dy)<5)return;if(!categoryDrag.moved){categoryDrag.moved=true;categoryBarMoved=true;categoryBar.setPointerCapture(e.pointerId);categoryBar.classList.add('is-dragging')}placeCategoryBar(categoryDrag.left+dx,categoryDrag.top+dy);e.preventDefault()});
