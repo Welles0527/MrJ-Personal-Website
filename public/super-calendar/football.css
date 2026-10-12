@@ -1,0 +1,92 @@
+.football-intro{margin:0 0 22px;padding:20px 24px;border:1px solid var(--border);border-radius:16px;background:var(--card)}
+.football-intro h2{font-size:22px;margin:0 0 12px}.football-intro h2 small{font-size:13px;font-weight:400;margin-left:12px;color:var(--muted)}
+.football-intro p{font-size:12px;color:var(--muted);line-height:1.8;margin:8px 0}.football-sources a{color:var(--text);text-decoration:underline;text-underline-offset:3px}
+.football-legend{display:flex;gap:12px 24px;flex-wrap:wrap;font-size:13px;margin:14px 0}.football-legend i{font-style:normal;font-size:18px}
+.football-match{display:flex;flex-direction:column;gap:5px;min-width:0;width:100%;padding:12px;text-align:left;color:var(--text);background:var(--card);border:1px solid var(--border);border-left:3px solid var(--match-color);border-radius:9px;font-family:inherit;cursor:pointer;line-height:1.5}
+.football-match:hover{background:color-mix(in srgb,var(--match-color) 10%,var(--card))}.football-match:focus-visible{outline:2px solid var(--match-color);outline-offset:2px}
+.football-tag{font-size:11px;color:var(--text)}.football-tag::first-letter{color:var(--match-color)}.football-opponent{font-size:13px;font-weight:600;overflow-wrap:anywhere}
+.football-score{font-size:23px;line-height:1.25;font-variant-numeric:tabular-nums}.football-time,.football-goals{font-size:11px;color:var(--muted);overflow-wrap:anywhere}.football-goals{padding-top:5px;border-top:1px solid var(--border)}
+.football-month .big-grid{grid-template-columns:repeat(7,minmax(0,1fr))}.football-month .big-day{min-width:0;min-height:110px}.football-compact{padding:8px 6px;gap:4px;margin-top:5px}.football-compact .football-score{font-size:20px}
+.football-scorers{padding-left:20px;line-height:1.7}.football-scorers li{margin-bottom:10px}.football-scorers small{color:var(--muted)}
+.football-scroll-hint{display:none}
+@media(max-width:680px){.football-intro{padding:16px}.football-intro h2 small{display:block;margin:7px 0 0}.football-month{overflow-x:auto}.football-month .big-grid{min-width:770px}.football-scroll-hint{display:block;color:var(--muted);font-size:12px;margin:0 0 10px}.football-legend{gap:8px 16px}.football-month .calendar-title{min-width:300px}.football-match{padding:12px}.football-compact{padding:8px 6px}}
+
+.football-month~.month-agenda{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.football-match.football-year{padding:7px 9px;gap:3px;font-size:12px;font-weight:400;line-height:1.5}
+.football-year-teams{display:flex;align-items:center;gap:6px;white-space:nowrap;min-width:0}
+.football-year-symbol{color:var(--match-color);flex:none}
+.football-year-meta{display:flex;align-items:center;gap:12px;white-space:nowrap;font-size:inherit;font-weight:inherit;font-variant-numeric:tabular-nums}
+.football-result{width:20px;height:20px;flex:none;margin-left:auto}
+
+.football-match.football-year.football-finished{flex-direction:row;align-items:center;gap:6px}
+.football-finished-teams{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.football-finished-score{flex:none;white-space:nowrap;font-variant-numeric:tabular-nums}
+.football-finished .football-result{width:18px;height:18px}
+.football-agenda{display:grid;gap:20px}
+.football-competition{min-width:0;padding:20px;border:1px solid var(--border);border-top:3px solid var(--match-color,var(--border));border-radius:12px;background:var(--card)}
+.football-competition-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.football-competition-heading h3{margin:0;font-size:26px;font-weight:700;line-height:1.3;color:var(--text)}
+.football-competition-heading h3 span{color:var(--match-color)}
+.football-competition-heading>span,.football-competition-empty{font-size:12px;color:var(--muted)}
+.football-competition-matches{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));gap:12px}
+.football-competition-empty{margin:0;padding:4px 0;line-height:1.7}
+@media(max-width:680px){.football-competition{padding:16px}.football-competition-heading h3{font-size:24px}.football-competition-matches{grid-template-columns:1fr}}
+
+.football-intro-heading{display:flex;align-items:baseline;gap:12px 24px;flex-wrap:wrap}
+.football-intro-heading h2{margin:0}.football-intro-heading .football-sources{margin:0}
+.football-agenda-stats{margin:0;font-size:13px;color:var(--muted);line-height:1.8}
+
+.football-month .calendar-title{gap:12px;flex-wrap:wrap}.football-month .football-sources{margin:0;font-size:12px;line-height:1.7;color:var(--muted)}
+
+.football-match.football-upcoming{flex-direction:row;align-items:center;gap:6px}
+.football-year-date{flex:none;white-space:nowrap;font-variant-numeric:tabular-nums}
+.football-competition{background:transparent}
+.football-competition-matches{grid-template-columns:1fr;gap:0}
+.football-match.football-agenda-match{display:grid;grid-template-columns:150px minmax(0,1fr);gap:12px 24px;padding:22px 0;background:transparent;border:0;border-bottom:1px solid var(--border);border-radius:0}
+.football-agenda-match:last-child{border-bottom:0}
+.football-agenda-match:hover{background:transparent;color:var(--match-color)}
+.football-fixture-date{font-size:16px;font-weight:600;align-self:center;font-variant-numeric:tabular-nums}
+.football-fixture-date small{display:block;margin-top:4px;font-size:12px;font-weight:400;color:var(--muted)}
+.football-duel{display:grid;grid-template-columns:minmax(0,1fr) 90px minmax(0,1fr);align-items:center;gap:18px}
+.football-team{font-size:20px;font-weight:700;overflow-wrap:anywhere}
+.football-home{text-align:right}.football-away{text-align:left}
+.football-duel-score{text-align:center;font-size:26px;font-variant-numeric:tabular-nums;color:var(--text)}
+.football-fixture-goals{grid-column:2;font-size:12px;line-height:1.7;color:var(--muted);text-align:center}
+@media(max-width:680px){.football-match.football-upcoming{display:grid;grid-template-columns:14px minmax(0,1fr) auto}.football-upcoming .football-year-date{grid-column:1/-1}.football-upcoming .football-finished-teams{white-space:normal;overflow:visible}.football-match.football-agenda-match{grid-template-columns:1fr;padding:18px 0;gap:12px}.football-duel{grid-template-columns:minmax(0,1fr) 64px minmax(0,1fr);gap:8px}.football-team{font-size:16px}.football-duel-score{font-size:22px}.football-fixture-goals{grid-column:1}.football-fixture-date{font-size:14px}.football-fixture-date small{display:inline;margin-left:10px}}
+
+.football-annual .month-events{max-height:none;overflow:visible}.football-annual .football-finished-teams{overflow:hidden;text-overflow:ellipsis}
+@media(max-width:680px){.annual.football-annual{grid-template-columns:1fr}}
+
+.football-team{display:flex;align-items:center;gap:12px;min-width:0}.football-home{justify-content:flex-end}.football-away{justify-content:flex-start}.football-team-badge{display:block;width:48px;height:48px;object-fit:contain;flex:none;background:transparent}
+@media(max-width:680px){.football-team{gap:6px;font-size:14px}.football-team-badge{width:32px;height:32px}.football-team>span{min-width:0}.football-duel{gap:6px;grid-template-columns:minmax(0,1fr) 54px minmax(0,1fr)}}
+
+.football-club-heading{display:flex;align-items:center;gap:12px}.football-club-heading .football-team-badge{width:42px;height:42px}
+.football-standings{margin-top:18px}.football-standings-title{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px}.football-standings-title h3{margin:0;font-size:18px}.football-standings-title>span{font-size:11px;color:var(--muted)}.football-standings-scroll{overflow-x:auto}.football-standings table{width:100%;border-collapse:collapse;min-width:740px;font-size:14px;font-variant-numeric:tabular-nums}.football-standings th,.football-standings td{padding:12px 8px;text-align:center;border-bottom:1px solid var(--border);white-space:nowrap}.football-standings thead th{font-weight:400;color:var(--muted)}.football-standings th:first-child{text-align:left}.football-standings tbody th{font-weight:500;border-left:4px solid #508fff}.football-standings tbody tr:last-child th{border-left-color:#ff946c}.football-standings-barca{background:color-mix(in srgb,var(--text) 5%,transparent)}.football-standing-club{display:flex;align-items:center;gap:12px}.football-standing-rank{width:22px;text-align:center}.football-standing-club .football-team-badge{width:32px;height:32px}.football-standing-points{font-weight:700}.football-standing-form{display:flex;justify-content:center;gap:7px}.football-form{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;font-weight:700;font-size:17px;color:#fff}.football-form-W{background:#2ba756}.football-form-D{background:#9393a1}.football-form-L{background:#ef453d}.football-form-latest{outline:2px solid currentColor;outline-offset:2px}
+@media(max-width:680px){.football-standings table{font-size:12px}.football-standings th,.football-standings td{padding:10px 6px}.football-standing-club{gap:8px}.football-standings-title h3{font-size:16px}}
+
+.football-intro{display:grid;grid-template-columns:minmax(240px,.8fr) minmax(0,2fr);column-gap:24px;align-content:start}.football-intro-heading,.football-intro>p,.football-intro>.football-legend{grid-column:1}.football-intro .football-standings{grid-column:2;grid-row:1/4;margin:0;min-width:0}.football-intro .football-standings-title{margin-bottom:6px}.football-intro .football-standings-title h3{font-size:14px}.football-intro .football-standings table{min-width:590px;font-size:11px}.football-intro .football-standings th,.football-intro .football-standings td{padding:6px 4px}.football-intro .football-standing-club{gap:6px}.football-intro .football-standing-rank{width:16px}.football-intro .football-standing-club .football-team-badge{width:22px;height:22px}.football-intro .football-standing-form{gap:5px}.football-intro .football-form{width:16px;height:16px;font-size:12px}.football-intro .football-form-latest{outline-width:1px;outline-offset:1px}
+@media(max-width:900px){.football-intro{grid-template-columns:1fr}.football-intro .football-standings{grid-column:1;grid-row:auto;margin-top:12px}}
+
+.football-intro .football-standings{grid-row:1}.football-intro-heading{align-self:start}.football-month .calendar-title .football-legend{margin:0;font-size:12px;gap:8px 18px}.football-standings-title{flex-wrap:wrap}
+.month-card.current .football-match.football-year.football-upcoming{background:color-mix(in srgb,var(--purple) 20%,transparent);color:var(--text)}.month-card.current .football-match.football-year.football-upcoming:hover{background:color-mix(in srgb,var(--purple) 25%,transparent)}
+
+.football-month~.section-title h2{font-size:28px}.football-match.football-agenda-match{position:relative;padding-right:84px}.football-agenda-match .football-team,.football-agenda-match .football-fixture-date,.football-agenda-match .football-fixture-date small{font-size:16px;font-weight:500}.football-finished-stamp{position:absolute;right:8px;top:12px;transform:rotate(-12deg);border:2px solid #e5e7eb80;border-radius:4px;padding:3px 6px;color:#e5e7eb99;font-size:15px;font-weight:700;letter-spacing:2px;line-height:1.3;pointer-events:none}
+@media(max-width:680px){.football-month~.section-title h2{font-size:24px}.football-match.football-agenda-match{padding-right:0;padding-top:42px}.football-agenda-match .football-team,.football-agenda-match .football-fixture-date,.football-agenda-match .football-fixture-date small{font-size:14px}.football-finished-stamp{top:8px;font-size:13px}}
+
+.football-scorer-summary{grid-column:1;grid-row:2;min-width:0;margin-top:12px}.football-intro .football-standings{grid-row:1/3}.football-scorer-summary h3{margin:0 0 8px;font-size:14px}.football-scorer-summary ol{margin:0;padding-left:22px;font-size:13px}.football-scorer-summary li{padding:3px 0}.football-scorer-summary li>span{display:inline-block;min-width:120px}.football-scorer-summary li strong{font-weight:600}.football-scorer-summary>small{display:block;margin-top:6px;font-size:10px;color:var(--muted)}.football-intro .football-points-gap{margin:10px 0 0;font-size:14px;color:var(--text)}.football-points-gap strong{color:var(--purple)}
+@media(max-width:900px){.football-intro .football-standings{grid-row:3}.football-scorer-summary{grid-row:2}}
+
+.football-scorer-summary ol{list-style:none;padding:0}.football-scorer-summary li{display:flex;align-items:center;gap:7px;padding:4px 0}.football-scorer-summary li>span{min-width:0}.football-scorer-rank{width:16px;text-align:center;color:var(--muted);flex:none}.football-player-portrait{width:32px;height:32px;object-fit:contain;border-radius:50%;background:#ffffff0d;flex:none}.football-scorer-name{flex:1;font-size:12px}.football-scorer-summary .football-team-badge{width:18px;height:18px}.football-scorer-summary li strong{white-space:nowrap;font-size:12px}.football-standings-title .football-points-gap{margin:0;font-size:12px;flex:1;text-align:center;white-space:nowrap}
+
+.football-intro{grid-template-columns:minmax(0,2fr) minmax(240px,.8fr);align-items:stretch}.football-intro .football-standings{grid-column:1;grid-row:1}.football-scorer-summary{grid-column:2;grid-row:1;margin:0;display:flex;flex-direction:column}.football-scorer-summary ol{flex:1;display:flex;flex-direction:column;justify-content:space-between}.football-season-heading{margin:0 0 18px;padding:0 4px}.football-season-heading h2{font-size:22px}.football-season-heading h2 small{font-size:13px;font-weight:400;margin-left:12px;color:var(--muted)}
+@media(max-width:900px){.football-intro{grid-template-columns:1fr;row-gap:20px}.football-intro .football-standings{grid-column:1;grid-row:1;margin:0}.football-scorer-summary{grid-column:1;grid-row:2}.football-scorer-summary ol{gap:4px}.football-season-heading h2{font-size:20px}}
+
+.football-clasico-star{color:#f1ca68;margin-left:5px;font-size:13px;display:inline-block;vertical-align:middle}
+
+.football-intro .football-standings table{border-collapse:separate;border-spacing:0}.football-intro .football-standings thead tr{height:28px}.football-intro .football-standings tbody tr{height:40px}.football-intro .football-standings th,.football-intro .football-standings td{box-sizing:border-box}.football-scorer-summary ol{flex:0;justify-content:start;gap:0}.football-scorer-summary li{height:40px;box-sizing:border-box;padding:4px 0;border-bottom:1px solid var(--border)}
+@media(min-width:901px){.football-intro .football-standings-title{height:22px;margin-bottom:0;flex-wrap:nowrap;align-items:center}.football-scorer-summary h3{height:22px;line-height:22px;margin:0}.football-scorer-summary ol{padding-top:28px}}
+
+.football-scorer-summary h3{text-align:center}.football-intro .football-standing-club .football-points-gap{margin:0 0 0 4px;font-size:11px;color:var(--purple);white-space:nowrap}
+
+.football-scorer-title{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:22px}.football-scorer-summary .football-scorer-title h3{text-align:left;margin:0;white-space:nowrap}.football-scorer-title>span{font-size:10px;color:var(--muted);white-space:nowrap}
+@media(max-width:900px){.football-scorer-title{margin-bottom:8px}}
