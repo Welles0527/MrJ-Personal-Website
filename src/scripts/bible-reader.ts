@@ -403,6 +403,8 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   let activeNoteTarget: { book: string; chapter: number; verse: number; verseText: string } | null = null;
   let activeAudio: HTMLAudioElement | null = null;
   let activeAudioUrl: string | null = null;
+  let activeNativeUtterance: SpeechSynthesisUtterance | null = null;
+  let pendingNativeSpeech: (() => void) | null = null;
   let activeSpeechController: AbortController | null = null;
   let speechRequestToken = 0;
   let speechState: 'idle' | 'playing' | 'paused' = 'idle';
@@ -1516,19 +1518,41 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     activeSpeechController?.abort();
     activeSpeechController = null;
     releaseActiveAudio();
+    if (activeNativeUtterance || pendingNativeSpeech) {
+      if (activeNativeUtterance) {
+        activeNativeUtterance.onend = null;
+        activeNativeUtterance.onerror = null;
+      }
+      activeNativeUtterance = null;
+      pendingNativeSpeech = null;
+      window.speechSynthesis.cancel();
+    }
     setSpeechState('idle');
   };
 
   const toggleSpeechPause = async () => {
     if (speechState === 'playing') {
       setSpeechState('paused');
-      activeAudio?.pause();
+      if (activeNativeUtterance) window.speechSynthesis.pause();
+      else activeAudio?.pause();
       notify('已暂停朗读。');
       return;
     }
     if (speechState !== 'paused') return;
 
     setSpeechState('playing');
+    if (pendingNativeSpeech) {
+      const start = pendingNativeSpeech;
+      pendingNativeSpeech = null;
+      start();
+      notify('已继续朗读。');
+      return;
+    }
+    if (activeNativeUtterance) {
+      window.speechSynthesis.resume();
+      notify('已继续朗读。');
+      return;
+    }
     if (!activeAudio) {
       notify('已继续朗读，音频准备完成后将播放。');
       return;
@@ -1626,6 +1650,32 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     }
   };
 
+  const playNativeSpeechSegment = (segments: string[], index: number, requestToken: number) => {
+    if (requestToken !== speechRequestToken || index >= segments.length) return;
+    const utterance = new SpeechSynthesisUtterance(segments[index]);
+    utterance.lang = 'zh-CN';
+    utterance.rate = speechRate;
+    const voices = window.speechSynthesis.getVoices().filter((voice) => voice.lang.toLowerCase().startsWith('zh'));
+    utterance.voice = voices.find((voice) => /yunyang|male|男/i.test(voice.name)) || voices[0] || null;
+    activeNativeUtterance = utterance;
+    utterance.onend = () => {
+      if (activeNativeUtterance !== utterance || requestToken !== speechRequestToken) return;
+      activeNativeUtterance = null;
+      if (index + 1 < segments.length) playNativeSpeechSegment(segments, index + 1, requestToken);
+      else setSpeechState('idle');
+    };
+    utterance.onerror = () => {
+      if (activeNativeUtterance !== utterance || requestToken !== speechRequestToken) return;
+      stopSpeech();
+      notify('设备朗读失败，请检查浏览器的语音设置后重试。');
+    };
+    const start = () => {
+      if (requestToken === speechRequestToken) window.speechSynthesis.speak(utterance);
+    };
+    if (speechState === 'paused') pendingNativeSpeech = start;
+    else start();
+  };
+
   const playSpeechSegment = async (
     segments: string[],
     index: number,
@@ -1640,8 +1690,13 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     }
     if (requestToken !== speechRequestToken || result.error?.name === 'AbortError') return;
     if (!result.audio) {
-      stopSpeech();
-      notify('云端男声生成失败，请稍后重新播放。');
+      if ('speechSynthesis' in window && 'SpeechSynthesisUtterance' in window) {
+        notify('云端男声暂不可用，已改用设备朗读，音色可能不同。');
+        playNativeSpeechSegment(segments, index, requestToken);
+      } else {
+        stopSpeech();
+        notify('云端男声生成失败，且当前浏览器不支持设备朗读。');
+      }
       return;
     }
 
