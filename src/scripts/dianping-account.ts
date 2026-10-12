@@ -30,7 +30,7 @@ style.textContent = `.account-locked .topbar,.account-locked .layout,.account-lo
 document.head.append(style);
 const login = document.createElement('section');
 login.className = 'account-login';
-login.innerHTML = `<form><h1>我的大众点评收藏</h1><p class="credentials" hidden>使用网站账号登录，查看和管理自己的收藏。登录状态保留 7 天。<label>邮箱<input name="email" type="email" autocomplete="username" required></label><label>密码<input name="password" type="password" autocomplete="current-password" required></label><button type="submit">登录</button></p><p role="status" aria-live="polite">正在检查网站登录状态…</p><button type="button" data-retry-session hidden>重试连接</button><a href="/officialwebsite/topics/space/planning/todo/">注册或找回网站账号密码</a></form>`;
+login.innerHTML = `<form><h1>我的大众点评收藏</h1><p class="credentials" hidden>使用网站账号登录，查看和管理自己的收藏。登录状态保留 7 天。<label>邮箱<input name="email" type="email" autocomplete="username" required></label><label>密码<input name="password" type="password" autocomplete="current-password" required></label><button type="submit">登录</button></p><p role="status" aria-live="polite">正在检查网站登录状态…</p><button type="button" data-retry-session hidden>重试连接</button><button type="button" data-show-login hidden>重新登录</button><a href="/officialwebsite/topics/space/planning/todo/">注册或找回网站账号密码</a></form>`;
 document.body.append(login);
 const badge = document.createElement('div');
 badge.className = 'account-badge';
@@ -42,6 +42,7 @@ const form = login.querySelector('form')!;
 const message = login.querySelector<HTMLElement>('[role=status]')!;
 const credentials = login.querySelector<HTMLElement>('.credentials')!;
 const retrySession = login.querySelector<HTMLButtonElement>('[data-retry-session]')!;
+const showLogin = login.querySelector<HTMLButtonElement>('[data-show-login]')!;
 const sync = badge.querySelector<HTMLElement>('[data-sync]')!;
 const retry = badge.querySelector<HTMLButtonElement>('[data-retry]')!;
 
@@ -63,6 +64,7 @@ function lock(text: string, mode: 'loading' | 'login' | 'retry') {
   message.textContent = text;
   credentials.hidden = mode !== 'login';
   retrySession.hidden = mode !== 'retry';
+  showLogin.hidden = mode !== 'retry';
 }
 function showSync(text: string, failed = false) {
   sync.textContent = text;
@@ -75,7 +77,7 @@ async function activate(next: CloudSession | null) {
   pending = false;
   session = null;
   window.dianpingAccountUI.clear();
-  lock(next ? '正在加载账号收藏…' : getRememberedSession() ? '暂时无法核实登录状态，请重试连接。' : '请登录网站账号。', next ? 'loading' : getRememberedSession() ? 'retry' : 'login');
+  lock(next ? '正在加载账号收藏…' : getRememberedSession() ? '登录状态已失效，请重新登录网站账号。' : '请登录网站账号。', next ? 'loading' : 'login');
   if (!next) return;
   try {
     const record = readRecord(await collection.doc(next.uid).get());
@@ -146,6 +148,7 @@ window.addEventListener('site-auth-change', event => {
   if (!next || (session && next.uid !== session.uid)) void activate(next);
 });
 retrySession.onclick = () => { lock('正在重新连接…', 'loading'); void getCloudSession().then(activate).catch(error => lock(cloudErrorMessage(error, '暂时无法核实登录状态，请重试连接。'), 'retry')); };
+showLogin.onclick = () => { credentials.hidden = false; retrySession.hidden = true; showLogin.hidden = true; message.textContent = '请使用网站账号重新登录。'; };
 window.addEventListener('beforeunload', event => { if (pending || saving) { event.preventDefault(); event.returnValue = ''; } });
 lock('正在检查网站登录状态…', 'loading');
 void getCloudSession().then(activate).catch(error => {

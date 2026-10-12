@@ -135,32 +135,21 @@ export const getCloudSession = async () => {
   }
   const remembered = getRememberedSession();
   const revisionAtStart = sessionRevision;
-  let session: CloudSession | null = null;
-  const maxAttempts = remembered ? 10 : 1;
-  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    let sessionData: CloudSessionResult | undefined;
-    try {
-      const result = await auth.getSession() as CloudResult<CloudSessionResult>;
-      sessionData = assertCloudResult(result, '无法核实登录状态。');
-    } catch (error) {
-      if (errorMessage(error, '') !== 'credentials not found') throw error;
-    }
-    if (sessionRevision !== revisionAtStart) return null;
-    const authenticatedSession = sessionData?.session;
-    session = authenticatedSession
-      ? sessionFromCurrentUser(sessionData?.user || authenticatedSession.user, authenticatedSession)
-      : null;
-    if (session || attempt === maxAttempts - 1) break;
-    await new Promise<void>(resolve => setTimeout(resolve, 500));
-    if (sessionRevision !== revisionAtStart) return null;
+  let sessionData: CloudSessionResult | undefined;
+  try {
+    const result = await auth.getSession() as CloudResult<CloudSessionResult>;
+    sessionData = assertCloudResult(result, '无法核实登录状态。');
+  } catch (error) {
+    if (!/credentials not found/i.test(errorMessage(error, ''))) throw error;
   }
-  if (!session) {
-    // An unavailable SDK session can occur during credential restoration or refresh.
-    // Keep account display/cache, but never authorize cloud writes from remembered data.
-    if (remembered) throw new Error('暂时无法核实登录会话，请稍后重试同步。');
-    return null;
-  }
-
+  if (sessionRevision !== revisionAtStart) return null;
+  const authenticatedSession = sessionData?.session;
+  const session = authenticatedSession
+    ? sessionFromCurrentUser(sessionData?.user || authenticatedSession.user, authenticatedSession)
+    : null;
+  // A remembered account is only a display hint, not an authenticated session.
+  // Missing credentials require sign-in; repeating getSession cannot restore them.
+  if (!session) return null;
   if (!remembered || remembered.uid !== session.uid || remembered.account !== session.account) {
     rememberSession(session);
     return session;
