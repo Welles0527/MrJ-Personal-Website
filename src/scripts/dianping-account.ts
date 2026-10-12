@@ -4,6 +4,7 @@ import type { CloudSession } from './site-auth';
 type FavoritesPayload = {
   version: number;
   favorites: Array<Record<string, unknown>>;
+  dealsByShop: Record<string, { status: 'found' | 'none' | 'unknown'; offers: Array<{ title: string; price: number; url: string }>; checkedAt: string }>;
   positions: Record<string, unknown>;
   home: Record<string, unknown>;
   notes: Record<string, string | string[]>;

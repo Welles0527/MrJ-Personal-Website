@@ -35,7 +35,36 @@ function shopDetails(candidate) {
   const categoryMatch = text.match(/(?:美食|餐饮|咖啡|酒吧|购物|商场|休闲度假|公园)[\s/·\-]*([^\s，。；;]{0,20})/);
   const priceText = [...document.querySelectorAll('#avgPriceTitle,.avg-price,.avgPrice,[class*="avg-price"]')].map(node => compact(node.innerText)).join(' ');
   const avgPrice = averagePriceFrom(priceText) ?? averagePriceFrom(text) ?? candidate.avgPrice ?? null;
-  return { id: candidate.id, avgPrice, name: name || candidate.name, score: scoreFrom(text) || candidate.score, photo, address: compact(addressMatch?.[1] || candidate.address), category: '美食', sub: compact(categoryMatch?.[1] || '其他'), url: candidate.url, city: '上海' };
+  return { id: candidate.id, avgPrice, name: name || candidate.name, score: scoreFrom(text) || candidate.score, photo, address: compact(addressMatch?.[1] || candidate.address), category: '美食', sub: compact(categoryMatch?.[1] || '其他'), url: candidate.url, city: '上海', deals: extractDeals() };
+}
+
+function extractDeals() {
+  const text = compact(document.body?.innerText);
+  const checkedAt = new Date().toISOString();
+  if (/验证码|滑动验证|异常访问|访问受限|安全验证|请完成验证/.test(text)) return { status: 'blocked', offers: [], checkedAt };
+  const offers = [];
+  const seen = new Set();
+  const selectors = '.meal-item-container,.coupon-item-container,a[href*="/deal/"],a[href*="/group/"],a[href*="/product/"],[data-deal-id],[class*="deal-item"],[class*="group-item"],[class*="tuan-item"],[class*="package-item"]';
+  for (const node of document.querySelectorAll(selectors)) {
+    const card = node.closest('.meal-item-container,.coupon-item-container,[class*="deal-item"],[class*="group-item"],[class*="tuan-item"],[class*="package-item"]') || node;
+    const cardText = compact(card.innerText).slice(0, 300);
+    const priceMatch = compact(card.querySelector('.priceInfo-container .price')?.innerText).match(/^([1-9]\d{0,5}(?:\.\d{1,2})?)$/) || cardText.match(/[¥￥]\s*([1-9]\d{0,5}(?:\.\d{1,2})?)(?!\d)/);
+    const heading = compact(card.querySelector('.title-container .title,.left-top-container .title,h2,h3,h4,[class*="title"],[class*="name"]')?.innerText);
+    const title = (heading || cardText.replace(/[¥￥]\s*\d+(?:\.\d{1,2})?.*$/, '')).trim().slice(0, 100);
+    const link = card.matches('a[href]') ? card : card.querySelector('a[href]');
+    const url = link?.href || location.href;
+    if (!priceMatch || !title || /^(?:商家团购套餐|商户优惠|团购|打开大众点评App查看)$/.test(title) || !/^https:\/\/(?:[\w-]+\.)*(?:dianping\.com|meituan\.com)\//.test(url)) continue;
+    const price = Number(priceMatch[1]);
+    const key = `${title}|${price}|${url}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    offers.push({ title, price, url });
+    if (offers.length === 40) break;
+  }
+  if (offers.length) return { status: 'found', offers, checkedAt };
+  if (/商家团购套餐.{0,35}(?:[¥￥]\s*\*+|打开大众点评App查看)/.test(text)) return { status: 'blocked', offers: [], checkedAt };
+  if (/暂无团购|暂无套餐|暂无可用团购|商家暂未发布团购|暂无商家团购/.test(text)) return { status: 'none', offers: [], checkedAt };
+  return { status: 'unknown', offers: [], checkedAt };
 }
 
 if (boardOrigins.has(location.origin) && (location.origin !== 'https://www.magicj.cn' || location.pathname.startsWith('/officialwebsite/tools/dianping-favorites/'))) {
@@ -45,9 +74,12 @@ if (boardOrigins.has(location.origin) && (location.origin !== 'https://www.magic
     if (event.data.type === 'dianping-helper-ping') window.postMessage({ source: 'dianping-favorites-helper', type: 'ready' }, location.origin);
     if (event.data.type === 'dianping-helper-search') chrome.runtime.sendMessage({ type: 'board-search', requestId: event.data.requestId, name: event.data.name });
     if (event.data.type === 'dianping-helper-select') chrome.runtime.sendMessage({ type: 'board-select', requestId: event.data.requestId, candidate: event.data.candidate });
+    if (event.data.type === 'dianping-helper-deals') chrome.runtime.sendMessage({ type: 'board-deals', requestId: event.data.requestId, shop: event.data.shop });
+    if (event.data.type === 'dianping-helper-package-search') chrome.runtime.sendMessage({ type: 'board-package-search', requestId: event.data.requestId, query: event.data.query });
+    if (event.data.type === 'dianping-helper-package-cancel') chrome.runtime.sendMessage({ type: 'board-package-cancel', requestId: event.data.requestId });
   });
   chrome.runtime.onMessage.addListener(message => {
-    if (!['started', 'candidates', 'result', 'error'].includes(message?.type)) return;
+    if (!['started', 'candidates', 'result', 'error', 'deals-result', 'deals-error', 'package-candidates', 'package-error'].includes(message?.type)) return;
     window.postMessage({ source: 'dianping-favorites-helper', ...message }, location.origin);
   });
 } else if (/dianping\.com$/.test(location.hostname)) {
@@ -59,7 +91,7 @@ if (boardOrigins.has(location.origin) && (location.origin !== 'https://www.magic
         const candidates = shopCandidates();
         if (candidates.length || Date.now() - started > 9000) {
           clearInterval(timer);
-          chrome.runtime.sendMessage({ type: 'search-results', candidates });
+          chrome.runtime.sendMessage({ type: 'search-results', candidates, blocked: /验证码|滑动验证|异常访问|访问受限|安全验证|请完成验证/.test(document.body?.innerText || '') });
           sendResponse({ ok: true });
         }
       }, 600);
@@ -69,9 +101,21 @@ if (boardOrigins.has(location.origin) && (location.origin !== 'https://www.magic
       const started = Date.now();
       const timer = setInterval(() => {
         const details = shopDetails(message.candidate || {});
-        if ((details.name && details.avgPrice !== null) || Date.now() - started > 7000) {
+        if ((details.name && details.deals.status !== 'unknown') || Date.now() - started > 7500) {
           clearInterval(timer);
           chrome.runtime.sendMessage({ type: 'shop-details', shop: details });
+          sendResponse({ ok: true });
+        }
+      }, 500);
+      return true;
+    }
+    if (message?.type === 'extract-deals') {
+      const started = Date.now();
+      const timer = setInterval(() => {
+        const deals = extractDeals();
+        if (deals.status !== 'unknown' || Date.now() - started > 7500) {
+          clearInterval(timer);
+          chrome.runtime.sendMessage({ type: 'deals-details', deals });
           sendResponse({ ok: true });
         }
       }, 500);
