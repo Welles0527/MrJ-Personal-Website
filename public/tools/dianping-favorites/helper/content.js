@@ -27,7 +27,11 @@ function shopDetails(candidate) {
   const photo = first(document.querySelector('meta[property="og:image"]')?.content, document.querySelector('img[src*="dianping"],img[src*="dpfile"]')?.currentSrc, candidate.photo);
   const addressMatch = text.match(/(?:地址|商户地址)\s*[:：]?\s*([^。；;]{4,100})/);
   const categoryMatch = text.match(/(?:美食|餐饮|咖啡|酒吧|购物|商场|休闲度假|公园)[\s/·\-]*([^\s，。；;]{0,20})/);
-  return { id: candidate.id, name: name || candidate.name, score: scoreFrom(text) || candidate.score, photo, address: compact(addressMatch?.[1] || candidate.address), category: '美食', sub: compact(categoryMatch?.[1] || '其他'), url: candidate.url, city: '上海' };
+  const address = compact(addressMatch?.[1] || candidate.address);
+  const regionName = (address.match(/(?:上海市?)?(黄浦|徐汇|长宁|静安|普陀|虹口|杨浦|闵行|宝山|嘉定|浦东新区|金山|松江|青浦|奉贤|崇明)(?:区|$)/) || [])[1];
+  const priceText = compact(document.querySelector('meta[name="description"]')?.content || '') + ' ' + text.slice(0, 2500);
+  const avgPrice = (priceText.match(/(?:人均|每人|人均消费)\s*[:：]?\s*[¥￥]?\s*(\d+(?:\.\d{1,2})?)\s*元?/) || [])[1];
+  return { id: candidate.id, name: name || candidate.name, score: scoreFrom(text) || candidate.score, photo, address, regionName: regionName ? (regionName === '浦东新区' ? regionName : `${regionName}区`) : '', avgPrice: avgPrice ? Number(avgPrice) : null, category: '美食', sub: compact(categoryMatch?.[1] || '其他'), url: candidate.url, city: '上海' };
 }
 
 if (boardOrigins.has(location.origin) && (location.origin !== 'https://www.magicj.cn' || location.pathname.startsWith('/officialwebsite/tools/dianping-favorites/'))) {
