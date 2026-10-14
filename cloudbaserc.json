@@ -21,6 +21,25 @@
       "timeout": 20,
       "memorySize": 128,
       "description": "Proxy and cache public A-share quotes, announcements, and news for the stock tracking dashboard."
+    },
+    {
+      "name": "football-sync",
+      "type": "Event",
+      "runtime": "Nodejs20.19",
+      "handler": "index.main",
+      "timeout": 120,
+      "memorySize": 256,
+      "description": "Official football schedule, results and league rankings cache",
+      "envVariables": {
+        "SNAPSHOT_FILE_ID": "cloud://magicj-web-d5g9yvowj6862f7a2.6d61-magicj-web-d5g9yvowj6862f7a2-1439083941/football/latest-2026.json"
+      },
+      "triggers": [
+        {
+          "name": "football-every-15-minutes",
+          "type": "timer",
+          "config": "0 */15 * * * * *"
+        }
+      ]
     }
   ]
 }

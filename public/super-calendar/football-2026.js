@@ -1,4 +1,5 @@
-// Official-source snapshot, checked 2026-10-11. No live data service is used.
+// Fallback snapshot; refreshed from the cloud official-source cache.
+let footballUpdatedAt='2026-10-11';
 const footballCompetitions={
   liga:{label:'西甲',symbol:'●',color:'#ff946c'},
   copa:{label:'国王杯',symbol:'♛',color:'#f1ca68'},
@@ -148,7 +149,7 @@ function footballStandingsTable(){return `<div class="football-standings"><div c
 // League-wide leaders from LALIGA official scorers table, checked 2026-10-12.
 const footballLeagueScorers=[{name:'拉菲尼亚',team:'巴萨',goals:12,slug:'raphinha'},{name:'塞尔希奥·卡梅略',team:'巴列卡诺',goals:7,slug:'camello'},{name:'姆巴佩',team:'皇家马德里',goals:7,slug:'kylian-mbappe-lottin'},{name:'亚马尔',team:'巴萨',goals:7,slug:'lamine-yamal'},{name:'罗伯托·费尔南德斯',team:'西班牙人',goals:6,slug:'roberto-fernandez-2'}];
 function footballPointsGap(){const gap=footballStandings.find(r=>r.team==='巴萨').points-footballStandings.find(r=>r.team==='皇家马德里').points;return `<span class="football-points-gap">（${gap>0?'+':''}${gap} vs 皇马）</span>`;}
-function footballScorerSummary(){return `<div class="football-scorer-summary"><div class="football-scorer-title"><h3><span aria-hidden="true">⚽</span> 射手榜</h3><span>数据更新日期：2026-10-11</span></div><ol>${footballLeagueScorers.map((r,i)=>`<li><span class="football-scorer-rank">${i+1}</span><img class="football-player-portrait" src="./player-portraits/${r.slug}.png" alt="${r.name}头像" width="32" height="32"><span class="football-scorer-name">${r.name}</span>${footballBadge(r.team)}<strong>${r.goals} 球</strong></li>`).join('')}</ol></div>`;}
+function footballScorerSummary(){return `<div class="football-scorer-summary"><div class="football-scorer-title"><h3><span aria-hidden="true">⚽</span> 射手榜</h3><span>数据更新日期：${esc(footballUpdatedAt)}</span></div><ol>${footballLeagueScorers.map((r,i)=>`<li><span class="football-scorer-rank">${i+1}</span><img class="football-player-portrait" src="${esc(r.portrait||'./player-portraits/'+r.slug+'.png')}" alt="${r.name}头像" width="32" height="32"><span class="football-scorer-name">${r.name}</span>${r.badge?`<img class="football-team-badge" src="${esc(r.badge)}" alt="${esc(r.team)}队徽" width="18" height="18">`:footballBadge(r.team)}<strong>${r.goals} 球</strong></li>`).join('')}</ol></div>`;}
 function footballIntro(){
   return `<section class="football-intro" aria-label="赛季榜单">${footballStandingsTable()}${footballScorerSummary()}</section><div class="football-season-heading football-intro-heading"><h2 class="football-club-heading">${footballBadge('巴萨')}<span>巴塞罗那 <small>2026–2027 赛季</small></span></h2></div>`;
 }
@@ -158,4 +159,16 @@ function footballDetail(id){
   const home=m.venue==='A'?m.opponent:'巴塞罗那',away=m.venue==='A'?'巴塞罗那':m.opponent;
   d.innerHTML=`<button class="dialog-close" aria-label="关闭">×</button><p style="color:${c.color}">${c.symbol} ${c.label} · ${m.competition==='super'?esc(m.round):'第 '+m.round+' 轮'} · 2026–2027</p><h2>${esc(home)}<br>${footballScore(m)}<br>${esc(away)}</h2><p>${m.start} · ${footballTime(m)}</p><p>${m.score?'已结束':m.start<today?'赛果待更新':'未开始'}${m.halftime?' · 半场 '+m.halftime.join(' : '):''}</p>${m.scorers?`<h3>进球球员</h3><ul class="football-scorers">${m.scorers.map(s=>`<li><strong>${esc(s.player)}</strong> · ${s.minutes.length} 球${s.ownGoal?'（乌龙，不计个人进球）':''}<br><small>${esc(s.team)}计分 · ${s.minutes.map(v=>esc(v)+'′').join('、')}</small></li>`).join('')}</ul>`:`<p>${footballGoals(m)}</p>`}<p>${esc(m.location)}</p><p>核对日期：2026-10-11 · 非实时数据</p><a href="${esc(m.source)}" target="_blank" rel="noopener noreferrer">查看比赛来源 ↗</a><div class="form-actions"><button class="primary" data-close>完成</button></div>`;
   $('.dialog-close',d).onclick=$('[data-close]',d).onclick=()=>d.close();d.showModal();
+}
+
+async function loadFootballSnapshot(){
+  const urls=['https://magicj-web-d5g9yvowj6862f7a2-1439083941.ap-shanghai.app.tcloudbase.com/api/football-snapshot','./football-latest.json'];
+  for(const url of urls){try{
+    const response=await fetch(url,{cache:'no-store',signal:AbortSignal.timeout(15000)});if(!response.ok)continue;
+    const data=await response.json();if(data.version!==1||data.season!=='2026-2027'||!Number.isFinite(Date.parse(data.updatedAt))||!Array.isArray(data.matches)||data.matches.length<10||data.matches.some(m=>!footballCompetitions[m.competition]||!/^\d{4}-\d{2}-\d{2}$/.test(m.start)||typeof m.opponent!=='string'||(m.score!==null&&(!Array.isArray(m.score)||m.score.length!==2||m.score.some(v=>!Number.isInteger(v)||v<0)))))continue;
+    if(!Array.isArray(data.standings)||data.standings.length!==5||!data.standings.some(r=>r.team==='巴萨')||!data.standings.some(r=>r.team==='皇家马德里')||!Array.isArray(data.scorers)||data.scorers.length!==5)continue;
+    footballMatches.splice(0,footballMatches.length,...data.matches);footballStandings.splice(0,footballStandings.length,...data.standings);footballLeagueScorers.splice(0,footballLeagueScorers.length,...data.scorers);
+    footballUpdatedAt=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).format(new Date(data.updatedAt));
+    if(state.page==='sports')render();return;
+  }catch{}}
 }
