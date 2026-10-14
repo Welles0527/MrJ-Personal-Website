@@ -104,6 +104,7 @@ type ReadingProgressSummary = {
 
 type RenderOptions = {
   updateLastRead?: boolean;
+  preserveReaderPosition?: boolean;
 };
 
 type TranslationPayload = {
@@ -998,9 +999,29 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   };
 
   const renderVerses = (targetVerse?: number, options: RenderOptions = {}) => {
+    const sample = currentSample();
+    const verseElements = [...verseList.querySelectorAll<HTMLElement>('.bible-verse[data-verse]')];
+    if (options.preserveReaderPosition && sample && verseElements.length === sample.verses.length) {
+      verseElements.forEach((element) => {
+        const verse = Number(element.dataset.verse);
+        const read = isReadVerse(sample.book, sample.chapter, verse);
+        const bookmarked = isBookmarked(sample.book, sample.chapter, verse);
+        element.classList.toggle('is-read', read);
+        element.classList.toggle('has-note', Boolean(noteForVerse(sample.book, sample.chapter, verse)));
+        element.querySelector('[data-action="toggle-read-verse"]')?.setAttribute('aria-pressed', String(read));
+        const bookmarkButton = element.querySelector<HTMLButtonElement>('[data-action="toggle-bookmark"]');
+        if (bookmarkButton) {
+          const label = bookmarked ? '取消收藏' : '收藏';
+          bookmarkButton.textContent = bookmarked ? '★' : '☆';
+          bookmarkButton.title = label;
+          bookmarkButton.setAttribute('aria-label', label);
+        }
+      });
+      renderLastRead();
+      return;
+    }
     hideTranslationPopover();
     const updateLastRead = options.updateLastRead ?? true;
-    const sample = currentSample();
     const book = currentBookInfo();
     currentTitle.textContent = `${book.title} ${currentChapter}`;
     updateUrl(targetVerse);
@@ -1939,6 +1960,10 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     if (silent && cloudState && stateStorageKey === accountStateKey && cloudState.updatedAt === state.updatedAt) {
       return true;
     }
+    const readerBounds = verseList.getBoundingClientRect();
+    const readerVisible = Boolean(verseList.querySelector('.bible-verse'))
+      && readerBounds.top < window.innerHeight && readerBounds.bottom > 0;
+    const preserveReaderPosition = stateStorageKey === accountStateKey || readerVisible;
     const accountCache = readStoredState(accountStateKey);
     if (accountCache) {
       const cachedVerses = readReadVerses(accountReadVersesKey);
@@ -1972,9 +1997,11 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     readVersesStorageKey = accountReadVersesKey;
     bookStatusStorageKey = accountBookStatusKey;
     writeLegacyOwner(session.uid);
-    currentBook = state.lastRead.book;
-    currentChapter = state.lastRead.chapter;
-    selectedTestament = currentBookInfo().testament;
+    if (!preserveReaderPosition) {
+      currentBook = state.lastRead.book;
+      currentChapter = state.lastRead.chapter;
+      selectedTestament = currentBookInfo().testament;
+    }
 
     if (resolved.shouldWriteCloud) {
       state.updatedAt = nowIso();
@@ -1982,7 +2009,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       await syncCloudState();
     }
     const cached = cacheSyncedState();
-    renderAll(state.lastRead.verse, { updateLastRead: false });
+    renderAll(state.lastRead.verse, { updateLastRead: false, preserveReaderPosition });
     if (!silent) {
       setReadingSyncStatus(cached ? '已同步到云端和本地。' : '云端已保存，本地缓存更新失败。', cached ? 'saved' : 'error');
     }
