@@ -72,7 +72,11 @@ if (boardOrigins.has(location.origin) && (location.origin !== 'https://www.magic
   window.addEventListener('message', event => {
     if (event.source !== window || event.origin !== location.origin || event.data?.source !== 'shanghai-favorites-board') return;
     if (event.data.type === 'dianping-helper-ping') window.postMessage({ source: 'dianping-favorites-helper', type: 'ready' }, location.origin);
-    if (event.data.type === 'dianping-helper-search') chrome.runtime.sendMessage({ type: 'board-search', requestId: event.data.requestId, name: event.data.name });
+    if (event.data.type === 'dianping-helper-search') {
+      const requestId = event.data.requestId;
+      const failed = () => window.postMessage({ source: 'dianping-favorites-helper', type: 'error', requestId, message: '大众点评助手连接已失效，请重新加载助手并刷新收藏页面。' }, location.origin);
+      try { chrome.runtime.sendMessage({ type: 'board-search', requestId, name: event.data.name }).catch(failed); } catch { failed(); }
+    }
     if (event.data.type === 'dianping-helper-select') chrome.runtime.sendMessage({ type: 'board-select', requestId: event.data.requestId, candidate: event.data.candidate });
     if (event.data.type === 'dianping-helper-deals') chrome.runtime.sendMessage({ type: 'board-deals', requestId: event.data.requestId, shop: event.data.shop });
     if (event.data.type === 'dianping-helper-package-search') chrome.runtime.sendMessage({ type: 'board-package-search', requestId: event.data.requestId, query: event.data.query });
