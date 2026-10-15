@@ -50,12 +50,13 @@
     @media print{.marker-controls,.selection-toolbar,.side-deleted,.collection-actions{display:none!important}.saved-quote,.saved-question-text,.saved-answer-paragraph{color:#111}.user-highlight{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
   </style>
 <style id="interview-photo-style">
-.hero{grid-template-columns:minmax(0,1fr) 194px;min-height:0;gap:22px;align-items:center}
-.interview-photo{display:block;width:194px;height:104px;overflow:hidden;border:1px solid #ffffff29;border-radius:12px;background:#151818;box-shadow:0 12px 28px #0006}
+.hero{display:flex;justify-content:flex-start;min-height:0;gap:22px;align-items:center;text-align:left}
+.hero>div{min-width:0}
+.interview-photo{display:block;flex:0 0 194px;width:194px;height:104px;overflow:hidden;border:1px solid #ffffff29;border-radius:12px;background:#151818;box-shadow:0 12px 28px #0006}
 .interview-photo img{display:block;width:100%;height:100%;object-fit:cover;transform:scale(1.19);transition:transform .35s ease}
 .interview-photo:hover img{transform:scale(1.22)}
 .interview-photo:focus-visible{outline:2px solid var(--mustard);outline-offset:4px}
-@media(max-width:700px){.hero{grid-template-columns:minmax(0,1fr) 114px;gap:10px;align-items:center}.hero h1{font-size:20px;line-height:1.35;letter-spacing:-.7px}.hero-stat{gap:8px;flex-wrap:wrap}.hero-stat span{font-size:9px}.hero-stat b{font-size:16px}.interview-photo{width:114px;height:65px;border-radius:9px}}
+@media(max-width:700px){.hero{gap:10px}.hero h1{font-size:20px;line-height:1.35;letter-spacing:-.7px}.hero-stat{gap:8px;flex-wrap:wrap}.hero-stat span{font-size:9px}.hero-stat b{font-size:16px}.interview-photo{flex-basis:114px;width:114px;height:65px;border-radius:9px}}
 @media(prefers-reduced-motion:reduce){.interview-photo img{transition:none}}
 </style></head>
 <body>
