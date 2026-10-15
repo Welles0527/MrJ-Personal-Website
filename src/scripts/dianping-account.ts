@@ -91,6 +91,7 @@ async function activate(next: CloudSession | null) {
     login.hidden = true;
     login.remove();
     document.body.classList.remove('account-locked');
+    (window as any).dianpingAccountReadyForDeals?.();
   } catch (error) { if (revision === generation) lock(cloudErrorMessage(error, '账号收藏加载失败，请重试连接。'), 'retry'); }
 }
 
