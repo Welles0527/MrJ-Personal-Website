@@ -992,7 +992,7 @@ function nextDeal(){
 function startDealsSync(){
   if(dealsSyncActive)return;
   if(!boardHelperReady){const status=document.querySelector('.collection-sync-status');if(status){status.textContent='当前浏览器未连接大众点评助手，自动同步无法启动。请在已启用助手的 Chrome 或 Edge 中打开此页面。';status.hidden=false}notify('大众点评助手未连接，自动同步未启动');return}
-  dealsQueue=items.filter(item=>!trash[item.id]&&!deleted[item.id]&&/^[a-zA-Z0-9]+$/.test(item.id));
+  dealsQueue=items.filter(item=>['美食','咖啡','茶室','酒吧'].includes(item.category)&&!trash[item.id]&&!deleted[item.id]&&/^[a-zA-Z0-9]+$/.test(item.id));
   dealsTotal=dealsQueue.length;dealsDone=0;
   if(!dealsTotal){notify('没有可同步的收藏商家');return}
   dealsSyncActive=true;document.querySelector('.collection-sync-status').hidden=false;document.querySelector('.collection-sync-status').textContent=`正在同步团购：0/${dealsTotal} 家。可在此页查看进度，完成后返回团购页面。`;nextDeal();
