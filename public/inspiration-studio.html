@@ -204,4 +204,4 @@ $('studioImportCancel').onclick=()=>$('studioImportDialog').close();
 $('studioImportConfirm').onclick=()=>{if(!studioReady||items.length||bookmarks.length)return;try{const data={items:JSON.parse(localStorage.getItem(KEY)||'[]'),tree:JSON.parse(localStorage.getItem(TREE_KEY)||'[]'),bookmarks:JSON.parse(localStorage.getItem(BOOKMARK_KEY)||'[]')};window.InspirationStudioStore.replace(data);$('studioImportDialog').close();window.dispatchEvent(new Event('inspiration-studio-change'))}catch{toast('旧数据格式异常，未导入')}};
 document.addEventListener('click',e=>{if(!studioReady&&e.target.closest('[data-toggle],[data-edit],[data-edit-branch],[data-add-parent],[data-bookmark-edit],#confirmDelete,#deleteBookmark,#confirmBookmarkDelete')){e.preventDefault();e.stopImmediatePropagation();toast('请先登录并同步账号')}},true);
 document.addEventListener('submit',e=>{if(!studioReady&&['form','bookmarkForm'].includes(e.target.id)){e.preventDefault();e.stopImmediatePropagation()}},true);
-</script><script type="module" src="./inspiration-studio-cloud.js"></script></body></html>
+</script><script type="module" src="./inspiration-studio-cloud.js?v=20261016-account-sync"></script></body></html>

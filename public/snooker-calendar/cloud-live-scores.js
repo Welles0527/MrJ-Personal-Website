@@ -7,8 +7,26 @@
     if (!window.cloudbase?.init) throw new Error(`CloudBase SDK unavailable: ${sdkUrl}`);
     const app = window.cloudbase.init({ env: envId, region: 'ap-shanghai' });
     const auth = app.auth();
-    const authResult = await auth.signInAnonymously();
-    const token = authResult?.data?.session?.access_token;
+    const getToken = async () => {
+      const hasPersonalAccount = () => Boolean(window.localStorage.getItem('mywebsite.site-auth-session.v1'));
+      let existing;
+      try {
+        existing = await auth.getSession?.();
+        if (existing?.error) throw new Error(existing.error.message || 'CloudBase session unavailable');
+      } catch (error) {
+        if (hasPersonalAccount() || !/credentials not found/i.test(error?.message || '')) throw error;
+      }
+      const existingToken = existing?.data?.session?.access_token;
+      if (existingToken) return existingToken;
+      // A temporary failure to restore a personal account must not replace its credentials.
+      if (hasPersonalAccount()) throw new Error('Personal session temporarily unavailable; using static scores');
+      const anonymous = await auth.signInAnonymously();
+      if (anonymous?.error) throw new Error(anonymous.error.message || 'CloudBase anonymous session unavailable');
+      return anonymous?.data?.session?.access_token;
+    };
+    const token = navigator.locks?.request
+      ? await navigator.locks.request(`mywebsite.auth:${envId}`, getToken)
+      : await getToken();
     if (!token) throw new Error('CloudBase anonymous session unavailable');
     const response = await fetch(`https://${envId}.ap-shanghai.tcb-api.tencentcloudapi.com/web?env=${envId}`, {
       method: 'POST',

@@ -7,7 +7,7 @@ export type CloudSession = {
 
 type CloudResult<T> = {
   data?: T;
-  error?: { message?: string } | null;
+  error?: { message?: string; code?: string } | null;
 };
 
 type CloudUser = {
@@ -37,6 +37,9 @@ type VerificationData = {
 type CloudAuthSession = {
   sub?: string;
   user?: CloudUser | null;
+  expires_at?: number;
+  expires_in?: number;
+  issued_at?: number;
 };
 
 type CloudSessionResult = {
@@ -55,6 +58,8 @@ const app = cloudbase.init({ env: ENV_ID });
 const auth = app.auth({ persistence: 'local' });
 const db = app.database();
 let sessionRevision = 0;
+let sessionCheck: Promise<CloudSession | null> | null = null;
+let explicitlySignedOut = false;
 
 const errorMessage = (error: unknown, fallback: string) => {
   if (typeof error === 'string' && error.trim()) return error;
@@ -78,14 +83,23 @@ const readRememberedSession = (): RememberedSession | null => {
   }
 };
 
+let knownSession: CloudSession | null = readRememberedSession();
+
 const rememberSession = (session: CloudSession) => {
+  const changed = knownSession?.uid !== session.uid || knownSession.account !== session.account;
+  const remembered = readRememberedSession();
   try {
-    window.localStorage.setItem(SESSION_KEY, JSON.stringify({ ...session, expiresAt: Date.now() + SESSION_TTL_MS }));
+    if (changed || !remembered || remembered.expiresAt <= Date.now()) {
+      window.localStorage.setItem(SESSION_KEY, JSON.stringify({ ...session, expiresAt: Date.now() + SESSION_TTL_MS }));
+    }
   } catch {
-    // CloudBase auth still owns the real session; this only controls the seven-day local default.
+    // This cache is only a display hint. CloudBase owns session validity and renewal.
   }
-  sessionRevision += 1;
-  window.dispatchEvent(new CustomEvent('site-auth-change', { detail: session }));
+  knownSession = session;
+  if (changed) {
+    sessionRevision += 1;
+    window.dispatchEvent(new CustomEvent('site-auth-change', { detail: session }));
+  }
 };
 
 const forgetSession = () => {
@@ -95,6 +109,8 @@ const forgetSession = () => {
     // Nothing to clean up when localStorage is unavailable.
   }
   sessionRevision += 1;
+  knownSession = null;
+  sessionCheck = null;
   window.dispatchEvent(new CustomEvent('site-auth-change', { detail: null }));
 };
 
@@ -106,7 +122,7 @@ const sessionFromCurrentUser = (currentUser: CloudUser | null | undefined, sessi
 
 const assertCloudResult = <T>(result: CloudResult<T>, fallback: string) => {
   if (!result) throw new Error(fallback);
-  if (result.error) throw new Error(result.error.message || fallback);
+  if (result.error) throw Object.assign(new Error(result.error.message || fallback), { code: result.error.code });
   return result.data;
 };
 
@@ -126,35 +142,60 @@ export const getRememberedSession = () => {
   return { uid: remembered.uid, account: remembered.account } satisfies CloudSession;
 };
 
-export const getCloudSession = async () => {
-  const storedSession = readRememberedSession();
-  if (storedSession && storedSession.expiresAt <= Date.now()) {
-    forgetSession();
-    await auth.signOut();
-    return null;
-  }
-  const remembered = getRememberedSession();
+const withSessionLock = async <T>(operation: () => Promise<T>): Promise<T> =>
+  navigator.locks ? await navigator.locks.request(`mywebsite.auth:${ENV_ID}`, operation) : operation();
+
+const sessionNeedsRefresh = (session: CloudAuthSession) => {
+  const expiresAt = session.expires_at ?? (session.issued_at && session.expires_in !== undefined
+    ? session.issued_at + session.expires_in : undefined);
+  return expiresAt !== undefined ? expiresAt <= Date.now() / 1000 + 60
+    : session.expires_in !== undefined && session.expires_in <= 60;
+};
+
+export const getCloudSession = (): Promise<CloudSession | null> => {
+  if (explicitlySignedOut) return Promise.resolve(null);
+  if (sessionCheck) return sessionCheck;
   const revisionAtStart = sessionRevision;
-  let sessionData: CloudSessionResult | undefined;
-  try {
-    const result = await auth.getSession() as CloudResult<CloudSessionResult>;
-    sessionData = assertCloudResult(result, '无法核实登录状态。');
-  } catch (error) {
-    if (!/credentials not found/i.test(errorMessage(error, ''))) throw error;
-  }
-  if (sessionRevision !== revisionAtStart) return null;
-  const authenticatedSession = sessionData?.session;
-  const session = authenticatedSession
-    ? sessionFromCurrentUser(sessionData?.user || authenticatedSession.user, authenticatedSession)
-    : null;
-  // A remembered account is only a display hint, not an authenticated session.
-  // Missing credentials require sign-in; repeating getSession cannot restore them.
-  if (!session) return null;
-  if (!remembered || remembered.uid !== session.uid || remembered.account !== session.account) {
-    rememberSession(session);
-    return session;
-  }
-  return session;
+  const pending = withSessionLock(async () => {
+    let lastError: unknown;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      if (revisionAtStart !== sessionRevision || explicitlySignedOut) return null;
+      try {
+        let sessionData: CloudSessionResult | undefined;
+        try {
+          sessionData = assertCloudResult(await auth.getSession() as CloudResult<CloudSessionResult>, '无法核实登录状态。');
+        } catch (error) {
+          if (revisionAtStart !== sessionRevision || explicitlySignedOut) return null;
+          if (!/token_expired|access_token_expired/i.test(String((error as { code?: string })?.code))) throw error;
+          sessionData = assertCloudResult(await auth.refreshSession() as CloudResult<CloudSessionResult>, '无法续期登录会话。');
+        }
+        if (revisionAtStart !== sessionRevision || explicitlySignedOut) return null;
+        if (sessionData?.session && sessionNeedsRefresh(sessionData.session)) {
+          sessionData = assertCloudResult(await auth.refreshSession() as CloudResult<CloudSessionResult>, '无法续期登录会话。');
+        }
+        if (revisionAtStart !== sessionRevision || explicitlySignedOut) return null;
+        const authenticated = sessionData?.session;
+        const session = authenticated ? sessionFromCurrentUser(sessionData?.user || authenticated.user, authenticated) : null;
+        if (session) {
+          rememberSession(session);
+          return session;
+        }
+        if (!readRememberedSession()) return null;
+        lastError = new Error('暂时无法核实登录会话，将自动重试。');
+      } catch (error) {
+        if (revisionAtStart !== sessionRevision || explicitlySignedOut) return null;
+        if (/credentials not found/i.test(errorMessage(error, ''))) {
+          if (!readRememberedSession()) return null;
+          lastError = new Error('暂时无法核实登录会话，将自动重试。');
+        } else lastError = error;
+      }
+      if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 150 * (attempt + 1)));
+    }
+    // Never authorize cloud access from the display cache, or broadcast a logout on network failure.
+    throw lastError;
+  }).finally(() => { if (sessionCheck === pending) sessionCheck = null; });
+  sessionCheck = pending;
+  return pending;
 };
 
 export const startEmailSignUp = async (email: string, password: string) => {
@@ -164,6 +205,9 @@ export const startEmailSignUp = async (email: string, password: string) => {
   if (!verifyOtp) throw new Error('无法发送邮箱验证码，请稍后重试。');
 
   return async (verificationCode: string) => {
+    sessionRevision += 1;
+    sessionCheck = null;
+    explicitlySignedOut = false;
     const verifyResult = await verifyOtp({ token: verificationCode });
     assertCloudResult(verifyResult, '邮箱验证码无效或已过期。');
     const session = await getCloudSession();
@@ -174,7 +218,11 @@ export const startEmailSignUp = async (email: string, password: string) => {
 };
 
 export const signInWithPassword = async (email: string, password: string) => {
-  const result = await auth.signInWithPassword({ email, password }) as CloudResult<SignInData>;
+  const revisionAtStart = ++sessionRevision;
+  sessionCheck = null;
+  explicitlySignedOut = false;
+  const result = await withSessionLock(() => auth.signInWithPassword({ email, password })) as CloudResult<SignInData>;
+  if (revisionAtStart !== sessionRevision || explicitlySignedOut) throw new Error('登录操作已取消，请重试。');
   const loginData = assertCloudResult(result, '登录失败。');
   const authenticatedSession = loginData?.session;
   const session = authenticatedSession
@@ -219,9 +267,33 @@ export const completePasswordReset = async (email: string, verificationId: strin
 };
 
 export const signOut = async () => {
+  explicitlySignedOut = true;
   forgetSession();
-  await auth.signOut();
+  await withSessionLock(() => auth.signOut());
 };
+
+window.addEventListener('storage', (event) => {
+  if (event.key !== null && event.key !== SESSION_KEY) return;
+  const remembered = readRememberedSession();
+  if (remembered?.uid === knownSession?.uid && remembered?.account === knownSession?.account) return;
+  sessionRevision += 1;
+  sessionCheck = null;
+  explicitlySignedOut = !remembered;
+  if (!remembered) {
+    knownSession = null;
+    window.dispatchEvent(new CustomEvent('site-auth-change', { detail: null }));
+  } else void getCloudSession().catch(() => undefined);
+});
+
+const maintainSession = () => {
+  if (!explicitlySignedOut && readRememberedSession() && document.visibilityState !== 'hidden' && navigator.onLine !== false) {
+    void getCloudSession().catch(() => undefined);
+  }
+};
+window.addEventListener('focus', maintainSession);
+window.addEventListener('online', maintainSession);
+document.addEventListener('visibilitychange', maintainSession);
+setInterval(maintainSession, 60_000);
 
 export const describeSessionExpiry = () => '登录状态默认保留 7 天。';
 

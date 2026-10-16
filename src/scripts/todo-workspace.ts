@@ -1064,6 +1064,8 @@ export function mountTodoWorkspace(root: HTMLElement) {
     if (cloudRefresh?.uid === session.uid) return cloudRefresh.promise;
     const request = (async () => {
       const api = await getCloudApi();
+      const actualSession = await api.getCloudSession();
+      if (actualSession?.uid !== session.uid || cloudSession?.uid !== session.uid) throw new Error('账号已改变，请重新同步。');
       const result = await api.loadCloudTodos(session.uid);
       applyCloudSnapshot(session, result.todos);
       if (cloudSession?.uid === session.uid) markSyncSuccess(session);
@@ -1154,6 +1156,10 @@ export function mountTodoWorkspace(root: HTMLElement) {
 
   const retryCloudSync = async () => {
     if (!cloudSession) {
+      if ((await getCloudApi()).getRememberedSession()) {
+        await initialiseCloud();
+        return;
+      }
       showLogin('请先登录后再重试同步。');
       return;
     }
@@ -2366,10 +2372,15 @@ export function mountTodoWorkspace(root: HTMLElement) {
 
   loginModal.addEventListener('cancel', (event) => event.preventDefault());
 
+  let initialisingCloud = false;
   const initialiseCloud = async () => {
+    if (initialisingCloud) return;
+    initialisingCloud = true;
+    let rememberedAccount = '';
     try {
       const api = await getCloudApi();
       const remembered = api.getRememberedSession();
+      rememberedAccount = remembered?.account || '';
       if (remembered) {
         setSyncStatus(`正在同步：${remembered.account}`, { retry: false });
         loginButton.hidden = true;
@@ -2384,18 +2395,25 @@ export function mountTodoWorkspace(root: HTMLElement) {
     } catch (error) {
       if (cloudSession) {
         markSyncFailure(cloudSession);
-        state.todos = [];
-        state.trash = [];
-        render();
-        notify('云端同步暂不可用，已停止显示和修改本地旧数据。');
+        return;
+      }
+      if (rememberedAccount) {
+        setSyncStatus(`暂时无法同步：${rememberedAccount}`, { retry: true });
+        lastSyncStatus.textContent = '保留登录状态，联网后自动重试';
         return;
       }
       showLogin(error instanceof Error ? error.message : '无法连接云端服务，请检查网络后重试。');
+    } finally {
+      initialisingCloud = false;
     }
   };
 
   const refreshWhenActive = () => {
-    if (!cloudSession) return;
+    if (document.visibilityState === 'hidden') return;
+    if (!cloudSession) {
+      void getCloudApi().then(api => { if (api.getRememberedSession()) void initialiseCloud(); }).catch(() => undefined);
+      return;
+    }
     const session = cloudSession;
     setSyncStatus(`正在同步：${session.account}`, { retry: false });
     void refreshCloudState(session)
@@ -2414,6 +2432,22 @@ export function mountTodoWorkspace(root: HTMLElement) {
     refreshWhenActive();
     scheduleExportReminder();
   });
+  window.addEventListener('online', refreshWhenActive);
+  const cloudRefreshTimer = window.setInterval(() => {
+    if (!cloudWatcher || !syncRetryButton.hidden) refreshWhenActive();
+  }, 30_000);
+  window.addEventListener('site-auth-change', (event) => {
+    const nextSession = (event as CustomEvent<CloudSession | null>).detail;
+    if (nextSession?.uid === cloudSession?.uid) return;
+    if (!cloudSession && nextSession && initialisingCloud) return;
+    closeCloudWatcher();
+    cloudSession = null;
+    state.todos = [];
+    state.trash = [];
+    render();
+    if (nextSession) void initialiseCloud();
+    else showLogin('已退出账号。', { open: false });
+  });
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
       refreshWhenActive();
@@ -2421,6 +2455,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
     }
   });
   window.addEventListener('beforeunload', () => {
+    window.clearInterval(cloudRefreshTimer);
     closeCloudWatcher();
     window.clearTimeout(exportReminderTimer);
   });
