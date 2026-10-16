@@ -3,7 +3,7 @@ import { getCloudDb, getCloudSession, signInWithPassword, signOut } from './site
 import type { CloudSession } from './site-auth';
 
 type Snapshot = { items: unknown[]; tree: unknown[]; bookmarks: unknown[] };
-type Store = { snapshot(): Snapshot; replace(data: Snapshot): void; setReady(ready: boolean): void };
+type Store = { snapshot(): Snapshot; replace(data: Snapshot, options?: { resetView: boolean }): void; setReady(ready: boolean): void };
 type StudioWindow = Window & { InspirationStudioStore?: Store };
 const studioWindow = window as StudioWindow;
 const collection = getCloudDb().collection('officialWebsiteInspirationStudios');
@@ -35,11 +35,11 @@ async function load() {
   try {
     const next = await getCloudSession();
     if (token !== epoch) return;
-    if (next?.uid !== session?.uid) { store().replace(empty()); confirmed = empty(); }
+    if (next?.uid !== session?.uid) { store().replace(empty(), { resetView: true }); confirmed = empty(); }
     session = next;
     account.textContent = session?.account || '登录';
     document.getElementById('studioLogout')!.classList.toggle('hidden', !session);
-    if (!session) { store().replace(empty()); status.textContent = '登录后同步'; return; }
+    if (!session) { store().replace(empty(), { resetView: true }); status.textContent = '登录后同步'; return; }
     const result = check(await collection.doc(session.uid).get());
     if (token !== epoch) return;
     const record = Array.isArray(result.data) ? result.data[0] : result.data;
@@ -82,16 +82,19 @@ async function save() {
 window.addEventListener('inspiration-studio-change', () => { void save(); });
 window.addEventListener('site-auth-change', (event) => {
   const next = (event as CustomEvent<CloudSession | null>).detail;
-  if (next?.uid !== session?.uid) { store().replace(empty()); confirmed = empty(); }
+  if (next?.uid === session?.uid) return;
+  if (next?.uid !== session?.uid) { store().replace(empty(), { resetView: true }); confirmed = empty(); }
   if (loading) return;
   epoch += 1;
   store().setReady(false);
   if (!busy) void load();
   else status.textContent = '账号已改变，请点击同步';
 });
-window.addEventListener('focus', () => { if (!busy) void load(); });
+window.addEventListener('focus', () => { if (!busy && !document.querySelector('dialog[open]')) void load(); });
 window.addEventListener('storage', event => {
-  if (event.key === 'mywebsite.site-auth-session.v1') { store().replace(empty()); confirmed = empty(); epoch += 1; store().setReady(false); if (!busy) void load(); }
+  if (event.key === 'mywebsite.site-auth-session.v1') {
+    try { if (JSON.parse(event.newValue || 'null')?.uid === session?.uid) return; } catch { /* Revalidate a malformed session through CloudBase. */ }
+    store().replace(empty(), { resetView: true }); confirmed = empty(); epoch += 1; store().setReady(false); if (!busy) void load(); }
 });
 document.getElementById('studioSync')!.onclick = () => { void load(); };
 document.getElementById('studioAccount')!.onclick = () => {
