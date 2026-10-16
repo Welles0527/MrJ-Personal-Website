@@ -10,6 +10,72 @@ const loading = document.querySelector<HTMLElement>('[data-loading]')!;
 const panel = document.querySelector<HTMLElement>('[data-selection]')!;
 const status = document.querySelector<HTMLElement>('[data-view-status]')!;
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const fallbackMap = document.querySelector<HTMLElement>('[data-fallback-map]')!;
+let selected: string | null = null;
+let mapMode = '3d';
+let mapFailed = false;
+let focusMapAlbum: ((album: Album) => void) | undefined;
+let changeSceneMode: ((flat: boolean) => void) | undefined;
+let resetMap: (() => void) | undefined;
+const updateModeButtons = () => document.querySelectorAll<HTMLButtonElement>('[data-mode]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.mode === mapMode)));
+const closeSelection = () => {
+  panel.hidden = true;
+  selected = null;
+  status.textContent = '全球视角';
+  document.querySelectorAll('.is-selected').forEach(row => row.classList.remove('is-selected'));
+  document.querySelectorAll('[data-focus]').forEach(button => button.setAttribute('aria-pressed', 'false'));
+};
+const selectAlbum = (id: string) => {
+  const album = albums.find(item => item.id === id);
+  if (!album) return;
+  selected = id;
+  const image = panel.querySelector<HTMLImageElement>('[data-selection-image]')!;
+  image.src = album.cover;
+  image.alt = `${album.markerName}相册封面`;
+  panel.querySelector('[data-selection-title]')!.textContent = album.name;
+  panel.querySelector('[data-selection-region]')!.textContent = album.region;
+  panel.querySelector('[data-selection-count]')!.textContent = `${album.count.toLocaleString()} 张照片`;
+  panel.querySelector<HTMLAnchorElement>('[data-selection-link]')!.href = album.href;
+  panel.hidden = false;
+  status.textContent = `${album.markerName} · ${album.latitude.toFixed(2)}° / ${album.longitude.toFixed(2)}°`;
+  document.querySelectorAll<HTMLButtonElement>('[data-focus]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.focus === id)));
+  document.querySelectorAll<HTMLElement>('[data-album-row]').forEach(row => row.classList.toggle('is-selected', row.dataset.albumRow === id));
+  focusMapAlbum?.(album);
+  if (innerWidth <= 820) document.querySelector('.world')?.scrollIntoView({ behavior: reducedMotion ? 'instant' : 'smooth', block: 'start' });
+};
+const showFlatFallback = (message: string) => {
+  if (mapFailed) return;
+  mapFailed = true;
+  mapMode = '2d';
+  focusMapAlbum = undefined;
+  changeSceneMode = undefined;
+  resetMap = undefined;
+  document.querySelector<HTMLElement>('#cesium-globe')!.hidden = true;
+  fallbackMap.hidden = false;
+  loading.hidden = false;
+  loading.textContent = message;
+  document.querySelector('[data-imagery]')!.textContent = '本地平面地图';
+  document.querySelector('[data-atlas]')!.setAttribute('data-ready', 'fallback');
+  document.querySelectorAll<HTMLButtonElement>('[data-zoom]').forEach(button => { button.disabled = true; });
+  updateModeButtons();
+};
+document.querySelectorAll<HTMLButtonElement>('[data-focus]').forEach(button => button.addEventListener('click', () => selectAlbum(button.dataset.focus!)));
+document.querySelector('[data-close]')!.addEventListener('click', closeSelection);
+document.querySelector('[data-home]')!.addEventListener('click', () => { closeSelection(); resetMap?.(); });
+document.addEventListener('keydown', event => { if (event.key === 'Escape') closeSelection(); });
+document.querySelectorAll<HTMLButtonElement>('[data-mode]').forEach(button => button.addEventListener('click', () => {
+  closeSelection();
+  if (mapFailed) return;
+  mapMode = button.dataset.mode!;
+  updateModeButtons();
+  if (changeSceneMode) {
+    fallbackMap.hidden = true;
+    changeSceneMode(mapMode === '2d');
+  } else {
+    fallbackMap.hidden = mapMode !== '2d';
+    loading.hidden = mapMode === '2d';
+  }
+}));
 const filterButtons = document.querySelectorAll<HTMLButtonElement>('[data-album-filter]');
 filterButtons.forEach(button => button.addEventListener('click', () => {
   const filter = button.dataset.albumFilter;
@@ -24,11 +90,8 @@ filterButtons.forEach(button => button.addEventListener('click', () => {
 }));
 
 async function start() {
-  let highResolution = true;
-  const imagery = await ArcGisMapServerImageryProvider.fromUrl('https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer', { enablePickFeatures: false }).catch(async () => {
-    highResolution = false;
-    return TileMapServiceImageryProvider.fromUrl(`${base}Assets/Textures/NaturalEarthII`, { maximumLevel: 2 });
-  });
+  // Start from the shipped map so a slow satellite service cannot block the UI.
+  const imagery = await TileMapServiceImageryProvider.fromUrl(`${base}Assets/Textures/NaturalEarthII`, { maximumLevel: 2 });
   const viewer = new Viewer('cesium-globe', {
     baseLayer: new ImageryLayer(imagery, { brightness: 0.78, contrast: 1.15, saturation: 0.62 }), baseLayerPicker: false, geocoder: false,
     animation: false, timeline: false, navigationHelpButton: false, homeButton: false,
@@ -90,7 +153,6 @@ async function start() {
   positions.forEach((position, i) => viewer.entities.add({ id: albums[i].id, position, point: { pixelSize: 5, color: Color.fromCssColorString('#dae9d0'), outlineColor: Color.fromCssColorString('#5b968e'), outlineWidth: 2 } }));
   const pins = albums.map(album => document.querySelector<HTMLButtonElement>(`[data-pin="${album.id}"]`)!);
   const leaders = albums.map(album => document.querySelector<SVGLineElement>(`[data-leader="${album.id}"]`)!);
-  let selected: string | null = null;
   const overviewHeight = () => {
     const { clientWidth: width, clientHeight: height } = viewer.canvas;
     const diameter = Math.min(height * 0.74, width * (innerWidth <= 820 ? 0.82 : 0.42));
@@ -109,6 +171,7 @@ async function start() {
     else viewer.camera.setView(options);
     viewer.scene.requestRender();
   };
+  resetMap = () => globalView();
   globalView(false);
   // Keep the reference's illuminated overview independent of the visitor's time zone.
   const light = new DirectionalLight({ direction: Cartesian3.clone(viewer.camera.directionWC) });
@@ -116,46 +179,29 @@ async function start() {
   viewer.scene.preRender.addEventListener(() => Cartesian3.clone(viewer.camera.directionWC, light.direction));
   const skyOptions = { overviewHeight: overviewHeight(), overviewLat: 28, overviewLng: 80, isInteracting: () => motionActive };
   let detachSky = attachStarMapSky(viewer, skyOptions);
-  document.querySelector('[data-imagery]')!.textContent = highResolution ? '高清卫星影像 · Esri' : '离线底图 · 高清影像暂不可用';
-  const selectAlbum = (id: string) => {
-    const album = albums.find(item => item.id === id);
-    if (!album) return;
-    selected = id;
-    const image = panel.querySelector<HTMLImageElement>('[data-selection-image]')!;
-    image.src = album.cover; image.alt = `${album.markerName}相册封面`;
-    panel.querySelector('[data-selection-title]')!.textContent = album.name;
-    panel.querySelector('[data-selection-region]')!.textContent = album.region;
-    panel.querySelector('[data-selection-count]')!.textContent = `${album.count.toLocaleString()} 张照片`;
-    panel.querySelector<HTMLAnchorElement>('[data-selection-link]')!.href = album.href;
-    panel.hidden = false;
-    status.textContent = `${album.markerName} · ${album.latitude.toFixed(2)}° / ${album.longitude.toFixed(2)}°`;
-    document.querySelectorAll<HTMLButtonElement>('.album-focus').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.focus === id)));
-    document.querySelectorAll<HTMLElement>('[data-album-row]').forEach(row => row.classList.toggle('is-selected', row.dataset.albumRow === id));
+  document.querySelector('[data-imagery]')!.textContent = '本地底图 · 正在连接高清影像';
+  focusMapAlbum = (album: Album) => {
     const destination = Cartesian3.fromDegrees(album.longitude, album.latitude, 2800000);
     useMotionResolution();
     viewer.camera.flyTo({ destination, duration: reducedMotion ? 0 : 1.6, orientation: { heading: 0, pitch: -Math.PI/2, roll: 0 } });
     restoreResolution();
-    if (innerWidth <= 820) document.querySelector('.world')?.scrollIntoView({ behavior: reducedMotion ? 'instant' : 'smooth', block: 'start' });
   };
-  document.querySelectorAll<HTMLButtonElement>('[data-focus]').forEach(button => button.addEventListener('click', () => selectAlbum(button.dataset.focus!)));
   viewer.selectedEntityChanged.addEventListener(entity => { if (entity) selectAlbum(entity.id); });
-  const close = () => { panel.hidden = true; selected = null; status.textContent = '全球视角'; document.querySelectorAll('.is-selected').forEach(row => row.classList.remove('is-selected')); document.querySelectorAll('.album-focus').forEach(button=>button.setAttribute('aria-pressed','false')); };
-  document.querySelector('[data-close]')!.addEventListener('click', close);
-  document.querySelector('[data-home]')!.addEventListener('click', () => { close(); globalView(); });
-  document.addEventListener('keydown', event => { if (event.key === 'Escape') close(); });
-  document.querySelectorAll<HTMLButtonElement>('[data-zoom]').forEach(button => button.addEventListener('click', () => { const distance = viewer.camera.positionCartographic.height * .35; if (button.dataset.zoom === 'in') viewer.camera.zoomIn(distance); else viewer.camera.zoomOut(distance); viewer.scene.requestRender(); }));
-  document.querySelectorAll<HTMLButtonElement>('[data-mode]').forEach(button => button.addEventListener('click', () => {
-    close();
-    document.querySelectorAll<HTMLButtonElement>('[data-mode]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+  document.querySelectorAll<HTMLButtonElement>('[data-zoom]').forEach(button => {
+    button.disabled = false;
+    button.addEventListener('click', () => { const distance = viewer.camera.positionCartographic.height * .35; if (button.dataset.zoom === 'in') viewer.camera.zoomIn(distance); else viewer.camera.zoomOut(distance); viewer.scene.requestRender(); });
+  });
+  changeSceneMode = (flat: boolean) => {
     detachSky();
-    const flat = button.dataset.mode === '2d';
     viewer.scene.globe.enableLighting = !flat;
     viewer.scene.globe.dynamicAtmosphereLighting = !flat;
-    const layer = viewer.imageryLayers.get(0);
-    layer.brightness = flat ? 1 : 0.78;
-    layer.contrast = flat ? 1 : 1.15;
-    layer.saturation = flat ? 1 : 0.62;
-    if (button.dataset.mode === '2d') {
+    for (let index = 0; index < viewer.imageryLayers.length; index++) {
+      const layer = viewer.imageryLayers.get(index);
+      layer.brightness = flat ? 1 : 0.78;
+      layer.contrast = flat ? 1 : 1.15;
+      layer.saturation = flat ? 1 : 0.62;
+    }
+    if (flat) {
       viewer.scene.morphTo2D(0);
       detachSky = () => {};
     } else {
@@ -164,7 +210,7 @@ async function start() {
       detachSky = attachStarMapSky(viewer, skyOptions);
     }
     globalView(false);
-  }));
+  };
   const previousView = new Matrix4();
   let previousWidth = 0, previousHeight = 0, previousSelected: string | null = null;
   viewer.scene.postRender.addEventListener(() => {
@@ -212,10 +258,23 @@ async function start() {
       pin.style.transform=`translate3d(${placement.x}px,${placement.y}px,0) translate(-50%,-50%)`;
     }
   });
-  viewer.scene.globe.tileLoadProgressEvent.addEventListener(remaining => { if (remaining===0) loading.hidden=true; });
-  viewer.scene.renderError.addEventListener(()=>{ loading.hidden=false;loading.textContent='地球显示暂时不可用，仍可从相册列表打开照片。'; });
+  viewer.scene.globe.tileLoadProgressEvent.addEventListener(remaining => { if (!mapFailed && remaining===0) loading.hidden=true; });
+  viewer.scene.renderError.addEventListener(() => showFlatFallback('3D暂时无法显示，已切换平面地图，可从列表打开相册。'));
+  fallbackMap.hidden = true;
+  if (mapMode === '2d') changeSceneMode(true);
+  if (selected) selectAlbum(selected);
   document.querySelector('[data-atlas]')?.setAttribute('data-ready','true');
   viewer.scene.requestRender();
+  // Keep the local layer underneath while satellite imagery loads in the background.
+  void ArcGisMapServerImageryProvider.fromUrl('https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer', { enablePickFeatures: false }).then(provider => {
+    if (mapFailed || viewer.isDestroyed()) return;
+    const flat = mapMode === '2d';
+    viewer.imageryLayers.add(new ImageryLayer(provider, { brightness: flat ? 1 : 0.78, contrast: flat ? 1 : 1.15, saturation: flat ? 1 : 0.62 }));
+    document.querySelector('[data-imagery]')!.textContent = '高清卫星影像 · Esri';
+    viewer.scene.requestRender();
+  }).catch(() => {
+    if (!mapFailed && !viewer.isDestroyed()) document.querySelector('[data-imagery]')!.textContent = '本地底图 · 高清影像暂不可用';
+  });
   window.addEventListener('pagehide',()=>{interactionEvents.abort();window.clearTimeout(restoreTimer);detachSky();if(!viewer.isDestroyed())viewer.destroy();},{once:true});
 }
-start().catch(error => { console.error('Travel globe initialization failed', error); loading.textContent='地球暂时无法加载，仍可从相册列表打开照片。'; });
+start().catch(error => { console.error('Travel globe initialization failed', error); showFlatFallback('3D暂时无法显示，已切换平面地图，可从列表打开相册。'); });
