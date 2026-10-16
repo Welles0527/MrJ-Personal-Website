@@ -489,3 +489,26 @@ html:not(.dark) .invest-factor>div{background:#6f503212}
   .project-motion *,.project-motion *:before,.project-motion *:after,.calendar-robot-pupils{animation:none!important;transition:none!important}
   .resume-scan-line,.coffee-steam,.project-motion .coffee-pouring,.coffee-milk-pool{display:none}
 }
+/* Keep each outer card square while fitting its demonstration into the available space. */
+.project-showcase-refined .project-gallery>.feature-card{aspect-ratio:1;height:auto;align-self:start;--demo-aspect:1.4}
+.project-showcase-refined .feature-card .feature-top,.project-showcase-refined .feature-card .feature-copy{flex-shrink:0}
+.project-showcase-refined .feature-card[data-project] .product-preview{flex:1;min-height:0;aspect-ratio:auto;container-type:size;display:grid;place-items:center;grid-template:minmax(0,1fr)/minmax(0,1fr)}
+.project-showcase-refined .project-gallery>.feature-card[data-project="bible"]{--demo-aspect:1.38}
+.project-showcase-refined .project-gallery>.feature-card[data-project="funds"]{--demo-aspect:1.12}
+.project-showcase-refined .project-gallery>.feature-card[data-project="resume"]{--demo-aspect:1.12}
+.project-showcase-refined .feature-card .product-preview>.project-motion{width:min(100cqw,calc(100cqh * var(--demo-aspect)));height:auto;aspect-ratio:var(--demo-aspect);container-type:inline-size}
+.project-showcase-refined .travel-preview-full{width:100%;height:100%;min-height:0}
+.project-showcase-refined .resume-capability-demo{padding:2cqw;gap:2cqw}
+.project-showcase-refined .resume-capability-demo .resume-capabilities{justify-content:flex-start}
+.project-showcase-refined .resume-capability-demo .resume-radar{flex:1;min-height:0;height:0;margin:0 0 1cqw}
+.project-showcase-refined .resume-capability-demo .resume-ai-skills{gap:1.5cqw}
+.project-showcase-refined .resume-capability-demo .resume-document{gap:1.5cqw}
+.project-showcase-refined .resume-capability-demo .resume-paper{padding:2cqw 1.8cqw}
+.project-showcase-refined .resume-capability-demo .resume-paper-entry{margin-top:1cqw}
+@media(max-width:760px){
+  .project-showcase-refined .project-gallery>.feature-card{padding:14px}
+  .project-showcase-refined .project-gallery>.feature-card[data-project="resume"]{--demo-aspect:1}
+  .project-showcase-refined .feature-card .feature-copy{margin:10px 0 12px}
+  .project-showcase-refined .feature-card .feature-copy h3{font-size:21px}
+  .project-showcase-refined .feature-card .feature-copy p{font-size:12px}
+}
