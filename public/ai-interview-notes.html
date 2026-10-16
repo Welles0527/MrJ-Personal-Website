@@ -114,7 +114,7 @@
     </section>
 
     
-<section id="collectionSection" class="collection-section" aria-labelledby="collectionTitle" hidden><div class="collection-header"><div><h2 id="collectionTitle">我的收藏</h2><p>收藏完整问答，也收藏值得反复读的连续段落。</p></div><button class="outline-btn" data-action="reading"><span data-icon="arrowLeft"></span>回到正文</button></div><div class="collection-tabs" role="tablist" aria-label="收藏内容"><button data-collection-tab="highlights" class="active" role="tab" aria-selected="true" aria-controls="collectionContent">标注语句<span class="mono" id="highlightTotal">0</span></button><button data-collection-tab="questions" role="tab" aria-selected="false" aria-controls="collectionContent">收藏问答<span class="mono" id="savedQuestionTotal">0</span></button><button data-collection-tab="deleted" role="tab" aria-selected="false" aria-controls="collectionContent">已删除<span class="mono" id="deletedTabTotal">0</span></button></div><div id="collectionContent" role="tabpanel"></div></section>
+<section id="collectionSection" class="collection-section" aria-labelledby="collectionTitle" hidden><div class="collection-header"><div><h2 id="collectionTitle">我的收藏</h2><p id="collectionDescription">收藏完整问答，也收藏值得反复读的连续段落。</p></div><button class="outline-btn" data-action="reading"><span data-icon="arrowLeft"></span>回到正文</button></div><div id="collectionContent"></div></section>
     <section aria-label="阅读内容" id="readingSection">
       <div class="reading-toolbar">
         <div class="reading-layout" role="group" aria-label="阅读方式"><button id="readingModeBtn" aria-pressed="true"><span data-icon="text"></span>全文</button><button id="listModeBtn" aria-pressed="false"><span data-icon="list"></span>列表</button></div>
@@ -384,27 +384,25 @@
   }
   function restoreQuestion(id,notify=true){if(!state.deleted.has(id))return;state.deleted.delete(id);saveState();refresh();if(notify)toast('问答已恢复，原有收藏和高亮也已恢复')}
   function restoreAll(){const count=state.deleted.size;if(!count)return;state.deleted.clear();saveState();refresh();toast('已恢复 '+count+' 个问答')}
-  function savedQuestionHTML(q){
+  function savedQuestionHTML(q,showTheme){
     const question='<h3 class="saved-question-text" data-annotatable="true" data-question-id="'+q.id+'" data-area="question" data-paragraph="0">'+renderBlock(q.id,'question',0)+'</h3>';
     const answer=q.answer.paragraphs.map((_,i)=>'<p class="saved-answer-paragraph" data-annotatable="true" data-question-id="'+q.id+'" data-area="answer" data-paragraph="'+i+'">'+renderBlock(q.id,'answer',i)+'</p>').join('');
-    return '<article class="collection-entry"><div class="collection-meta"><span class="mono">'+q.time+'</span>'+collectionThemeHTML(q)+'</div>'+question+'<div class="saved-answer">'+answer+'</div><div class="collection-actions"><button class="text-action" data-star="'+q.id+'">'+icon('bookmark')+'取消收藏</button><button class="text-action" data-delete="'+q.id+'">'+icon('trash')+'删除问答</button></div></article>';
+    return '<article class="collection-entry"><div class="collection-meta"><span class="mono">'+q.time+'</span>'+(showTheme?collectionThemeHTML(q):'')+'</div>'+question+'<div class="saved-answer">'+answer+'</div><div class="collection-actions"><button class="text-action" data-star="'+q.id+'">'+icon('bookmark')+'取消收藏</button><button class="text-action" data-delete="'+q.id+'">'+icon('trash')+'删除问答</button></div></article>';
   }
   function collectionThemeHTML(q){const theme=THEMES.find(item=>item.id===q.theme);return '<span class="collection-theme" style="--tone:'+theme.color+';--ink:'+theme.ink+'">'+escapeHTML(theme.title)+'</span>'}
   function renderCollections(){
     const questionTime=q=>q.time.split(':').reduce((seconds,part)=>seconds*60+Number(part),0);
     const groups=highlightGroups().sort((a,b)=>questionTime(findQuestion(a.questionId))-questionTime(findQuestion(b.questionId))),saved=[...state.favorites].map(findQuestion).filter(q=>q&&!state.deleted.has(q.id)).sort((a,b)=>questionTime(a)-questionTime(b)),deleted=QUESTIONS.filter(q=>state.deleted.has(q.id));
-    $('highlightTotal').textContent=groups.length;$('savedQuestionTotal').textContent=saved.length;$('deletedTabTotal').textContent=deleted.length;
-    document.querySelectorAll('[data-collection-tab]').forEach(button=>{const active=button.dataset.collectionTab===state.collectionTab;button.classList.toggle('active',active);button.setAttribute('aria-selected',active)});
+    $('collectionTitle').textContent=state.collectionTab==='deleted'?'恢复问答':'我的收藏';
+    $('collectionDescription').textContent=state.collectionTab==='deleted'?'在这里恢复误删的问答。':'收藏完整问答，也收藏值得反复读的连续段落。';
     let content='';
-    if(state.collectionTab==='highlights'){
-      content=groups.map(group=>{const q=findQuestion(group.questionId);return '<article class="collection-entry highlight-entry"><div class="collection-meta"><span class="mono">'+q.time+'</span>'+collectionThemeHTML(q)+'</div><p class="quote-source">来自提问：'+escapeHTML(q.question)+'</p><blockquote class="saved-quote">'+escapeHTML(group.text)+'</blockquote></article>'}).join('');
-      if(!content)content='<div class="collection-empty">'+icon('pen')+'<h3>把值得反复读的语句留下来</h3><p>在正文中拖选文字，可选择高亮或下划线收藏。连续段落会合并展示。</p><button class="primary-btn" data-action="reading">开始阅读与标记</button></div>';
-    }else if(state.collectionTab==='questions'){
-      content=saved.map(savedQuestionHTML).join('');
-      if(!content)content='<div class="collection-empty">'+icon('bookmark')+'<h3>还没有收藏问答</h3><p>点击提问右侧的书签图标，即可收藏整段问答。</p><button class="primary-btn" data-action="reading">回到正文</button></div>';
+    if(state.collectionTab==='deleted'){
+      if(deleted.length)content='<div class="deleted-summary"><span>'+deleted.length+' 个问答可恢复。</span><button class="outline-btn" data-action="restore-all">'+icon('restore')+'恢复全部</button></div>'+deleted.map(q=>'<article class="collection-entry"><div class="collection-meta"><span class="mono">'+q.time+'</span><span>待恢复</span></div><h3 class="saved-question-text">'+escapeHTML(q.question)+'</h3><p class="deleted-preview">'+escapeHTML(q.answer.paragraphs[0].slice(0,150))+(q.answer.paragraphs[0].length>150?'…':'')+'</p><button class="outline-btn" data-restore="'+q.id+'">'+icon('restore')+'恢复这段问答</button></article>').join('');
+      else content='<div class="collection-empty">'+icon('restore')+'<h3>没有待恢复的问答</h3><p>删除后可在这里恢复，收藏和高亮也会一并恢复。</p></div>';
     }else{
-      if(deleted.length)content='<div class="deleted-summary"><span>'+deleted.length+' 个问答已删除，可随时恢复。</span><button class="outline-btn" data-action="restore-all">'+icon('restore')+'恢复全部</button></div>'+deleted.map(q=>'<article class="collection-entry"><div class="collection-meta"><span class="mono">'+q.time+'</span><span>已删除</span></div><h3 class="saved-question-text">'+escapeHTML(q.question)+'</h3><p class="deleted-preview">'+escapeHTML(q.answer.paragraphs[0].slice(0,150))+(q.answer.paragraphs[0].length>150?'…':'')+'</p><button class="outline-btn" data-restore="'+q.id+'">'+icon('restore')+'恢复这段问答</button></article>').join('');
-      else content='<div class="collection-empty">'+icon('restore')+'<h3>没有已删除的问答</h3><p>删除后可在这里恢复，收藏和高亮也会一并恢复。</p></div>';
+      const entries=[...groups.map(group=>({q:findQuestion(group.questionId),group})),...saved.map(q=>({q}))].sort((a,b)=>questionTime(a.q)-questionTime(b.q));
+      content=entries.map((entry,index)=>{const {q,group}=entry,showTheme=index===0||entries[index-1].q.theme!==q.theme;if(!group)return savedQuestionHTML(q,showTheme);return '<article class="collection-entry highlight-entry"><div class="collection-meta"><span class="mono">'+q.time+'</span>'+(showTheme?collectionThemeHTML(q):'')+'</div><p class="quote-source">来自提问：'+escapeHTML(q.question)+'</p><blockquote class="saved-quote">'+escapeHTML(group.text)+'</blockquote></article>'}).join('');
+      if(!content)content='<div class="collection-empty">'+icon('pen')+'<h3>把值得反复读的语句留下来</h3><p>在正文中拖选文字，或收藏完整问答；连续段落会合并展示。</p><button class="primary-btn" data-action="reading">开始阅读与标记</button></div>';
     }
     $('collectionContent').innerHTML=content;
   }
@@ -495,8 +493,7 @@
       const button=event.target.closest('button');if(!button||button.disabled)return;
       if(button.dataset.theme){selectTheme(Number(button.dataset.theme));return}if(button.dataset.star){toggleFavorite(button.dataset.star);return}if(button.dataset.read){toggleRead(button.dataset.read);return}if(button.dataset.copy){copyQuestion(button.dataset.copy);return}
       if(button.dataset.delete){deleteQuestion(button.dataset.delete);return}if(button.dataset.restore){restoreQuestion(button.dataset.restore);return}
-      if(button.dataset.collectionTab){state.collectionTab=button.dataset.collectionTab;hideSelectionMenu();renderCollections();return}
-      if(button.dataset.gotoQuestion){gotoQuestion(button.dataset.gotoQuestion);return}if(button.dataset.gotoHighlight){gotoHighlight(button.dataset.gotoHighlight);return}if(button.dataset.copyHighlight){copyHighlight(button.dataset.copyHighlight);return}if(button.dataset.removeHighlight){removeHighlightGroup(button.dataset.removeHighlight);return}
+      if(button.dataset.gotoQuestion){gotoQuestion(button.dataset.gotoQuestion);return}
       if(button.dataset.markerColor){state.color=button.dataset.markerColor;if(button.hasAttribute('data-apply-marker'))applyPendingAnnotation('highlight',state.color);else{syncBrush();saveState()}return}
       if(button.dataset.action==='mark-selection'){applyPendingAnnotation('highlight');return}if(button.dataset.action==='underline-selection'){applyPendingAnnotation('underline');return}if(button.dataset.action==='erase-highlight'){erasePendingAnnotation('highlight');return}if(button.dataset.action==='erase-underline'){erasePendingAnnotation('underline');return}if(button.dataset.action==='cancel-selection'){hideSelectionMenu();return}if(button.dataset.action==='undo'){undoLatest();return}if(button.dataset.action==='restore-all'){restoreAll();return}if(button.dataset.action==='deleted'){state.collectionTab='deleted';setView('collection');return}if(button.dataset.action==='reading'){state.theme=null;setView('reading');return}
     });
