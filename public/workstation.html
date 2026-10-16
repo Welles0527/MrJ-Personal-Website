@@ -371,6 +371,17 @@ body[data-page="station"] .category-bar .filter-check{display:none}@media(min-wi
       <a class="reading-choice-card" href="/officialwebsite/ai-interview-notes.html"><small>02 / INTERVIEW NOTES</small><strong>AI 采访笔记</strong><span>阅读曾鸣访谈，梳理 AI 时代的组织与战略。</span><b aria-hidden="true">↗</b></a>
     </div>
   </div>
+</dialog><dialog id="investment-choice-dialog" class="reading-choice-dialog" aria-labelledby="investment-choice-title">
+  <div class="reading-choice-shell">
+    <button class="reading-choice-close" type="button" aria-label="关闭选择窗口">×</button>
+    <p class="eyebrow">AI INVESTING / 投资看板</p>
+    <h2 id="investment-choice-title">选择要查看的看板</h2>
+    <p class="reading-choice-intro">选择基金研究或个股跟踪，打开对应投资看板。</p>
+    <div class="reading-choice-grid">
+      <a class="reading-choice-card" href="https://www.magicj.cn/officialwebsite/topics/space/investing/funds/index.html#kpi"><small>01 / FUND DASHBOARD</small><strong>基金看板</strong><span>筛选基金，跟踪基金经理与市场表现。</span><b aria-hidden="true">↗</b></a>
+      <a class="reading-choice-card" href="https://www.magicj.cn/officialwebsite/stock-tracking/?stock=301026&amp;view=daily"><small>02 / STOCK DASHBOARD</small><strong>个股看板</strong><span>查看 301026 的个股跟踪与每日数据。</span><b aria-hidden="true">↗</b></a>
+    </div>
+  </div>
 </dialog><script>(() => {
   'use strict';
   const q=(s,p=document)=>p.querySelector(s), qa=(s,p=document)=>[...p.querySelectorAll(s)];
@@ -405,7 +416,7 @@ body[data-page="station"] .category-bar .filter-check{display:none}@media(min-wi
   const nodes=[
     {title:'个人计划',desc:'安排每一天的优先事项',href:'/officialwebsite/topics/space/planning/todo',cats:['life'],type:'plan'},
     {title:'超级日历',desc:'进入超级日历',href:projects[0].href,cats:['life'],type:'calendar'},
-    {title:'AI 投资理财',desc:'基金筛选与经理跟踪',href:projects[3].href,cats:['invest'],type:'chart'},
+    {title:'AI 投资理财',desc:'基金看板 · 个股看板',href:projects[3].href,choice:'investment',cats:['invest'],type:'chart'},
     {title:'AI 灵感站',desc:'收集想法，让灵感成为作品',href:'/officialwebsite/inspiration-studio.html',cats:['venture'],type:'idea'},
     {title:'AI 阅读',desc:'阅读、记录与每日思考',href:projects[2].href,choice:true,cats:['learn'],type:'book'},
     {title:'3D 旅行相册',desc:'重访世界里的每段记忆',href:projects[1].href,cats:['life'],type:'globe'},
@@ -414,7 +425,7 @@ body[data-page="station"] .category-bar .filter-check{display:none}@media(min-wi
   ];
   const group=q('[data-station-nodes]');
   if(group){
-    group.innerHTML=nodes.map((n,i)=>n.href?`<a class="station-node glass node-${i}" href="${n.href}" ${n.choice?'data-reading-choice aria-haspopup="dialog"':''} data-cats="${n.cats.join(' ')}" ${n.href.startsWith('https')?'target="_blank" rel="noreferrer"':''}><span class="node-icon">${icon(n.type)}</span><span><strong>${n.title}</strong><small>${n.desc}</small></span><span class="node-launch" aria-hidden="true">↗</span></a>`:`<div class="station-node glass node-${i} is-upcoming" data-cats="${n.cats.join(' ')}"><span class="node-icon">${icon(n.type)}</span><span><strong>${n.title}</strong><small>${n.desc}</small></span></div>`).join('');
+    group.innerHTML=nodes.map((n,i)=>n.href?`<a class="station-node glass node-${i}" href="${n.href}" ${n.choice==='investment'?'data-investment-choice aria-haspopup="dialog"':n.choice?'data-reading-choice aria-haspopup="dialog"':''} data-cats="${n.cats.join(' ')}" ${n.href.startsWith('https')&&!n.choice?'target="_blank" rel="noreferrer"':''}><span class="node-icon">${icon(n.type)}</span><span><strong>${n.title}</strong><small>${n.desc}</small></span><span class="node-launch" aria-hidden="true">${n.choice==='investment'?'⌄':'↗'}</span></a>`:`<div class="station-node glass node-${i} is-upcoming" data-cats="${n.cats.join(' ')}"><span class="node-icon">${icon(n.type)}</span><span><strong>${n.title}</strong><small>${n.desc}</small></span></div>`).join('');
     const wires=[];
     for(let i=0;i<4;i++){const y=107+i*138;wires.push(`<path data-cats="${nodes[i].cats.join(' ')}" d="M336 ${y} H377 Q408 ${y} 425 ${(y+345)/2} T510 345"/>`);wires.push(`<path data-cats="${nodes[i+4].cats.join(' ')}" d="M864 ${y} H823 Q792 ${y} 775 ${(y+345)/2} T690 345"/>`);}
     q('.wire-paths').innerHTML=wires.join('');
@@ -433,6 +444,14 @@ body[data-page="station"] .category-bar .filter-check{display:none}@media(min-wi
   });
   q('.reading-choice-close',readingDialog)?.addEventListener('click',()=>readingDialog.close());
   readingDialog?.addEventListener('click',event=>{if(event.target===readingDialog)readingDialog.close()});
+  const investmentDialog=q('#investment-choice-dialog');
+  q('[data-investment-choice]')?.addEventListener('click',event=>{
+    if(!investmentDialog)return;
+    event.preventDefault();
+    investmentDialog.showModal();
+  });
+  q('.reading-choice-close',investmentDialog)?.addEventListener('click',()=>investmentDialog.close());
+  investmentDialog?.addEventListener('click',event=>{if(event.target===investmentDialog)investmentDialog.close()});
   const categoryBar=q('.category-bar'),floatingCategories=matchMedia('(min-width:1100px)');
   if(categoryBar&&document.body.dataset.page==='station'){
     let categoryDrag=null,ignoreCategoryClickUntil=0,categoryBarMoved=false;
