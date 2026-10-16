@@ -90,7 +90,7 @@ window.addEventListener('site-auth-change', (event) => {
   if (!busy) void load();
   else status.textContent = '账号已改变，请点击同步';
 });
-window.addEventListener('focus', () => { if (!busy && !document.querySelector('dialog[open]')) void load(); });
+window.addEventListener('focus', () => { if (!busy && !document.querySelector('dialog[open], .node-inline')) void load(); });
 window.addEventListener('storage', event => {
   if (event.key === 'mywebsite.site-auth-session.v1') {
     try { if (JSON.parse(event.newValue || 'null')?.uid === session?.uid) return; } catch { /* Revalidate a malformed session through CloudBase. */ }
