@@ -31,6 +31,8 @@
   let demoCity = null;
   const visitedCities = new Set();
   const photoCount = 8;
+  const expandedPreview = Boolean(canvas.closest('.travel-preview-full'));
+  const demoDuration = expandedPreview ? 4800 : 3000;
   // Shanghai reference photos: CC0, Wikimedia Commons.
   // https://commons.wikimedia.org/wiki/File:Shanghai_Skyline1.jpg
   // https://commons.wikimedia.org/wiki/File:Shanghai,_Yu_Garden.jpg
@@ -77,7 +79,7 @@
     if (!demoCity || demoTime < 1000) return;
     const city = markers.find(marker => marker.name === demoCity.name);
     if (!city) return;
-    const fade = Math.min(1, (demoTime - 1000) / 200, (3000 - demoTime) / 300);
+    const fade = Math.min(1, (demoTime - 1000) / 200, (demoDuration - demoTime) / 300);
     context.save();
     context.globalAlpha = Math.max(0, fade);
     // A simulated pointer approaches the city before the click pulse.
@@ -106,7 +108,7 @@
     context.restore();
     if (demoTime >= 1650) {
       const appear = Math.min(1, (demoTime - 1650) / 300);
-      const albumWidth = Math.min(148, width * .76);
+      const albumWidth = Math.min(expandedPreview ? 210 : 148, width * .8, (height - 20) / .7);
       const albumHeight = albumWidth * .7;
       const x = Math.max(5, Math.min(width - albumWidth - 5, city.x - albumWidth * .3));
       const y = Math.min(height - albumHeight - 6, city.y + 30);
@@ -363,8 +365,8 @@
       if (visible && !document.hidden && !reducedMotion.matches) {
         // Hold the pointer stage until an unvisited city rotates into view.
         demoTime = demoCity ? demoTime + delta : Math.min(1000, demoTime + delta);
-        if (demoTime >= 3000) {
-          demoTime -= 3000;
+        if (demoTime >= demoDuration) {
+          demoTime -= demoDuration;
           demoCity = null;
         }
         if (!demoCity) {
