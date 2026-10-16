@@ -1983,7 +1983,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     const readerBounds = verseList.getBoundingClientRect();
     const readerVisible = Boolean(verseList.querySelector('.bible-verse'))
       && readerBounds.top < window.innerHeight && readerBounds.bottom > 0;
-    const preserveReaderPosition = stateStorageKey === accountStateKey || readerVisible;
+    const preserveReaderPosition = stateStorageKey === accountStateKey || readerVisible || params.has('book');
     const accountCache = readStoredState(accountStateKey);
     if (accountCache) {
       const cachedVerses = readReadVerses(accountReadVersesKey);
@@ -2030,7 +2030,10 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     }
     if (accountRevision !== readerAccountRevision || session?.uid !== nextSession.uid) return false;
     const cached = cacheSyncedState();
-    renderAll(state.lastRead.verse, { updateLastRead: false, preserveReaderPosition });
+    const targetVerse = preserveReaderPosition
+      ? Number(new URLSearchParams(window.location.search).get('verse') || '') || undefined
+      : state.lastRead.verse;
+    renderAll(targetVerse, { updateLastRead: false, preserveReaderPosition });
     if (!silent) {
       setReadingSyncStatus(cached ? '已同步到云端和本地。' : '云端已保存，本地缓存更新失败。', cached ? 'saved' : 'error');
     }

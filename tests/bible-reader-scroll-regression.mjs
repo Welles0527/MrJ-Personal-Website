@@ -18,7 +18,9 @@ const storeStub = `
     loads: 0, saves: 0,
     holdInitial: new URL(location.href).searchParams.has('delay-first-sync'),
     snapshot: {
-      lastRead: { book: 'heb', chapter: 10, verse: 1, updatedAt: '2026-10-12T00:00:00.000Z' },
+      lastRead: new URL(location.href).searchParams.has('foreign-last-read')
+        ? { book: 'mat', chapter: 20, verse: 1, updatedAt: '2026-10-12T00:00:00.000Z' }
+        : { book: 'heb', chapter: 10, verse: 1, updatedAt: '2026-10-12T00:00:00.000Z' },
       bookmarks: [], notes: [], readVerses: [], bookStatuses: {}, updatedAt: '2026-10-12T00:00:00.000Z'
     }
   };
@@ -38,6 +40,38 @@ const storeStub = `
 const browser = await chromium.launch({ channel: 'chrome', headless: true });
 try {
   for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+    for (const explicitChapter of [true, false]) {
+      const coldContext = await browser.newContext({ viewport, reducedMotion: 'reduce' });
+      const coldPage = await coldContext.newPage();
+      let releaseFullText;
+      const fullTextGate = new Promise(resolve => { releaseFullText = resolve; });
+      await coldPage.route('**/*site-auth.ts*', route => route.fulfill({ contentType: 'application/javascript', body: authStub }));
+      await coldPage.route('**/*bible-reader-cloud-store.ts*', route => route.fulfill({ contentType: 'application/javascript', body: storeStub }));
+      await coldPage.route('**/data/bible/chi-cuv-simp.json', async route => {
+        await fullTextGate;
+        await route.continue();
+      });
+      const target = explicitChapter
+        ? `${pageUrl.replace('verse=1', 'verse=25')}&foreign-last-read=1`
+        : `${baseUrl}/officialwebsite/topics/applications/inspiration-station/theology/?foreign-last-read=1`;
+      await coldPage.goto(target, { waitUntil: 'domcontentloaded' });
+      await coldPage.waitForFunction(() => document.querySelector('[data-reading-sync-status]')?.dataset.status === 'saved');
+      releaseFullText();
+      const expectedBook = explicitChapter ? 'heb' : 'mat';
+      const expectedChapter = explicitChapter ? '10' : '20';
+      const expectedVerse = explicitChapter ? '25' : '1';
+      await coldPage.waitForFunction(() => document.querySelector('[data-verse-list] .bible-verse'));
+      assert.equal(await coldPage.locator('[data-current-title]').textContent(), explicitChapter ? '希伯来书 10' : '马太福音 20',
+        'cold account restoration must honor explicit links, but resume cloud progress when no book is requested');
+      const currentUrl = new URL(coldPage.url());
+      assert.equal(currentUrl.searchParams.get('book'), expectedBook);
+      assert.equal(currentUrl.searchParams.get('chapter'), expectedChapter);
+      assert.equal(currentUrl.searchParams.get('verse'), expectedVerse);
+      assert.equal(await coldPage.locator(`#${expectedBook}-${expectedChapter}-${expectedVerse}`).getAttribute('class').then(value => value.includes('is-target')), true,
+        'full-text loading must preserve the requested verse');
+      console.log(`PASS ${viewport.width}px cold restore: ${explicitChapter ? 'explicit chapter and verse retained' : 'cloud reading position resumed'}`);
+      await coldContext.close();
+    }
     const context = await browser.newContext({ viewport, reducedMotion: 'reduce' });
     const page = await context.newPage();
     await page.addInitScript(() => {
