@@ -58,7 +58,14 @@
 .reading-toolbar .marker-controls{margin:0 0 0 auto;padding:0;border:0;gap:10px}
 .reading-toolbar .marker-controls[hidden]{display:none}
 .visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.user-underline{text-decoration-line:underline;text-decoration-color:var(--underline-color);text-decoration-thickness:2px;text-underline-offset:4px;text-decoration-skip-ink:none}
+.user-underline.highlight-focus{outline:2px solid var(--cream);outline-offset:3px}
+.selection-toolbar{max-width:calc(100vw - 24px);flex-wrap:wrap;border-radius:16px}
+.selection-toolbar[hidden]{display:none}
+.selection-toolbar .selection-apply,.selection-toolbar .marker-swatch,.selection-toolbar .text-action{flex:none}
+.selection-break{display:none}
 @media(max-width:700px){.reading-toolbar{margin-top:18px;padding:13px 0;gap:10px}.reading-layout{order:0}.reading-search{order:1;flex:1 1 160px;min-width:0;max-width:none}.reading-toolbar .marker-controls{order:2;width:100%;margin:0;gap:9px}}
+@media(max-width:700px){.selection-toolbar{gap:8px;padding:9px}.selection-toolbar .selection-apply{font-size:11px}.selection-break{display:block;flex-basis:100%;height:0}}
 .interview-photo{display:block;flex:0 0 194px;width:194px;height:104px;overflow:hidden;border:1px solid #ffffff29;border-radius:12px;background:#151818;box-shadow:0 12px 28px #0006}
 .interview-photo img{display:block;width:100%;height:100%;object-fit:cover;transform:scale(1.19);transition:transform .35s ease}
 .interview-photo:hover img{transform:scale(1.22)}
@@ -101,12 +108,12 @@
     </section>
 
     
-<section id="collectionSection" class="collection-section" aria-labelledby="collectionTitle" hidden><div class="collection-header"><div><h2 id="collectionTitle">我的收藏</h2><p>收藏完整问答，也收藏一句值得反复想的话。</p></div><button class="outline-btn" data-action="reading"><span data-icon="arrowLeft"></span>回到正文</button></div><div class="collection-tabs" role="tablist" aria-label="收藏内容"><button data-collection-tab="highlights" class="active" role="tab" aria-selected="true" aria-controls="collectionContent">高亮语句<span class="mono" id="highlightTotal">0</span></button><button data-collection-tab="questions" role="tab" aria-selected="false" aria-controls="collectionContent">收藏问答<span class="mono" id="savedQuestionTotal">0</span></button><button data-collection-tab="deleted" role="tab" aria-selected="false" aria-controls="collectionContent">已删除<span class="mono" id="deletedTabTotal">0</span></button></div><div id="collectionContent" role="tabpanel"></div></section>
+<section id="collectionSection" class="collection-section" aria-labelledby="collectionTitle" hidden><div class="collection-header"><div><h2 id="collectionTitle">我的收藏</h2><p>收藏完整问答，也收藏值得反复读的连续段落。</p></div><button class="outline-btn" data-action="reading"><span data-icon="arrowLeft"></span>回到正文</button></div><div class="collection-tabs" role="tablist" aria-label="收藏内容"><button data-collection-tab="highlights" class="active" role="tab" aria-selected="true" aria-controls="collectionContent">标注语句<span class="mono" id="highlightTotal">0</span></button><button data-collection-tab="questions" role="tab" aria-selected="false" aria-controls="collectionContent">收藏问答<span class="mono" id="savedQuestionTotal">0</span></button><button data-collection-tab="deleted" role="tab" aria-selected="false" aria-controls="collectionContent">已删除<span class="mono" id="deletedTabTotal">0</span></button></div><div id="collectionContent" role="tabpanel"></div></section>
     <section aria-label="阅读内容" id="readingSection">
       <div class="reading-toolbar">
         <div class="reading-layout" role="group" aria-label="阅读方式"><button id="readingModeBtn" aria-pressed="true"><span data-icon="text"></span>全文</button><button id="listModeBtn" aria-pressed="false"><span data-icon="list"></span>列表</button></div>
         <div class="reading-search"><span data-icon="search"></span><input id="search" type="search" aria-label="搜索并高亮全文中的问题和回答" placeholder="查找关键词或时间点" autocomplete="off"><button id="searchClear" class="search-clear" aria-label="清除搜索" hidden><span data-icon="close"></span></button></div>
-        <div class="marker-controls"><button class="outline-btn brush-toggle" id="brushBtn" aria-pressed="false"><span data-icon="pen"></span>高亮画笔</button><div class="marker-palette" aria-label="文字高亮颜色"><button class="marker-swatch" data-marker-color="yellow" style="--swatch:#E4BB52" aria-label="使用麦穗黄画笔" title="麦穗黄" aria-pressed="true"></button><button class="marker-swatch" data-marker-color="green" style="--swatch:#A6C3A2" aria-label="使用鼠尾草绿画笔" title="鼠尾草绿" aria-pressed="false"></button><button class="marker-swatch" data-marker-color="rose" style="--swatch:#DAA0AD" aria-label="使用玫瑰粉画笔" title="玫瑰粉" aria-pressed="false"></button><button class="marker-swatch" data-marker-color="blue" style="--swatch:#A0BDD7" aria-label="使用灰蓝画笔" title="灰蓝" aria-pressed="false"></button></div><button class="text-action" data-action="deleted" title="查看已删除的问答"><span data-icon="restore"></span>恢复问答</button></div>
+        <div class="marker-controls"><button class="outline-btn brush-toggle" id="brushBtn" aria-pressed="false"><span data-icon="pen"></span>高亮画笔</button><button class="outline-btn brush-toggle" id="underlineBtn" aria-pressed="false">下划线</button><div class="marker-palette" aria-label="文字高亮颜色"><button class="marker-swatch" data-marker-color="yellow" style="--swatch:#E4BB52" aria-label="使用麦穗黄画笔" title="麦穗黄" aria-pressed="true"></button><button class="marker-swatch" data-marker-color="green" style="--swatch:#A6C3A2" aria-label="使用鼠尾草绿画笔" title="鼠尾草绿" aria-pressed="false"></button><button class="marker-swatch" data-marker-color="rose" style="--swatch:#DAA0AD" aria-label="使用玫瑰粉画笔" title="玫瑰粉" aria-pressed="false"></button><button class="marker-swatch" data-marker-color="blue" style="--swatch:#A0BDD7" aria-label="使用灰蓝画笔" title="灰蓝" aria-pressed="false"></button></div><button class="text-action" data-action="deleted" title="查看已删除的问答"><span data-icon="restore"></span>恢复问答</button></div>
         <span id="searchStatus" class="visually-hidden" aria-live="polite">95 个问题全部展开</span>
       </div>
       <div class="qa-list" id="questionList" aria-label="问题列表" hidden></div>
@@ -115,10 +122,10 @@
     </section>    <footer class="footer"><span>曾鸣访谈精华 · 全文阅读版 · Demo v1.3 · 阅读标注版</span><div class="palette"><span class="eyebrow">PALETTE STUDY</span><i style="background:var(--cream)"></i><i style="background:var(--blue)"></i><i style="background:var(--teal)"></i><i style="background:var(--terra)"></i><i style="background:var(--mustard)"></i><i style="background:var(--sage)"></i><i style="background:var(--rose)"></i><i style="background:var(--plum)"></i></div></footer>
   </main>
 </div>
-<dialog class="info-dialog" id="infoDialog" aria-labelledby="infoTitle"><div class="info-top"><h2 id="infoTitle">内容与字幕匹配说明</h2><button class="icon-btn" id="closeInfo" aria-label="关闭内容说明"><span data-icon="close"></span></button></div><p><strong>95 个精选问题，均已匹配上传的 transcript.srt。</strong>保留原清单的八个主题与时间点，每个回答下方另列实际提问字幕时间、回应起止时间。开启“高亮画笔”后拖选文字，可自动标记；也可选中文字后使用浮动高亮工具。高亮语句会自动收入“我的收藏”。</p><p>部分清单时间与实际提问相差几秒，已根据上下文核对起止位置。清单中少量明显转写错误按字幕校对，例如“非智力”改为“非共识”、“不能让人快乐”改为“能不能让人快乐”。</p><p>回答合并了字幕断行，并按阅读需要分段、补充标点，<strong>保留字幕原有措辞</strong>。字幕没有说话人标签；同一回应区间内的少量追问与回应一并保留。字幕中的转写错字尚未对照音频校正。</p><p><a href="https://www.xiaoyuzhoufm.com/episode/6a97f287f03e74ee6b03ea5b" target="_blank" rel="noopener noreferrer">打开完整访谈</a></p><div class="notice">本页只收录你选出的 95 个问题与对应回应。所有文字直接展开，可按主题定位，也可通过关键词或清单时间查找。正文右侧的垃圾桶可删除整段问答；已删除内容可恢复。</div><p>收藏、高亮、已读及删除状态保存在当前浏览器。下载的 HTML 会一并保留当前标注与删除状态，可离线阅读。</p></dialog>
-<div class="selection-toolbar" id="selectionToolbar" role="toolbar" aria-label="选中文字高亮工具" hidden><button class="selection-apply" data-action="mark-selection"><span data-icon="pen"></span>高亮并收藏</button><span class="selection-divider"></span><button class="marker-swatch" data-marker-color="yellow" data-apply-marker style="--swatch:#E4BB52" aria-label="用麦穗黄高亮选中文字" title="麦穗黄" aria-pressed="true"></button><button class="marker-swatch" data-marker-color="green" data-apply-marker style="--swatch:#A6C3A2" aria-label="用鼠尾草绿高亮选中文字" title="鼠尾草绿" aria-pressed="false"></button><button class="marker-swatch" data-marker-color="rose" data-apply-marker style="--swatch:#DAA0AD" aria-label="用玫瑰粉高亮选中文字" title="玫瑰粉" aria-pressed="false"></button><button class="marker-swatch" data-marker-color="blue" data-apply-marker style="--swatch:#A0BDD7" aria-label="用灰蓝高亮选中文字" title="灰蓝" aria-pressed="false"></button><button class="text-action" data-action="cancel-selection" aria-label="关闭高亮工具"><span data-icon="close"></span></button></div>
+<dialog class="info-dialog" id="infoDialog" aria-labelledby="infoTitle"><div class="info-top"><h2 id="infoTitle">内容与字幕匹配说明</h2><button class="icon-btn" id="closeInfo" aria-label="关闭内容说明"><span data-icon="close"></span></button></div><p><strong>95 个精选问题，均已匹配上传的 transcript.srt。</strong>保留原清单的八个主题与时间点，每个回答下方另列实际提问字幕时间、回应起止时间。开启高亮画笔或下划线后拖选文字，也可在选字工具中选择标记或抹除。标注语句会自动收入“我的收藏”。</p><p>部分清单时间与实际提问相差几秒，已根据上下文核对起止位置。清单中少量明显转写错误按字幕校对，例如“非智力”改为“非共识”、“不能让人快乐”改为“能不能让人快乐”。</p><p>回答合并了字幕断行，并按阅读需要分段、补充标点，<strong>保留字幕原有措辞</strong>。字幕没有说话人标签；同一回应区间内的少量追问与回应一并保留。字幕中的转写错字尚未对照音频校正。</p><p><a href="https://www.xiaoyuzhoufm.com/episode/6a97f287f03e74ee6b03ea5b" target="_blank" rel="noopener noreferrer">打开完整访谈</a></p><div class="notice">本页只收录你选出的 95 个问题与对应回应。所有文字直接展开，可按主题定位，也可通过关键词或清单时间查找。正文右侧的垃圾桶可删除整段问答；已删除内容可恢复。</div><p>收藏、标注、已读及删除状态保存在当前浏览器。下载的 HTML 会一并保留当前标注与删除状态，可离线阅读。</p></dialog>
+ <div class="selection-toolbar" id="selectionToolbar" role="toolbar" aria-label="选中文字标注工具" hidden><button class="selection-apply" data-action="mark-selection"><span data-icon="pen"></span>高亮收藏</button><button class="selection-apply" data-action="underline-selection">划线收藏</button><span class="selection-divider"></span><button class="marker-swatch" data-marker-color="yellow" data-apply-marker style="--swatch:#E4BB52" aria-label="用麦穗黄高亮选中文字" title="麦穗黄" aria-pressed="true"></button><button class="marker-swatch" data-marker-color="green" data-apply-marker style="--swatch:#A6C3A2" aria-label="用鼠尾草绿高亮选中文字" title="鼠尾草绿" aria-pressed="false"></button><button class="marker-swatch" data-marker-color="rose" data-apply-marker style="--swatch:#DAA0AD" aria-label="用玫瑰粉高亮选中文字" title="玫瑰粉" aria-pressed="false"></button><button class="marker-swatch" data-marker-color="blue" data-apply-marker style="--swatch:#A0BDD7" aria-label="用灰蓝高亮选中文字" title="灰蓝" aria-pressed="false"></button><span class="selection-break" aria-hidden="true"></span><button class="selection-apply" data-action="erase-highlight">抹除高亮</button><button class="selection-apply" data-action="erase-underline">抹除划线</button><button class="text-action" data-action="cancel-selection" aria-label="关闭标注工具"><span data-icon="close"></span></button></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<script id="embeddedReadingState" type="application/json">{"schemaVersion":2,"favorites":[],"read":[],"deleted":[],"highlights":[],"color":"yellow"}</script>
+<script id="embeddedReadingState" type="application/json">{"schemaVersion":3,"favorites":[],"read":[],"deleted":[],"highlights":[],"color":"yellow"}</script>
 <script>
   'use strict';
   const ICONS={
@@ -292,7 +299,7 @@
     if(typeof value.text==='string'&&value.text!==raw.slice(start,end))return null;
     if(typeof value.id!=='string'||!/^[a-z0-9-]{1,100}$/i.test(value.id))return null;
     const groupId=typeof value.groupId==='string'&&/^[a-z0-9-]{1,100}$/i.test(value.groupId)?value.groupId:value.id;
-    return {id:value.id,groupId,questionId:value.questionId,area:value.area,paragraph,start,end,text:raw.slice(start,end),color:Object.hasOwn(HIGHLIGHT_COLORS,value.color)?value.color:'yellow',createdAt:Number.isFinite(value.createdAt)?value.createdAt:0};
+    return {id:value.id,groupId,questionId:value.questionId,area:value.area,paragraph,start,end,text:raw.slice(start,end),kind:value.kind==='underline'?'underline':'highlight',color:Object.hasOwn(HIGHLIGHT_COLORS,value.color)?value.color:'yellow',createdAt:Number.isFinite(value.createdAt)?value.createdAt:0};
   }
   let persisted={};
   try{const embedded=$('embeddedReadingState');if(embedded)persisted=JSON.parse(embedded.textContent)||{}}catch(e){}
@@ -300,8 +307,8 @@
   const storedHighlights=[...(Array.isArray(persisted.highlights)?persisted.highlights:[]),...(Array.isArray(persisted.unresolvedHighlights)?persisted.unresolvedHighlights:[])];
   const loadedHighlights=storedHighlights.map(normalizeHighlight).filter(Boolean);
   const unresolvedHighlights=storedHighlights.filter(item=>!normalizeHighlight(item));
-  const state={storageFailed:false,theme:null,view:'reading',layout:'reading',collectionTab:'highlights',query:'',matchIndex:-1,matches:[],brushActive:false,color:Object.hasOwn(HIGHLIGHT_COLORS,persisted.color)?persisted.color:'yellow',pendingSelection:[],favorites:new Set(safeIds(persisted.favorites)),read:new Set(safeIds(persisted.read)),deleted:new Set(safeIds(persisted.deleted)),highlights:[...new Map(loadedHighlights.map(item=>[item.id,item])).values()]};
-  const snapshot=()=>({schemaVersion:2,favorites:[...state.favorites],read:[...state.read],deleted:[...state.deleted],highlights:state.highlights.map(item=>({...item})),unresolvedHighlights,color:state.color});
+  const state={storageFailed:false,theme:null,view:'reading',layout:'reading',collectionTab:'highlights',query:'',matchIndex:-1,matches:[],brushActive:false,brushKind:'highlight',color:Object.hasOwn(HIGHLIGHT_COLORS,persisted.color)?persisted.color:'yellow',pendingSelection:[],favorites:new Set(safeIds(persisted.favorites)),read:new Set(safeIds(persisted.read)),deleted:new Set(safeIds(persisted.deleted)),highlights:[...new Map(loadedHighlights.map(item=>[item.id,item])).values()]};
+  const snapshot=()=>({schemaVersion:3,favorites:[...state.favorites],read:[...state.read],deleted:[...state.deleted],highlights:state.highlights.map(item=>({...item})),unresolvedHighlights,color:state.color});
   const saveState=()=>{try{localStorage.setItem(STORAGE_KEY,JSON.stringify(snapshot()));state.storageFailed=false;return true}catch(e){state.storageFailed=true;return false}};
   const activeQuestions=()=>QUESTIONS.filter(q=>!state.deleted.has(q.id));
   function blockHighlights(questionId,area,paragraph){return state.highlights.filter(item=>item.questionId===questionId&&item.area===area&&item.paragraph===paragraph)}
@@ -313,10 +320,11 @@
     const points=[...boundaries].sort((a,b)=>a-b);let result='';
     for(let i=0;i<points.length-1;i++){
       const start=points[i],end=points[i+1];if(end===start)continue;
-      const manual=[...marks].reverse().find(item=>item.start<=start&&item.end>=end),searched=searchRanges.some(range=>range.start<=start&&range.end>=end);
+      const covering=[...marks].reverse().filter(item=>item.start<=start&&item.end>=end),highlight=covering.find(item=>item.kind!=='underline'),underline=covering.find(item=>item.kind==='underline'),searched=searchRanges.some(range=>range.start<=start&&range.end>=end);
       let piece=escapeHTML(text.slice(start,end));
       if(searched)piece='<span class="search-needle">'+piece+'</span>';
-      if(manual){const color=HIGHLIGHT_COLORS[manual.color]||HIGHLIGHT_COLORS.yellow;piece='<mark class="user-highlight" data-highlight-id="'+escapeHTML(manual.id)+'" style="--marker-fill:'+color.fill+'">'+piece+'</mark>'}
+      if(underline){const color=HIGHLIGHT_COLORS[underline.color]||HIGHLIGHT_COLORS.yellow;piece='<span class="user-underline" data-highlight-id="'+escapeHTML(underline.id)+'" style="--underline-color:'+color.fill+'">'+piece+'</span>'}
+      if(highlight){const color=HIGHLIGHT_COLORS[highlight.color]||HIGHLIGHT_COLORS.yellow;piece='<mark class="user-highlight" data-highlight-id="'+escapeHTML(highlight.id)+'" style="--marker-fill:'+color.fill+'">'+piece+'</mark>'}
       else if(searched)piece='<mark class="search-highlight">'+piece+'</mark>';
       result+=piece;
     }
@@ -339,9 +347,14 @@
   }
   function navigateMatch(direction){if(!state.matches.length)return;if(state.layout==='list')setLayout('reading',false);state.matchIndex=state.matchIndex<0?(direction>0?0:state.matches.length-1):(state.matchIndex+direction+state.matches.length)%state.matches.length;const id=state.matches[state.matchIndex];document.querySelectorAll('.qa-entry.search-current').forEach(row=>row.classList.remove('search-current'));$(id).classList.add('search-current');$(id).scrollIntoView({behavior:'smooth',block:'start'});updateSearchStatus()}
   function highlightGroups(){
-    const groups=new Map();
-    for(const item of state.highlights){if(state.deleted.has(item.questionId))continue;const key=item.groupId+'::'+item.questionId;if(!groups.has(key))groups.set(key,{key,questionId:item.questionId,color:item.color,createdAt:item.createdAt,items:[]});const group=groups.get(key);group.items.push(item);group.createdAt=Math.max(group.createdAt,item.createdAt);group.color=item.color}
-    return [...groups.values()].map(group=>{group.items.sort((a,b)=>(a.area==='question'?0:1)-(b.area==='question'?0:1)||a.paragraph-b.paragraph||a.start-b.start);group.text=group.items.map(item=>item.text).join(String.fromCharCode(10));return group}).sort((a,b)=>b.createdAt-a.createdAt);
+    const groups=[],latest=new Map(),ordered=state.highlights.filter(item=>!state.deleted.has(item.questionId)).sort((a,b)=>findQuestion(a.questionId).index-findQuestion(b.questionId).index||(a.area==='question'?0:1)-(b.area==='question'?0:1)||a.paragraph-b.paragraph||a.start-b.start);
+    for(const item of ordered){
+      const bucket=item.questionId+'::'+item.kind+'::'+item.color,group=latest.get(bucket),prior=group?.items.at(-1),sameParagraph=prior&&prior.area===item.area&&prior.paragraph===item.paragraph,gap=sameParagraph?getBlockText(item.questionId,item.area,item.paragraph).slice(prior.end,item.start):'',adjacent=sameParagraph&&/^[\s，。！？；：、,.!?;:…“”"'（）()—-]*$/.test(gap),nextParagraph=prior&&prior.area==='answer'&&item.area==='answer'&&item.paragraph===prior.paragraph+1;
+      if(group&&((prior.groupId===item.groupId&&!sameParagraph)||adjacent||nextParagraph)){group.items.push(item);group.createdAt=Math.min(group.createdAt,item.createdAt)}
+      else{const next={key:item.id,questionId:item.questionId,kind:item.kind,color:item.color,createdAt:item.createdAt,items:[item]};groups.push(next);latest.set(bucket,next)}
+    }
+    for(const group of groups){const parts=[];for(const item of group.items){const last=parts.at(-1);if(last&&last.area===item.area&&last.paragraph===item.paragraph){last.end=Math.max(last.end,item.end)}else parts.push({area:item.area,paragraph:item.paragraph,start:item.start,end:item.end})}group.text=parts.map(part=>getBlockText(group.questionId,part.area,part.paragraph).slice(part.start,part.end)).join(String.fromCharCode(10))}
+    return groups.sort((a,b)=>a.createdAt-b.createdAt||state.highlights.findIndex(item=>item.id===a.key)-state.highlights.findIndex(item=>item.id===b.key));
   }
   function syncProgress(){
     const active=activeQuestions(),groups=highlightGroups(),saved=active.filter(q=>state.favorites.has(q.id)),read=active.filter(q=>state.read.has(q.id));
@@ -371,13 +384,13 @@
     return '<article class="collection-entry"><div class="collection-meta"><span class="mono">'+q.time+'</span><span>'+escapeHTML(THEMES.find(theme=>theme.id===q.theme).title)+'</span></div>'+question+'<div class="saved-answer">'+answer+'</div><div class="collection-actions"><button class="outline-btn" data-goto-question="'+q.id+'">'+icon('arrowUpRight')+'回到原文</button><button class="text-action" data-star="'+q.id+'">'+icon('bookmark')+'取消收藏</button><button class="text-action" data-delete="'+q.id+'">'+icon('trash')+'删除问答</button></div></article>';
   }
   function renderCollections(){
-    const groups=highlightGroups(),saved=activeQuestions().filter(q=>state.favorites.has(q.id)),deleted=QUESTIONS.filter(q=>state.deleted.has(q.id));
+    const groups=highlightGroups(),saved=[...state.favorites].map(findQuestion).filter(q=>q&&!state.deleted.has(q.id)),deleted=QUESTIONS.filter(q=>state.deleted.has(q.id));
     $('highlightTotal').textContent=groups.length;$('savedQuestionTotal').textContent=saved.length;$('deletedTabTotal').textContent=deleted.length;
     document.querySelectorAll('[data-collection-tab]').forEach(button=>{const active=button.dataset.collectionTab===state.collectionTab;button.classList.toggle('active',active);button.setAttribute('aria-selected',active)});
     let content='';
     if(state.collectionTab==='highlights'){
-      content=groups.map(group=>{const q=findQuestion(group.questionId),color=HIGHLIGHT_COLORS[group.color];return '<article class="collection-entry highlight-entry"><div class="collection-meta"><span class="highlight-color-dot" style="background:'+color.fill+'"></span><span>'+color.name+'</span><span class="mono">'+q.time+'</span></div><blockquote class="saved-quote">'+escapeHTML(group.text)+'</blockquote><p class="quote-source">来自提问：'+escapeHTML(q.question)+'</p><div class="collection-actions"><button class="outline-btn" data-goto-highlight="'+escapeHTML(group.items[0].id)+'">'+icon('arrowUpRight')+'回到原文</button><button class="text-action" data-copy-highlight="'+escapeHTML(group.key)+'">'+icon('copy')+'复制语句</button><button class="text-action" data-remove-highlight="'+escapeHTML(group.key)+'">'+icon('eraser')+'取消高亮</button></div></article>'}).join('');
-      if(!content)content='<div class="collection-empty">'+icon('pen')+'<h3>把值得反复读的语句留下来</h3><p>在正文中拖选文字，点击“高亮”；也可开启画笔后直接拖选。标记会自动出现在这里。</p><button class="primary-btn" data-action="reading">开始阅读与标记</button></div>';
+      content=groups.map(group=>{const q=findQuestion(group.questionId),color=HIGHLIGHT_COLORS[group.color],label=group.kind==='underline'?'下划线':'高亮';return '<article class="collection-entry highlight-entry"><div class="collection-meta"><span class="highlight-color-dot" style="background:'+color.fill+'"></span><span>'+label+' · '+color.name+'</span><span class="mono">'+q.time+'</span></div><blockquote class="saved-quote">'+escapeHTML(group.text)+'</blockquote><p class="quote-source">来自提问：'+escapeHTML(q.question)+'</p><div class="collection-actions"><button class="outline-btn" data-goto-highlight="'+escapeHTML(group.items[0].id)+'">'+icon('arrowUpRight')+'回到原文</button><button class="text-action" data-copy-highlight="'+escapeHTML(group.key)+'">'+icon('copy')+'复制语句</button><button class="text-action" data-remove-highlight="'+escapeHTML(group.key)+'">'+icon('eraser')+'抹除'+label+'</button></div></article>'}).join('');
+      if(!content)content='<div class="collection-empty">'+icon('pen')+'<h3>把值得反复读的语句留下来</h3><p>在正文中拖选文字，可选择高亮或下划线收藏。连续段落会合并展示。</p><button class="primary-btn" data-action="reading">开始阅读与标记</button></div>';
     }else if(state.collectionTab==='questions'){
       content=saved.map(savedQuestionHTML).join('');
       if(!content)content='<div class="collection-empty">'+icon('bookmark')+'<h3>还没有收藏问答</h3><p>点击提问右侧的书签图标，即可收藏整段问答。</p><button class="primary-btn" data-action="reading">回到正文</button></div>';
@@ -387,22 +400,25 @@
     }
     $('collectionContent').innerHTML=content;
   }
-  function addHighlights(fragments,color=state.color){
+  function subtractAnnotations(fragments,kind){
+    let changed=false;const kept=[];
+    for(const item of state.highlights){let pieces=[item];for(const fragment of fragments){if(item.kind!==kind||item.questionId!==fragment.questionId||item.area!==fragment.area||item.paragraph!==fragment.paragraph)continue;const raw=getBlockText(item.questionId,item.area,item.paragraph);pieces=pieces.flatMap(piece=>{if(fragment.start>=piece.end||fragment.end<=piece.start)return [piece];changed=true;const ranges=[];if(fragment.start>piece.start)ranges.push([piece.start,fragment.start]);if(fragment.end<piece.end)ranges.push([fragment.end,piece.end]);return ranges.map(([start,end],index)=>({...piece,id:index===0?piece.id:uid('hl'),start,end,text:raw.slice(start,end)}))})}kept.push(...pieces)}
+    if(changed)state.highlights=kept;return changed;
+  }
+  function addAnnotations(fragments,kind,color=state.color){
     const groupId=uid('grp'),createdAt=Date.now(),created=[];
-    for(const fragment of fragments){
-      if(state.deleted.has(fragment.questionId))continue;
-      const prior=state.highlights.find(item=>item.questionId===fragment.questionId&&item.area===fragment.area&&item.paragraph===fragment.paragraph&&item.start===fragment.start&&item.end===fragment.end);
-      const item=normalizeHighlight({...fragment,id:prior?.id||uid('hl'),groupId,color,createdAt});if(!item)continue;
-      if(prior)state.highlights=state.highlights.filter(value=>value.id!==prior.id);
-      state.highlights.push(item);created.push(item);
-    }
-    if(created.length){saveState();refresh();toast('已高亮，语句已收入我的收藏')}
+    for(const fragment of fragments){if(state.deleted.has(fragment.questionId))continue;const item=normalizeHighlight({...fragment,id:uid('hl'),groupId,kind,color,createdAt});if(item)created.push(item)}
+    if(created.length){subtractAnnotations(created,kind);state.highlights.push(...created);saveState();refresh();toast(kind==='underline'?'已划线并收入我的收藏':'已高亮并收入我的收藏')}
     return created;
   }
+  function eraseAnnotations(fragments,kind){
+    const before=[...state.highlights];if(!subtractAnnotations(fragments,kind)){toast(kind==='underline'?'选中内容没有下划线':'选中内容没有高亮');return}
+    saveState();refresh();toast(kind==='underline'?'已抹除划线':'已抹除高亮',()=>{state.highlights=before;saveState();refresh()});
+  }
   function removeHighlightGroup(key){
-    const removed=state.highlights.filter(item=>item.groupId+'::'+item.questionId===key);if(!removed.length)return;
-    state.highlights=state.highlights.filter(item=>item.groupId+'::'+item.questionId!==key);saveState();refresh();
-    toast('已取消高亮',()=>{state.highlights.push(...removed);saveState();refresh()});
+    const group=highlightGroups().find(item=>item.key===key);if(!group)return;const ids=new Set(group.items.map(item=>item.id)),before=[...state.highlights];
+    state.highlights=state.highlights.filter(item=>!ids.has(item.id));saveState();refresh();
+    toast(group.kind==='underline'?'已抹除划线':'已抹除高亮',()=>{state.highlights=before;saveState();refresh()});
   }
   function gotoQuestion(id){if(!validIds.has(id)||state.deleted.has(id))return;const q=findQuestion(id);state.theme=q.theme;setView('reading',false);setLayout('reading',false);$(id).scrollIntoView({behavior:'smooth',block:'start'})}
   function gotoHighlight(id){const item=state.highlights.find(value=>value.id===id);if(!item||state.deleted.has(item.questionId))return;state.theme=findQuestion(item.questionId).theme;setView('reading',false);const mark=$(item.questionId).querySelector('[data-highlight-id="'+item.id+'"]');if(mark){mark.scrollIntoView({behavior:'smooth',block:'center'});mark.classList.add('highlight-focus');setTimeout(()=>mark.classList.remove('highlight-focus'),1800)}else $(item.questionId).scrollIntoView({behavior:'smooth',block:'start'})}
@@ -425,23 +441,24 @@
   function hideSelectionMenu(){state.pendingSelection=[];$('selectionToolbar').hidden=true}
   function showSelectionMenu(rect){
     const menu=$('selectionToolbar');menu.hidden=false;
-    const width=menu.offsetWidth||288,left=Math.max(12,Math.min(rect.left,window.innerWidth-width-12));
-    menu.style.left=left+'px';menu.style.top=(rect.bottom+60<window.innerHeight?rect.bottom+9:Math.max(10,rect.top-55))+'px';
+    const width=menu.offsetWidth||288,height=menu.offsetHeight||55,left=Math.max(12,Math.min(rect.left,window.innerWidth-width-12));
+    menu.style.left=left+'px';menu.style.top=(rect.bottom+height+16<window.innerHeight?rect.bottom+9:Math.max(10,rect.top-height-9))+'px';
   }
   function handleSelection(auto=false){
     if($('infoDialog').open)return;
     const selection=window.getSelection();if(!selection||selection.isCollapsed||!selection.rangeCount){hideSelectionMenu();return}
     const range=selection.getRangeAt(0),fragments=captureSelection(range);if(!fragments.length){hideSelectionMenu();return}
     state.pendingSelection=fragments;
-    if(auto&&state.brushActive){applyPendingHighlight();return}
+    if(auto&&state.brushActive){applyPendingAnnotation(state.brushKind);return}
     const boxes=range.getClientRects(),rect=boxes.length?boxes[boxes.length-1]:range.getBoundingClientRect();showSelectionMenu(rect);
   }
-  function applyPendingHighlight(color=state.color){const fragments=state.pendingSelection.map(item=>({...item}));if(!fragments.length)return;state.color=Object.hasOwn(HIGHLIGHT_COLORS,color)?color:'yellow';window.getSelection()?.removeAllRanges();hideSelectionMenu();addHighlights(fragments,state.color);syncBrush()}
+  function applyPendingAnnotation(kind,color=state.color){const fragments=state.pendingSelection.map(item=>({...item}));if(!fragments.length)return;state.color=Object.hasOwn(HIGHLIGHT_COLORS,color)?color:'yellow';window.getSelection()?.removeAllRanges();hideSelectionMenu();addAnnotations(fragments,kind,state.color);syncBrush()}
+  function erasePendingAnnotation(kind){const fragments=state.pendingSelection.map(item=>({...item}));if(!fragments.length)return;window.getSelection()?.removeAllRanges();hideSelectionMenu();eraseAnnotations(fragments,kind)}
   function syncBrush(){
-    $('brushBtn').classList.toggle('active',state.brushActive);$('brushBtn').setAttribute('aria-pressed',state.brushActive);document.body.classList.toggle('brush-on',state.brushActive);
+    for(const [id,kind] of [['brushBtn','highlight'],['underlineBtn','underline']]){const active=state.brushActive&&state.brushKind===kind;$(id).classList.toggle('active',active);$(id).setAttribute('aria-pressed',active)}document.body.classList.toggle('brush-on',state.brushActive);
     document.querySelectorAll('[data-marker-color]').forEach(button=>{const active=button.dataset.markerColor===state.color;button.classList.toggle('active',active);button.setAttribute('aria-pressed',active)});
   }
-  function toggleBrush(){state.brushActive=!state.brushActive;syncBrush();if(state.brushActive&&state.pendingSelection.length)applyPendingHighlight();else if(state.brushActive)toast('画笔已开启，拖选文字即可标记');else toast('画笔已关闭')}
+  function toggleBrush(kind='highlight'){const same=state.brushActive&&state.brushKind===kind;state.brushKind=kind;state.brushActive=!same;syncBrush();if(state.brushActive&&state.pendingSelection.length)applyPendingAnnotation(kind);else if(state.brushActive)toast(kind==='underline'?'下划线已开启，拖选文字即可收藏':'画笔已开启，拖选文字即可标记');else toast('画笔已关闭')}
   let toastTimer,undoAction=null;
   function toast(message,undo=null){undoAction=undo;$('toast').innerHTML='<span>'+escapeHTML(message+(state.storageFailed?'（当前浏览器无法保存，请下载 HTML 保留）':''))+'</span>'+(undo?'<button data-action="undo">撤销</button>':'');$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),undo?10000:2800)}
   function undoLatest(){if(!undoAction)return;const run=undoAction;undoAction=null;run();toast('已撤销')}
@@ -449,7 +466,7 @@
   function showInfo(){hideSelectionMenu();$('infoDialog').showModal();document.body.classList.add('modal-open')}
   async function copyText(text,message){try{if(navigator.clipboard&&window.isSecureContext)await navigator.clipboard.writeText(text);else{const area=document.createElement('textarea');area.value=text;area.style.position='fixed';area.style.opacity='0';document.body.appendChild(area);area.select();const ok=document.execCommand('copy');area.remove();if(!ok)throw new Error('copy failed')}toast(message)}catch(e){toast('复制未成功，可选中文字后复制')}}
   async function copyQuestion(id){const q=findQuestion(id);if(!q||state.deleted.has(id))return;const ranges=q.answer.ranges.map(range=>range.label).join('、');await copyText([q.time+'｜小珺：'+q.question,'','曾鸣：'+q.answer.text,'','来源：transcript.srt','回应字幕区间：'+ranges].join(String.fromCharCode(10)),'问答已复制，保留字幕来源')}
-  async function copyHighlight(key){const group=highlightGroups().find(value=>value.key===key);if(!group)return;const q=findQuestion(group.questionId);await copyText([group.text,'','来自：'+q.time+'｜'+q.question,'来源：transcript.srt'].join(String.fromCharCode(10)),'高亮语句已复制')}
+  async function copyHighlight(key){const group=highlightGroups().find(value=>value.key===key);if(!group)return;const q=findQuestion(group.questionId);await copyText([group.text,'','来自：'+q.time+'｜'+q.question,'来源：transcript.srt'].join(String.fromCharCode(10)),'标注语句已复制')}
   function injectSnapshot(html,payload){
     const serialized=JSON.stringify(payload).replace(/</g,'\\u003c'),scriptAt=html.indexOf('<script>');
     if(scriptAt<0)throw new Error('missing app script');
@@ -472,17 +489,17 @@
       if(button.dataset.delete){deleteQuestion(button.dataset.delete);return}if(button.dataset.restore){restoreQuestion(button.dataset.restore);return}
       if(button.dataset.collectionTab){state.collectionTab=button.dataset.collectionTab;hideSelectionMenu();renderCollections();return}
       if(button.dataset.gotoQuestion){gotoQuestion(button.dataset.gotoQuestion);return}if(button.dataset.gotoHighlight){gotoHighlight(button.dataset.gotoHighlight);return}if(button.dataset.copyHighlight){copyHighlight(button.dataset.copyHighlight);return}if(button.dataset.removeHighlight){removeHighlightGroup(button.dataset.removeHighlight);return}
-      if(button.dataset.markerColor){state.color=button.dataset.markerColor;if(button.hasAttribute('data-apply-marker'))applyPendingHighlight(state.color);else{syncBrush();saveState()}return}
-      if(button.dataset.action==='mark-selection'){applyPendingHighlight();return}if(button.dataset.action==='cancel-selection'){hideSelectionMenu();return}if(button.dataset.action==='undo'){undoLatest();return}if(button.dataset.action==='restore-all'){restoreAll();return}if(button.dataset.action==='deleted'){state.collectionTab='deleted';setView('collection');return}if(button.dataset.action==='reading'){state.theme=null;setView('reading');return}
+      if(button.dataset.markerColor){state.color=button.dataset.markerColor;if(button.hasAttribute('data-apply-marker'))applyPendingAnnotation('highlight',state.color);else{syncBrush();saveState()}return}
+      if(button.dataset.action==='mark-selection'){applyPendingAnnotation('highlight');return}if(button.dataset.action==='underline-selection'){applyPendingAnnotation('underline');return}if(button.dataset.action==='erase-highlight'){erasePendingAnnotation('highlight');return}if(button.dataset.action==='erase-underline'){erasePendingAnnotation('underline');return}if(button.dataset.action==='cancel-selection'){hideSelectionMenu();return}if(button.dataset.action==='undo'){undoLatest();return}if(button.dataset.action==='restore-all'){restoreAll();return}if(button.dataset.action==='deleted'){state.collectionTab='deleted';setView('collection');return}if(button.dataset.action==='reading'){state.theme=null;setView('reading');return}
     });
     $('allBtn').addEventListener('click',()=>{state.theme=null;setView('reading',false);setLayout('reading')});$('homeLink').addEventListener('click',()=>{state.theme=null;setView('reading',false);setLayout('reading',false)});
-    $('favoritesBtn').addEventListener('click',()=>{state.collectionTab='highlights';setView('collection')});$('brushBtn').addEventListener('click',toggleBrush);
+    $('favoritesBtn').addEventListener('click',()=>{state.collectionTab='highlights';setView('collection')});$('brushBtn').addEventListener('click',()=>toggleBrush('highlight'));$('underlineBtn').addEventListener('click',()=>toggleBrush('underline'));
     $('readingModeBtn').addEventListener('click',()=>setLayout('reading',false));$('listModeBtn').addEventListener('click',()=>setLayout('list',false));
     $('search').addEventListener('input',event=>{state.query=event.target.value;hideSelectionMenu();applySearch()});$('searchClear').addEventListener('click',()=>{state.query='';$('search').value='';hideSelectionMenu();applySearch();$('search').focus()});$('search').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();navigateMatch(event.shiftKey?-1:1)}});
     $('infoBtn').addEventListener('click',showInfo);$('closeInfo').addEventListener('click',()=>$('infoDialog').close());$('infoDialog').addEventListener('close',()=>document.body.classList.remove('modal-open'));$('infoDialog').addEventListener('click',event=>{if(event.target===$('infoDialog')){const box=$('infoDialog').getBoundingClientRect();if(event.clientX<box.left||event.clientX>box.right||event.clientY<box.top||event.clientY>box.bottom)$('infoDialog').close()}});
     $('downloadBtn').addEventListener('click',downloadHTML);
     $('menuBtn').addEventListener('click',()=>{const open=$('sidebar').classList.toggle('mobile-open');$('mobileBackdrop').classList.toggle('show',open);$('menuBtn').setAttribute('aria-expanded',open)});$('mobileBackdrop').addEventListener('click',closeMobileNav);
-    document.addEventListener('mousedown',event=>{if(event.target.closest('#selectionToolbar,#brushBtn,[data-marker-color]'))event.preventDefault()});
+    document.addEventListener('mousedown',event=>{if(event.target.closest('#selectionToolbar,#brushBtn,#underlineBtn,[data-marker-color]'))event.preventDefault()});
     document.addEventListener('mouseup',event=>{if(event.target.closest('button,input,select,textarea'))return;handleSelection(true)});
     document.addEventListener('touchend',event=>{if(event.target.closest('button,input,select,textarea'))return;setTimeout(()=>handleSelection(true),100)},{passive:true});
     document.addEventListener('keyup',event=>{if(event.key==='Shift'||event.key.startsWith('Arrow'))handleSelection(false)});
