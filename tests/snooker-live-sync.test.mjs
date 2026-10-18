@@ -82,6 +82,13 @@ test('follows list pagination and preserves last valid scores and timestamp afte
     await synchronize({ now: new Date(now.getTime() + 600000), root,
       request: async url => url.endsWith('official-id') ? payload([]) : { data: [entry] } });
     assert.deepEqual((await read()).events, valid.events);
+    const scheduled = normalizeTournament(event.id, payload([match('m1', 'Scheduled'), match('m2', 'Scheduled')]), now.toISOString());
+    await writeFile(path.join(root, 'live-scores.js'), 'window.CUE_LIVE_SCORES = ' + JSON.stringify({ version: 1, events: { [event.id]: scheduled } }) + ';');
+    await synchronize({ now, root, request });
+    const started = await read();
+    assert.equal(started.events[event.id].status, 'live');
+    assert.equal(started.events[event.id].matches.length, 1);
+    assert.equal(started.failures[event.id], undefined);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

@@ -134,7 +134,9 @@ export async function synchronize({ now = new Date(), request = getJson, root = 
           if (!tournament) throw new Error('WST 尚无可匹配的赛事数据');
           const result = normalizeTournament(event.id, await request(endpoint + tournament.id), now.toISOString());
           if (!result.matches.length) throw new Error('WST 尚未公布场次');
-          if (previous.events[event.id]?.matches.length > result.matches.length) {
+          const previousEvent = previous.events[event.id];
+          const tournamentStarted = previousEvent?.status === 'upcoming' && result.status !== 'upcoming';
+          if (previousEvent?.matches.length > result.matches.length && !tournamentStarted) {
             throw new Error('WST 返回场次数量减少，保留上次完整记录');
           }
           next.events[event.id] = result;
