@@ -133,6 +133,8 @@
 @media(max-width:680px){.personal-plan-month{overflow-x:auto}.personal-plan-month .big-grid{min-width:700px}.big-grid .personal-plan-task{padding:5px;font-size:12px;gap:3px}.personal-plan-notice{line-height:1.6}.plan-mobile-hint{display:block;margin-top:4px}}
 .month-bubble-chart{padding:24px;border:1px solid var(--border);border-radius:14px;background:var(--card)}.month-bubble-help{margin:0 0 16px;color:var(--muted);font-size:13px}.month-bubble-scroll{overflow:hidden;padding:12px 0 8px}.month-bubble-plot,.month-bubble-axis{zoom:var(--chart-scale,.1)}.month-bubble-plot{position:relative;width:var(--plot-width);height:var(--plot-height);margin:0 24px 0 80px;border-left:1px solid var(--border);border-bottom:1px solid var(--border);background:repeating-linear-gradient(to right,transparent 0,transparent calc(var(--day-width) - 1px),var(--border) calc(var(--day-width) - 1px),var(--border) var(--day-width))}.month-bubble-row{position:absolute;left:0;right:0;top:var(--row-top);height:var(--row-height);border-bottom:1px dashed var(--border);pointer-events:none}.month-bubble-row>span{position:absolute;right:calc(100% + 12px);top:50%;transform:translateY(-50%);color:var(--bubble-color);font-size:12px;white-space:nowrap}.month-bubble{position:absolute;left:var(--x);top:var(--y);width:var(--size);height:var(--size);transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px;border:1px solid var(--bubble-color);border-radius:50%;background:color-mix(in srgb,var(--bubble-color) 24%,var(--card));color:var(--text);font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;box-shadow:0 3px 12px var(--shadow)}.month-bubble:hover,.month-bubble:focus-visible{background:color-mix(in srgb,var(--bubble-color) 45%,var(--card));outline:2px solid var(--bubble-color);outline-offset:3px;z-index:2}.month-bubble-label{max-width:100%;white-space:nowrap}.month-bubble-total{font-size:10px;font-weight:400;color:var(--text)}.month-bubble-axis{position:relative;width:var(--plot-width);height:30px;margin:12px 24px 0 80px;color:var(--muted);font-size:12px}.month-bubble-axis span{position:absolute;left:var(--x);transform:translateX(-50%);white-space:nowrap}.month-bubble-caption{margin:8px 0 0;text-align:center;color:var(--muted);font-size:12px}.month-bubble-empty{margin:24px 0;color:var(--muted);text-align:center}@media(max-width:680px){.month-bubble-chart{padding:16px 12px}.month-bubble-help{font-size:12px}}
 
+
+
 .life-year-legend{display:flex;gap:12px 18px;flex-wrap:wrap;margin:18px 0 10px;color:var(--muted);font-size:12px}.life-year-legend span,.life-date-detail p{display:flex;align-items:center;gap:7px}.life-year-legend svg{width:17px;height:17px;color:var(--purple)}.life-year-note{color:var(--muted);font-size:12px;line-height:1.7;margin:0 0 16px}
 :root[data-theme] .life-annual .mini-day{min-height:44px;grid-template-rows:18px auto;align-content:start;gap:3px;padding:4px 1px}.life-date-icons{display:flex;justify-content:center;align-content:start;flex-wrap:wrap;gap:2px;min-height:15px;max-width:100%}.life-marker{display:inline-flex;align-items:center;justify-content:center;color:var(--purple);font-style:normal}.life-marker svg{width:13px;height:13px;stroke-width:2}.life-marker.marker-important svg{fill:currentColor}.life-annual .mini-day.today .life-marker{color:inherit}.life-annual .mini-day.has-life-marker:not(.today){background:var(--surface-strong)}.life-annual .mini-day:focus-visible{outline:2px solid var(--purple);outline-offset:2px}.life-date-detail{margin:20px 0}.life-date-detail svg{width:23px;height:23px;color:var(--purple);flex:none}.life-date-detail p{margin:14px 0}
 /* Travel uses pale blue surfaces with readable blue accents. */
@@ -392,4 +394,18 @@ render();
 body.life-week-page .life-week-panel{border:0!important;border-radius:0!important;background:transparent}
 .topright>.calendar-account-tools{display:flex!important;align-items:center;gap:10px;min-width:0}
 @media(max-width:680px){.calendar-topbar .topright{flex-wrap:wrap;justify-content:flex-end}.topright>.calendar-account-tools{flex-wrap:wrap;justify-content:flex-end}}
-</style><script>loadCodexSnapshot();loadFootballSnapshot();setInterval(loadFootballSnapshot,300000);</script></body></html>
+</style><script>
+const renderWithSportsBack = render;
+render = function(){
+  renderWithSportsBack();
+  if(state.page !== 'sports') return;
+  const title = document.querySelector('main h1');
+  if(!title) return;
+  const back = document.createElement('a');
+  back.href = '#overview';
+  back.textContent = '返回超级日历 ↗';
+  back.style.cssText = 'display:inline-block;margin-left:16px;font-size:13px;line-height:1.5;font-weight:500;letter-spacing:normal;white-space:nowrap;color:var(--purple)';
+  title.style.cssText += ';display:flex;align-items:center;flex-wrap:wrap;gap:6px 0';
+  title.append(back);
+};
+render();loadCodexSnapshot();loadFootballSnapshot();setInterval(loadFootballSnapshot,300000);</script></body></html>

@@ -239,7 +239,18 @@
   }
 
   const previousRender = render;
-  render = () => { document.querySelector('.redesign-match-dialog')?.remove(); previousRender(); adaptPage(); };
+  render = () => {
+    document.querySelector('.redesign-match-dialog')?.remove(); previousRender(); adaptPage();
+    const title = document.querySelector('main h1');
+    if (title) {
+      const back = document.createElement('a');
+      back.href = '../super-calendar/index.html#overview';
+      back.textContent = '返回超级日历 ↗';
+      back.style.cssText = 'display:inline-block;margin-left:16px;font-size:13px;line-height:1.5;font-weight:500;letter-spacing:normal;white-space:nowrap;color:var(--selection)';
+      title.style.cssText += ';display:flex;align-items:center;flex-wrap:wrap;gap:6px 0';
+      title.append(back);
+    }
+  };
   document.addEventListener('click', event => {
     const row = event.target.closest?.('[data-redesign-match]');
     if (row) { showMatch(row); return; }
