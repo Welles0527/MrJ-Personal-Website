@@ -1661,10 +1661,18 @@ const tools = [
             "skills"
             "experience"
             "education"
-            "tools";
+            "tools"
+            "contact";
           grid-template-columns: minmax(0, 1fr);
           grid-template-rows: auto;
           border-radius: 24px;
+        }
+
+        .resume-shell > .find-me {
+          grid-area: contact;
+          margin: 0;
+          padding: 28px 22px;
+          border-top: 1px solid var(--line);
         }
 
         .resume-shell::before {
@@ -1968,6 +1976,9 @@ const tools = [
         </section>
 
         <section class="panel skills-panel" aria-labelledby="skills-title">
+          <h2 class="section-title" id="skills-title">
+            <span class="i18n" data-zh="能力图谱" data-en="Capabilities">能力图谱</span>
+          </h2>
           <p class="section-eyebrow i18n" data-zh="自我评估" data-en="Self Assessment">自我评估</p>
           <section class="work-skills-feature">
             <h3 class="skill-group-title capability-title--emphasis i18n" data-zh="工作技能" data-en="Work">工作技能</h3>
@@ -1995,9 +2006,6 @@ const tools = [
               </svg>
             </div>
           </section>
-          <h2 class="section-title" id="skills-title">
-            <span class="i18n" data-zh="能力图谱" data-en="Capabilities">能力图谱</span>
-          </h2>
           <div class="skill-groups">
             <section>
               <h3 class="skill-group-title capability-title--emphasis i18n" data-zh="AI 技能（熟练度）" data-en="AI Skills (Proficiency)">AI 技能（熟练度）</h3>
@@ -2074,6 +2082,16 @@ const tools = [
 
     <script is:inline>
       const root = document.documentElement;
+      const findMe = document.querySelector('.find-me');
+      const profileActions = document.querySelector('.profile-actions');
+      const resumeShell = document.querySelector('.resume-shell');
+      const mobileContact = matchMedia('(max-width:720px)');
+      const placeFindMe = () => {
+        const parent = mobileContact.matches ? resumeShell : profileActions;
+        if (findMe.parentElement !== parent) parent.append(findMe);
+      };
+      placeFindMe();
+      mobileContact.addEventListener('change', placeFindMe);
       const languageButton = document.querySelector("[data-language-toggle]");
       const languageLabel = document.querySelector("[data-language-label]");
       const themeButton = document.querySelector("[data-theme-toggle]");

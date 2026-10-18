@@ -1,4 +1,22 @@
 (() => {
+  const pagePath = location.pathname.replace(/\/$/, '') || '/';
+  const mainPages = ['/', '/homepage-root.html', '/officialwebsite/homepage-root.html', '/officialwebsite/about.html', '/officialwebsite/workstation.html', '/officialwebsite/resume', '/officialwebsite/resume/index.html'];
+  if (mainPages.includes(pagePath) && !document.querySelector('.site-page-back')) {
+    const backStyle = document.createElement('style');
+    backStyle.textContent = '.has-site-page-back{padding-bottom:calc(76px + env(safe-area-inset-bottom))}.site-page-back{position:fixed;left:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:90;min-height:44px;padding:9px 15px;border:1px solid #bc916b80;border-radius:99px;background:#181512eb;color:#f2d4b9;font-family:inherit;font-size:14px;line-height:1.5;box-shadow:0 4px 18px #0004;cursor:pointer}.site-page-back:focus-visible{outline:2px solid #ffb277;outline-offset:3px}@media print{.site-page-back{display:none}.has-site-page-back{padding-bottom:0}}';
+    document.head.append(backStyle);
+    document.body.classList.add('has-site-page-back');
+    const back = document.createElement('button');
+    back.type = 'button';
+    back.className = 'site-page-back';
+    back.textContent = '← 返回';
+    back.setAttribute('aria-label', '返回上一页，无历史记录时返回首页');
+    back.addEventListener('click', () => {
+      if (history.length > 1 && document.referrer && new URL(document.referrer).origin === location.origin) history.back();
+      else location.assign('/');
+    });
+    document.body.append(back);
+  }
   const selector = 'a[href^="mailto:welles.gu@gmail.com"],[data-copy="MrJ-0527"],[data-contact-qr]';
   let dialog;
 

@@ -507,6 +507,13 @@ html:not(.dark) .invest-factor>div{background:#6f503212}
 .project-showcase-refined .resume-capability-demo .resume-paper-entry{margin-top:1cqw}
 @media(max-width:760px){
   .project-showcase-refined .project-gallery>.feature-card{padding:14px}
+  .project-showcase-refined .resume-capability-demo .resume-paper{gap:1cqw;justify-content:space-between;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  .project-showcase-refined .resume-capability-demo .resume-paper>*{flex-shrink:0}
+  .project-showcase-refined .resume-capability-demo .resume-paper-header{margin-bottom:0}
+  .project-showcase-refined .resume-capability-demo .resume-paper-subtitle{min-height:0;font-size:2.3cqw}
+  .project-showcase-refined .resume-capability-demo .resume-paper-entry{flex:0 0 auto;margin-top:0}
+  .project-showcase-refined .resume-capability-demo .resume-paper-entry>strong{font-size:3cqw;line-height:1.6;overflow-wrap:anywhere}
+  .project-showcase-refined .resume-capability-demo .resume-paper-entry>small{font-size:2.6cqw;line-height:1.6;margin-top:2px}
   .project-showcase-refined .project-gallery>.feature-card[data-project="resume"]{--demo-aspect:1}
   .project-showcase-refined .feature-card .feature-copy{margin:10px 0 12px}
   .project-showcase-refined .feature-card .feature-copy h3{font-size:21px}
