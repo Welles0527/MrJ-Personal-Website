@@ -376,11 +376,22 @@ const hymnCards = [
 ---
 
 <section class="bible-app" data-bible-app>
-  <section class="bible-stage" aria-label="J-Space">
-    <div class="bible-stage-copy">
-      <p>J-Space</p>
-      <button class="bible-stage-login" type="button" data-action="cloud-login">账号登录</button>
+  <header class="bible-account-bar" aria-label="账号与返回">
+    <div class="bible-account-controls">
+      <button type="button" data-action="cloud-login">账号登录</button>
+      <button type="button" data-action="cloud-logout" hidden>退出账号</button>
+      <a href={`${basePath}workstation.html`} data-action="go-back">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6M8 12h12" /></svg>
+        返回
+      </a>
     </div>
+    <div class="bible-account-feedback">
+      <span class="bible-login-account" data-login-account hidden></span>
+      <span class="bible-reading-sync-status" data-reading-sync-status aria-live="polite"></span>
+    </div>
+  </header>
+
+  <section class="bible-stage" aria-label="圣经网站">
 
     <div class="bible-book-shell" data-feature-book aria-live="polite">
       <div class="bible-book-shadow" aria-hidden="true"></div>
@@ -474,7 +485,6 @@ const hymnCards = [
           </div>
           <div class="bible-reading-actions">
             <button type="button" class="bible-theme-toggle" data-action="toggle-reading-theme" aria-pressed="false">深色阅读</button>
-            <button type="button" data-action="cloud-login">账号登录</button>
             <div class="bible-speech-actions" aria-label="章节朗读控制">
               <select class="bible-speech-rate" data-speech-rate aria-label="朗读倍速" title="朗读倍速">
                 <option value="1">1×</option>
@@ -498,8 +508,6 @@ const hymnCards = [
                 </svg>
               </button>
             </div>
-            <span class="bible-login-account" data-login-account hidden></span>
-            <span class="bible-reading-sync-status" data-reading-sync-status aria-live="polite"></span>
           </div>
         </header>
 
@@ -745,6 +753,7 @@ const hymnCards = [
   }
 
   .bible-app {
+    --bible-account-bar-height: 5.5rem;
     --gold: #d8b35f;
     --gold-soft: #f1d995;
     --night: #030303;
@@ -857,27 +866,94 @@ const hymnCards = [
     color: #6e3b12;
   }
 
-  .bible-stage-copy {
-    position: relative;
-    z-index: 2;
+  .bible-account-bar {
+    position: sticky;
+    z-index: 40;
+    top: 0;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    max-width: 31rem;
-    padding-top: clamp(1.3rem, 2.4vw, 2.2rem);
+    box-sizing: border-box;
+    height: var(--bible-account-bar-height);
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.25rem;
+    padding: 0.5rem clamp(1rem, 2.8vw, 2.4rem);
+    border-bottom: 1px solid rgba(216, 179, 95, 0.16);
+    background: #050505;
   }
 
-  .bible-stage-login {
-    min-height: 2.5rem;
+  .bible-account-controls {
+    display: flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+
+  .bible-account-controls button,
+  .bible-account-controls a {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
     padding: 0.45rem 0.8rem;
     border: 1px solid rgba(216, 179, 95, 0.55);
     border-radius: 999px;
     background: rgba(38, 29, 13, 0.92);
     color: #f6d78b;
     cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
   }
 
-  .bible-stage-copy p,
+  .bible-account-controls :is(button, a):focus-visible {
+    outline: 2px solid #ffd67f;
+    outline-offset: 2px;
+  }
+
+  .bible-account-controls button:disabled {
+    cursor: wait;
+    opacity: 0.55;
+  }
+
+  .bible-account-controls svg {
+    width: 1rem;
+    height: 1rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+  }
+
+  .bible-account-bar [hidden] {
+    display: none;
+  }
+
+  .bible-account-feedback {
+    display: flex;
+    min-height: 1.1rem;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .bible-account-bar .bible-login-account,
+  .bible-account-bar .bible-reading-sync-status {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 60%;
+    color: var(--gold-soft);
+    overflow: hidden;
+    text-align: right;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .bible-account-bar .bible-login-account {
+    max-width: 40%;
+  }
+
   .bible-section-kicker,
   .bible-page-kicker,
   .bible-reader-brand p,
@@ -3211,8 +3287,18 @@ const hymnCards = [
       border-radius: 1.1rem;
     }
 
-    .bible-stage-copy {
-      padding-top: 1.5rem;
+    .bible-account-bar {
+      padding-inline: 0.82rem;
+    }
+
+    .bible-account-controls {
+      gap: 0.4rem;
+    }
+
+    .bible-account-controls button,
+    .bible-account-controls a {
+      padding-inline: 0.7rem;
+      font-size: 0.8rem;
     }
 
     .bible-book-shell {
@@ -3272,7 +3358,7 @@ const hymnCards = [
     .bible-reader-sidebar {
       position: fixed;
       z-index: 30;
-      top: 0;
+      top: var(--bible-account-bar-height);
       bottom: 0;
       left: 0;
       width: min(88vw, 350px);
@@ -3423,7 +3509,7 @@ const hymnCards = [
     .bible-chapter-strip {
       position: sticky;
       z-index: 20;
-      top: 0;
+      top: var(--bible-account-bar-height);
     }
 
     .bible-book-status-marker img {

@@ -1,4 +1,4 @@
-import { cloudErrorMessage, getCloudDb, getCloudSession, getRememberedSession, signInWithPassword, startEmailSignUp } from './site-auth';
+import { cloudErrorMessage, getCloudDb, getCloudSession, getRememberedSession, signInWithPassword, signOut, startEmailSignUp } from './site-auth';
 import type { CloudSession } from './site-auth';
 import { accountStorageKey, resolveAccountSnapshot } from './bible-reader-account-state';
 import { createBibleReaderCloudStore } from './bible-reader-cloud-store';
@@ -331,6 +331,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   const verifyField = get<HTMLElement>('[data-verify-field]');
   const loginStatus = get<HTMLElement>('[data-login-status]');
   const cloudLoginButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-action="cloud-login"]')];
+  const cloudLogoutButton = root.querySelector<HTMLButtonElement>('[data-action="cloud-logout"]');
   const readChapterButton = get<HTMLButtonElement>('[data-action="read-chapter"]');
   const pauseReadingButton = get<HTMLButtonElement>('[data-action="toggle-speech-pause"]');
   const speechRateSelect = get<HTMLSelectElement>('[data-speech-rate]');
@@ -389,6 +390,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   const setReadingSyncStatus = (message: string, status = 'idle') => {
     if (!readingSyncStatus) return;
     readingSyncStatus.textContent = message;
+    readingSyncStatus.title = message;
     readingSyncStatus.dataset.status = status;
   };
   let session: CloudSession | null = null;
@@ -427,6 +429,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   const renderLoginState = (nextSession: CloudSession | null) => {
     loginStatus.textContent = nextSession ? `已登录：${nextSession.account}` : '未登录时会先保存到本机浏览器。';
     cloudLoginButtons.forEach((button) => { button.textContent = nextSession ? '同步账号' : '账号登录'; });
+    if (cloudLogoutButton) cloudLogoutButton.hidden = !nextSession;
     if (loginAccount) {
       loginAccount.hidden = !nextSession;
       loginAccount.textContent = nextSession?.account ?? '';
@@ -2258,6 +2261,28 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       if (expandedNoteGroups.has(key)) expandedNoteGroups.delete(key);
       else expandedNoteGroups.add(key);
       renderNotes();
+    }
+    if (trigger.dataset.action === 'go-back') {
+      if (document.referrer && new URL(document.referrer).origin === location.origin && history.length > 1) {
+        event.preventDefault();
+        history.back();
+      }
+      return;
+    }
+    if (trigger.dataset.action === 'cloud-logout' && cloudLogoutButton) {
+      cloudLogoutButton.disabled = true;
+      cloudLoginButtons.forEach((button) => { button.disabled = true; });
+      void signOut().then(() => {
+        if (loginModal.open) loginModal.close();
+        setReadingSyncStatus('已退出账号。');
+        notify('已退出账号。');
+      }).catch((error) => {
+        setReadingSyncStatus(cloudErrorMessage(error, '退出账号失败，请重试。'), 'error');
+      }).finally(() => {
+        cloudLogoutButton.disabled = false;
+        cloudLoginButtons.forEach((button) => { button.disabled = false; });
+      });
+      return;
     }
     if (trigger.dataset.action === 'cloud-login') {
       const activeSession = session ?? getRememberedSession();

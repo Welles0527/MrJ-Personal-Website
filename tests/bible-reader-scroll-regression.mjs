@@ -4,12 +4,20 @@ import { chromium } from 'playwright';
 const baseUrl = process.env.BIBLE_SCROLL_TEST_URL || 'http://127.0.0.1:4362';
 const pageUrl = `${baseUrl}/officialwebsite/topics/applications/inspiration-station/theology/?book=heb&chapter=10&verse=1`;
 const authStub = `
-  const session = { uid: 'scroll-regression-user', account: 'scroll-regression@example.com' };
+  let session = new URL(location.href).searchParams.has('signed-out') ? null
+    : { uid: 'scroll-regression-user', account: 'scroll-regression@example.com' };
   export const getRememberedSession = () => session;
   export const getCloudSession = async () => session;
   export const getCloudDb = () => ({});
-  export const signInWithPassword = async () => session;
-  export const signOut = async () => undefined;
+  export const signInWithPassword = async () => {
+    session = { uid: 'scroll-regression-user', account: 'scroll-regression@example.com' };
+    return session;
+  };
+  export const signOut = async () => {
+    window.__bibleSignOutCalls = (window.__bibleSignOutCalls || 0) + 1;
+    session = null;
+    window.dispatchEvent(new CustomEvent('site-auth-change', { detail: null }));
+  };
   export const startEmailSignUp = async () => async () => session;
   export const cloudErrorMessage = (error, fallback) => error?.message || fallback;
 `;
@@ -135,7 +143,7 @@ try {
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'reader must not overflow horizontally');
     await page.screenshot({ path: `.private/bible-reader-scroll-${viewport.width}.png`, fullPage: false });
 
-    const syncButton = page.locator('.bible-reading-header [data-action="cloud-login"]');
+    const syncButton = page.locator('.bible-account-bar [data-action="cloud-login"]');
     await syncButton.scrollIntoViewIfNeeded();
     const beforeManualSync = await position();
     const manualLoads = await page.evaluate(() => window.__bibleScrollFixture.loads);
@@ -163,6 +171,7 @@ try {
     await page.goto(`${pageUrl}&delay-first-sync=1`);
     await page.waitForFunction(() => document.querySelectorAll('[data-verse-list] .bible-verse').length === 39
       && window.__bibleScrollFixture?.releaseInitial);
+    await page.waitForTimeout(250);
     await page.locator('#heb-10-25').scrollIntoViewIfNeeded();
     const beforeAccountRestore = await position();
     await page.evaluate(() => {
@@ -173,9 +182,79 @@ try {
     assert.equal(await page.locator('[data-current-title]').textContent(), '希伯来书 10', 'delayed account restoration must not interrupt an active reader');
     const afterAccountRestore = await position();
     assert.ok(Math.abs(afterAccountRestore.reader - beforeAccountRestore.reader) <= 3 && Math.abs(afterAccountRestore.page - beforeAccountRestore.page) <= 3,
-      `${viewport.width}px delayed account restoration must preserve the reading viewport`);
+      `${viewport.width}px delayed account restoration must preserve the reading viewport: ${JSON.stringify({ before: beforeAccountRestore, after: afterAccountRestore })}`);
     console.log(`PASS ${viewport.width}px delayed account restoration preserves the current chapter and viewport`);
+
+    const homeUrl = `${baseUrl}/officialwebsite/topics/applications/inspiration-station/theology/`;
+    await page.goto(homeUrl);
+    await page.waitForFunction(() => document.querySelector('[data-login-account]')?.textContent === 'scroll-regression@example.com');
+    assert.equal(await page.locator('[data-action="cloud-login"]').count(), 1, 'only one sync entry may remain');
+    assert.equal(await page.locator('.bible-reading-header [data-action="cloud-login"]').count(), 0);
+    assert.equal(await page.getByText('J-Space', { exact: true }).count(), 0);
+    assert.equal(await page.locator('[data-action="cloud-logout"]').isVisible(), true);
+    await page.waitForTimeout(250);
+    await page.evaluate(() => scrollTo(0, 0));
+    await page.screenshot({ path: `.private/bible-account-toolbar-home-${viewport.width}.png` });
+    const controls = await page.locator('.bible-account-controls').boundingBox();
+    assert.ok(controls && controls.x + controls.width <= viewport.width && controls.y < 30, 'account controls must be in the top-right toolbar');
+    const toolbarHeight = await page.locator('.bible-account-bar').evaluate(node => node.getBoundingClientRect().height);
+    await page.evaluate(() => {
+      document.querySelector('[data-reading-sync-status]').textContent = '暂时无法核实登录会话，将自动重试。请稍后重试。'.repeat(4);
+      scrollTo(0, 800);
+    });
+    await page.waitForTimeout(250);
+    assert.equal(await page.locator('.bible-account-bar').evaluate(node => node.getBoundingClientRect().height), toolbarHeight,
+      'sync messages must not resize the toolbar or move the reading position');
+    assert.ok(await page.locator('.bible-account-bar').evaluate(node => Math.abs(node.getBoundingClientRect().top) <= 1),
+      'account controls must remain available while reading');
+    const toolbarLayout = await page.locator('.bible-account-bar').evaluate(node => {
+      const bar = node.getBoundingClientRect();
+      return [...node.querySelectorAll('.bible-account-controls button, .bible-account-controls a')].map(button => {
+        const rect = button.getBoundingClientRect();
+        return { label: button.textContent.trim(), top: rect.top, bottom: rect.bottom, barTop: bar.top, barBottom: bar.bottom };
+      });
+    });
+    assert.ok(toolbarLayout.every(rect => rect.top >= rect.barTop && rect.bottom <= rect.barBottom),
+      `toolbar buttons must not be clipped: ${JSON.stringify(toolbarLayout)}`);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+    await page.screenshot({ path: `.private/bible-account-toolbar-reader-${viewport.width}.png` });
+
+    await page.locator('[data-action="cloud-logout"]').click();
+    await page.waitForFunction(() => document.querySelector('[data-action="cloud-logout"]').hidden);
+    assert.equal(await page.evaluate(() => window.__bibleSignOutCalls), 1);
+    assert.equal(await page.locator('[data-login-account]').isHidden(), true);
+    assert.equal(await syncButton.textContent(), '账号登录');
+    assert.equal(await page.locator('[data-login-modal]').evaluate(node => node.open), false, 'logout must not automatically open a login dialog');
+    await syncButton.click();
+    await page.locator('[data-login-form] input[name="email"]').fill('scroll-regression@example.com');
+    await page.locator('[data-login-form] input[name="password"]').fill('fixture-only-password');
+    await page.locator('[data-login-form] button[type="submit"]').click();
+    await page.waitForFunction(() => !document.querySelector('[data-login-modal]').open && !document.querySelector('[data-action="cloud-logout"]').hidden);
+    assert.equal(await syncButton.textContent(), '同步账号');
+    assert.equal(await page.locator('.bible-account-bar').evaluate(node => node.getBoundingClientRect().height), toolbarHeight);
+    console.log(`PASS ${viewport.width}px single sticky account toolbar, logout, login and stable layout`);
     await context.close();
+
+    const guestContext = await browser.newContext({ viewport });
+    await guestContext.route('**/*site-auth.ts*', route => route.fulfill({ contentType: 'application/javascript', body: authStub }));
+    const workstationUrl = `${baseUrl}/officialwebsite/workstation.html`;
+    const guestUrl = `${homeUrl}?signed-out=1`;
+    await guestContext.route('**/workstation.html', route => route.fulfill({ contentType: 'text/html', body: `<a id="open-bible" href="${guestUrl}">Open Bible</a>` }));
+    const guest = await guestContext.newPage();
+    await guest.goto(guestUrl);
+    await guest.waitForSelector('[data-action="cloud-login"]');
+    assert.equal(await guest.locator('[data-action="cloud-logout"]').isHidden(), true);
+    await guest.locator('[data-action="cloud-login"]').click();
+    assert.equal(await guest.locator('[data-login-modal]').evaluate(node => node.open), true);
+    await guest.locator('[data-action="close-login"]').click();
+    await guest.locator('[data-action="go-back"]').click();
+    await guest.waitForURL(workstationUrl);
+    await guest.locator('#open-bible').click();
+    await guest.waitForURL(guestUrl);
+    await guest.locator('[data-action="go-back"]').click();
+    await guest.waitForURL(workstationUrl);
+    console.log(`PASS ${viewport.width}px guest login, direct-entry fallback and same-site back navigation`);
+    await guestContext.close();
   }
 } finally {
   await browser.close();
