@@ -177,6 +177,25 @@
     const fallback = /^(Wildcard|Qualifier|Winner of Match|To be decided)/i.test(name) ? '球员待定' : '暂无官方照片';
     return `<span class="match-portrait"><img src="${escape(photo || './player-placeholder.svg')}" alt="${escape(photo ? player(name) + '的官方照片' : fallback)}" title="${escape(photo ? player(name) : fallback)}" loading="lazy" referrerpolicy="no-referrer"></span>`;
   };
+  window.CUE_GET_EVENT_PLAYERS = id => {
+    const matches = snapshot?.events?.[id]?.matches || [];
+    const key = name => String(name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’‘]/g, "'").trim().toLowerCase();
+    const entrants = new Map();
+    matches.forEach(match => [match.home, match.away].forEach(name => {
+      if (!name || /^(Wildcard|Qualifier|Winner of Match|To be decided)/i.test(name)) return;
+      if (!entrants.has(key(name))) entrants.set(key(name), { name: player(name), en: name,
+        photo: assets[name]?.[1] ? `https://images.gc.wstservices.co.uk/600x600/${assets[name][1]}` : playerPhotos[name] || playerPhotos[name.replace(/'/g, '’')] || './player-placeholder.svg',
+        eliminated: false });
+    }));
+    matches.forEach(match => {
+      if (match.status !== 'ended' || /group|round robin|league stage/i.test(match.round || '') ||
+          match.homeScore == null || match.awayScore == null || Number(match.homeScore) === Number(match.awayScore)) return;
+      const loser = Number(match.homeScore) < Number(match.awayScore) ? match.home : match.away;
+      const entrant = entrants.get(key(loser));
+      if (entrant) entrant.eliminated = true;
+    });
+    return [...entrants.values()].sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
+  };
   const entrant = (name, side, eliminated = false) => {
     const code = assets[name]?.[0] || playerMeta[name]?.[3];
     const country = countries[code];

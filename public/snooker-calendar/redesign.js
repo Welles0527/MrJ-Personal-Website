@@ -88,29 +88,48 @@
     }
   `;
   stylesheet.textContent += `
-    .redesign-panel [data-redesign-match]{grid-template-columns:minmax(0,1fr)!important;min-height:104px!important;padding:10px 18px!important}
+    .redesign-panel [data-redesign-match]{grid-template-columns:180px minmax(0,1fr)!important;min-height:116px!important;padding:12px 30px 12px 18px!important}
     .redesign-panel .match-when,.redesign-panel .knockout-match-meta,.redesign-panel .redesign-round-label,.redesign-panel .redesign-chevron,.redesign-panel .match-flag{display:none!important}
-    .redesign-panel .match-pair,.redesign-panel .knockout-match-players{width:100%;grid-template-columns:minmax(0,1fr) 100px minmax(0,1fr)!important;align-items:center}
+    .redesign-panel .match-pair,.redesign-panel .knockout-match-players{grid-column:2;width:min(100%,440px);margin-inline:auto;grid-template-columns:minmax(0,1fr) 80px minmax(0,1fr)!important;align-items:center;gap:12px!important}
     .redesign-panel .match-entrant,.redesign-panel .match-entrant-away{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center;gap:5px!important;text-align:center}
     .redesign-panel .match-name,.redesign-panel .match-entrant-away .match-name{align-items:center!important;text-align:center!important;width:100%}
     .redesign-panel .match-name>[data-bracket-player]{font-size:13px!important;line-height:1.35;overflow-wrap:normal}
-    .redesign-panel .match-portrait{width:48px!important;height:54px!important}
+    .redesign-panel .match-portrait-wrap{display:block!important;width:56px!important;min-width:0!important;left:auto!important;right:auto!important;align-self:center!important}
+    .redesign-panel .match-portrait{width:56px!important;height:62px!important}
     .redesign-panel .match-portrait img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:contain!important;object-position:center!important;transform:none!important}
     .redesign-panel .match-score,.redesign-panel .knockout-score{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px!important;overflow:visible}
     .redesign-panel .match-score>div:not(.match-points){display:flex;align-items:center;justify-content:center;gap:7px}
     .redesign-panel .match-score>.compact-match-clock,.redesign-panel .knockout-score>.compact-match-clock{display:block!important;font-size:11px!important;line-height:1.4;color:var(--muted);font-weight:500}
     .redesign-panel .compact-score-values{display:flex;align-items:center;justify-content:center;gap:7px}
     .redesign-panel .match-points{display:none!important}
-    .compact-match-date{padding:10px 18px 5px;font-size:12px;font-weight:600;color:var(--muted)}
+    .compact-match-date{display:none!important}
+    .compact-fixture-time{grid-column:1;grid-row:1;display:flex;flex-direction:column;justify-content:center;align-self:center;gap:4px;font-size:16px;line-height:1.4;color:var(--muted);white-space:nowrap}
+    .compact-fixture-time strong{font-size:24px;line-height:1.2;color:var(--text)}
     .redesign-dialog-pair .match-flag{display:none!important}
     .inline-bracket .match-fixture,.inline-bracket .knockout-match,.inline-bracket .bracket-match{position:relative}
     .match-favorite{position:absolute;top:5px;right:8px;z-index:2;padding:3px 6px;border:0;border-radius:5px;background:transparent;color:var(--muted);font-size:10px;line-height:1.5;white-space:nowrap;cursor:pointer}
     .match-favorite[aria-pressed="true"]{color:var(--selection)}
+    .redesign-panel .match-controls-row{justify-content:flex-end}
+    .redesign-panel .match-status-filters{flex:0 1 auto!important;margin-left:auto;justify-content:flex-end;min-width:0}
+    .match-view-switch{display:flex;gap:4px;margin-right:auto;padding:3px;border:1px solid var(--line);border-radius:8px}
+    .match-view-switch button{padding:7px 10px;border:0;border-radius:5px;background:transparent;color:var(--muted);font:inherit;font-size:12px;white-space:nowrap;cursor:pointer}
+    .match-view-switch button[aria-pressed="true"]{background:var(--selection);color:var(--selection-ink)}
+    .roster-gallery[hidden],.redesign-panel [data-match-list][hidden]{display:none!important}
+    .roster-gallery{padding:18px 0}
+    .roster-gallery>p{margin:0 0 18px;color:var(--muted);font-size:12px}
+    .roster-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:20px 14px}
+    .roster-player{margin:0;min-width:0;text-align:center}
+    .roster-player img{display:block;width:82px;height:94px;object-fit:contain;object-position:center;margin:0 auto 8px;border:1px solid var(--line);border-radius:9px;background:var(--card)}
+    .roster-player figcaption{font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+    .roster-player figcaption small{display:block;font-size:10px;color:var(--muted)}
+    .roster-player.is-eliminated{opacity:.2}
+    .redesign-panel[data-roster-view="players"] .match-date-calendar,.redesign-panel[data-roster-view="players"] .match-status-filters,.redesign-panel[data-roster-view="players"] .match-player-filters,.redesign-panel[data-roster-view="players"] .earlier-matches,.redesign-panel[data-roster-view="players"] .match-filter-empty{display:none!important}
+    @media(max-width:680px){.match-view-switch{flex:1 0 100%;box-sizing:border-box;margin-bottom:4px}.redesign-panel .match-status-filters{flex:1 1 0!important;flex-wrap:nowrap!important;overflow-x:auto!important;justify-content:flex-start}.redesign-panel .match-status-filters button{flex-shrink:0}.redesign-panel .match-player-filters{flex:0 0 120px}.roster-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px 8px}.roster-player img{width:70px;height:82px}.roster-player figcaption{font-size:11px}}
     .match-favorites-list{display:grid;gap:0;margin:20px 0}
     .saved-match{display:grid;grid-template-columns:220px minmax(0,1fr) auto;align-items:center;gap:16px;padding:19px 0;border-bottom:1px solid var(--line)}
     .saved-match small{display:block;color:var(--muted);margin-top:6px}.saved-match>b{font-size:16px}.saved-match>b span{font-size:12px;color:var(--muted);font-weight:400;margin:0 10px}.saved-match .match-favorite{position:static;font-size:12px}
     @media(max-width:680px){.saved-match{grid-template-columns:minmax(0,1fr) auto;gap:12px}.saved-match>b{grid-column:1/-1;grid-row:2;font-size:14px}.saved-match>.match-favorite{grid-column:2;grid-row:1}}
-    @media(max-width:680px){.redesign-panel [data-redesign-match]{padding:9px 8px!important;min-height:100px!important}.redesign-panel .match-pair,.redesign-panel .knockout-match-players{grid-template-columns:minmax(0,1fr) 68px minmax(0,1fr)!important}.redesign-panel .match-name>[data-bracket-player]{font-size:11px!important}.redesign-panel .match-portrait{width:43px!important;height:48px!important}}
+    @media(max-width:680px){.redesign-panel [data-redesign-match]{grid-template-columns:96px minmax(0,1fr)!important;padding:22px 8px 10px!important;min-height:120px!important;gap:5px!important}.redesign-panel .match-pair,.redesign-panel .knockout-match-players{grid-template-columns:minmax(0,1fr) 42px minmax(0,1fr)!important;gap:4px!important}.redesign-panel .match-name>[data-bracket-player]{font-size:11px!important}.redesign-panel .match-portrait-wrap,.redesign-panel .match-portrait{width:43px!important}.redesign-panel .match-portrait{height:48px!important}.compact-fixture-time{font-size:11px;gap:5px}.compact-fixture-time strong{font-size:20px}}
   `;
   document.head.append(stylesheet);
 
@@ -125,6 +144,14 @@
     if (saved && typeof saved === 'object' && !Array.isArray(saved)) matchFavorites = saved;
   } catch {}
   const favoriteRecords = new Map();
+  state.matchViewByEvent ||= {};
+  function setMatchView(panel, view) {
+    const players = view === 'players';
+    panel.dataset.rosterView = view;
+    panel.querySelector('[data-match-list]').hidden = players;
+    panel.querySelector('.roster-gallery').hidden = !players;
+    panel.querySelectorAll('[data-match-view]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.matchView === view)));
+  }
   const favoriteButton = key => `<button type="button" class="match-favorite" data-match-favorite="${escape(key)}" aria-pressed="${Boolean(matchFavorites[key])}" aria-label="${matchFavorites[key] ? '取消收藏比赛' : '收藏比赛'}">${matchFavorites[key] ? '★ 已收藏' : '☆ 收藏'}</button>`;
   const persistFavorites = () => {
     try { localStorage.setItem(favoriteKey, JSON.stringify(matchFavorites)); } catch {}
@@ -250,13 +277,16 @@
           values.append(...score.childNodes);
           score.append(values);
         }
-        if (row.dataset.matchStatus !== 'ended') {
-          const time = document.createElement('small');
-          time.className = 'compact-match-clock';
-          time.textContent = clock(row) || '时间待定';
-          score.prepend(time);
-        }
       }
+      const date = row.dataset.matchDate;
+      const time = document.createElement('time');
+      time.className = 'compact-fixture-time';
+      const validDate = /^\d{4}-\d{2}-\d{2}$/.test(date || '');
+      const weekday = validDate ? new Intl.DateTimeFormat('zh-CN', { timeZone: 'Asia/Shanghai', weekday: 'long' }).format(new Date(`${date}T12:00:00+08:00`)) : '';
+      const fullDate = validDate ? `${date.slice(0, 4)}年${Number(date.slice(5, 7))}月${Number(date.slice(8))}日` : '日期待定';
+      if (validDate && /^\d{2}:\d{2}$/.test(clock(row))) time.dateTime = `${date}T${clock(row)}:00+08:00`;
+      time.innerHTML = `<span>${escape(fullDate)}</span><span>${escape(weekday)}</span><strong>${escape(clock(row) || '时间待定')}</strong>`;
+      row.prepend(time);
     });
     content.replaceChildren();
     ['live', 'upcoming', 'ended'].forEach(status => {
@@ -284,11 +314,30 @@
       panel.querySelector('.match-status-filters').append(drawButton);
       if (!heading.children.length) heading.remove();
     }
-    main.append(panel.querySelector('.match-controls-row'), content);
+    const controls = panel.querySelector('.match-controls-row');
+    const viewSwitch = document.createElement('div');
+    viewSwitch.className = 'match-view-switch';
+    viewSwitch.setAttribute('role', 'group');
+    viewSwitch.setAttribute('aria-label', '赛事视图');
+    viewSwitch.innerHTML = '<button type="button" data-match-view="matches">比赛对阵</button><button type="button" data-match-view="players">参赛球员</button>';
+    controls.prepend(viewSwitch);
+    content.dataset.matchList = '';
+    const roster = document.createElement('section');
+    roster.className = 'roster-gallery';
+    roster.setAttribute('aria-label', '本赛事参赛球员');
+    const entrants = window.CUE_GET_EVENT_PLAYERS?.(panel.dataset.inlineEventId) || [];
+    const eliminated = entrants.filter(player => player.eliminated).length;
+    roster.innerHTML = entrants.length ? `<p>已录入 ${entrants.length} 位球员 · 未淘汰 ${entrants.length - eliminated} 位 · 已淘汰 ${eliminated} 位</p><div class="roster-grid">${entrants.map(player => `<figure class="roster-player${player.eliminated ? ' is-eliminated' : ''}"><img src="${escape(player.photo)}" alt="${escape(player.name)}" loading="lazy" referrerpolicy="no-referrer"><figcaption>${escape(player.name)}<small>${player.eliminated ? '已淘汰' : '未淘汰'}</small></figcaption></figure>`).join('')}</div>` : '<p>官方暂未公布可同步的参赛名单。</p>';
+    roster.addEventListener('error', event => {
+      const image = event.target;
+      if (image instanceof HTMLImageElement && !image.src.endsWith('/player-placeholder.svg')) image.src = './player-placeholder.svg';
+    }, true);
+    main.append(controls, content, roster);
     const history = panel.querySelector('.earlier-matches'); if (history) main.append(history);
     const empty = panel.querySelector('.match-filter-empty'); if (empty) main.append(empty);
     const note = panel.querySelector('.bracket-note'); if (note) main.append(note);
     grid.append(main); panel.append(grid); updatePanel(panel);
+    setMatchView(panel, state.matchViewByEvent[panel.dataset.inlineEventId] || 'matches');
     new MutationObserver(() => updatePanel(panel)).observe(panel, {
       subtree: true, attributes: true, attributeFilter: ['aria-pressed'],
     });
@@ -362,6 +411,13 @@
     }
   };
   document.addEventListener('click', event => {
+    const view = event.target.closest?.('[data-match-view]');
+    if (view) {
+      const panel = view.closest('.redesign-panel');
+      state.matchViewByEvent[panel.dataset.inlineEventId] = view.dataset.matchView;
+      setMatchView(panel, view.dataset.matchView);
+      return;
+    }
     const favorite = event.target.closest?.('[data-match-favorite]');
     if (favorite) {
       event.preventDefault();
