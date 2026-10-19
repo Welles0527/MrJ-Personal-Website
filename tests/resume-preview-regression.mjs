@@ -9,6 +9,17 @@ try {
     await page.addInitScript(() => localStorage.setItem('magicj.home-intro.seen', '1'));
     await page.goto(process.env.RESUME_PREVIEW_URL || 'http://127.0.0.1:4326/');
     await page.locator('[data-project="resume"]').scrollIntoViewIfNeeded();
+    for (const dark of [false, true]) {
+      await page.evaluate(dark => document.documentElement.classList.toggle('dark', dark), dark);
+      const paint = await page.locator('.resume-capability-demo').evaluate(demo => ({
+        frame: getComputedStyle(demo.parentElement).backgroundImage,
+        inner: getComputedStyle(demo).backgroundImage,
+        innerColor: getComputedStyle(demo).backgroundColor,
+      }));
+      assert.ok(paint.frame.startsWith('linear-gradient('), `${width}: entire preview frame is painted`);
+      assert.equal(paint.inner, 'none', `${width}: no separate inner background seam`);
+      assert.equal(paint.innerColor, 'rgba(0, 0, 0, 0)', `${width}: frame background shows through`);
+    }
     for (const language of ['zh-CN', 'en', 'zh-CN']) {
       await page.waitForFunction(language => {
         const paper = document.querySelector('.resume-paper');
