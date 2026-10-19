@@ -15,7 +15,7 @@ const normalizeRankings = (payload, fetchedAt) => {
 };
 const CALENDAR_URL = "https://www.magicj.cn/officialwebsite/snooker-calendar/index.html";
 const COLLECTION = "snookerLiveScores";
-const INTERVAL_MS = 20 * 60 * 1000;
+const INTERVAL_MS = 5 * 60 * 1000;
 const SNAPSHOT_ID = "current";
 
 const normalize = (name) => String(name || "")
@@ -155,7 +155,7 @@ async function refreshSnookerScores(db, { now = new Date(), fetchImpl = fetch } 
   const previous = (await readSnookerSnapshot(db)) || emptySnapshot();
   const fetchedAt = now.toISOString();
   const next = { ...previous, intervalMs: INTERVAL_MS, checkedAt: fetchedAt, failures: {}, events: { ...previous.events } };
-  // The existing timer runs every 20 minutes; only fetch rankings when at least 30 minutes old.
+  // The timer runs every 5 minutes; only fetch rankings when at least 30 minutes old.
   if (!previous.rankings || now - Date.parse(previous.rankings.fetchedAt) >= 30 * 60 * 1000) {
     try {
       next.rankings = normalizeRankings(await requestJson(RANKINGS_ENDPOINT, fetchImpl), fetchedAt);
@@ -216,4 +216,8 @@ async function refreshSnookerScores(db, { now = new Date(), fetchImpl = fetch } 
   };
 }
 
-module.exports = { findTournament, normalizeTournament, normalizeRankings, readEvents, readSnookerSnapshot, refreshSnookerScores };
+// Called only after the entry point has verified the platform timer context.
+const scheduledRefreshAction = event => event?.TriggerName === 'refresh-snooker-every-5-minutes'
+  ? 'refreshSnookerScores' : 'refreshAll';
+
+module.exports = { findTournament, normalizeTournament, normalizeRankings, readEvents, readSnookerSnapshot, refreshSnookerScores, scheduledRefreshAction };

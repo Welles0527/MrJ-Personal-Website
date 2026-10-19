@@ -206,7 +206,7 @@
 
   filtered = () => baseFiltered().filter(event => {
     if (state.nav !== 'schedule') return true;
-    return inMonth(event, CURRENT_MONTH);
+    return inMonth(event, CURRENT_MONTH) && status(event) !== 'ended';
   });
 
   const bracketWinnerIndex = score => {
@@ -399,10 +399,10 @@
 
   const scheduleControl = () => {
     const available = event => state.types.has(event.type) && state.regions.has(event.region);
-    const monthlyEvents = events.filter(event => available(event) && inMonth(event, CURRENT_MONTH));
+    const monthlyEvents = events.filter(event => available(event) && inMonth(event, CURRENT_MONTH) && status(event) !== 'ended');
     const counts = ['ended', 'live', 'upcoming'].map(kind => monthlyEvents.filter(event => status(event) === kind).length);
     return `<div class="schedule-control" role="region" aria-label="赛程显示范围">
-      <div><strong>${CURRENT_MONTH + 1}月赛事</strong><span>共 ${monthlyEvents.length} 场 · 已结束 ${counts[0]} · 进行中 ${counts[1]} · 未开始 ${counts[2]}</span></div>
+      <div><strong>${CURRENT_MONTH + 1}月赛事</strong><span>共 ${monthlyEvents.length} 场 · 进行中 ${counts[1]} · 未开始 ${counts[2]}</span></div>
     </div>`;
   };
 
@@ -702,7 +702,7 @@
   filterStyle.textContent += `
     .match-date-calendar{display:grid;grid-template-columns:minmax(0,1fr) 90px;gap:8px;align-items:stretch}
     .match-date-calendar-top{display:contents}.match-date-calendar-label{display:none}
-    .match-date-list{grid-column:1;grid-row:1}.match-date-all{grid-column:2;grid-row:1;height:100%}
+    .match-date-list{grid-column:1;grid-row:1;grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(76px,1fr);overflow-x:auto}.match-date-all{grid-column:2;grid-row:1;height:100%}
     .match-date-option{position:relative;padding-inline:24px}.match-date-count{position:absolute;right:7px;top:50%;transform:translateY(-50%);display:grid;place-items:center;min-width:20px;height:20px;padding:2px;border-radius:50%;background:color-mix(in srgb,var(--text) 10%,transparent);font-size:10px;font-weight:600}
     .match-controls-row{flex-direction:row;align-items:center}
     .match-status-filters>span{display:none}.match-status-filters button:first-of-type{border-left:0}

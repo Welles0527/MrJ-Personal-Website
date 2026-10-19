@@ -394,7 +394,7 @@
           <div class="knockout-round-matches">${matches.map(bracketCard).join('')}</div></section>`;
       }).join('')}</div>`;
     };
-    const note = stale(data) ? '暂未取得最新数据，以下为上次同步记录' : '自动更新中 · 每 20 分钟采集';
+    const note = stale(data) ? '暂未取得最新数据，以下为上次同步记录' : '自动更新中 · 每 5 分钟采集';
     return `<section class="inline-bracket" data-inline-event-id="${escape(event.id)}" style="--event-color:${color(event)}" aria-label="${escape(event.name)}对阵信息">
       ${drawAvailable ? `<div class="inline-bracket-heading"><button type="button" data-match-bracket="${escape(event.id)}">对阵图</button></div>` : ''}
       ${knockout ? bracket() : `<div class="inline-bracket-rounds live-score-rounds">${groups.map(renderGroup).join('')}</div>
@@ -405,6 +405,37 @@
       <a href="${escape(data.source)}" target="_blank" rel="noopener">WST 官方赛果 ↗</a></p></section>`;
   };
 
+  const synchronizedEvent = event => {
+    const winner = snapshot?.events?.[event.id]?.winner;
+    if (!winner) return event;
+    const photo = playerPhotos[winner] || playerPhotos[winner.replace(/'/g, '’')];
+    return { ...event, champion: { ...event.champion, name: player(winner), en: winner,
+      photo: photo || (event.champion?.en === winner ? event.champion.photo : ''),
+      credit: 'WST 官方赛事结果', creditUrl: snapshot.events[event.id].source } };
+  };
+  const previousChampionMarkup = championMarkup;
+  championMarkup = event => {
+    if (status(event) === 'live') return `<a class="dialog-progress-link" href="#results-${escape(event.id)}" data-event-progress="${escape(event.id)}">查看比赛进程 ↗</a>`;
+    return previousChampionMarkup(synchronizedEvent(event));
+  };
+  const previousDetail = showDetail;
+  let detailEventId = null;
+  showDetail = id => { detailEventId = id; previousDetail(id); };
+  document.addEventListener('click', event => {
+    const link = event.target.closest('[data-event-progress]');
+    if (!link) return;
+    event.preventDefault();
+    const id = link.dataset.eventProgress;
+    const tournament = events.find(item => item.id === id);
+    document.getElementById('detail').close();
+    state.nav = 'results';
+    state.statuses = new Set(['live', 'ended']);
+    state.types.add(tournament.type);
+    state.regions.add(tournament.region);
+    state.expandedEvent = id;
+    render();
+    document.querySelector(`[data-inline-event="${id}"]`)?.scrollIntoView({ block: 'start' });
+  });
   const previousWinner = winnerField;
   winnerField = (event, eventStatus) => {
     const winner = snapshot?.events?.[event.id]?.winner;
@@ -432,17 +463,17 @@
     const badge = document.querySelector('.snapshot');
     if (badge && !['rankings', 'players'].includes(state.nav)) {
       badge.textContent = latest ? `${delayed ? '部分同步延迟' : '赛果同步'} · ${time(latest.fetchedAt)}` : '等待赛果同步';
-      badge.title = latest ? 'WST 官方比分；云函数每 20 分钟采集，页面每分钟检查更新' : '尚未取得 WST 比分数据';
+      badge.title = latest ? 'WST 官方比分；云函数每 5 分钟采集，页面每分钟检查更新' : '尚未取得 WST 比分数据';
     }
     if (['year', 'schedule', 'results', 'favorites'].includes(state.nav)) {
       const note = document.querySelector('.bottom-note');
-      if (note) note.innerHTML = '<span>WST 比分由云函数每 20 分钟采集 · 页面每分钟检查更新 · 北京时间</span>' +
+      if (note) note.innerHTML = '<span>WST 比分由云函数每 5 分钟采集 · 页面每分钟检查更新 · 北京时间</span>' +
         `<span>${latest ? delayed ? '同步延迟，保留上次有效数据' : '查看赛事对阵中的各场比赛状态' : '等待首次同步'}</span>`;
     }
   };
 
   const style = document.createElement('style');
-  style.textContent = '.live-score-rounds{max-height:none;overflow:visible;align-items:start}.match-entrant .match-name>small{display:none!important}.match-flag{filter:none!important;opacity:1!important;mix-blend-mode:normal!important;isolation:isolate}.match-flag svg,.match-flag svg *{filter:none!important;opacity:1!important;forced-color-adjust:none}@media(max-width:680px){.live-score-rounds{flex-direction:column}.live-score-rounds .inline-bracket-round{flex:none;min-width:0;width:100%}}';
+  style.textContent = '.dialog-progress-link{flex:none;margin:12px 0 0;color:var(--selection);font-size:14px;white-space:nowrap}.live-score-rounds{max-height:none;overflow:visible;align-items:start}.match-entrant .match-name>small{display:none!important}.match-flag{filter:none!important;opacity:1!important;mix-blend-mode:normal!important;isolation:isolate}.match-flag svg,.match-flag svg *{filter:none!important;opacity:1!important;forced-color-adjust:none}@media(max-width:680px){.live-score-rounds{flex-direction:column}.live-score-rounds .inline-bracket-round{flex:none;min-width:0;width:100%}}';
   document.head.append(style);
   document.addEventListener('error', event => {
     if (event.target instanceof HTMLImageElement && event.target.closest('.match-portrait') && !event.target.src.endsWith('/player-placeholder.svg')) {
@@ -458,6 +489,7 @@
     const panelScroll = panel ? { top: panel.scrollTop, left: panel.scrollLeft } : null;
     const earlierOpen = Boolean(document.querySelector('.earlier-matches[open]'));
     render();
+    if (document.getElementById('detail')?.open && detailEventId) showDetail(detailEventId);
     if (earlierOpen) document.querySelector('.earlier-matches')?.setAttribute('open', '');
     if (panelScroll) document.querySelector('.live-score-rounds')?.scrollTo(panelScroll);
     window.scrollTo(position);

@@ -4,6 +4,13 @@ import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { readEvents, findTournament, normalizeTournament, normalizeRankings, rankingsEndpoint, synchronize } from '../scripts/sync-snooker-scores.mjs';
+import cloudSync from '../scripts/snooker-cloud-sync.cjs';
+
+test('additional five-minute timer refreshes snooker without increasing the shared football schedule', () => {
+  assert.equal(cloudSync.scheduledRefreshAction({ TriggerName: 'refresh-snooker-every-5-minutes' }), 'refreshSnookerScores');
+  assert.equal(cloudSync.scheduledRefreshAction({ TriggerName: 'refresh-scores-every-20-minutes' }), 'refreshAll');
+  assert.equal(cloudSync.scheduledRefreshAction({}), 'refreshAll');
+});
 
 test('official rankings validate all sixteen positions and retain the last success on failure', async () => {
   const board = { data: [{ id: 'abfba8fe-1423-5a2a-a96b-d77e8b413ca8', attributes: {

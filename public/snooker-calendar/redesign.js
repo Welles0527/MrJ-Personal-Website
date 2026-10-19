@@ -87,12 +87,84 @@
       body[data-active-nav="schedule"] .bottom-note{display:block;line-height:2.2}.redesign-match-dialog{padding:19px}.redesign-match-dialog h2{font-size:21px}
     }
   `;
+  stylesheet.textContent += `
+    .redesign-panel [data-redesign-match]{grid-template-columns:minmax(0,1fr)!important;min-height:104px!important;padding:10px 18px!important}
+    .redesign-panel .match-when,.redesign-panel .knockout-match-meta,.redesign-panel .redesign-round-label,.redesign-panel .redesign-chevron,.redesign-panel .match-flag{display:none!important}
+    .redesign-panel .match-pair,.redesign-panel .knockout-match-players{width:100%;grid-template-columns:minmax(0,1fr) 100px minmax(0,1fr)!important;align-items:center}
+    .redesign-panel .match-entrant,.redesign-panel .match-entrant-away{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center;gap:5px!important;text-align:center}
+    .redesign-panel .match-name,.redesign-panel .match-entrant-away .match-name{align-items:center!important;text-align:center!important;width:100%}
+    .redesign-panel .match-name>[data-bracket-player]{font-size:13px!important;line-height:1.35;overflow-wrap:normal}
+    .redesign-panel .match-portrait{width:48px!important;height:54px!important}
+    .redesign-panel .match-portrait img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:contain!important;object-position:center!important;transform:none!important}
+    .redesign-panel .match-score,.redesign-panel .knockout-score{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px!important;overflow:visible}
+    .redesign-panel .match-score>div:not(.match-points){display:flex;align-items:center;justify-content:center;gap:7px}
+    .redesign-panel .match-score>.compact-match-clock,.redesign-panel .knockout-score>.compact-match-clock{display:block!important;font-size:11px!important;line-height:1.4;color:var(--muted);font-weight:500}
+    .redesign-panel .compact-score-values{display:flex;align-items:center;justify-content:center;gap:7px}
+    .redesign-panel .match-points{display:none!important}
+    .compact-match-date{padding:10px 18px 5px;font-size:12px;font-weight:600;color:var(--muted)}
+    .redesign-dialog-pair .match-flag{display:none!important}
+    .inline-bracket .match-fixture,.inline-bracket .knockout-match,.inline-bracket .bracket-match{position:relative}
+    .match-favorite{position:absolute;top:5px;right:8px;z-index:2;padding:3px 6px;border:0;border-radius:5px;background:transparent;color:var(--muted);font-size:10px;line-height:1.5;white-space:nowrap;cursor:pointer}
+    .match-favorite[aria-pressed="true"]{color:var(--selection)}
+    .match-favorites-list{display:grid;gap:0;margin:20px 0}
+    .saved-match{display:grid;grid-template-columns:220px minmax(0,1fr) auto;align-items:center;gap:16px;padding:19px 0;border-bottom:1px solid var(--line)}
+    .saved-match small{display:block;color:var(--muted);margin-top:6px}.saved-match>b{font-size:16px}.saved-match>b span{font-size:12px;color:var(--muted);font-weight:400;margin:0 10px}.saved-match .match-favorite{position:static;font-size:12px}
+    @media(max-width:680px){.saved-match{grid-template-columns:minmax(0,1fr) auto;gap:12px}.saved-match>b{grid-column:1/-1;grid-row:2;font-size:14px}.saved-match>.match-favorite{grid-column:2;grid-row:1}}
+    @media(max-width:680px){.redesign-panel [data-redesign-match]{padding:9px 8px!important;min-height:100px!important}.redesign-panel .match-pair,.redesign-panel .knockout-match-players{grid-template-columns:minmax(0,1fr) 68px minmax(0,1fr)!important}.redesign-panel .match-name>[data-bracket-player]{font-size:11px!important}.redesign-panel .match-portrait{width:43px!important;height:48px!important}}
+  `;
   document.head.append(stylesheet);
 
   const groupStatus = row => ['live', 'suspended'].includes(row.dataset.matchStatus) ? 'live' :
     row.dataset.matchStatus === 'ended' ? 'ended' : 'upcoming';
   const playerName = entrant => entrant?.querySelector('[data-bracket-player]')?.childNodes[0]?.textContent.trim() || '';
-  const clock = row => row.querySelector('.match-clock,.match-when strong')?.textContent.trim() || '';
+  const clock = row => row.dataset.matchClock || row.querySelector('.match-clock,.match-when strong')?.textContent.trim() || '';
+  const favoriteKey = 'cue-match-favorites';
+  let matchFavorites = {};
+  try {
+    const saved = JSON.parse(localStorage.getItem(favoriteKey) || '{}');
+    if (saved && typeof saved === 'object' && !Array.isArray(saved)) matchFavorites = saved;
+  } catch {}
+  const favoriteRecords = new Map();
+  const favoriteButton = key => `<button type="button" class="match-favorite" data-match-favorite="${escape(key)}" aria-pressed="${Boolean(matchFavorites[key])}" aria-label="${matchFavorites[key] ? '取消收藏比赛' : '收藏比赛'}">${matchFavorites[key] ? '★ 已收藏' : '☆ 收藏'}</button>`;
+  const persistFavorites = () => {
+    try { localStorage.setItem(favoriteKey, JSON.stringify(matchFavorites)); } catch {}
+  };
+  function decorateFavorite(row, tournament, index) {
+    if (!tournament || row.querySelector('[data-match-favorite]') || row.matches('.bracket-missing')) return;
+    const number = row.querySelector('.knockout-match-meta,.match-when,:scope>small')?.textContent.match(/第\s*(\d+)\s*场/)?.[1];
+    const sourceMatch = window.CUE_LIVE_SCORES?.events?.[tournament.id]?.matches?.find(match => String(match.number) === number);
+    const names = [...row.querySelectorAll('[data-bracket-player],.bracket-player>span')].map(node => node.childNodes[0]?.textContent.trim());
+    const key = `${tournament.id}:${sourceMatch?.id || number || `${names.join('|')}:${index}`}`;
+    const startsAt = sourceMatch?.startsAt;
+    const date = startsAt ? new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai' }).format(new Date(startsAt)) : row.dataset.matchDate;
+    const time = startsAt ? new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Shanghai', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(startsAt)) : clock(row);
+    favoriteRecords.set(key, { eventId: tournament.id, eventName: tournament.name,
+      matchId: sourceMatch?.id || row.dataset.liveMatch || '', date,
+      clock: /^\d{2}:\d{2}$/.test(time) ? time : '', home: names[0] || '球员待定', away: names[1] || '球员待定' });
+    if (matchFavorites[key]) matchFavorites[key] = favoriteRecords.get(key);
+    row.insertAdjacentHTML('beforeend', favoriteButton(key));
+  }
+  function renderMatchFavorites() {
+    const main = document.querySelector('main');
+    const oldList = main.querySelector('.details-list');
+    const records = Object.entries(matchFavorites).filter(([, record]) => record && record.eventId)
+      .map(([key, record]) => {
+        const latest = window.CUE_LIVE_SCORES?.events?.[record.eventId]?.matches?.find(match => match.id === record.matchId);
+        if (latest?.startsAt) {
+          const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(latest.startsAt)).map(part => [part.type, part.value]));
+          record.date = `${parts.year}-${parts.month}-${parts.day}`;
+          record.clock = `${parts.hour}:${parts.minute}`;
+        }
+        return [key, record];
+      }).sort(([, a], [, b]) => `${b.date} ${b.clock}`.localeCompare(`${a.date} ${a.clock}`));
+    main.innerHTML = `<div class="title-row"><div><div class="eyebrow">WORLD SNOOKER CALENDAR</div><h1>我的收藏</h1><p>已收藏 ${records.length} 场比赛 · 北京时间</p></div></div><section class="match-favorites-list" aria-label="收藏的比赛">${records.length ? records.map(([key, record]) => `<article class="saved-match"><div><strong>${escape(record.date ? dateLabel(record.date) : '日期待定')} ${escape(record.clock || '时间待定')}</strong><small>${escape(record.eventName)}</small></div><b>${escape(record.home)} <span>对阵</span> ${escape(record.away)}</b>${favoriteButton(key)}</article>`).join('') : '<p>暂无收藏比赛，点击对阵旁的“☆ 收藏”即可添加。</p>'}</section>`;
+    if (oldList && state.favorites.size) {
+      const legacy = document.createElement('details');
+      legacy.innerHTML = '<summary>已收藏的赛事</summary>';
+      legacy.append(oldList);
+      main.append(legacy);
+    }
+  }
 
   function updatePanel(panel) {
     const id = panel.dataset.inlineEventId;
@@ -113,6 +185,14 @@
       const visibleRows = [...group.querySelectorAll('.knockout-match,.match-fixture')].filter(row => !row.classList.contains('match-filter-hidden'));
       group.classList.toggle('match-filter-hidden', !visibleRows.length);
       group.querySelector('.redesign-status-heading small').textContent = `${visibleRows.length} 场`;
+    });
+    const shownDates = new Set();
+    panel.querySelectorAll('.compact-match-date').forEach(heading => {
+      const row = heading.nextElementSibling;
+      const date = row?.dataset.matchDate || '';
+      const visible = row && !row.classList.contains('match-filter-hidden') && !shownDates.has(date);
+      heading.classList.toggle('match-filter-hidden', !visible);
+      if (visible) shownDates.add(date);
     });
   }
 
@@ -145,6 +225,8 @@
       const round = row.closest('.knockout-round,.inline-bracket-round')?.querySelector('h4')?.childNodes[0]?.textContent.trim() || row.querySelector('.match-when span')?.textContent.trim() || '比赛安排';
       row.dataset.redesignRound = round;
       row.dataset.redesignMatch = String(index);
+      row.dataset.matchClock = clock(row);
+      decorateFavorite(row, events.find(item => item.id === panel.dataset.inlineEventId), index);
       row.setAttribute('role', 'button');
       row.tabIndex = 0;
       row.setAttribute('aria-label', `${[...row.querySelectorAll('.match-entrant')].map(playerName).join(' 对阵 ')}，查看比赛详情`);
@@ -160,6 +242,21 @@
         const score = row.querySelector('.knockout-score');
         if (score) score.innerHTML = '<span class="redesign-vs">VS</span>';
       }
+      const score = row.querySelector('.match-score,.knockout-score');
+      if (score) {
+        if (score.classList.contains('knockout-score')) {
+          const values = document.createElement('div');
+          values.className = 'compact-score-values';
+          values.append(...score.childNodes);
+          score.append(values);
+        }
+        if (row.dataset.matchStatus !== 'ended') {
+          const time = document.createElement('small');
+          time.className = 'compact-match-clock';
+          time.textContent = clock(row) || '时间待定';
+          score.prepend(time);
+        }
+      }
     });
     content.replaceChildren();
     ['live', 'upcoming', 'ended'].forEach(status => {
@@ -170,7 +267,12 @@
       group.className = 'knockout-round redesign-status-group';
       group.dataset.groupStatus = status;
       group.innerHTML = `<h4 class="redesign-status-heading">${labels[status]} <small></small><span>${status === 'ended' ? '已完成场次' : '按开赛时间排列'}</span></h4>`;
-      group.append(...selected);
+      selected.forEach(row => {
+        const heading = document.createElement('div');
+        heading.className = 'compact-match-date';
+        heading.textContent = dateLabel(row.dataset.matchDate);
+        group.append(heading, row);
+      });
       content.append(group);
     });
     panel.querySelectorAll('.later-matches').forEach(section => section.remove());
@@ -241,6 +343,14 @@
   const previousRender = render;
   render = () => {
     document.querySelector('.redesign-match-dialog')?.remove(); previousRender(); adaptPage();
+    document.querySelectorAll('.inline-bracket').forEach(panel => {
+      const id = panel.dataset.inlineEventId || panel.querySelector('[data-inline-close]')?.dataset.inlineClose;
+      const tournament = events.find(item => item.id === id);
+      panel.querySelectorAll('.match-fixture,.knockout-match,.bracket-match').forEach((row, index) => decorateFavorite(row, tournament, index));
+    });
+    const count = document.querySelector('[data-nav="favorites"]>span');
+    if (count) count.textContent = Object.keys(matchFavorites).length + state.favorites.size;
+    if (state.nav === 'favorites') renderMatchFavorites();
     const title = document.querySelector('main h1');
     if (title) {
       const back = document.createElement('a');
@@ -252,10 +362,26 @@
     }
   };
   document.addEventListener('click', event => {
+    const favorite = event.target.closest?.('[data-match-favorite]');
+    if (favorite) {
+      event.preventDefault();
+      const key = favorite.dataset.matchFavorite;
+      if (matchFavorites[key]) delete matchFavorites[key];
+      else if (favoriteRecords.has(key)) matchFavorites[key] = favoriteRecords.get(key);
+      persistFavorites();
+      if (state.nav === 'favorites') render();
+      else {
+        favorite.outerHTML = favoriteButton(key);
+        const count = document.querySelector('[data-nav="favorites"]>span');
+        if (count) count.textContent = Object.keys(matchFavorites).length + state.favorites.size;
+      }
+      return;
+    }
     const row = event.target.closest?.('[data-redesign-match]');
     if (row) { showMatch(row); return; }
   });
   document.addEventListener('keydown', event => {
+    if (event.target.closest?.('[data-match-favorite]')) return;
     const row = event.target.closest?.('[data-redesign-match]');
     if (row && ['Enter', ' '].includes(event.key)) { event.preventDefault(); showMatch(row); }
   });
