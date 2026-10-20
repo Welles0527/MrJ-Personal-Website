@@ -139,19 +139,6 @@
     .saved-match small{display:block;color:var(--muted);margin-top:6px}.saved-match>b{font-size:16px}.saved-match>b span{font-size:12px;color:var(--muted);font-weight:400;margin:0 10px}.saved-match .match-favorite{position:static;font-size:12px}
     @media(max-width:680px){.saved-match{grid-template-columns:minmax(0,1fr) auto;gap:12px}.saved-match>b{grid-column:1/-1;grid-row:2;font-size:14px}.saved-match>.match-favorite{grid-column:2;grid-row:1}}
     @media(max-width:680px){.redesign-panel [data-redesign-match]{grid-template-columns:96px minmax(0,1fr)!important;padding:22px 8px 10px!important;min-height:120px!important;gap:5px!important}.redesign-panel .match-pair,.redesign-panel .knockout-match-players{grid-template-columns:minmax(0,1fr) 42px minmax(0,1fr)!important;gap:4px!important}.redesign-panel .match-name>[data-bracket-player]{font-size:11px!important}.redesign-panel .match-portrait-wrap,.redesign-panel .match-portrait{width:43px!important}.redesign-panel .match-portrait{height:48px!important}.compact-fixture-time{font-size:11px;gap:5px}.compact-fixture-time strong{font-size:20px}}
-    body[data-active-nav="results"] .results-live-match{grid-template-columns:180px minmax(0,1fr)!important;min-height:116px!important;padding:12px 30px 12px 18px!important}
-    body[data-active-nav="results"] .results-live-match .match-when,body[data-active-nav="results"] .results-live-match .match-flag{display:none!important}
-    body[data-active-nav="results"] .results-live-match .match-pair{grid-column:2;width:min(100%,440px);margin-inline:auto;grid-template-columns:minmax(0,1fr) 80px minmax(0,1fr)!important;align-items:center;gap:12px!important}
-    body[data-active-nav="results"] .results-live-match .match-entrant,body[data-active-nav="results"] .results-live-match .match-entrant-away{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center;gap:5px!important;text-align:center}
-    body[data-active-nav="results"] .results-live-match .match-name,body[data-active-nav="results"] .results-live-match .match-entrant-away .match-name{align-items:center!important;text-align:center!important;width:100%}
-    body[data-active-nav="results"] .results-live-match .match-portrait-wrap{display:block!important;width:56px!important;min-width:0!important;left:auto!important;right:auto!important;align-self:center!important}
-    body[data-active-nav="results"] .results-live-match .match-portrait{width:56px!important;height:62px!important}
-    body[data-active-nav="results"] .results-live-match .match-portrait img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:contain!important;object-position:center!important;transform:none!important}
-    body[data-active-nav="results"] .results-live-match .match-score{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px!important;overflow:visible}
-    body[data-active-nav="results"] .results-live-match .match-score>div:not(.match-points){display:flex;align-items:center;justify-content:center;gap:7px}
-    body[data-active-nav="results"] .results-live-match .match-score>span,body[data-active-nav="results"] .results-live-match .match-points{display:none!important}
-    body[data-active-nav="results"] .results-live-match .compact-fixture-time{display:flex!important}
-    @media(max-width:680px){body[data-active-nav="results"] .results-live-match{grid-template-columns:96px minmax(0,1fr)!important;padding:22px 8px 10px!important;min-height:120px!important;gap:5px!important}body[data-active-nav="results"] .results-live-match .match-pair{grid-template-columns:minmax(0,1fr) 42px minmax(0,1fr)!important;gap:4px!important}body[data-active-nav="results"] .results-live-match .match-portrait-wrap,body[data-active-nav="results"] .results-live-match .match-portrait{width:43px!important}body[data-active-nav="results"] .results-live-match .match-portrait{height:48px!important}}
   `;
   document.head.append(stylesheet);
 
@@ -333,13 +320,15 @@
     });
     content.replaceChildren();
     ['live', 'upcoming', 'ended'].forEach(status => {
-      const selected = currentRows.filter(row => groupStatus(row) === status).sort((a, b) =>
-        a.dataset.matchDate.localeCompare(b.dataset.matchDate) || clock(a).localeCompare(clock(b)));
+      const selected = currentRows.filter(row => groupStatus(row) === status).sort((a, b) => {
+        const order = a.dataset.matchDate.localeCompare(b.dataset.matchDate) || clock(a).localeCompare(clock(b));
+        return state.nav === 'results' ? -order : order;
+      });
       if (!selected.length) return;
       const group = document.createElement('section');
       group.className = 'knockout-round redesign-status-group';
       group.dataset.groupStatus = status;
-      group.innerHTML = `<h4 class="redesign-status-heading">${labels[status]} <small></small><span>${status === 'ended' ? '已完成场次' : '按开赛时间排列'}</span></h4>`;
+      group.innerHTML = `<h4 class="redesign-status-heading">${labels[status]} <small></small><span>${state.nav === 'results' ? '按开赛时间倒序' : status === 'ended' ? '已完成场次' : '按开赛时间排列'}</span></h4>`;
       selected.forEach(row => {
         const heading = document.createElement('div');
         heading.className = 'compact-match-date';
@@ -400,20 +389,6 @@
     if (state.nav === 'results') {
       const list = document.querySelector('.details-list');
       if (list) {
-        list.querySelectorAll('.inline-bracket .match-fixture[data-match-status="live"],.inline-bracket .match-fixture[data-match-status="suspended"]').forEach(row => {
-          const date = row.dataset.matchDate;
-          const matchClock = row.querySelector('.match-when strong')?.textContent.trim() || '时间待定';
-          const time = document.createElement('time');
-          time.className = 'compact-fixture-time';
-          if (/^\d{4}-\d{2}-\d{2}$/.test(date || '')) {
-            time.dateTime = /^\d{2}:\d{2}$/.test(matchClock) ? `${date}T${matchClock}:00+08:00` : date;
-            const weekday = new Intl.DateTimeFormat('zh-CN', { timeZone: 'Asia/Shanghai', weekday: 'long' }).format(new Date(`${date}T12:00:00+08:00`));
-            time.innerHTML = `<span>${date.slice(0, 4)}年${Number(date.slice(5, 7))}月${Number(date.slice(8))}日</span><span>${weekday}</span>`;
-          } else time.innerHTML = '<span>日期待定</span>';
-          time.innerHTML += `<strong>${row.dataset.matchStatus === 'suspended' ? '暂停中' : '进行中'}</strong><small>${matchClock === '时间待定' ? '开赛时间待定' : `原定 ${escape(matchClock)}`}</small>`;
-          row.classList.add('results-live-match');
-          row.prepend(time);
-        });
         const cards = Array.from(list.querySelectorAll(':scope > .event-row-card')).map(card => ({
           card,
           bracket: card.nextElementSibling?.matches('.inline-bracket') ? card.nextElementSibling : null,
@@ -433,6 +408,7 @@
         }
       }
     }
+    document.querySelectorAll('.inline-bracket').forEach(adaptPanel);
     if (state.nav !== 'schedule') return;
     document.querySelector('main > .pending-events')?.remove();
     document.querySelectorAll('.details-list>.event-row-card').forEach(card => {
@@ -446,7 +422,6 @@
       right.querySelector('button').onclick = () => showDetail(event.id); card.append(right);
       const art = document.createElement('div'); art.className = 'redesign-table-art'; art.setAttribute('aria-hidden', 'true'); art.innerHTML = '<i></i><i></i><i></i><i></i>'; card.append(art);
     });
-    document.querySelectorAll('.inline-bracket').forEach(adaptPanel);
   }
 
   const previousRender = render;
