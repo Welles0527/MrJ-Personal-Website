@@ -107,6 +107,7 @@
     .compact-match-date{display:none!important}
     .compact-fixture-time{grid-column:1;grid-row:1;display:flex;flex-direction:column;justify-content:center;align-self:center;gap:4px;font-size:16px;line-height:1.4;color:var(--muted);white-space:nowrap}
     .compact-fixture-time strong{font-size:24px;line-height:1.2;color:var(--text)}
+    .compact-fixture-time small{font-size:11px;line-height:1.3;color:var(--muted)}
     .redesign-dialog-pair .match-flag{display:none!important}
     .inline-bracket .match-fixture,.inline-bracket .knockout-match,.inline-bracket .bracket-match{position:relative}
     .match-favorite{position:absolute;top:5px;right:8px;z-index:2;padding:3px 6px;border:0;border-radius:5px;background:transparent;color:var(--muted);font-size:10px;line-height:1.5;white-space:nowrap;cursor:pointer}
@@ -119,19 +120,38 @@
     .roster-gallery[hidden],.redesign-panel [data-match-list][hidden]{display:none!important}
     .roster-gallery{padding:18px 0}
     .roster-gallery>p{margin:0 0 18px;color:var(--muted);font-size:12px}
-    .roster-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:20px 14px}
+    .roster-layout-switch{display:flex;gap:5px;margin:0 0 14px}
+    .roster-layout-switch button{padding:8px 12px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--muted);font:inherit;font-size:12px;cursor:pointer}
+    .roster-layout-switch button[aria-pressed="true"]{border-color:var(--selection);background:var(--selection);color:var(--selection-ink)}
+    .roster-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+    .roster-column{min-width:0;padding:15px;border:1px solid var(--line);border-radius:11px;background:var(--card)}
+    .roster-column h3{margin:0 0 15px;font-size:14px}.roster-column h3 small{margin-left:7px;color:var(--muted);font-size:11px;font-weight:400}
+    .roster-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:16px 10px}
     .roster-player{margin:0;min-width:0;text-align:center}
-    .roster-player img{display:block;width:82px;height:94px;object-fit:contain;object-position:center;margin:0 auto 8px;border:1px solid var(--line);border-radius:9px;background:var(--card)}
+    .roster-player img{display:block;width:66px;height:66px;object-fit:contain;object-position:center;margin:0 auto 8px;border:1px solid var(--line);border-radius:9px;background:var(--card)}
     .roster-player figcaption{font-size:12px;line-height:1.5;overflow-wrap:anywhere}
     .roster-player figcaption small{display:block;font-size:10px;color:var(--muted)}
     .roster-player.is-eliminated{opacity:.2}
     .redesign-panel[data-roster-view="players"] .match-date-calendar,.redesign-panel[data-roster-view="players"] .match-status-filters,.redesign-panel[data-roster-view="players"] .match-player-filters,.redesign-panel[data-roster-view="players"] .earlier-matches,.redesign-panel[data-roster-view="players"] .match-filter-empty{display:none!important}
-    @media(max-width:680px){.match-view-switch{flex:1 0 100%;box-sizing:border-box;margin-bottom:4px}.redesign-panel .match-status-filters{flex:1 1 0!important;flex-wrap:nowrap!important;overflow-x:auto!important;justify-content:flex-start}.redesign-panel .match-status-filters button{flex-shrink:0}.redesign-panel .match-player-filters{flex:0 0 120px}.roster-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px 8px}.roster-player img{width:70px;height:82px}.roster-player figcaption{font-size:11px}}
+    @media(max-width:680px){.match-view-switch{flex:1 0 100%;box-sizing:border-box;margin-bottom:4px}.redesign-panel .match-status-filters{flex:1 1 0!important;flex-wrap:nowrap!important;overflow-x:auto!important;justify-content:flex-start}.redesign-panel .match-status-filters button{flex-shrink:0}.redesign-panel .match-player-filters{flex:0 0 120px}.roster-columns{gap:8px}.roster-column{padding:9px 6px}.roster-column h3{font-size:12px}.roster-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 4px}.roster-player img{width:48px;height:48px}.roster-player figcaption{font-size:10px}.roster-layout-switch button{flex:1;min-width:0;padding:8px 5px;font-size:11px}}
     .match-favorites-list{display:grid;gap:0;margin:20px 0}
     .saved-match{display:grid;grid-template-columns:220px minmax(0,1fr) auto;align-items:center;gap:16px;padding:19px 0;border-bottom:1px solid var(--line)}
     .saved-match small{display:block;color:var(--muted);margin-top:6px}.saved-match>b{font-size:16px}.saved-match>b span{font-size:12px;color:var(--muted);font-weight:400;margin:0 10px}.saved-match .match-favorite{position:static;font-size:12px}
     @media(max-width:680px){.saved-match{grid-template-columns:minmax(0,1fr) auto;gap:12px}.saved-match>b{grid-column:1/-1;grid-row:2;font-size:14px}.saved-match>.match-favorite{grid-column:2;grid-row:1}}
     @media(max-width:680px){.redesign-panel [data-redesign-match]{grid-template-columns:96px minmax(0,1fr)!important;padding:22px 8px 10px!important;min-height:120px!important;gap:5px!important}.redesign-panel .match-pair,.redesign-panel .knockout-match-players{grid-template-columns:minmax(0,1fr) 42px minmax(0,1fr)!important;gap:4px!important}.redesign-panel .match-name>[data-bracket-player]{font-size:11px!important}.redesign-panel .match-portrait-wrap,.redesign-panel .match-portrait{width:43px!important}.redesign-panel .match-portrait{height:48px!important}.compact-fixture-time{font-size:11px;gap:5px}.compact-fixture-time strong{font-size:20px}}
+    body[data-active-nav="results"] .results-live-match{grid-template-columns:180px minmax(0,1fr)!important;min-height:116px!important;padding:12px 30px 12px 18px!important}
+    body[data-active-nav="results"] .results-live-match .match-when,body[data-active-nav="results"] .results-live-match .match-flag{display:none!important}
+    body[data-active-nav="results"] .results-live-match .match-pair{grid-column:2;width:min(100%,440px);margin-inline:auto;grid-template-columns:minmax(0,1fr) 80px minmax(0,1fr)!important;align-items:center;gap:12px!important}
+    body[data-active-nav="results"] .results-live-match .match-entrant,body[data-active-nav="results"] .results-live-match .match-entrant-away{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center;gap:5px!important;text-align:center}
+    body[data-active-nav="results"] .results-live-match .match-name,body[data-active-nav="results"] .results-live-match .match-entrant-away .match-name{align-items:center!important;text-align:center!important;width:100%}
+    body[data-active-nav="results"] .results-live-match .match-portrait-wrap{display:block!important;width:56px!important;min-width:0!important;left:auto!important;right:auto!important;align-self:center!important}
+    body[data-active-nav="results"] .results-live-match .match-portrait{width:56px!important;height:62px!important}
+    body[data-active-nav="results"] .results-live-match .match-portrait img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:contain!important;object-position:center!important;transform:none!important}
+    body[data-active-nav="results"] .results-live-match .match-score{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px!important;overflow:visible}
+    body[data-active-nav="results"] .results-live-match .match-score>div:not(.match-points){display:flex;align-items:center;justify-content:center;gap:7px}
+    body[data-active-nav="results"] .results-live-match .match-score>span,body[data-active-nav="results"] .results-live-match .match-points{display:none!important}
+    body[data-active-nav="results"] .results-live-match .compact-fixture-time{display:flex!important}
+    @media(max-width:680px){body[data-active-nav="results"] .results-live-match{grid-template-columns:96px minmax(0,1fr)!important;padding:22px 8px 10px!important;min-height:120px!important;gap:5px!important}body[data-active-nav="results"] .results-live-match .match-pair{grid-template-columns:minmax(0,1fr) 42px minmax(0,1fr)!important;gap:4px!important}body[data-active-nav="results"] .results-live-match .match-portrait-wrap,body[data-active-nav="results"] .results-live-match .match-portrait{width:43px!important}body[data-active-nav="results"] .results-live-match .match-portrait{height:48px!important}}
   `;
   document.head.append(stylesheet);
 
@@ -147,12 +167,30 @@
   } catch {}
   const favoriteRecords = new Map();
   state.matchViewByEvent ||= {};
+  state.rosterLayoutByEvent ||= {};
   function setMatchView(panel, view) {
     const players = view === 'players';
     panel.dataset.rosterView = view;
     panel.querySelector('[data-match-list]').hidden = players;
     panel.querySelector('.roster-gallery').hidden = !players;
     panel.querySelectorAll('[data-match-view]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.matchView === view)));
+  }
+  function arrangeRoster(roster, layout) {
+    const columns = [...roster.querySelectorAll('.roster-column')];
+    const groups = [[], []];
+    roster.querySelectorAll('.roster-player').forEach(player => {
+      const left = layout === 'ranking' ? player.dataset.rosterRank !== '' : player.dataset.rosterChina === 'true';
+      groups[left ? 0 : 1].push(player);
+    });
+    groups.forEach((players, index) => {
+      players.sort((a, b) => layout === 'ranking' && index === 0 ?
+        Number(a.dataset.rosterRank) - Number(b.dataset.rosterRank) :
+        Number(a.dataset.rosterOrder) - Number(b.dataset.rosterOrder));
+      columns[index].querySelector('.roster-grid').append(...players);
+      columns[index].querySelector('h3').innerHTML = `${layout === 'ranking' ? (index ? '其他球员' : '世界前 16') : (index ? '国外球员' : '中国球员')} <small>${players.length} 位</small>`;
+    });
+    roster.dataset.layout = layout;
+    roster.querySelectorAll('[data-roster-layout]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.rosterLayout === layout)));
   }
   const favoriteButton = key => `<button type="button" class="match-favorite" data-match-favorite="${escape(key)}" aria-pressed="${Boolean(matchFavorites[key])}" aria-label="${matchFavorites[key] ? '取消收藏比赛' : '收藏比赛'}">${matchFavorites[key] ? '★ 已收藏' : '☆ 收藏'}</button>`;
   const persistFavorites = () => {
@@ -287,7 +325,10 @@
       const weekday = validDate ? new Intl.DateTimeFormat('zh-CN', { timeZone: 'Asia/Shanghai', weekday: 'long' }).format(new Date(`${date}T12:00:00+08:00`)) : '';
       const fullDate = validDate ? `${date.slice(0, 4)}年${Number(date.slice(5, 7))}月${Number(date.slice(8))}日` : '日期待定';
       if (validDate && /^\d{2}:\d{2}$/.test(clock(row))) time.dateTime = `${date}T${clock(row)}:00+08:00`;
-      time.innerHTML = `<span>${escape(fullDate)}</span><span>${escape(weekday)}</span><strong>${escape(clock(row) || '时间待定')}</strong>`;
+      const matchClock = clock(row) || '时间待定';
+      const inProgress = ['live', 'suspended'].includes(row.dataset.matchStatus);
+      const statusText = row.dataset.matchStatus === 'suspended' ? '暂停中' : '进行中';
+      time.innerHTML = `<span>${escape(fullDate)}</span><span>${escape(weekday)}</span><strong>${inProgress ? statusText : escape(matchClock)}</strong>${inProgress ? `<small>${matchClock === '时间待定' ? '开赛时间待定' : `原定 ${escape(matchClock)}`}</small>` : ''}`;
       row.prepend(time);
     });
     content.replaceChildren();
@@ -329,7 +370,10 @@
     roster.setAttribute('aria-label', '本赛事参赛球员');
     const entrants = window.CUE_GET_EVENT_PLAYERS?.(panel.dataset.inlineEventId) || [];
     const eliminated = entrants.filter(player => player.eliminated).length;
-    roster.innerHTML = entrants.length ? `<p>已录入 ${entrants.length} 位球员 · 未淘汰 ${entrants.length - eliminated} 位 · 已淘汰 ${eliminated} 位</p><div class="roster-grid">${entrants.map(player => `<figure class="roster-player${player.eliminated ? ' is-eliminated' : ''}"><img src="${escape(player.photo)}" alt="${escape(player.name)}" loading="lazy" referrerpolicy="no-referrer"><figcaption>${escape(player.name)}<small>${player.eliminated ? '已淘汰' : '未淘汰'}</small></figcaption></figure>`).join('')}</div>` : '<p>官方暂未公布可同步的参赛名单。</p>';
+    const rosterKey = name => name.replace(/[’‘]/g, "'").replace(/^Mark J Williams$/, 'Mark Williams').toLowerCase();
+    const top16 = new Map(rankingYears[2026].players.map((name, index) => [rosterKey(name), index + 1]));
+    roster.innerHTML = entrants.length ? `<p>已录入 ${entrants.length} 位球员 · 未淘汰 ${entrants.length - eliminated} 位 · 已淘汰 ${eliminated} 位</p><div class="roster-layout-switch" role="group" aria-label="参赛球员布局"><button type="button" data-roster-layout="country">中国 vs 国外</button><button type="button" data-roster-layout="ranking">世界排名</button></div><div class="roster-columns"><section class="roster-column" aria-label="左侧球员"><h3></h3><div class="roster-grid"></div></section><section class="roster-column" aria-label="右侧球员"><h3></h3><div class="roster-grid"></div></section></div>${entrants.map((player, index) => `<figure class="roster-player${player.eliminated ? ' is-eliminated' : ''}" data-roster-order="${index}" data-roster-china="${['CN', 'HK'].includes(player.countryCode)}" data-roster-rank="${top16.get(rosterKey(player.en)) || ''}"><img src="${escape(player.photo)}" alt="${escape(player.name)}" loading="lazy" referrerpolicy="no-referrer"><figcaption>${escape(player.name)}<small>${player.eliminated ? '已淘汰' : '未淘汰'}</small></figcaption></figure>`).join('')}` : '<p>官方暂未公布可同步的参赛名单。</p>';
+    if (entrants.length) arrangeRoster(roster, state.rosterLayoutByEvent[panel.dataset.inlineEventId] || 'country');
     roster.addEventListener('error', event => {
       const image = event.target;
       if (image instanceof HTMLImageElement && !image.src.endsWith('/player-placeholder.svg')) image.src = './player-placeholder.svg';
@@ -356,6 +400,20 @@
     if (state.nav === 'results') {
       const list = document.querySelector('.details-list');
       if (list) {
+        list.querySelectorAll('.inline-bracket .match-fixture[data-match-status="live"],.inline-bracket .match-fixture[data-match-status="suspended"]').forEach(row => {
+          const date = row.dataset.matchDate;
+          const matchClock = row.querySelector('.match-when strong')?.textContent.trim() || '时间待定';
+          const time = document.createElement('time');
+          time.className = 'compact-fixture-time';
+          if (/^\d{4}-\d{2}-\d{2}$/.test(date || '')) {
+            time.dateTime = /^\d{2}:\d{2}$/.test(matchClock) ? `${date}T${matchClock}:00+08:00` : date;
+            const weekday = new Intl.DateTimeFormat('zh-CN', { timeZone: 'Asia/Shanghai', weekday: 'long' }).format(new Date(`${date}T12:00:00+08:00`));
+            time.innerHTML = `<span>${date.slice(0, 4)}年${Number(date.slice(5, 7))}月${Number(date.slice(8))}日</span><span>${weekday}</span>`;
+          } else time.innerHTML = '<span>日期待定</span>';
+          time.innerHTML += `<strong>${row.dataset.matchStatus === 'suspended' ? '暂停中' : '进行中'}</strong><small>${matchClock === '时间待定' ? '开赛时间待定' : `原定 ${escape(matchClock)}`}</small>`;
+          row.classList.add('results-live-match');
+          row.prepend(time);
+        });
         const cards = Array.from(list.querySelectorAll(':scope > .event-row-card')).map(card => ({
           card,
           bracket: card.nextElementSibling?.matches('.inline-bracket') ? card.nextElementSibling : null,
@@ -412,6 +470,13 @@
     }
   };
   document.addEventListener('click', event => {
+    const rosterLayout = event.target.closest?.('[data-roster-layout]');
+    if (rosterLayout) {
+      const panel = rosterLayout.closest('.redesign-panel');
+      state.rosterLayoutByEvent[panel.dataset.inlineEventId] = rosterLayout.dataset.rosterLayout;
+      arrangeRoster(panel.querySelector('.roster-gallery'), rosterLayout.dataset.rosterLayout);
+      return;
+    }
     const view = event.target.closest?.('[data-match-view]');
     if (view) {
       const panel = view.closest('.redesign-panel');
