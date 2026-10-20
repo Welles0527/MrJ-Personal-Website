@@ -88,6 +88,8 @@
     }
   `;
   stylesheet.textContent += `
+    .calendar-back-link{display:inline-block;margin-left:14px;font-size:12px;line-height:1.5;font-weight:500;white-space:nowrap;color:var(--selection)}
+    @media(max-width:680px){header:has(.calendar-back-link){position:relative;height:92px!important;padding-top:26px!important}header .calendar-back-link{position:absolute;top:8px;left:17px;margin:0;font-size:11px}}
     .redesign-panel [data-redesign-match]{grid-template-columns:180px minmax(0,1fr)!important;min-height:116px!important;padding:12px 30px 12px 18px!important}
     .redesign-panel .match-when,.redesign-panel .knockout-match-meta,.redesign-panel .redesign-round-label,.redesign-panel .redesign-chevron,.redesign-panel .match-flag{display:none!important}
     .redesign-panel .match-pair,.redesign-panel .knockout-match-players{grid-column:2;width:min(100%,440px);margin-inline:auto;grid-template-columns:minmax(0,1fr) 80px minmax(0,1fr)!important;align-items:center;gap:12px!important}
@@ -400,14 +402,13 @@
     const count = document.querySelector('[data-nav="favorites"]>span');
     if (count) count.textContent = Object.keys(matchFavorites).length + state.favorites.size;
     if (state.nav === 'favorites') renderMatchFavorites();
-    const title = document.querySelector('main h1');
-    if (title) {
+    const breadcrumb = document.querySelector('header .crumb');
+    if (breadcrumb) {
       const back = document.createElement('a');
       back.href = '../super-calendar/index.html#overview';
       back.textContent = '返回超级日历 ↗';
-      back.style.cssText = 'display:inline-block;margin-left:16px;font-size:13px;line-height:1.5;font-weight:500;letter-spacing:normal;white-space:nowrap;color:var(--selection)';
-      title.style.cssText += ';display:flex;align-items:center;flex-wrap:wrap;gap:6px 0';
-      title.append(back);
+      back.className = 'calendar-back-link';
+      breadcrumb.append(back);
     }
   };
   document.addEventListener('click', event => {
