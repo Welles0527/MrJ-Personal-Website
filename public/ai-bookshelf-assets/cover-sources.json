@@ -91,13 +91,14 @@
   },
   {
     "id": "ant-financial",
-    "sourcePage": "https://book.douban.com/subject/27004031/",
-    "imageUrl": "https://img9.doubanio.com/view/subject/l/public/s29409046.jpg",
+    "sourcePage": "https://www.dedao.cn/ebook/detail?id=BEJmMZXq1b8qOpBlD69XAdP7LEGaKJWEBG3xRnme5vrVzo4QMZYgNyk2jNA5467K",
+    "imageUrl": "https://piccdn3.umiwi.com/img/201704/25/201704250940207658678336.jpg",
     "title": "蚂蚁金服 (豆瓣)",
-    "file": "ant-financial-published.jpg",
+    "file": "ant-financial-flat.jpg",
     "bookTitle": "蚂蚁金服",
     "author": "由曦",
-    "category": "商业"
+    "category": "商业",
+    "processing": "Authentic flat front cover; rendered as a CSS 3D book without product-photo background or embedded spine."
   },
   {
     "id": "homo-deus",
@@ -121,13 +122,14 @@
   },
   {
     "id": "tencent",
-    "sourcePage": "https://book.douban.com/subject/26929955/",
-    "imageUrl": "https://img3.doubanio.com/view/subject/l/public/s29202707.jpg",
+    "sourcePage": "https://read.douban.com/ebook/31076416/",
+    "imageUrl": "https://pic.arkread.com/cover/ebook/f/31076416.1653706365.jpg!cover_default.jpg",
     "title": "腾讯传 (豆瓣)",
-    "file": "tencent-published.jpg",
+    "file": "tencent-flat.jpg",
     "bookTitle": "腾讯传",
     "author": "吴晓波",
-    "category": "商业"
+    "category": "商业",
+    "processing": "Authentic flat front cover; rendered as a CSS 3D book without product-photo background or embedded spine."
   },
   {
     "id": "greenspan",
@@ -151,13 +153,14 @@
   },
   {
     "id": "great-game",
-    "sourcePage": "https://book.douban.com/subject/30424140/",
-    "imageUrl": "https://img3.doubanio.com/view/subject/l/public/s33746909.jpg",
+    "sourcePage": "https://read.douban.com/ebook/109197076/",
+    "imageUrl": "https://pic.arkread.com/cover/ebook/f/109197076.1653700448.jpg!cover_default.jpg",
     "title": "伟大的博弈 (豆瓣)",
-    "file": "great-game-published.jpg",
+    "file": "great-game-flat.jpg",
     "bookTitle": "伟大的博弈",
     "author": "约翰·S.戈登",
-    "category": "经济"
+    "category": "经济",
+    "processing": "Authentic flat front cover; rendered as a CSS 3D book without product-photo background or embedded spine."
   },
   {
     "id": "capital-5000",
@@ -171,22 +174,24 @@
   },
   {
     "id": "republic",
-    "sourcePage": "https://book.douban.com/subject/30417846/",
-    "imageUrl": "https://img3.doubanio.com/view/subject/l/public/s29963863.jpg",
+    "sourcePage": "https://halifax.overdrive.com/media/11474517",
+    "imageUrl": "https://img1.od-cdn.com/ImageType-100/5719-1/%7B3100A641-C708-44EF-A165-BA6498E9A12B%7DIMG100.JPG",
     "title": "理想国 (豆瓣)",
-    "file": "republic-published.jpg",
+    "file": "republic-flat.jpg",
     "bookTitle": "理想国",
     "author": "柏拉图",
-    "category": "哲学"
+    "category": "哲学",
+    "processing": "Authentic flat front cover; rendered as a CSS 3D book without product-photo background or embedded spine."
   },
   {
     "id": "wang-yangming",
-    "sourcePage": "https://www.nationalreading.gov.cn/hstj/rwsk/202203/t20220329_105002.html",
-    "imageUrl": "https://www.nationalreading.gov.cn/hstj/rwsk/202203/W020220414609318775253.png",
-    "file": "wang-yangming-published.png",
+    "sourcePage": "https://www.dedao.cn/ebook/detail?id=Jjrvne28LQ2OjoRqkgdnmJX6NADGlWxXY4Wx1KvbBz97eaMP4VZrpEYy5VB6adNX",
+    "imageUrl": "https://piccdn3.umiwi.com/img/201903/18/201903182214573493188195.jpg",
+    "file": "wang-yangming-flat.jpg",
     "bookTitle": "五百年来王阳明",
     "author": "郦波",
-    "category": "哲学"
+    "category": "哲学",
+    "processing": "Authentic flat front cover; rendered as a CSS 3D book without product-photo background or embedded spine."
   },
   {
     "id": "bible",
