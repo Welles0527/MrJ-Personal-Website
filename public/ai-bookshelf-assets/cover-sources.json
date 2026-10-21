@@ -1,0 +1,202 @@
+[
+  {
+    "id": "quantum-dice",
+    "sourcePage": "https://read.douban.com/ebook/119081113/",
+    "imageUrl": "https://pic.arkread.com/cover/ebook/f/119081113.1653699745.jpg!cover_default.jpg",
+    "title": "上帝掷骰子吗？（升级版） - 曹天元 | 豆瓣阅读",
+    "file": "quantum-dice-published.jpg",
+    "bookTitle": "上帝掷骰子吗？",
+    "author": "曹天元",
+    "category": "科学"
+  },
+  {
+    "id": "snowball",
+    "sourcePage": "https://book.douban.com/subject/3605924/",
+    "imageUrl": "https://img3.doubanio.com/view/subject/l/public/s3665853.jpg",
+    "title": "滚雪球 (豆瓣)",
+    "file": "snowball-published.jpg",
+    "bookTitle": "滚雪球",
+    "author": "艾丽斯·施罗德",
+    "category": "投资"
+  },
+  {
+    "id": "poor-charlie",
+    "sourcePage": "https://book.douban.com/subject/26831789/",
+    "imageUrl": "https://img3.doubanio.com/view/subject/l/public/s28875892.jpg",
+    "title": "穷查理宝典 (豆瓣)",
+    "file": "poor-charlie-published.jpg",
+    "bookTitle": "穷查理宝典",
+    "author": "查理·芒格 · 彼得·考夫曼 编",
+    "category": "投资"
+  },
+  {
+    "id": "wealth-of-nations",
+    "sourcePage": "https://book.douban.com/subject/25947471/",
+    "imageUrl": "https://img9.doubanio.com/view/subject/l/public/s29186904.jpg",
+    "title": "国富论（上下卷） (豆瓣)",
+    "file": "wealth-of-nations-published.jpg",
+    "bookTitle": "国富论",
+    "author": "亚当·斯密",
+    "category": "经济"
+  },
+  {
+    "id": "simple-investing",
+    "sourcePage": "https://read.douban.com/ebook/145151305/",
+    "imageUrl": "https://pic.arkread.com/cover/ebook/f/145151305.1653696768.jpg!cover_default.jpg",
+    "title": "投资中最简单的事（更新版） - 邱国鹭 | 豆瓣阅读",
+    "file": "simple-investing-published.jpg",
+    "bookTitle": "投资中最简单的事",
+    "author": "邱国鹭",
+    "category": "投资"
+  },
+  {
+    "id": "sapiens",
+    "sourcePage": "https://book.douban.com/subject/25985021/",
+    "imageUrl": "https://img3.doubanio.com/view/subject/l/public/s27814883.jpg",
+    "title": "人类简史 (豆瓣)",
+    "file": "sapiens-published.jpg",
+    "bookTitle": "人类简史",
+    "author": "尤瓦尔·赫拉利",
+    "category": "历史"
+  },
+  {
+    "id": "brief-history-of-time",
+    "sourcePage": "https://book.douban.com/subject/30135708/",
+    "imageUrl": "https://img9.doubanio.com/view/subject/l/public/s29681995.jpg",
+    "title": "时间简史 (豆瓣)",
+    "file": "brief-history-of-time-published.jpg",
+    "bookTitle": "时间简史",
+    "author": "史蒂芬·霍金",
+    "category": "科学"
+  },
+  {
+    "id": "rich-dad",
+    "sourcePage": "https://book.douban.com/subject/1033778/",
+    "imageUrl": "https://img3.doubanio.com/view/subject/l/public/s11229869.jpg",
+    "title": "富爸爸，穷爸爸 (豆瓣)",
+    "file": "rich-dad-published.jpg",
+    "bookTitle": "富爸爸穷爸爸",
+    "author": "罗伯特·清崎 / 莎伦·莱希特",
+    "category": "投资"
+  },
+  {
+    "id": "market-economics",
+    "sourcePage": "https://read.douban.com/ebook/25901603/",
+    "imageUrl": "https://pic.arkread.com/cover/ebook/f/25901603.1653707227.jpg!cover_default.jpg",
+    "title": "菜场经济学 - 财上海 | 豆瓣阅读",
+    "file": "market-economics-published.jpg",
+    "bookTitle": "菜场经济学",
+    "author": "财上海",
+    "category": "经济"
+  },
+  {
+    "id": "ant-financial",
+    "sourcePage": "https://book.douban.com/subject/27004031/",
+    "imageUrl": "https://img9.doubanio.com/view/subject/l/public/s29409046.jpg",
+    "title": "蚂蚁金服 (豆瓣)",
+    "file": "ant-financial-published.jpg",
+    "bookTitle": "蚂蚁金服",
+    "author": "由曦",
+    "category": "商业"
+  },
+  {
+    "id": "homo-deus",
+    "sourcePage": "https://book.douban.com/subject/26943161/",
+    "imageUrl": "https://img3.doubanio.com/view/subject/l/public/s34207642.jpg",
+    "title": "未来简史 (豆瓣)",
+    "file": "homo-deus-published.jpg",
+    "bookTitle": "未来简史",
+    "author": "尤瓦尔·赫拉利",
+    "category": "人文社科"
+  },
+  {
+    "id": "leek",
+    "sourcePage": "https://book.douban.com/subject/30314653/",
+    "imageUrl": "https://img3.doubanio.com/view/subject/l/public/s29869019.jpg",
+    "title": "韭菜的自我修养 (豆瓣)",
+    "file": "leek-published.jpg",
+    "bookTitle": "韭菜的自我修养",
+    "author": "李笑来",
+    "category": "投资"
+  },
+  {
+    "id": "tencent",
+    "sourcePage": "https://book.douban.com/subject/26929955/",
+    "imageUrl": "https://img3.doubanio.com/view/subject/l/public/s29202707.jpg",
+    "title": "腾讯传 (豆瓣)",
+    "file": "tencent-published.jpg",
+    "bookTitle": "腾讯传",
+    "author": "吴晓波",
+    "category": "商业"
+  },
+  {
+    "id": "greenspan",
+    "sourcePage": "https://read.douban.com/ebook/108469843/",
+    "imageUrl": "https://pic.arkread.com/cover/ebook/f/108469843.1653696277.jpg!cover_default.jpg",
+    "title": "格林斯潘传 - [美] 塞巴斯蒂安·马拉比 | 豆瓣阅读",
+    "file": "greenspan-published.jpg",
+    "bookTitle": "格林斯潘传",
+    "author": "塞巴斯蒂安·马拉比",
+    "category": "经济"
+  },
+  {
+    "id": "prediction",
+    "sourcePage": "https://book.douban.com/subject/35219831/",
+    "imageUrl": "https://img3.doubanio.com/view/subject/l/public/s33855089.jpg",
+    "title": "预测 (豆瓣)",
+    "file": "prediction-published.jpg",
+    "bookTitle": "预测",
+    "author": "洪灏",
+    "category": "投资"
+  },
+  {
+    "id": "great-game",
+    "sourcePage": "https://book.douban.com/subject/30424140/",
+    "imageUrl": "https://img3.doubanio.com/view/subject/l/public/s33746909.jpg",
+    "title": "伟大的博弈 (豆瓣)",
+    "file": "great-game-published.jpg",
+    "bookTitle": "伟大的博弈",
+    "author": "约翰·S.戈登",
+    "category": "经济"
+  },
+  {
+    "id": "capital-5000",
+    "sourcePage": "https://read.douban.com/ebook/169701936/",
+    "imageUrl": "https://pic.arkread.com/cover/ebook/f/169701936.1653695480.jpg!cover_default.jpg",
+    "title": "资本5000年：资本秩序如何塑造人类文明 - 彭兴庭 | 豆瓣阅读",
+    "file": "capital-5000-published.jpg",
+    "bookTitle": "资本5000年",
+    "author": "彭兴庭",
+    "category": "经济"
+  },
+  {
+    "id": "republic",
+    "sourcePage": "https://book.douban.com/subject/30417846/",
+    "imageUrl": "https://img3.doubanio.com/view/subject/l/public/s29963863.jpg",
+    "title": "理想国 (豆瓣)",
+    "file": "republic-published.jpg",
+    "bookTitle": "理想国",
+    "author": "柏拉图",
+    "category": "哲学"
+  },
+  {
+    "id": "wang-yangming",
+    "sourcePage": "https://www.nationalreading.gov.cn/hstj/rwsk/202203/t20220329_105002.html",
+    "imageUrl": "https://www.nationalreading.gov.cn/hstj/rwsk/202203/W020220414609318775253.png",
+    "file": "wang-yangming-published.png",
+    "bookTitle": "五百年来王阳明",
+    "author": "郦波",
+    "category": "哲学"
+  },
+  {
+    "id": "bible",
+    "sourcePage": null,
+    "imageUrl": null,
+    "file": "bible-black-gold.png",
+    "bookTitle": "圣经",
+    "author": "多位作者 · 旧约与新约",
+    "category": "信仰",
+    "source": "User supplied Bible cover photograph",
+    "processing": "Imagegen: perspective-correct front cover, black leather and gold lettering; CSS 3D spine and gilded pages."
+  }
+]
