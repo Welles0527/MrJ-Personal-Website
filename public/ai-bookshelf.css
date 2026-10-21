@@ -37,3 +37,11 @@
 .book-body[data-book-id="bible"] .book-pages { background-color: #c9ac67; background-blend-mode: multiply; }
 .book-item.is-pulled .book-body[data-book-id="bible"], .book-item:focus-within .book-body[data-book-id="bible"] { transform: translate3d(0,-8px,35px) rotateY(28deg); }
 .cover-image[src*="bible-black-gold"] { object-fit: contain; background: #111313; }
+
+/* Published contents retain hierarchy without linking to demo chapters. */
+.published-contents { max-height: 360px; overflow-y: auto; overscroll-behavior: contain; padding-right: 10px; scrollbar-width: thin; }
+.published-contents li { padding: 10px 0; font-size: 13px; line-height: 1.65; overflow-wrap: anywhere; border-bottom: 1px solid #d8c9b444; }
+.published-contents .toc-level-0 { font-weight: 600; }
+.published-contents .toc-level-1 { padding-left: 12px; }
+.published-contents .toc-level-2 { padding-left: 24px; color: #81766b; }
+.toc-source { display: inline-block; margin-bottom: 12px; text-decoration: underline; text-underline-offset: 3px; }
