@@ -1,0 +1,75 @@
+{
+  "source": "https://baibaoshu.net",
+  "snapshot": "2026-10-21",
+  "chapters": 1189,
+  "verses": 31100,
+  "verse": 30882,
+  "passage": 202,
+  "chapter": 16,
+  "chapterFallbacks": [
+    {
+      "book": "jdg",
+      "chapter": 10,
+      "verses": [
+        17,
+        18
+      ]
+    },
+    {
+      "book": "1sa",
+      "chapter": 15,
+      "verses": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "book": "1ch",
+      "chapter": 21,
+      "verses": [
+        31
+      ]
+    },
+    {
+      "book": "2ch",
+      "chapter": 20,
+      "verses": [
+        13
+      ]
+    },
+    {
+      "book": "isa",
+      "chapter": 66,
+      "verses": [
+        14
+      ]
+    },
+    {
+      "book": "luk",
+      "chapter": 15,
+      "verses": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "book": "act",
+      "chapter": 22,
+      "verses": [
+        30
+      ]
+    },
+    {
+      "book": "1co",
+      "chapter": 11,
+      "verses": [
+        1
+      ]
+    }
+  ]
+}

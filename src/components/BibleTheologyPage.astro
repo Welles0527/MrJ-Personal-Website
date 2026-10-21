@@ -712,12 +712,20 @@ const hymnCards = [
     </div>
   </dialog>
 
-  <aside class="bible-translation-popover" data-bible-translation-popover role="status" aria-live="polite" hidden>
+  <aside id="bible-translation-popover" class="bible-translation-popover" data-bible-translation-popover role="dialog" aria-labelledby="bible-translation-reference" hidden>
     <div class="bible-translation-popover-heading">
-      <strong data-bible-translation-reference>参考译文</strong>
+      <strong id="bible-translation-reference" data-bible-translation-reference>参考译文</strong>
       <small data-bible-translation-source>CCB · Biblica</small>
+      <button class="bible-translation-close" data-bible-translation-close type="button" aria-label="关闭译文与注解">×</button>
     </div>
-    <p data-bible-translation-text>正在载入译文…</p>
+    <div class="bible-translation-popover-body" data-bible-translation-body>
+      <p data-bible-translation-text aria-live="polite">正在载入译文…</p>
+      <section class="bible-commentary" aria-label="经文注解">
+        <h3>经文注解</h3>
+        <div class="bible-commentary-content" data-bible-commentary-content aria-live="polite"></div>
+        <a class="bible-commentary-source" data-bible-commentary-source target="_blank" rel="noopener noreferrer" hidden>来源：百宝书 · 查看本章原文 ↗</a>
+      </section>
+    </div>
   </aside>
 
   <p class="bible-toast" data-bible-toast hidden></p>
@@ -1955,16 +1963,20 @@ const hymnCards = [
 
   .bible-translation-popover {
     position: fixed;
+    display: flex;
+    flex-direction: column;
     z-index: 120;
     box-sizing: border-box;
     max-width: calc(100vw - 1.5rem);
+    max-height: min(38rem, calc(100dvh - 1.5rem));
+    overflow: hidden;
     border: 1px solid rgba(181, 138, 50, 0.5);
     border-radius: 0.72rem;
     padding: 0.82rem 0.9rem;
     background: rgba(255, 250, 240, 0.98);
     color: #21170c;
     box-shadow: 0 14px 36px rgba(54, 36, 12, 0.24);
-    pointer-events: none;
+    pointer-events: auto;
   }
 
   .bible-translation-popover[hidden] {
@@ -1976,6 +1988,7 @@ const hymnCards = [
     align-items: baseline;
     justify-content: space-between;
     gap: 0.8rem;
+    flex: none;
   }
 
   .bible-translation-popover-heading strong {
@@ -1989,7 +2002,78 @@ const hymnCards = [
     color: #8b6c3a;
     font-size: 0.64rem;
     font-weight: 800;
+    margin-left: auto;
   }
+
+  .bible-translation-close {
+    flex: none;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: 1px solid rgba(181, 138, 50, 0.4);
+    border-radius: 50%;
+    color: inherit;
+    background: transparent;
+    font-size: 1.3rem;
+    cursor: pointer;
+  }
+
+  .bible-translation-popover-body {
+    overflow-y: auto;
+    min-height: 0;
+    overscroll-behavior: contain;
+    overflow-wrap: anywhere;
+    scrollbar-gutter: stable;
+    padding-right: 0.35rem;
+  }
+
+  .bible-commentary {
+    margin-top: 1rem;
+    border-top: 1px solid rgba(181, 138, 50, 0.3);
+    padding-top: 0.75rem;
+  }
+
+  .bible-commentary h3 {
+    margin: 0;
+    font-size: 0.95rem;
+    color: inherit;
+  }
+
+  .bible-commentary-content h4 {
+    margin: 0.7rem 0 0.3rem;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  .bible-translation-popover .bible-commentary-content p,
+  .bible-translation-popover .bible-commentary-content blockquote {
+    margin: 0.65rem 0;
+    font-size: 0.88rem;
+    line-height: 1.8;
+    white-space: pre-line;
+  }
+
+  .bible-commentary-content blockquote {
+    border-left: 2px solid #b58a32;
+    padding-left: 0.75rem;
+    opacity: 0.85;
+  }
+
+  .bible-translation-popover .bible-commentary-content .bible-commentary-range,
+  .bible-commentary-source {
+    font-size: 0.75rem;
+    line-height: 1.6;
+    color: inherit;
+    opacity: 0.8;
+  }
+
+  .bible-commentary-source {
+    display: inline-block;
+    margin: 0.6rem 0 0.25rem;
+    text-underline-offset: 0.2em;
+  }
+
+  .bible-commentary-source[hidden] { display: none; }
 
   .bible-translation-popover p {
     margin: 0.48rem 0 0;

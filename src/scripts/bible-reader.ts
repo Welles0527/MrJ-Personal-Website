@@ -2,6 +2,7 @@ import { cloudErrorMessage, getCloudDb, getCloudSession, getRememberedSession, s
 import type { CloudSession } from './site-auth';
 import { accountStorageKey, resolveAccountSnapshot } from './bible-reader-account-state';
 import { createBibleReaderCloudStore } from './bible-reader-cloud-store';
+import { loadVerseCommentary, renderCommentary } from './bible-commentary';
 
 type BibleBook = {
   slug: string;
@@ -351,6 +352,10 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   const translationReference = get<HTMLElement>('[data-bible-translation-reference]');
   const translationText = get<HTMLElement>('[data-bible-translation-text]');
   const translationSource = get<HTMLElement>('[data-bible-translation-source]');
+  const translationBody = get<HTMLElement>('[data-bible-translation-body]');
+  const commentaryContent = get<HTMLElement>('[data-bible-commentary-content]');
+  const commentarySource = get<HTMLAnchorElement>('[data-bible-commentary-source]');
+  const translationClose = get<HTMLButtonElement>('[data-bible-translation-close]');
 
   const params = new URLSearchParams(window.location.search);
   root.classList.toggle('is-direct-reader', params.has('book'));
@@ -934,6 +939,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     window.clearTimeout(translationHoverTimer);
     translationHoverTimer = undefined;
     translationRequestToken += 1;
+    activeTranslationVerse?.querySelector('[data-action="show-translation"]')?.setAttribute('aria-expanded', 'false');
     activeTranslationVerse?.classList.remove('is-translation-active');
     activeTranslationVerse = null;
     translationPopover.hidden = true;
@@ -942,7 +948,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   const positionTranslationPopover = (verseElement: HTMLElement) => {
     if (translationPopover.hidden) return;
     const viewportPadding = 12;
-    const width = Math.min(430, window.innerWidth - viewportPadding * 2);
+    const width = Math.min(520, window.innerWidth - viewportPadding * 2);
     translationPopover.style.width = `${width}px`;
     const verseBounds = verseElement.getBoundingClientRect();
     const popoverHeight = translationPopover.offsetHeight;
@@ -973,18 +979,40 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     const key = verseKey(book, chapter, verse);
     const requestToken = ++translationRequestToken;
     activeTranslationVerse?.classList.remove('is-translation-active');
+    activeTranslationVerse?.querySelector('[data-action="show-translation"]')?.setAttribute('aria-expanded', 'false');
     activeTranslationVerse = verseElement;
     activeTranslationVerse.classList.add('is-translation-active');
+    activeTranslationVerse.querySelector('[data-action="show-translation"]')?.setAttribute('aria-expanded', 'true');
     translationReference.textContent = `${sample.title}:${verse}`;
     translationText.textContent = '正在载入译文…';
     translationSource.textContent = 'CCB · Biblica';
+    commentaryContent.textContent = '正在载入经文注解…';
+    commentarySource.hidden = true;
     translationPopover.hidden = false;
+    translationBody.scrollTop = 0;
     positionTranslationPopover(verseElement);
+
+    // Independent loading: translation outages must not suppress locally stored commentary.
+    void loadVerseCommentary(book, chapter, verse).then(({ sections, sourceUrl }) => {
+      if (requestToken !== translationRequestToken || activeTranslationVerse !== verseElement) return;
+      renderCommentary(commentaryContent, sections, chapter);
+      const source = new URL(sourceUrl);
+      if (source.origin === 'https://baibaoshu.net') {
+        commentarySource.href = source.href;
+        commentarySource.hidden = false;
+      }
+      positionTranslationPopover(verseElement);
+    }).catch(() => {
+      if (requestToken !== translationRequestToken || activeTranslationVerse !== verseElement) return;
+      commentaryContent.textContent = '暂时无法载入注解，请关闭后重新点击“译”重试。';
+      positionTranslationPopover(verseElement);
+    });
 
     const cached = translationCache.get(key);
     if (cached) {
       translationReference.textContent = cached.reference || `${sample.title}:${verse}`;
       translationText.textContent = cached.content;
+      translationSource.textContent = `${cached.version || 'CCB'} · ${cached.source || 'Biblica'}`;
       positionTranslationPopover(verseElement);
       return;
     }
@@ -1068,7 +1096,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
           <div class="bible-verse-actions" data-verse-actions="${verse}">
             <button type="button" data-action="toggle-bookmark" data-verse="${verse}" title="${isBookmarked(sample.book, sample.chapter, verse) ? '取消收藏' : '收藏'}" aria-label="${isBookmarked(sample.book, sample.chapter, verse) ? '取消收藏' : '收藏'}">${isBookmarked(sample.book, sample.chapter, verse) ? '★' : '☆'}</button>
             <button class="bible-verse-read-action" type="button" data-action="toggle-read-verse" data-verse="${verse}" title="标记阅读" aria-label="切换本节阅读状态" aria-pressed="${read}">✓</button>
-            <button class="bible-verse-translation-link" type="button" data-action="show-translation" data-verse="${verse}" aria-label="查看 CCB 当代译本">译</button>
+            <button class="bible-verse-translation-link" type="button" data-action="show-translation" data-verse="${verse}" aria-label="查看译文与经文注解" aria-controls="bible-translation-popover" aria-expanded="false">译</button>
           </div>
         </section>
       `;
@@ -2186,6 +2214,18 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     if (!(target instanceof Element)) return;
     const trigger = target.closest<HTMLElement>('[data-action="show-translation"]');
     if (!trigger || (event.relatedTarget instanceof Node && trigger.contains(event.relatedTarget))) return;
+    window.clearTimeout(translationHoverTimer);
+    translationHoverTimer = undefined;
+  });
+
+  translationClose.addEventListener('click', () => {
+    const trigger = activeTranslationVerse?.querySelector<HTMLButtonElement>('[data-action="show-translation"]');
+    hideTranslationPopover();
+    trigger?.focus({ preventScroll: true });
+  });
+  document.addEventListener('pointerdown', (event) => {
+    const target = event.target;
+    if (!(target instanceof Element) || target.closest('[data-bible-translation-popover], [data-action="show-translation"]')) return;
     hideTranslationPopover();
   });
 
@@ -2357,6 +2397,10 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     renderNotes();
   });
   window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !translationPopover.hidden) {
+      translationClose.click();
+      return;
+    }
     if (event.key === 'ArrowLeft') setFeature(currentFeature - 1);
     if (event.key === 'ArrowRight') setFeature(currentFeature + 1);
   });
