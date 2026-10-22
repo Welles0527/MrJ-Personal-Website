@@ -6,6 +6,32 @@ import path from 'node:path';
 import { readEvents, findTournament, normalizeTournament, normalizeRankings, rankingsEndpoint, synchronize } from '../scripts/sync-snooker-scores.mjs';
 import cloudSync from '../scripts/snooker-cloud-sync.cjs';
 
+test('official 147 list updates counts and rejects incomplete upstream pages', () => {
+  const lines = Array.from({ length: 246 }, (_, index) =>
+    `<strong>${index + 1}.</strong>&nbsp;${index ? 'Ronnie O\\\'Sullivan' : 'Steve Davis'}${index === 97 ? ' ' : ' &ndash; '}2026 Example<br>`).join('');
+  const html = `<script>window.__NUXT__={content:'<p>Steve Davis made the first ever official 147</p><p>${lines}</p>',imageKey:n}</script>`;
+  const result = cloudSync.normalizeMaximums(html, '2026-10-22T00:00:00Z');
+  assert.equal(result.total, 246);
+  assert.deepEqual(result.players[0], { name: "Ronnie O'Sullivan", count: 245 });
+  assert.throws(() => cloudSync.normalizeMaximums(html.replace('<strong>246.</strong>', ''), result.fetchedAt));
+});
+
+test('147 refresh persists when the separate tournament feed fails', async () => {
+  const lines = Array.from({ length: 246 }, (_, index) =>
+    `<strong>${index + 1}.</strong>&nbsp;${index ? 'Ronnie O\\\'Sullivan' : 'Steve Davis'} &ndash; 2026 Example<br>`).join('');
+  const html = `content:'<p>Steve Davis made the first ever official 147</p><p>${lines}</p>',imageKey:n`;
+  let saved;
+  const db = { createCollection: async () => {}, collection: () => ({ doc: () => ({
+    get: async () => ({ data: [] }), set: async record => { saved = record.snapshot; }
+  }) }) };
+  const fetchImpl = async url => String(url).includes('/147s/allofficial147s/')
+    ? { ok: true, text: async () => html }
+    : { ok: false, status: 503 };
+  await cloudSync.refreshSnookerScores(db, { now: new Date('2026-10-22T00:00:00Z'), fetchImpl });
+  assert.equal(saved.maximums.total, 246);
+  assert.ok(saved.failures.source);
+});
+
 test('additional five-minute timer refreshes snooker without increasing the shared football schedule', () => {
   assert.equal(cloudSync.scheduledRefreshAction({ TriggerName: 'refresh-snooker-every-5-minutes' }), 'refreshSnookerScores');
   assert.equal(cloudSync.scheduledRefreshAction({ TriggerName: 'refresh-scores-every-20-minutes' }), 'refreshAll');

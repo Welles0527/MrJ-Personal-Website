@@ -2,6 +2,7 @@
 
 const WST_ENDPOINT = "https://tournaments.snooker.web.gc.wstservices.co.uk/v2/";
 const RANKINGS_ENDPOINT = 'https://rankings.snooker.web.gc.wstservices.co.uk/v2?rankingsLimit=200&showOfficial=true';
+const MAXIMUMS_URL = 'https://www.wst.tv/147s/allofficial147s/';
 const normalizeRankings = (payload, fetchedAt) => {
   const board = payload?.data?.find(item => item.id === 'abfba8fe-1423-5a2a-a96b-d77e8b413ca8');
   if (!board || board.attributes.live !== false || board.attributes.published !== true) throw new Error('Official world rankings unavailable');
@@ -12,6 +13,39 @@ const normalizeRankings = (payload, fetchedAt) => {
   return { fetchedAt, basis: board.attributes.recalculateAfter, source: 'https://www.wst.tv/rankings/',
     players: rows.map(row => ({ id: row.playerID, rank: row.position,
       name: `${row.player.firstName} ${row.player.surname}`, amount: row.prizeMoney })) };
+};
+const normalizeMaximums = (html, fetchedAt, minimum = 246) => {
+  const page = String(html || '');
+  const introduction = page.indexOf('Steve Davis made the first ever official 147');
+  const contentStart = page.lastIndexOf("content:'", introduction);
+  const contentEnd = page.indexOf("',imageKey:", introduction);
+  if (introduction < 0 || contentStart < 0 || contentEnd < 0) {
+    throw new Error('WST 147 list content missing');
+  }
+  const text = page.slice(contentStart + 9, contentEnd)
+    .replace(/\\n/g, '\n')
+    .replace(/\\'/g, "'")
+    .replace(/<br\s*\/?\s*>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;|&#160;/gi, ' ')
+    .replace(/&ndash;|&#8211;/gi, '–')
+    .replace(/&rsquo;|&#8217;/gi, '’')
+    .replace(/&amp;/gi, '&');
+  const rows = [...text.matchAll(/^\s*(\d{1,3})\s*\.\s*([A-Za-z][A-Za-z .’'\-]+?)(?:\s*[–,-]\s*|\s+)(?:19|20)\d{2}\b/gm)]
+    .map(([, number, name]) => ({ number: Number(number), name: name.replace(/\s+/g, ' ').trim() }));
+  if (rows.length < minimum || rows.some((row, index) => row.number !== index + 1)) {
+    throw new Error(`Incomplete WST 147 list (${rows.length} entries; sequence ${rows.slice(0, 3).map(row => row.number)} ... ${rows.slice(-3).map(row => row.number)})`);
+  }
+  const counts = new Map();
+  for (const { name } of rows) {
+    const key = name.replace(/[‘’]/g, "'");
+    const record = counts.get(key) || { name: key, count: 0 };
+    record.count += 1;
+    counts.set(key, record);
+  }
+  const players = [...counts.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  return { fetchedAt, source: MAXIMUMS_URL, total: rows.length, players };
 };
 const CALENDAR_URL = "https://www.magicj.cn/officialwebsite/snooker-calendar/index.html";
 const COLLECTION = "snookerLiveScores";
@@ -163,14 +197,23 @@ async function refreshSnookerScores(db, { now = new Date(), fetchImpl = fetch } 
       next.failures.rankings = { checkedAt: fetchedAt, message: error.message };
     }
   }
+  if (!previous.maximums || now - Date.parse(previous.maximums.fetchedAt) >= 60 * 60 * 1000) {
+    try {
+      next.maximums = normalizeMaximums(
+        await requestText(MAXIMUMS_URL, fetchImpl), fetchedAt, previous.maximums?.total || 246
+      );
+    } catch (error) {
+      next.failures.maximums = { checkedAt: fetchedAt, message: error.message };
+    }
+  }
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai" }).format(now);
   const cutoff = new Date(Date.parse(today) - 2 * 86400000).toISOString().slice(0, 10);
   const horizon = new Date(Date.parse(today) + 30 * 86400000).toISOString().slice(0, 10);
-  const events = readEvents(await requestText(CALENDAR_URL, fetchImpl))
-    .filter((event) => event.end >= cutoff && event.start <= horizon);
   const tournaments = [];
   let url = WST_ENDPOINT;
   try {
+    const events = readEvents(await requestText(CALENDAR_URL, fetchImpl))
+      .filter((event) => event.end >= cutoff && event.start <= horizon);
     for (let page = 0; url && page < 10; page += 1) {
       const response = await requestJson(url, fetchImpl);
       if (!Array.isArray(response.data)) throw new Error("Invalid WST tournament list");
@@ -220,4 +263,4 @@ async function refreshSnookerScores(db, { now = new Date(), fetchImpl = fetch } 
 const scheduledRefreshAction = event => event?.TriggerName === 'refresh-snooker-every-5-minutes'
   ? 'refreshSnookerScores' : 'refreshAll';
 
-module.exports = { findTournament, normalizeTournament, normalizeRankings, readEvents, readSnookerSnapshot, refreshSnookerScores, scheduledRefreshAction };
+module.exports = { findTournament, normalizeTournament, normalizeRankings, normalizeMaximums, readEvents, readSnookerSnapshot, refreshSnookerScores, scheduledRefreshAction };
