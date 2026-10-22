@@ -55,3 +55,22 @@
 /* Match each flat front cover to its natural proportions on the 3D book. */
 .book-body[data-book-id] { width: calc(var(--book-h) * var(--cover-ratio, .714286)); }
 .book-body[data-book-id] .cover-image { object-fit: contain; }
+
+/* Centered reading dialog with generous measure and bounded internal scrolling. */
+.app-shell .book-details, .app-shell .book-details.mobile-open {
+  display:block; position:fixed; z-index:40; left:50%; top:50%; right:auto; bottom:auto;
+  transform:translate(-50%,-50%); width:800px; max-width:calc(100vw - 48px);
+  height:82dvh; max-height:820px; min-height:0; overflow-y:auto; overscroll-behavior:contain;
+  padding:32px 48px 40px; border:1px solid #dfcfb7; border-radius:20px;
+  box-shadow:0 20px 64px #24170d50;
+}
+.has-book-details > .mobile-backdrop {display:block; position:fixed; inset:0; z-index:39; background:#20180f66;}
+.book-details .details-close {position:sticky; top:0; float:right; margin:0 -16px 0 0; z-index:2; background:#fcf9f3; border-radius:50%;}
+.book-details .book-introduction {font-size:16px; line-height:1.9;}
+.book-details .details-section {margin-top:28px;}
+.book-details .published-contents {font-size:15px; line-height:1.8;}
+@media(max-width:700px){
+  .app-shell .book-details.mobile-open {width:calc(100vw - 24px); max-width:none; height:82dvh; max-height:820px; padding:24px 22px 30px; border-radius:16px;}
+  .book-details .details-close {margin-right:-8px;}
+  .book-details .book-introduction {font-size:15px;}
+}
