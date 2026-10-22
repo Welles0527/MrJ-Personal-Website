@@ -45,7 +45,15 @@ export const mountSiteAuthStatus = async (root: ParentNode = document) => {
     const fallback = getRememberedSession();
     sessionCheck = getCloudSession()
       .then((session) => { renderBlocks(blocks, session); })
-      .catch(() => { renderBlocks(blocks, fallback); })
+      .catch((error) => {
+        renderBlocks(blocks, fallback);
+        if (error?.code === 'SITE_AUTH_REQUIRED') {
+          blocks.forEach((block) => {
+            block.status.textContent = `${fallback ? `账号：${fallback.account}；` : ''}登录已失效，请重新登录。`;
+            if (block.login) block.login.hidden = false;
+          });
+        }
+      })
       .finally(() => { sessionCheck = null; });
     return sessionCheck;
   };

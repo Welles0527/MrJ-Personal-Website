@@ -71,8 +71,8 @@ function installFixture({ identity, key, initialFailure }) {
     database: () => db,
     callFunction: async () => ({ result: {} }),
     auth: () => ({
-      async getSession() { fixture.checks++; check(); return { data: { session: localStorage.getItem('sync-fixture-owner') ? session() : null } }; },
-      async refreshSession() { check(); fixture.refreshes++; fixture.expired = false; return { data: { session: session() } }; },
+      async getSession() { fixture.checks++; check(); if (fixture.missingCredentials) throw new Error('credentials not found'); return { data: { session: !fixture.missingSession && localStorage.getItem('sync-fixture-owner') ? session() : null } }; },
+      async refreshSession() { check(); fixture.refreshes++; if (fixture.revoked) throw new Error('credentials not found'); fixture.expired = fixture.missingSession = fixture.missingCredentials = false; return { data: { session: session() } }; },
       async signOut() { localStorage.removeItem('sync-fixture-owner'); }
     })
   }) };
@@ -97,6 +97,13 @@ try {
     const before = await position();
     await reader.evaluate(() => { window.__stableVerse = document.querySelector('#heb-10-25'); window.__syncFixture.expired = true; window.__syncFixture.intervals[60000].forEach(fn => fn()); });
     await reader.waitForFunction(() => window.__syncFixture.refreshes === 1);
+    for (const field of ['missingSession', 'missingCredentials']) {
+      const previous = await reader.evaluate(() => window.__syncFixture.refreshes);
+      await reader.evaluate(field => { window.__syncFixture[field] = true; window.__syncFixture.intervals[15000].forEach(fn => fn()); }, field);
+      await reader.waitForFunction(previous => window.__syncFixture.refreshes > previous, previous);
+      await reader.waitForFunction(() => document.querySelector('[data-reading-sync-status]')?.dataset.status === 'saved');
+      assert.equal(await reader.locator('dialog[open]').count(), 0, 'missing-session renewal must not open login');
+    }
     await reader.evaluate(() => { window.__syncFixture.offline = true; window.__syncFixture.intervals[15000].forEach(fn => fn()); });
     await reader.waitForFunction(() => document.querySelector('[data-reading-sync-status]')?.textContent.includes('network')
       || [...document.querySelectorAll('[data-action="cloud-login"]')].some(node => node.textContent === '重试同步'));
@@ -168,6 +175,26 @@ try {
     await stocks.evaluate(() => { window.__syncFixture.expired = true; window.__syncFixture.intervals[60000].forEach(fn => fn()); });
     await stocks.waitForFunction(() => window.__syncFixture.refreshes === 1);
     console.log(`PASS ${viewport.width}px calendar iframe, standalone studio, fund preferences/notes, stock account bridge`);
+
+    await reader.evaluate(() => { window.__syncFixture.missingSession = window.__syncFixture.revoked = true; window.__syncFixture.intervals[15000].forEach(fn => fn()); });
+    await reader.waitForFunction(() => [...document.querySelectorAll('[data-action="cloud-login"]')].some(node => node.textContent === '重新登录'));
+    assert.equal(await reader.locator('dialog[open]').count(), 0, 'revocation must not interrupt reading with a modal');
+    const revokedPosition = await position();
+    assert.ok(Math.abs(after.y - revokedPosition.y) <= 3 && Math.abs(after.reader - revokedPosition.reader) <= 3, 'revocation must retain reading position');
+    assert.equal(await reader.evaluate(key => Boolean(localStorage.getItem(key)), key), true);
+    await reader.screenshot({ path: `.private/shared-sync-reauth-${viewport.width}.png` });
+    await reader.locator('[data-action="cloud-login"]').first().click();
+    assert.equal(await reader.locator('dialog[open]').count(), 1, 'manual reauthentication must open login directly without requiring logout');
+    await reader.keyboard.press('Escape');
+
+    const widget = await context.newPage();
+    await widget.route('**/auth-widget-fixture', route => route.fulfill({ contentType: 'text/html', body: '<div data-site-auth><span data-site-auth-status></span><a data-site-auth-login>登录账号</a><button data-site-auth-sign-out>退出账号</button></div><script type="module">import { mountSiteAuthStatus } from "/officialwebsite/src/scripts/site-auth-widget.ts"; await mountSiteAuthStatus();</script>' }));
+    await widget.goto(`${base}/auth-widget-fixture`);
+    await widget.waitForFunction(() => document.querySelector('[data-site-auth-login]')?.hidden);
+    await widget.evaluate(() => { window.__syncFixture.missingSession = window.__syncFixture.revoked = true; window.dispatchEvent(new Event('focus')); });
+    await widget.waitForFunction(() => document.querySelector('[data-site-auth-status]')?.textContent.includes('登录已失效'));
+    assert.equal(await widget.locator('[data-site-auth-login]').isVisible(), true, 'shared widget must expose login without requiring logout');
+    assert.equal(await widget.locator('[data-site-auth-sign-out]').isVisible(), true);
 
     await todo.evaluate(async () => { const auth = await import('/officialwebsite/src/scripts/site-auth.ts'); await auth.signOut(); });
     await reader.waitForFunction(() => document.querySelector('[data-login-account]')?.hidden);

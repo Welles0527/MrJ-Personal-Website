@@ -442,16 +442,19 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     }
   };
 
+  let reauthenticationRequired = false;
   const markCloudSyncUnavailable = (error?: unknown) => {
+    reauthenticationRequired = (error as { code?: string })?.code === 'SITE_AUTH_REQUIRED';
     automaticCloudSyncEnabled = false;
     const detail = cloudErrorMessage(error, '云端同步失败。');
-    setReadingSyncStatus(`${detail} 请重试。`, 'error');
+    setReadingSyncStatus(reauthenticationRequired ? detail : `${detail} 请重试。`, 'error');
     if (!session) {
       renderLoginState(getRememberedSession());
+      if (reauthenticationRequired) cloudLoginButtons.forEach((button) => { button.textContent = '重新登录'; });
       return;
     }
     loginStatus.textContent = `已登录：${session.account}；${detail}`;
-    cloudLoginButtons.forEach((button) => { button.textContent = '重试同步'; });
+    cloudLoginButtons.forEach((button) => { button.textContent = reauthenticationRequired ? '重新登录' : '重试同步'; });
   };
 
   const resetReaderForSignedOutSession = () => {
@@ -951,15 +954,13 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     const width = Math.min(520, window.innerWidth - viewportPadding * 2);
     translationPopover.style.width = `${width}px`;
     const verseBounds = verseElement.getBoundingClientRect();
-    const popoverHeight = translationPopover.offsetHeight;
     const left = Math.min(
       window.innerWidth - width - viewportPadding,
       Math.max(viewportPadding, verseBounds.left + Math.min(42, Math.max(0, verseBounds.width - width)))
     );
     const below = verseBounds.bottom + 8;
-    const top = below + popoverHeight <= window.innerHeight - viewportPadding
-      ? below
-      : Math.max(viewportPadding, verseBounds.top - popoverHeight - 8);
+    const top = below;
+    translationPopover.style.maxHeight = `min(38rem, ${Math.max(120, window.innerHeight - top - viewportPadding)}px)`;
     translationPopover.style.left = `${left}px`;
     translationPopover.style.top = `${top}px`;
   };
@@ -1989,6 +1990,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   };
 
   const performCloudSessionSync = async (nextSession: CloudSession, silent = false) => {
+    reauthenticationRequired = false;
     if (session?.uid !== nextSession.uid) {
       cloudEditRevision = savedCloudEditRevision = 0;
       readerAccountRevision += 1;
@@ -2235,6 +2237,9 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   window.addEventListener('resize', () => {
     if (activeTranslationVerse) positionTranslationPopover(activeTranslationVerse);
   });
+  window.addEventListener('scroll', () => {
+    if (activeTranslationVerse) positionTranslationPopover(activeTranslationVerse);
+  }, { passive: true });
 
   root.addEventListener('click', (event) => {
     const target = event.target;
@@ -2326,7 +2331,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     }
     if (trigger.dataset.action === 'cloud-login') {
       const activeSession = session ?? getRememberedSession();
-      if (activeSession) {
+      if (activeSession && !reauthenticationRequired) {
         setReadingSyncStatus('正在重试云端同步…', 'saving');
         getCloudSession()
           .then((verifiedSession) => {

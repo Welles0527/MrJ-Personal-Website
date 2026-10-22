@@ -25,7 +25,7 @@ function createAuth(getLoginState, loginResult, options = {}) {
     cloudbase: { init: () => ({ auth: () => ({ getSession: async () => {
       const state = await getLoginState();
       return { data: { session: state ? { ...state, user: state.user } : null } };
-    }, refreshSession: async () => { refreshes++; return options.refresh?.(); },
+    }, refreshSession: async () => { refreshes++; return options.refresh ? options.refresh() : { data: { session: null } }; },
     signInWithPassword: async () => typeof loginResult === 'function' ? loginResult() : loginResult, currentUser: { uid: 'stale-anonymous-id' },
     signOut: async () => { signOuts++; } }), database: () => ({}) }) },
     document: { visibilityState: 'visible', addEventListener: (type, callback) => listeners.set(type, callback) },
@@ -49,7 +49,7 @@ assert.ok(delayed.store.has(key), 'startup must not clear the remembered account
 assert.equal(delayed.changes.length, 0, 'transient null states must not broadcast a logout');
 
 const expired = createAuth(async () => null);
-await assert.rejects(expired.api.getCloudSession(), /暂时无法核实登录会话/);
+await assert.rejects(expired.api.getCloudSession(), /登录会话已失效/);
 assert.equal(expired.store.has(key), true, 'unavailable session must preserve account cache');
 assert.equal(expired.changes.length, 0, 'unavailable session must not broadcast logout');
 
@@ -69,13 +69,13 @@ assert.equal((await modern.api.getCloudSession()).account, '49001422@qq.com');
 const anonymous = createAuth(async () => ({ user: { id: 'visitor', is_anonymous: true } }));
 await assert.rejects(anonymous.api.getCloudSession(), /暂时无法核实登录会话/, 'anonymous sessions must not authorize personal account writes');
 const unsigned = createAuth(async () => { throw new Error('credentials not found'); });
-await assert.rejects(unsigned.api.getCloudSession(), /暂时无法核实登录会话/, 'missing credentials must not log out a remembered account');
+await assert.rejects(unsigned.api.getCloudSession(), /登录会话已失效/, 'missing credentials must not log out a remembered account');
 assert.equal(unsigned.changes.length, 0);
 unsigned.store.delete(key);
 assert.equal(await unsigned.api.getCloudSession(), null, 'a guest without remembered credentials remains signed out');
 let refreshing = true;
 const refresh = createAuth(async () => refreshing ? null : { user: { ...session, email: session.account } });
-await assert.rejects(refresh.api.getCloudSession(), /暂时无法核实登录会话/);
+await assert.rejects(refresh.api.getCloudSession(), /登录会话已失效/);
 refreshing = false;
 assert.equal((await refresh.api.getCloudSession()).uid, session.uid, 'refresh recovery must restore verified access without signing in again');
 assert.equal(refresh.changes.length, 0, 'refresh recovery must not broadcast a false logout');
@@ -146,3 +146,21 @@ resolveLogin({ data: { session: valid() } });
 await assert.rejects(loginRequest, /登录操作已取消/, 'late password responses must not undo an explicit logout');
 assert.equal(cancelledLogin.store.has(key), false);
 console.log('PASS logout during password authentication');
+
+for (const missing of [false, true]) {
+  const recoverable = createAuth(async () => {
+    if (missing) throw new Error('credentials not found');
+    return null;
+  }, undefined, { refresh: async () => ({ data: { session: valid() } }) });
+  assert.equal((await recoverable.api.getCloudSession())?.uid, session.uid, 'empty or missing access credentials must attempt SDK renewal');
+  assert.equal(recoverable.refreshes, 1);
+  assert.equal(recoverable.changes.length, 0, 'recovery must not broadcast logout or reset reading');
+}
+const revoked = createAuth(async () => null, undefined, { refresh: async () => { throw new Error('credentials not found'); } });
+await assert.rejects(revoked.api.getCloudSession(), error => error.code === 'SITE_AUTH_REQUIRED' && /重新登录/.test(error.message));
+assert.ok(revoked.store.has(key), 'reauthentication must preserve account data');
+assert.equal(revoked.signOuts, 0);
+assert.equal(revoked.changes.length, 0);
+const offlineRestore = createAuth(async () => null, undefined, { refresh: async () => { throw new Error('network unavailable'); } });
+await assert.rejects(offlineRestore.api.getCloudSession(), error => error.code !== 'SITE_AUTH_REQUIRED' && /network unavailable/.test(error.message));
+console.log('PASS missing-session renewal, reauthentication classification, offline preservation');

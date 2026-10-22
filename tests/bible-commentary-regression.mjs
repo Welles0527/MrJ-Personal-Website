@@ -67,6 +67,7 @@ try {
     assert.equal(commentaryRequests, 0, 'commentary must be loaded on demand');
     const trigger = page.locator('#mat-26-41 [data-action="show-translation"]');
     await trigger.scrollIntoViewIfNeeded();
+    await page.locator('#mat-26-41').evaluate(el => el.scrollIntoView({ block: 'center', behavior: 'instant' }));
     await trigger.click();
     const popover = page.locator('[data-bible-translation-popover]');
     await page.waitForFunction(() => document.querySelector('[data-bible-commentary-content]').textContent.includes('暂时无法'));
@@ -82,6 +83,8 @@ try {
     await popover.hover();
     assert(await popover.isVisible(), 'moving from trigger into the annotation must keep it open');
     const bounds = await popover.boundingBox();
+    const verseBounds = await page.locator('#mat-26-41').boundingBox();
+    assert.ok(Math.abs(bounds.y - verseBounds.y - verseBounds.height - 8) <= 1, 'popover top must stay below the whole verse after commentary loads');
     assert(bounds.x >= 11 && bounds.y >= 11 && bounds.x + bounds.width <= viewport.width - 11 && bounds.y + bounds.height <= viewport.height - 11);
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
     const scrollBefore = await page.evaluate(() => [scrollY, document.querySelector('[data-verse-list]').scrollTop]);
@@ -91,6 +94,16 @@ try {
     assert.deepEqual(await page.evaluate(() => [scrollY, document.querySelector('[data-verse-list]').scrollTop]), scrollBefore, 'reading commentary must not move the page');
     await page.locator('[data-bible-translation-body]').evaluate(el => { el.scrollTop = 0; });
     await page.screenshot({ path: `.private/bible-commentary-${viewport.width}.png` });
+    await page.evaluate(() => {
+      const list = document.querySelector('[data-verse-list]');
+      if (list.scrollHeight > list.clientHeight) list.scrollTop += 40;
+      else window.scrollBy(0, 40);
+    });
+    await page.waitForFunction(() => {
+      const verse = document.querySelector('#mat-26-41').getBoundingClientRect();
+      const panel = document.querySelector('[data-bible-translation-popover]').getBoundingClientRect();
+      return Math.abs(panel.top - verse.bottom - 8) <= 1;
+    });
     await page.keyboard.press('Escape');
     assert(!(await popover.isVisible()));
     await page.locator('#mat-26-39 [data-action="show-translation"]').click();

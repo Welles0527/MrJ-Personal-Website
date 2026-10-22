@@ -152,6 +152,21 @@ const sessionNeedsRefresh = (session: CloudAuthSession) => {
     : session.expires_in !== undefined && session.expires_in <= 60;
 };
 
+const renewCloudSession = async () => {
+  const loginRequired = () => Object.assign(new Error('登录会话已失效，请重新登录；本地数据已保留。'), { code: 'SITE_AUTH_REQUIRED' });
+  try {
+    const data = assertCloudResult(await auth.refreshSession() as CloudResult<CloudSessionResult>, '无法续期登录会话。');
+    if (data && !data.session) throw loginRequired();
+    return data;
+  } catch (error) {
+    const code = String((error as { code?: string })?.code || '');
+    if (/^(?:refresh_token_expired|invalid_refresh_token)$/i.test(code) || /credentials not found/i.test(errorMessage(error, ''))) {
+      throw loginRequired();
+    }
+    throw error;
+  }
+};
+
 export const getCloudSession = (): Promise<CloudSession | null> => {
   if (explicitlySignedOut) return Promise.resolve(null);
   if (sessionCheck) return sessionCheck;
@@ -166,12 +181,17 @@ export const getCloudSession = (): Promise<CloudSession | null> => {
           sessionData = assertCloudResult(await auth.getSession() as CloudResult<CloudSessionResult>, '无法核实登录状态。');
         } catch (error) {
           if (revisionAtStart !== sessionRevision || explicitlySignedOut) return null;
-          if (!/token_expired|access_token_expired/i.test(String((error as { code?: string })?.code))) throw error;
-          sessionData = assertCloudResult(await auth.refreshSession() as CloudResult<CloudSessionResult>, '无法续期登录会话。');
+          const missingCredentials = /credentials not found/i.test(errorMessage(error, ''));
+          if (missingCredentials && !readRememberedSession()) return null;
+          if (!missingCredentials && !/token_expired|access_token_expired/i.test(String((error as { code?: string })?.code))) throw error;
+          sessionData = await renewCloudSession();
         }
         if (revisionAtStart !== sessionRevision || explicitlySignedOut) return null;
         if (sessionData?.session && sessionNeedsRefresh(sessionData.session)) {
-          sessionData = assertCloudResult(await auth.refreshSession() as CloudResult<CloudSessionResult>, '无法续期登录会话。');
+          sessionData = await renewCloudSession();
+        } else if (!sessionData?.session && readRememberedSession() && attempt === 2) {
+          // Allow delayed SDK restoration first, then actively recover a missing session.
+          sessionData = await renewCloudSession();
         }
         if (revisionAtStart !== sessionRevision || explicitlySignedOut) return null;
         const authenticated = sessionData?.session;
@@ -184,6 +204,7 @@ export const getCloudSession = (): Promise<CloudSession | null> => {
         lastError = new Error('暂时无法核实登录会话，将自动重试。');
       } catch (error) {
         if (revisionAtStart !== sessionRevision || explicitlySignedOut) return null;
+        if ((error as { code?: string })?.code === 'SITE_AUTH_REQUIRED') throw error;
         if (/credentials not found/i.test(errorMessage(error, ''))) {
           if (!readRememberedSession()) return null;
           lastError = new Error('暂时无法核实登录会话，将自动重试。');
