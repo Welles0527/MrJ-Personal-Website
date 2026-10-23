@@ -5,6 +5,15 @@
   "functionRoot": "cloudfunctions",
   "functions": [
     {
+      "name": "home-visits",
+      "type": "Event",
+      "runtime": "Nodejs20.19",
+      "handler": "index.main",
+      "timeout": 10,
+      "memorySize": 128,
+      "description": "Homepage cumulative page views; HTTP mapping /officialwebsite/api/home-visits."
+    },
+    {
       "name": "youversion-verse",
       "type": "Event",
       "runtime": "Nodejs18.15",

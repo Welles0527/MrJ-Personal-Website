@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 
 // The confirmed coffee-learning portfolio is preserved in homepage-root.html.
-const expectedContentHash = 'e0e695582e4fdcbeadcff60186e2ab3a26aeed3c9b70043d6cefe10c694abfb7';
+const expectedContentHash = 'e98be89f9fc8636fc8c29756bdb6a331275ee24579b020eabc06936f69682dfe';
 const iconHref = '/officialwebsite/icons/personal-home-orange.png?v=20261012-reference';
 const targets = process.argv.slice(2);
 if (!targets.length) targets.push('public/homepage-root.html');

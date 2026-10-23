@@ -46,7 +46,7 @@ try {
       for (const dimension of ['x', 'y', 'width', 'height']) assert.ok(Math.abs(after[key][dimension] - before[key][dimension]) < 1, `${width}: preserve ${key}.${dimension}`);
     }
     if (width < 768) {
-      assert.ok(Math.abs(after.navigation.x - after.photo.x) < 1, `${width}: navigation aligns with portrait frame`);
+      assert.ok(Math.abs(after.navigation.x + after.navigation.width / 2 - width / 2) < 1, `${width}: mobile navigation is centered`);
       assert.ok(after.navigation.x + after.navigation.width <= width, `${width}: navigation fits`);
     } else assert.deepEqual(after.navigation, before.navigation, 'desktop navigation unchanged');
     await page.screenshot({ path: `${process.env.TEMP}/homepage-nav-layout-${width}.png` });
