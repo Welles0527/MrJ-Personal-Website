@@ -11,7 +11,10 @@
     .visit-label{letter-spacing:.12em;opacity:.7;border:0;background:none;color:inherit;font:inherit;padding:0;text-align:left;cursor:pointer}
     .visit-settings{box-sizing:border-box;inset:0;margin:auto;width:min(360px,calc(100vw - 32px));max-height:calc(100vh - 32px);overflow:auto;padding:24px;border:1px solid #786047;border-radius:18px;background:#191919;color:#eee;font:14px/1.7 sans-serif}
     .visit-settings::backdrop{background:#0009}
-    .visit-settings h2{font-size:20px;margin:0 0 12px}.visit-settings p{color:#bbb}.visit-settings label{display:flex;gap:10px;align-items:flex-start}.visit-settings input{margin-top:6px}
+    html:has(.visit-settings[open]) .neon-cursor{display:none!important}
+    html.custom-cursor-enabled .visit-settings,html.custom-cursor-enabled .visit-settings *{cursor:auto!important}
+    html.custom-cursor-enabled .visit-settings label,html.custom-cursor-enabled .visit-settings input,html.custom-cursor-enabled .visit-settings button{cursor:pointer!important}
+    .visit-settings{outline:none}.visit-settings h2{font-size:20px;margin:0 0 12px}.visit-settings p{color:#bbb}.visit-settings label{display:flex;gap:10px;align-items:center;min-height:44px;cursor:pointer}.visit-settings input{width:18px;height:18px;flex:0 0 18px;margin:0;accent-color:#ffbc80}
     .visit-settings button{margin-top:18px;padding:9px 18px;border:1px solid #786047;border-radius:10px;background:#30271e;color:#ffbc80;cursor:pointer}
     .visit-wheels{display:flex;gap:3px;padding:5px;border:1px solid #373737;border-radius:8px;background:linear-gradient(#090909,#282828);box-shadow:inset 0 2px 5px #000,0 1px 1px #ffffff25}
     .visit-wheel{position:relative;display:block;width:19px;height:28px;overflow:hidden;border-radius:4px;background:#151515;box-shadow:inset 0 1px 5px #000;color:#fff}

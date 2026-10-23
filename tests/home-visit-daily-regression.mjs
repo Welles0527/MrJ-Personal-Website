@@ -28,7 +28,17 @@ try {
     assert.equal(methods.filter(m=>m==='POST').length,2,'Concurrent tabs increment only once on new day');
     await second.close();
     await page.getByRole('button',{name:'访问计数设置'}).click();
-    await page.getByLabel('本人访问不统计（仅此浏览器）').check();
+    const checkbox=page.getByLabel('本人访问不统计（仅此浏览器）');
+    const checkboxBox=await checkbox.boundingBox();
+    await page.mouse.move(checkboxBox.x+checkboxBox.width/2,checkboxBox.y+checkboxBox.height/2,{steps:12});
+    assert.equal(await checkbox.evaluate(el=>getComputedStyle(el).cursor),'pointer');
+    assert.equal(await page.locator('.neon-cursor').evaluate(el=>getComputedStyle(el).display),'none');
+    await page.mouse.click(checkboxBox.x+checkboxBox.width/2,checkboxBox.y+checkboxBox.height/2);
+    assert.equal(await checkbox.isChecked(),true,'Actual mouse click checks box');
+    const labelBox=await page.locator('.visit-settings label').boundingBox();
+    await page.mouse.click(labelBox.x+labelBox.width-12,labelBox.y+labelBox.height/2);
+    assert.equal(await checkbox.isChecked(),false,'Whole label toggles checkbox');
+    await checkbox.check();
     const dialog=page.locator('.visit-settings');
     const box=await dialog.boundingBox();
     assert.ok(box.x>=0&&box.y>=0&&box.x+box.width<=width&&box.y+box.height<=height);

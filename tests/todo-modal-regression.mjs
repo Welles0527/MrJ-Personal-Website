@@ -17,7 +17,7 @@ const astroPackage = projectRequire(astroPackagePath);
 const astroBin = typeof astroPackage.bin === 'string' ? astroPackage.bin : astroPackage.bin?.astro;
 if (!astroBin) throw new Error('Astro CLI entrypoint is missing from astro/package.json.');
 const astroCli = path.resolve(path.dirname(astroPackagePath), astroBin);
-const astroStartsInBackground = Number.parseInt(astroPackage.version, 10) >= 7;
+const astroStartsInBackground = Number.parseInt(astroPackage.version, 10) >= 7 && process.env.TODO_MODAL_FOREGROUND !== '1';
 
 const findFreePort = () => new Promise((resolve, reject) => {
   const server = net.createServer();
@@ -112,7 +112,7 @@ const serverArgs = [astroCli, 'dev', '--host', '127.0.0.1', '--port', String(por
 if (astroStartsInBackground) serverArgs.push('--background');
 const server = spawn(process.execPath, serverArgs, {
   cwd: projectRoot,
-  env: { ...process.env, BROWSER: 'none' },
+  env: { ...process.env, BROWSER: 'none', ...(process.env.TODO_MODAL_FOREGROUND === '1' ? { ASTRO_DEV_BACKGROUND: '1' } : {}) },
   stdio: ['ignore', 'pipe', 'pipe']
 });
 server.stdout.on('data', (chunk) => serverOutput.push(chunk.toString()));
