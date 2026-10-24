@@ -1,4 +1,5 @@
 import type { CloudSession, CloudTodo, CloudTodoCategory, CloudTodoWatcher } from './todo-cloud';
+import { escapeHtml } from './escape-html';
 
 type RangePreset = '4' | '8' | 'month' | 'quarter' | 'year' | 'custom';
 
@@ -122,13 +123,6 @@ const isoWeekNumber = (date: Date) => {
 };
 
 const normalizeTitle = (title: string) => title.trim().replace(/\s+/g, ' ').toLocaleLowerCase('zh-CN');
-
-const escapeHtml = (value: unknown) => String(value ?? '')
-  .replaceAll('&', '&amp;')
-  .replaceAll('<', '&lt;')
-  .replaceAll('>', '&gt;')
-  .replaceAll('"', '&quot;')
-  .replaceAll("'", '&#039;');
 
 const emptyCategoryRecord = (): Record<CloudTodoCategory, number> => ({
   work: 0,

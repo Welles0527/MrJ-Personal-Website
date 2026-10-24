@@ -116,17 +116,9 @@ const columns = [
       });
     };
 
-    const updateFilters = () => {
-      filterButtons.forEach((button) => {
-        const active = button.dataset.termFilter === activeGroup;
-        button.classList.toggle('active', active);
-        button.setAttribute('aria-pressed', String(active));
-      });
-    };
-
-    const updateStudyFilters = () => {
-      studyButtons.forEach((button) => {
-        const active = button.dataset.studyFilter === activeStudy;
+    const updateButtonGroup = (buttons: HTMLButtonElement[], activeValue: string, attribute: 'termFilter' | 'studyFilter') => {
+      buttons.forEach((button) => {
+        const active = button.dataset[attribute] === activeValue;
         button.classList.toggle('active', active);
         button.setAttribute('aria-pressed', String(active));
       });
@@ -166,7 +158,7 @@ const columns = [
 
     const setGroup = (group: string, updateUrl = false) => {
       activeGroup = validGroups.has(group) ? group : 'all';
-      updateFilters();
+      updateButtonGroup(filterButtons, activeGroup, 'termFilter');
       renderRows();
 
       if (updateUrl) {
@@ -181,7 +173,7 @@ const columns = [
     filterButtons.forEach((button) => button.addEventListener('click', () => setGroup(button.dataset.termFilter ?? 'all', true)));
     studyButtons.forEach((button) => button.addEventListener('click', () => {
       activeStudy = button.dataset.studyFilter ?? 'all';
-      updateStudyFilters();
+      updateButtonGroup(studyButtons, activeStudy, 'studyFilter');
       renderRows();
     }));
     sortButtons.forEach((button) => button.addEventListener('click', () => {
@@ -193,7 +185,7 @@ const columns = [
     }));
 
     setGroup(activeGroup);
-    updateStudyFilters();
+    updateButtonGroup(studyButtons, activeStudy, 'studyFilter');
     updateSortIndicators();
   }
 </script>

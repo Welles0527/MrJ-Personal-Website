@@ -1,4 +1,5 @@
 import cloudbase from '@cloudbase/js-sdk';
+import { escapeHtml as safeText } from './escape-html';
 
 type Temperature = 'hot' | 'cold';
 type OrderStatus = 'new' | 'brewing' | 'ready' | 'done';
@@ -97,13 +98,6 @@ const productImage = (productId: string) => ({
 const parseStored = <T>(key: string, fallback: T): T => {
   try { return JSON.parse(localStorage.getItem(key) || '') as T; } catch { return fallback; }
 };
-
-const safeText = (value: unknown) => String(value ?? '')
-  .replaceAll('&', '&amp;')
-  .replaceAll('<', '&lt;')
-  .replaceAll('>', '&gt;')
-  .replaceAll('"', '&quot;')
-  .replaceAll("'", '&#039;');
 
 const orderIdFromResult = (result: unknown) => {
   if (!result || typeof result !== 'object') return '';
