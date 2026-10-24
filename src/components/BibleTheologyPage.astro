@@ -9,6 +9,7 @@ const groupAlbumsHref = `${basePath}topics/applications/inspiration-station/theo
 const alternativeKnowledgeHref = `${basePath}topics/applications/inspiration-station/theology/alternative-knowledge/`;
 const bibleLibraryHref = `${basePath}demos/bible-library-demo/index.html`;
 const bibleGuideHref = `${basePath}topics/applications/inspiration-station/theology/bible-guide/`;
+const groupStudyHref = `${basePath}topics/applications/inspiration-station/theology/group-study/`;
 
 const featurePages = [
   {
@@ -78,8 +79,8 @@ const featurePages = [
     quote: '因为无论在哪里，有两三个人奉我的名聚会。',
     reference: '马太福音 18:20',
     summary: '提供查经提纲、讨论问题和小组记录模板。',
-    action: '进入小组',
-    href: '#bible-groups',
+    action: '准备小组查经',
+    href: groupStudyHref,
     status: '带领模板',
     image: `${basePath}images/bible-theology/feature-groups.webp`,
     artA: '#c4b5fd',
@@ -426,7 +427,9 @@ const hymnCards = [
     <nav class="bible-top-nav" aria-label="圣经网站板块导航">
       <div class="bible-nav-scroll">
         {featurePages.map((page, index) => (
-          <button type="button" data-feature-target={String(index)} class={index === 0 ? 'is-active' : ''}>
+          page.id === 'groups' ? <a href={groupStudyHref}>
+            <span class="bible-nav-index" aria-hidden="true">05</span><span>{page.title}</span>
+          </a> : <button type="button" data-feature-target={String(index)} class={index === 0 ? 'is-active' : ''}>
             <span class="bible-nav-index" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
             <span>{page.title}</span>
           </button>
@@ -734,6 +737,14 @@ const hymnCards = [
   <script>
     import { mountBibleReader } from '../scripts/bible-reader';
 
+    const openGroupStudy = () => {
+      if (location.hash === '#bible-groups') {
+        location.replace(`${import.meta.env.BASE_URL.replace(/\/$/, '')}/topics/applications/inspiration-station/theology/group-study/`);
+      }
+    };
+    openGroupStudy();
+    window.addEventListener('hashchange', openGroupStudy);
+
     const root = document.querySelector<HTMLElement>('[data-bible-app]');
     const dataElement = document.getElementById('bible-data');
     if (root && dataElement?.textContent) {
@@ -830,7 +841,9 @@ const hymnCards = [
     display: none;
   }
 
-  .bible-nav-scroll button {
+  .bible-nav-scroll button,
+  .bible-nav-scroll a {
+    text-decoration: none;
     display: inline-flex;
     min-height: 3rem;
     align-items: center;
@@ -848,12 +861,14 @@ const hymnCards = [
     transition: color 180ms ease, background 180ms ease, box-shadow 180ms ease, transform 180ms ease;
   }
 
-  .bible-nav-scroll button:hover {
+  .bible-nav-scroll button:hover,
+  .bible-nav-scroll a:hover {
     background: rgba(255, 246, 218, 0.06);
     color: #fff5d4;
   }
 
-  .bible-nav-scroll button:focus-visible {
+  .bible-nav-scroll button:focus-visible,
+  .bible-nav-scroll a:focus-visible {
     outline: 2px solid #ffd67f;
     outline-offset: 2px;
   }

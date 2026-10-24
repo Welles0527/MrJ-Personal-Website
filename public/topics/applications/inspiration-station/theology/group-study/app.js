@@ -1,0 +1,140 @@
+const $ = (selector) => document.querySelector(selector);
+const KEY = 'magicj.group-study.v1';
+const uid = () => crypto.randomUUID();
+const books = 'gen:创世记 exo:出埃及记 lev:利未记 num:民数记 deu:申命记 jos:约书亚记 jdg:士师记 rut:路得记 1sa:撒母耳记上 2sa:撒母耳记下 1ki:列王纪上 2ki:列王纪下 1ch:历代志上 2ch:历代志下 ezr:以斯拉记 neh:尼希米记 est:以斯帖记 job:约伯记 psa:诗篇 pro:箴言 ecc:传道书 sng:雅歌 isa:以赛亚书 jer:耶利米书 lam:耶利米哀歌 ezk:以西结书 dan:但以理书 hos:何西阿书 jol:约珥书 amo:阿摩司书 oba:俄巴底亚书 jon:约拿书 mic:弥迦书 nam:那鸿书 hab:哈巴谷书 zep:西番雅书 hag:哈该书 zec:撒迦利亚书 mal:玛拉基书 mat:马太福音 mrk:马可福音 luk:路加福音 jhn:约翰福音 act:使徒行传 rom:罗马书 1co:哥林多前书 2co:哥林多后书 gal:加拉太书 eph:以弗所书 php:腓立比书 col:歌罗西书 1th:帖撒罗尼迦前书 2th:帖撒罗尼迦后书 1ti:提摩太前书 2ti:提摩太后书 tit:提多书 phm:腓利门书 heb:希伯来书 jas:雅各书 1pe:彼得前书 2pe:彼得后书 1jn:约翰一书 2jn:约翰二书 3jn:约翰三书 jud:犹大书 rev:启示录'.split(' ').map(x => x.split(':'));
+const bookNames = Object.fromEntries(books);
+function newPlan() {
+  return { id: uid(), title: '新的查经聚会', date: '', leader: '', goal: '', notes: '', followup: '', passages: [], resources: [],
+    steps: [],
+    questions: ['观察：这段经文中发生了什么？','理解：上下文怎样帮助我们理解这段经文？','应用：这周我可以如何回应？'].map(text=>({id:uid(),text,answer:'',focus:false})) };
+}
+const string = x => typeof x === 'string' && x.length <= 100000;
+const safeUrl = value => { try { const u = new URL(value); return ['http:','https:'].includes(u.protocol) ? u.href : null; } catch { return null; } };
+function validPlan(p) {
+  return p && ['id','title','date','leader','goal','notes','followup'].every(k=>string(p[k])) &&
+    Array.isArray(p.steps) && p.steps.length <= 300 && p.steps.every(s=>s && ['id','title','content'].every(k=>string(s[k])) && Number.isFinite(s.minutes) && s.minutes >= 0 && s.minutes <= 600 && typeof s.focus==='boolean' && Array.isArray(s.highlights) && s.highlights.length<=100 && s.highlights.every(string)) &&
+    Array.isArray(p.questions) && p.questions.length<=300 && p.questions.every(q=>q && ['id','text','answer'].every(k=>string(q[k])) && typeof q.focus==='boolean') &&
+    Array.isArray(p.resources) && p.resources.length<=300 && p.resources.every(r=>r && ['id','title','type','url'].every(k=>string(r[k])) && safeUrl(r.url)) &&
+    Array.isArray(p.passages) && p.passages.length<=300 && p.passages.every(p=>p && string(p.id) && bookNames[p.book] && Number.isInteger(p.chapter) && p.chapter>0 && p.chapter<=150 && Number.isInteger(p.start) && p.start>0 && Array.isArray(p.verses) && p.verses.length<=176 && p.verses.every(string) && Array.isArray(p.marked) && p.marked.every(n=>Number.isInteger(n) && n>=0 && n<p.verses.length));
+}
+let state = {version:1, active:'', plans:[]};
+let storageBlocked = false;
+try {
+  const raw = localStorage.getItem(KEY);
+  if (raw) {
+    const data = JSON.parse(raw);
+    if (data.version!==1 || !Array.isArray(data.plans) || !data.plans.length || !data.plans.every(validPlan)) throw new Error('invalid');
+    state = data;
+  }
+} catch { storageBlocked = true; }
+if (!state.plans.length) state.plans.push(newPlan());
+if (!state.plans.some(p=>p.id===state.active)) state.active=state.plans[0].id;
+const current = () => state.plans.find(p=>p.id===state.active);
+let noticeTimer;
+function notice(text) { $('#notice').textContent=text; clearTimeout(noticeTimer); noticeTimer=setTimeout(()=>$('#notice').textContent='',5000); }
+function save() {
+  try {
+    if(storageBlocked) throw new Error('blocked');
+    localStorage.setItem(KEY,JSON.stringify(state));
+    $('#save-state').textContent=`已保存在此浏览器 · ${new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})}`;
+    $('#save-state').classList.remove('save-error');
+  } catch { $('#save-state').textContent='本地保存不可用，请导出备份；已有存储未被覆盖。'; $('#save-state').classList.add('save-error'); }
+}
+function node(tag, text, className) { const e=document.createElement(tag); if(text!==undefined)e.textContent=text; if(className)e.className=className; return e; }
+function button(text, action) { const b=node('button',text); b.type='button'; b.addEventListener('click',action); return b; }
+function field(tag, value, label, update) { const e=node(tag); e.value=value; e.setAttribute('aria-label',label); e.addEventListener('input',()=>{update(e.value);save();}); return e; }
+function totals() { $('#total-time').textContent=`${current().steps.length} 个环节 · 共 ${current().steps.reduce((n,s)=>n+s.minutes,0)} 分钟`; }
+function renderPlans() {
+  $('#plans').replaceChildren(...state.plans.map(p=>{
+    const b=button('',()=>{state.active=p.id;save();render();}); b.setAttribute('aria-current',String(p.id===state.active));
+    b.append(node('span',p.title||'未命名聚会'),node('small',p.date||'日期待定'));return b;
+  }));
+}
+function removeItem(list, item, renderList) {
+  const index=list.indexOf(item); list.splice(index,1);save();renderList();totals();
+  $('#notice').replaceChildren(node('span','已移除。 '),button('撤销',()=>{list.splice(index,0,item);save();render();$('#notice').replaceChildren();}));
+  clearTimeout(noticeTimer);
+}
+function renderSteps() {
+  $('#steps').replaceChildren(...current().steps.map((s,i)=>{
+    const card=node('article',undefined,`step${s.focus?' focus':''}`), head=node('div',undefined,'step-head');
+    const title=field('input',s.title,'环节名称',v=>s.title=v), minutes=field('input',s.minutes,'环节分钟数',v=>{s.minutes=Math.min(600,Math.max(0,Number(v)||0));totals();});minutes.type='number';minutes.min='0';minutes.max='600';minutes.title='分钟';
+    head.append(node('span',String(i+1).padStart(2,'0'),'step-number'),title,minutes);
+    const content=field('textarea',s.content,'环节内容',v=>{s.content=v;highlightPreview();});
+    const preview=node('div',undefined,'notes-preview');
+    function highlightPreview() {
+      preview.replaceChildren(); let cursor=0;
+      const terms=s.highlights.filter(Boolean);
+      while(cursor<s.content.length) {
+        let start=s.content.length, term='';
+        for(const t of terms){const pos=s.content.indexOf(t,cursor);if(pos>=0&&pos<start){start=pos;term=t;}}
+        preview.append(document.createTextNode(s.content.slice(cursor,start)));
+        if(!term)break;
+        preview.append(node('mark',term));cursor=start+term.length;
+      }
+      preview.hidden=!terms.length;
+    }
+    highlightPreview();
+    const tools=node('div',undefined,'tools edit-only');
+    const up=button('↑ 上移',()=>{[current().steps[i-1],current().steps[i]]=[s,current().steps[i-1]];save();renderSteps();});up.disabled=i===0;
+    const down=button('↓ 下移',()=>{[current().steps[i+1],current().steps[i]]=[s,current().steps[i+1]];save();renderSteps();});down.disabled=i===current().steps.length-1;
+    const focus=button(s.focus?'★ 重点环节':'☆ 设为重点',()=>{s.focus=!s.focus;save();renderSteps();});focus.setAttribute('aria-pressed',String(s.focus));
+    tools.append(up,down,focus,button('高亮选中文字',()=>{const text=content.value.slice(content.selectionStart,content.selectionEnd).trim();if(!text)return notice('请先在本环节内容中选中文字。');if(!s.highlights.includes(text))s.highlights.push(text);save();highlightPreview();}),button('清除高亮',()=>{s.highlights=[];save();highlightPreview();}),button('移除',()=>removeItem(current().steps,s,renderSteps)));
+    card.append(head,content,preview,tools);return card;
+  })); totals();
+}
+function renderQuestions() {
+  $('#questions').replaceChildren(...current().questions.map((q,i)=>{
+    const card=node('article',undefined,`question${q.focus?' focus':''}`);
+    const question=field('textarea',q.text,`问题 ${i+1}`,v=>q.text=v);question.rows=2;
+    const answer=field('textarea',q.answer,`问题 ${i+1} 的讨论记录`,v=>q.answer=v);answer.placeholder='记录组员的回应、不同观点和待查考的问题…';
+    const tools=node('div',undefined,'tools edit-only');const focus=button(q.focus?'★ 重点问题':'☆ 设为重点',()=>{q.focus=!q.focus;save();renderQuestions();});focus.setAttribute('aria-pressed',String(q.focus));
+    tools.append(focus,button('移除',()=>removeItem(current().questions,q,renderQuestions)));
+    card.append(node('span',`QUESTION ${String(i+1).padStart(2,'0')}`,'eyebrow'),question,answer,tools);return card;
+  }));
+}
+function renderResources() {
+  $('#resource-list').replaceChildren(...current().resources.map(r=>{
+    const card=node('article',undefined,'resource'), copy=node('div'),a=node('a',r.title+' ↗');a.href=safeUrl(r.url);a.target='_blank';a.rel='noopener noreferrer';copy.append(node('small',r.type),a);
+    const remove=button('移除',()=>removeItem(current().resources,r,renderResources));remove.className='edit-only';card.append(copy,remove);return card;
+  }));
+  if(!current().resources.length)$('#resource-list').append(node('p','加入与本次经文相关的视频、背景文章或讨论资料。','empty'));
+}
+function renderPassages() {
+  $('#passages').replaceChildren(...current().passages.map(p=>{
+    const card=node('article',undefined,'passage'),head=node('div',undefined,'section-head');
+    const a=node('a',`${bookNames[p.book]} ${p.chapter}:${p.start}–${p.start+p.verses.length-1} ↗`);a.href=`../?book=${p.book}&chapter=${p.chapter}&verse=${p.start}`;a.target='_blank';a.rel='noopener';
+    const remove=button('移除',()=>removeItem(current().passages,p,renderPassages));remove.className='edit-only';head.append(a,remove);card.append(head);
+    p.verses.forEach((text,i)=>{const row=node('p',undefined,'verse');const toggle=button(String(p.start+i),()=>{p.marked=p.marked.includes(i)?p.marked.filter(n=>n!==i):[...p.marked,i];save();renderPassages();});toggle.setAttribute('aria-label',`高亮第 ${p.start+i} 节`);toggle.setAttribute('aria-pressed',String(p.marked.includes(i)));row.append(toggle,node(p.marked.includes(i)?'mark':'span',text));card.append(row);});
+    card.append(node('small','点击节号标记重点；点击经文标题阅读上下文。','muted'));return card;
+  }));
+  if(!current().passages.length)$('#passages').append(node('p','选择书卷、章节与范围，将经文加入本次查经。','empty'));
+}
+function render() { renderPlans();document.querySelectorAll('[data-meta]').forEach(e=>e.value=current()[e.dataset.meta]);renderSteps();renderQuestions();renderResources();renderPassages(); }
+document.querySelectorAll('[data-meta]').forEach(e=>e.addEventListener('input',()=>{current()[e.dataset.meta]=e.value;save();if(['title','date'].includes(e.dataset.meta))renderPlans();}));
+$('#new-plan').onclick=()=>{const p=newPlan();state.plans.unshift(p);state.active=p.id;save();render();$('#title').focus();};
+$('#add-step').onclick=()=>{current().steps.push({id:uid(),title:'新的环节',minutes:5,content:'',highlights:[],focus:false});save();renderSteps();};
+$('#add-question').onclick=()=>{current().questions.push({id:uid(),text:'',answer:'',focus:false});save();renderQuestions();$('#questions').lastElementChild.querySelector('textarea').focus();};
+$('#present').onclick=()=>{const on=document.body.classList.toggle('present');$('#present').textContent=on?'返回编辑':'带领模式';document.querySelectorAll('textarea').forEach(e=>{e.style.height=on?`${e.scrollHeight+2}px`:'';e.readOnly=on;});document.querySelectorAll('input').forEach(e=>e.readOnly=on);};
+for(const [id,name] of books){const option=node('option',name);option.value=id;$('#book').append(option);}
+let bible;
+$('#scripture-form').onsubmit=async e=>{
+  e.preventDefault();const plan=current(),book=$('#book').value,chapter=Number($('#chapter').value),start=Number($('#verse-start').value),end=Number($('#verse-end').value);
+  $('#add-scripture').disabled=true;$('#scripture-status').textContent='正在读取经文…';
+  try {
+    if(!bible){const response=await fetch('/officialwebsite/data/bible/chi-cuv-simp.json',{signal:AbortSignal.timeout(20000)});if(!response.ok)throw new Error('load');bible=await response.json();}
+    const verses=bible.chapters[`${book}-${chapter}`];
+    if(!Number.isInteger(start)||!Number.isInteger(end)||!verses||start<1||end<start||end>verses.length){$('#scripture-status').textContent='章节或节数范围无效，请核对后再加入。';return;}
+    plan.passages.push({id:uid(),book,chapter,start,verses:verses.slice(start-1,end),marked:[]});save();renderPassages();$('#scripture-status').textContent=plan===current()?'经文已加入。':'经文已加入原查经计划。';
+  }catch{$('#scripture-status').textContent='经文加载失败，请检查网络后再次点击“加入经文”。';}finally{$('#add-scripture').disabled=false;}
+};
+$('#resource-form').onsubmit=e=>{e.preventDefault();const url=safeUrl($('#resource-url').value);if(!url)return notice('仅支持 http 或 https 链接。');current().resources.push({id:uid(),type:$('#resource-type').value,title:$('#resource-title').value.trim()||'未命名资料',url});save();renderResources();e.target.reset();};
+$('#export').onclick=()=>{const url=URL.createObjectURL(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}));const a=node('a');a.href=url;a.download=`小组查经备份-${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+$('#import').onclick=()=>$('#import-file').click();
+$('#import-file').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{
+  if(file.size>10*1024*1024)throw new Error();const imported=JSON.parse(await file.text());
+  if(imported.version!==1||!Array.isArray(imported.plans)||!imported.plans.length||imported.plans.length>100||!imported.plans.every(validPlan))throw new Error();
+  const plans=imported.plans.map(p=>({...p,id:uid(),title:`${p.title}（导入）`}));state.plans.push(...plans);state.active=plans[0].id;save();render();notice('已导入为新计划，原有草稿保留。');
+}catch{notice('备份格式无效或文件过大，未更改现有草稿。');}finally{e.target.value='';}};
+render();save();
+window.addEventListener('storage',e=>{if(e.key===KEY){storageBlocked=true;$('#save-state').textContent='另一个标签页已更新草稿。请先导出当前编辑，再刷新以载入最新版本。';$('#save-state').classList.add('save-error');}});
