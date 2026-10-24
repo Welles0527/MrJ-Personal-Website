@@ -1,0 +1,14 @@
+# Preserve the exact published bytes of these standalone pages and resources.
+# Some published files intentionally contain mixed line endings; do not normalize them.
+/public/ai-bookshelf.html -text
+/public/ai-bookshelf.js -text
+/public/ai-bookshelf.css -text
+/public/ai-interview-notes.html -text
+/public/coffee-field-guide-zh.html -text
+/public/family-health.html -text
+/public/family-health-auth.js -text
+/public/portfolio.html -text
+/public/project-previews.js -text
+/public/travel-globe.js -text
+/public/workstation.html -text
+/public/workstation-current.js -text
