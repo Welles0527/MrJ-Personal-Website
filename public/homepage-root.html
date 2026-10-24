@@ -733,7 +733,7 @@ html:not(.dark) .mrj-featured .reading-book-pages{background:repeating-linear-gr
     themeButton.addEventListener('click',toggleTheme);
     cleanups.push(()=>themeButton.removeEventListener('click',toggleTheme));
   }
-  const projectLinks={'AI旅行相册':'/officialwebsite/topics/space/travel/travel-map/','AI3D旅行相册':'/officialwebsite/topics/space/travel/travel-map/','AI 智能投资':'/officialwebsite/stock-tracking/?stock=301026','AI阅读神器':'/officialwebsite/topics/applications/inspiration-station/theology?book=lev&chapter=7&verse=1','AI魔法学院':'https://www.magicj.cn/aiacademy/'};
+  const projectLinks={'AI旅行相册':'/officialwebsite/topics/space/travel/travel-map/','AI3D旅行相册':'/officialwebsite/topics/space/travel/travel-map/','AI 智能投资':'/officialwebsite/stock-tracking/?stock=301026','AI阅读神器':'/officialwebsite/ai-bookshelf.html','AI魔法学院':'https://www.magicj.cn/aiacademy/'};
   let page='home',routeCleanups=[],frameStart=performance.now();
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   function hydrateAssets(scope){scope.querySelectorAll('img[data-asset]').forEach(img=>{img.src=config.assets[img.dataset.asset];});scope.querySelectorAll('.project-card').forEach(card=>{const title=card.querySelector('header span:last-child')?.textContent?.trim(),href=projectLinks[title];if(!href||card.dataset.projectLinked)return;card.dataset.projectLinked='true';card.tabIndex=0;card.setAttribute('role','link');card.setAttribute('aria-label','打开项目：'+title);card.addEventListener('click',()=>{location.href=href;});card.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();location.href=href;}});});}
@@ -899,15 +899,14 @@ html:not(.dark) .mrj-featured .reading-book-pages{background:repeating-linear-gr
     {id:'resume',title:'AI个性化简历',en:'A DIFFERENT INTRODUCTION',desc:'用AI制作的个性化双语简历，以另一种方式，展现个性化的自己。',href:'https://www.magicj.cn/officialwebsite/resume/',cats:['work','venture'],type:'user'}
   ];
   const nodes=[
-    {title:'个人计划',desc:'安排每一天的优先事项',href:'https://www.magicj.cn/officialwebsite/topics/space/planning/todo',cats:['life','work'],type:'plan'},
+    {title:'个人计划',desc:'安排每一天的优先事项',href:'https://www.magicj.cn/officialwebsite/super-calendar/index.html#life',cats:['life','work'],type:'plan'},
     {title:'3D 旅行相册',desc:'重访世界里的每段记忆',href:projects[1].href,cats:['life'],type:'globe'},
     {title:'微读圣经',desc:'阅读、记录与每日思考',href:projects[2].href,cats:['life','learn'],type:'book'},
     {title:'每日电台',desc:'金融、AI 与市场资讯',href:'https://www.magicj.cn/officialwebsite/daily-radio/',cats:['learn','work'],type:'radio'},
-    {title:'点评日历',desc:'记录探店与生活灵感',href:'/officialwebsite/dianping-calendar/index.html',cats:['life','tools'],type:'pin'},
     {title:'AI 前沿资讯',desc:'内容筹备中',href:'',cats:['learn'],type:'news'},
     {title:'AI 魔法学院',desc:'从入门到亲手创造',href:'https://www.magicj.cn/aiacademy/',cats:['learn','venture'],type:'academy'},
     {title:'AI 投资理财',desc:'个股与基金，两种视角',href:'https://www.magicj.cn/officialwebsite/stock-tracking/?stock=301026&view=daily',cats:['work'],type:'chart'},
-    {title:'AI 实用工具',desc:'为工作与生活减负',href:projects[4].href,cats:['work','tools'],type:'tools'},
+    {title:'AI 实用工具',desc:'为工作与生活减负',href:'/officialwebsite/tools/',cats:['work','tools'],type:'tools'},
     {title:'超级日历',desc:'进入生活、出行、赛事与 AI 日历空间',href:projects[0].href,cats:['life','work'],type:'calendar'},
     {title:'明星基金经理',desc:'数据、经理与投资笔记',href:projects[3].href,cats:['work'],type:'chart'},
     {title:'认识 J先生',desc:'经历、兴趣与创业',href:'https://www.magicj.cn/officialwebsite/resume/',cats:['life','work','venture'],type:'user'}
@@ -1043,8 +1042,7 @@ html:not(.dark) .mrj-featured .reading-book-pages{background:repeating-linear-gr
     {id:'finance',name:'财务分析师',short:'财务分析',en:'FINANCIAL ANALYST',tagline:'让数字，成为决策。',desc:'二十余年财务与商业分析经验，横跨酒店、联合办公、零售、餐饮与科技。把预算、模型与经营洞察，转化为可以行动的判断。',tags:['FP&A','财务建模','经营分析'],href:'https://www.magicj.cn/officialwebsite/resume/',action:'查看工作经历',icon:'finance'},
     {id:'ai',name:'AI 导师',short:'AI 导师',en:'AI MENTOR',tagline:'让每个想法，都能动手实现。',desc:'从生活、工作和投资场景出发，帮助初学者建立 AI 应用能力。在 J先生 AI 魔法学院，把工具学习变成自己的作品。',tags:['AI魔法学院','实践教学','个人创造'],href:'https://www.magicj.cn/aiacademy/',action:'进入 AI 魔法学院',icon:'ai'},
     {id:'snooker',name:'斯诺克爱好者',short:'斯诺克',en:'SNOOKER ENTHUSIAST',tagline:'一杆之间，专注当下。',desc:'关注赛程、球员与每一场精彩对决。用自己的赛事日历，把对斯诺克的热爱整理成触手可及的日常。',tags:['斯诺克','赛事日历','专注与策略'],href:'/officialwebsite/snooker-calendar/',action:'打开斯诺克赛事日历',icon:'cue'},
-    {id:'football',name:'足球爱好者',short:'足球',en:'FOOTBALL ENTHUSIAST',tagline:'走上球场，热爱就有了形状。',desc:'足球是生活里的另一种节奏：奔跑、配合，也享受比赛本身。把工作之外的时间，留一些给运动。',tags:['足球','团队协作','运动生活'],href:'https://www.magicj.cn/officialwebsite/topics/space/planning/todo',action:'看看我的生活计划',icon:'football'},
-    {id:'coffee',name:'咖啡爱好者',short:'咖啡',en:'COFFEE LOVER',tagline:'把日常，冲煮得慢一点。',desc:'从一杯咖啡到一家小店，发现生活中值得停留的细节。也用 AI，把点单、探店与日常的小灵感变成工具。',tags:['咖啡','探店','日常灵感'],href:'/officialwebsite/dianping-calendar/index.html',action:'打开点评日历',icon:'coffee'},
+    {id:'football',name:'足球爱好者',short:'足球',en:'FOOTBALL ENTHUSIAST',tagline:'走上球场，热爱就有了形状。',desc:'足球是生活里的另一种节奏：奔跑、配合，也享受比赛本身。把工作之外的时间，留一些给运动。',tags:['足球','团队协作','运动生活'],href:'https://www.magicj.cn/officialwebsite/super-calendar/index.html#life',action:'看看我的生活计划',icon:'football'},
     {id:'travel',name:'旅行家',short:'旅行',en:'WORLD EXPLORER',tagline:'世界很大，回忆可以很近。',desc:'把旅行照片放回它们发生的地方。从伦敦、土耳其到加州，用相册重新连接走过的路与见过的风景。',tags:['旅行','摄影','3D相册'],href:'/officialwebsite/topics/space/travel/travel-map/',action:'翻阅我的旅行相册',icon:'globe'}
   ];
   let roleIndex=0;
