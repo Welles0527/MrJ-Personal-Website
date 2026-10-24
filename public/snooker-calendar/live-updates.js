@@ -337,7 +337,7 @@
         [match.home, match.homeScore], [match.away, match.awayScore],
       ].map(([name, score]) => `<div class="bracket-player ${name === winner ? 'won' : ''}"><span>${escape(player(name))}</span><b>${scored ? escape(score ?? '—') : '—'}</b></div>`).join('')}</article>`;
     };
-    return `<section class="inline-bracket" data-inline-event-id="${escape(event.id)}" style="--event-color:${color(event)}"><div class="inline-bracket-heading"><strong>赛事对阵</strong>${status(event) === 'live' ? `<button type="button" data-match-bracket="${escape(event.id)}">返回比赛明细</button>` : ''}</div><div class="bracket-scroll"><div class="bracket-stage" style="width:${width}px;height:${height + 32}px"><svg class="bracket-lines" width="${width}" height="${height}" aria-hidden="true"><path d="${paths.join(' ')}"/></svg>${rounds.map((round, index) => `<section class="bracket-round" style="left:${index * 228}px"><h4>${escape(roundName(round))}</h4>${slots[index].map((match, slot) => `<div class="bracket-slot" style="top:${bracketCenter(index, slot)}px">${card(match)}</div>`).join('')}</section>`).join('')}</div></div><p class="bracket-note">对阵与比分随官方数据自动更新 · 同步于 ${escape(time(data.fetchedAt))}（北京时间）</p></section>`;
+    return `<section class="inline-bracket" data-inline-event-id="${escape(event.id)}" style="--event-color:${color(event)}"><div class="inline-bracket-heading"><strong>赛事对阵</strong>${status(event) === 'live' ? `<button type="button" data-match-bracket="${escape(event.id)}">返回比赛明细</button>` : ''}</div><div class="bracket-scroll"><div class="bracket-stage" style="width:${width}px;height:${height + 32}px"><svg class="bracket-lines" width="${width}" height="${height}" aria-hidden="true"><path d="${paths.join(' ')}"/></svg>${rounds.map((round, index) => `<section class="bracket-round" style="left:${index * 228}px"><h4>${escape(/^Round \d+$/i.test(round) && groups[index].length === 8 ? '1/8决赛' : roundName(round))}</h4>${slots[index].map((match, slot) => `<div class="bracket-slot" style="top:${bracketCenter(index, slot)}px">${card(match)}</div>`).join('')}</section>`).join('')}</div></div><p class="bracket-note">对阵与比分随官方数据自动更新 · 同步于 ${escape(time(data.fetchedAt))}（北京时间）</p></section>`;
   };
   inlineBracket = event => {
     const data = snapshot?.events?.[event.id];
@@ -348,7 +348,7 @@
     }
     const drawAvailable = status(event) === 'live' && data?.matches?.some(match =>
       knockoutRound(match.round) && ['ended', 'live', 'suspended'].includes(match.status));
-    if (drawAvailable && state.matchBracketByEvent[event.id]) return draw(event, data);
+    if (drawAvailable && state.matchBracketByEvent[event.id] !== false) return draw(event, data);
     if (!data?.matches?.length) {
       if (!resultsPage) return previousBracket(event);
       const rows = (event.result?.length ? event.result : event.matches || []).map((row, index) => ({ row, index })).filter(({ row }) =>

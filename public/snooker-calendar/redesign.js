@@ -341,17 +341,17 @@
     const grid = document.createElement('div'); grid.className = 'redesign-content-grid';
     const main = document.createElement('div'); main.className = 'redesign-match-main';
     const drawButton = panel.querySelector('[data-match-bracket]');
-    if (drawButton) {
-      const heading = drawButton.parentElement;
-      panel.querySelector('.match-status-filters').append(drawButton);
-      if (!heading.children.length) heading.remove();
-    }
     const controls = panel.querySelector('.match-controls-row');
     const viewSwitch = document.createElement('div');
     viewSwitch.className = 'match-view-switch';
     viewSwitch.setAttribute('role', 'group');
     viewSwitch.setAttribute('aria-label', '赛事视图');
     viewSwitch.innerHTML = '<button type="button" data-match-view="matches">比赛对阵</button><button type="button" data-match-view="players">参赛球员</button>';
+    if (drawButton) {
+      const heading = drawButton.parentElement;
+      viewSwitch.prepend(drawButton);
+      if (!heading.children.length) heading.remove();
+    }
     controls.prepend(viewSwitch);
     content.dataset.matchList = '';
     const roster = document.createElement('section');

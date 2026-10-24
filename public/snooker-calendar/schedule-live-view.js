@@ -422,7 +422,7 @@
       event.preventDefault();
       event.stopImmediatePropagation();
       const id = drawButton.dataset.matchBracket;
-      state.matchBracketByEvent[id] = !state.matchBracketByEvent[id];
+      state.matchBracketByEvent[id] = state.matchBracketByEvent[id] === false;
       render();
       return;
     }
