@@ -42,37 +42,48 @@
       </div>
 
       <nav class="board-tabs" aria-label="知识看板切换">
+        <a class="board-link" href="/officialwebsite/topics/applications/inspiration-station/theology/bible-text-statistics/">
+          <span>01</span> 圣经文字
+        </a>
+        <button class="board-tab" type="button" data-board-target="numbers" aria-selected="false">
+          <span>02</span> 数字圣经
+        </button>
         <button class="board-tab is-active" type="button" data-board-target="mountains" aria-selected="true">
-          <span>01</span> 圣经名山
+          <span>03</span> 圣经名山
         </button>
         <button class="board-tab" type="button" data-board-target="offerings" aria-selected="false">
-          <span>02</span> 圣经献祭
+          <span>04</span> 圣经献祭
         </button>
         <a
           class="board-link"
           href="/officialwebsite/topics/applications/inspiration-station/theology/age-rankings?view=lifespan"
         >
-          <span>03</span> 寿命排行
+          <span>05</span> 寿命排行
         </a>
         <a
           class="board-link"
           href="/officialwebsite/topics/applications/inspiration-station/theology/age-rankings?view=accession"
         >
-          <span>04</span> 登基排行
-        </a>
-        <a
-          class="board-link"
-          href="/officialwebsite/topics/applications/inspiration-station/theology/bible-text-statistics/"
-        >
-          <span>05</span> 圣经文字
+          <span>06</span> 登基排行
         </a>
         <a class="board-link" href="./biblical-festivals/">
-          <span>06</span> 圣经节期
+          <span>07</span> 圣经节期
         </a>
       </nav>
     </header>
 
     <main id="main-content">
+      <section class="board numbers-board" id="numbers-board" data-board="numbers" hidden>
+        <p class="eyebrow">NUMBERS IN SCRIPTURE · 数字里的圣经故事</p>
+        <h1>数字圣经</h1>
+        <p class="numbers-intro">从七日的节奏，到十二支派与十二使徒。选一个数字，沿着分类与经文，看看它出现在怎样的故事里。</p>
+        <div class="number-picker" role="group" aria-label="选择圣经数字"></div>
+        <div class="number-categories" role="group" aria-label="按主题分类"></div>
+        <p id="number-status" role="status"></p>
+        <button id="number-retry" class="filter-chip" type="button" hidden>重新加载经文</button>
+        <div id="number-passages" class="number-passages"></div>
+        <aside class="context-note"><div><strong>读数字，也读上下文</strong><p>这里收录的是代表性经文，不是全经出现次数排行。分类描述经文中的实际用途；同一个数字在不同语境中不一定具有相同的象征意义。经文采用本站和合本（公开领域简体），点击出处可进入阅读器查看上下文。</p></div></aside>
+      </section>
       <section class="board is-active" id="mountains-board" data-board="mountains">
         <div class="hero hero--mountains">
           <img

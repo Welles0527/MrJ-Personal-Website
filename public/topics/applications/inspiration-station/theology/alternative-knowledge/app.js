@@ -414,16 +414,22 @@ function activateBoard(target) {
     board.classList.toggle("is-active", active);
   });
 
-  document.title = target === "mountains" ? "圣经名山 · 知识看板 Demo" : "圣经献祭 · 知识看板 Demo";
+  document.title = `${{ mountains: "圣经名山", offerings: "圣经献祭", numbers: "数字圣经" }[target]} · 另类圣经`;
+  if (target === "numbers") loadNumberPassages();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 boardTabs.forEach((tab) => {
-  tab.addEventListener("click", () => activateBoard(tab.dataset.boardTarget));
+  tab.addEventListener("click", () => {
+    const target = tab.dataset.boardTarget;
+    if (location.hash === `#${target}`) activateBoard(target);
+    else location.hash = target;
+  });
 });
 
 boards.forEach((board) => {
   const type = board.dataset.board;
+  if (type === "numbers") return;
   const grid = board.querySelector(".story-grid");
   const filters = [...board.querySelectorAll(".filter-chip")];
   const viewButtons = [...board.querySelectorAll(".view-switch button")];
@@ -468,3 +474,122 @@ dialog.addEventListener("click", (event) => {
     event.clientY > box.bottom;
   if (outside) dialog.close();
 });
+
+// References use the same book identifiers and public-domain text as the reader.
+const numberPassages = [
+  [1, "信仰与合一", "独一的主", "deu", "申命记", 6, 4],
+  [1, "信仰与合一", "一主、一信、一洗", "eph", "以弗所书", 4, 5],
+  [2, "见证与差遣", "两三个人的见证", "deu", "申命记", 19, 15],
+  [2, "见证与差遣", "两个两个地差遣", "mrk", "马可福音", 6, 7],
+  [3, "时间与等候", "第三日复活", "1co", "哥林多前书", 15, 4],
+  [3, "时间与等候", "三日三夜", "mat", "马太福音", 12, 40],
+  [4, "异象与启示", "四活物", "rev", "启示录", 4, 6],
+  [4, "异象与启示", "四方与四风", "rev", "启示录", 7, 1],
+  [5, "供应与神迹", "五饼二鱼", "mat", "马太福音", 14, 17],
+  [5, "比喻与教导", "五个聪明、五个愚拙", "mat", "马太福音", 25, 2],
+  [6, "创造与安息", "六日劳碌", "exo", "出埃及记", 20, 9],
+  [6, "供应与神迹", "六口石缸", "jhn", "约翰福音", 2, 6],
+  [7, "创造与安息", "第七日安息", "gen", "创世记", 2, 2],
+  [7, "敬拜与节期", "七日的节期", "lev", "利未记", 23, 34],
+  [7, "异象与启示", "七个教会、七个灯台", "rev", "启示录", 1, 20],
+  [7, "争战与信靠", "七位祭司、七个号角、七圈", "jos", "约书亚记", 6, 4],
+  [10, "律法与约", "十条诫命", "deu", "申命记", 4, 13],
+  [10, "供应与神迹", "十个长大麻风的人", "luk", "路加福音", 17, 12],
+  [12, "群体与呼召", "十二支派", "gen", "创世记", 49, 28],
+  [12, "群体与呼召", "十二使徒", "luk", "路加福音", 6, 13],
+  [12, "记念与见证", "十二块石头", "jos", "约书亚记", 4, 9],
+  [12, "异象与启示", "十二座城门", "rev", "启示录", 21, 12],
+  [40, "时间与等候", "四十昼夜的雨", "gen", "创世记", 7, 12],
+  [40, "旷野与试炼", "旷野四十年", "deu", "申命记", 8, 2],
+  [40, "旷野与试炼", "禁食四十昼夜", "mat", "马太福音", 4, 2],
+  [50, "敬拜与节期", "数算五十天", "lev", "利未记", 23, 16],
+  [50, "敬拜与节期", "第五十年：禧年", "lev", "利未记", 25, 10],
+  [70, "群体与呼召", "七十位长老", "num", "民数记", 11, 16],
+  [70, "时间与等候", "七十年的应许", "jer", "耶利米书", 29, 10]
+];
+let selectedNumber = 7;
+let selectedCategory = "全部";
+let numberBible;
+let numberLoading = false;
+const numberPicker = document.querySelector(".number-picker");
+const categoryPicker = document.querySelector(".number-categories");
+const numberStatus = document.querySelector("#number-status");
+const numberRetry = document.querySelector("#number-retry");
+
+function renderNumberPassages() {
+  numberPicker.replaceChildren();
+  [...new Set(numberPassages.map((entry) => entry[0]))].forEach((number) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = String(number);
+    button.setAttribute("aria-pressed", String(number === selectedNumber));
+    button.addEventListener("click", () => {
+      selectedNumber = number;
+      selectedCategory = "全部";
+      renderNumberPassages();
+    });
+    numberPicker.append(button);
+  });
+  const entries = numberPassages.filter((entry) => entry[0] === selectedNumber);
+  categoryPicker.replaceChildren();
+  ["全部", ...new Set(entries.map((entry) => entry[1]))].forEach((category) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = category;
+    button.setAttribute("aria-pressed", String(category === selectedCategory));
+    button.addEventListener("click", () => {
+      selectedCategory = category;
+      renderNumberPassages();
+    });
+    categoryPicker.append(button);
+  });
+  const container = document.querySelector("#number-passages");
+  container.replaceChildren();
+  const visible = entries.filter((entry) => selectedCategory === "全部" || entry[1] === selectedCategory);
+  if (numberBible) numberStatus.textContent = `数字 ${selectedNumber} · ${visible.length} 处代表经文`;
+  visible.forEach(([number, category, title, book, name, chapter, verse]) => {
+    const card = document.createElement("article");
+    card.className = "number-card";
+    const label = document.createElement("p");
+    label.className = "eyebrow";
+    label.textContent = `${number} / ${category}`;
+    const heading = document.createElement("h2");
+    heading.textContent = title;
+    const text = document.createElement("blockquote");
+    text.textContent = numberBible ? numberBible.chapters[`${book}-${chapter}`][verse - 1] : "经文加载中…";
+    const link = document.createElement("a");
+    link.href = `../?book=${book}&chapter=${chapter}&verse=${verse}`;
+    link.textContent = `${name} ${chapter}:${verse} · 阅读上下文 ↗`;
+    card.append(label, heading, text, link);
+    container.append(card);
+  });
+}
+
+async function loadNumberPassages() {
+  if (numberBible || numberLoading) return;
+  numberLoading = true;
+  numberRetry.hidden = true;
+  numberStatus.textContent = "正在加载和合本经文…";
+  try {
+    const response = await fetch("/officialwebsite/data/bible/chi-cuv-simp.json");
+    if (!response.ok) throw new Error("Bible unavailable");
+    const bible = await response.json();
+    if (!numberPassages.every(([, , , book, , chapter, verse]) => typeof bible.chapters?.[`${book}-${chapter}`]?.[verse - 1] === "string")) throw new Error("Missing verse");
+    numberBible = bible;
+    renderNumberPassages();
+  } catch {
+    numberStatus.textContent = "经文暂时加载失败，请重试；也可以点击出处进入阅读器。";
+    document.querySelectorAll(".number-card blockquote").forEach((text) => { text.textContent = "经文暂未加载"; });
+    numberRetry.hidden = false;
+  } finally {
+    numberLoading = false;
+  }
+}
+numberRetry.addEventListener("click", loadNumberPassages);
+renderNumberPassages();
+function restoreBoard() {
+  const target = location.hash.slice(1);
+  activateBoard(["numbers", "mountains", "offerings"].includes(target) ? target : "mountains");
+}
+window.addEventListener("hashchange", restoreBoard);
+if (location.hash) restoreBoard();
