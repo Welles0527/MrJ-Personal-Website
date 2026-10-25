@@ -1,9 +1,9 @@
-name: Codex reset daily cloud sync
+name: Codex reset every 2 hours cloud sync
 
 on:
   schedule:
-    # 02:00 UTC = 10:00 Asia/Shanghai. GitHub may queue scheduled runs.
-    - cron: '0 2 * * *'
+    # Every 2 hours, on even hours in Asia/Shanghai. GitHub may queue scheduled runs.
+    - cron: '0 */2 * * *'
   workflow_dispatch:
 
 permissions:
