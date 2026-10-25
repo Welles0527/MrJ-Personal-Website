@@ -205,9 +205,37 @@ const editing = () => questionDragging || (document.activeElement?.matches('inpu
 const blankPlan = p => p.title === '新的查经聚会' && !p.date && !p.leader && !p.goal && !p.notes && !p.followup && !p.steps.length && !p.resources.length && !p.passages.length && p.questions.length===3 && p.questions.every((q,i)=>!q.answer && !q.focus && q.text===['观察：这段经文中发生了什么？','理解：上下文怎样帮助我们理解这段经文？','应用：这周我可以如何回应？'][i]);
 function syncStatus(text,error=false){$('#save-state').textContent=text;$('#save-state').classList.toggle('save-error',error);}
 function rememberLocally(){applyingCloud=true;try{save();}finally{applyingCloud=false;}}
+function backupLegacyDraft(){
+  const raw=localStorage.getItem(KEY);
+  if(raw && !localStorage.getItem(`${KEY}:legacy-original-backup`))localStorage.setItem(`${KEY}:legacy-original-backup`,raw);
+  return raw;
+}
+async function migrateLegacyDraft(session,token){
+  const owner=localStorage.getItem(`${KEY}:legacy-owner`);
+  if(owner && owner!==session.uid)return;
+  const raw=backupLegacyDraft();if(!raw)return;
+  const source=JSON.parse(raw);
+  if(source.version!==1||!Array.isArray(source.plans)||!source.plans.every(validPlan))throw new Error('原始草稿格式异常，原件已保留，请先导出备份');
+  const incoming=source.plans.filter(p=>!blankPlan(p));if(!incoming.length)return;
+  const digest=[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(raw)))].map(n=>n.toString(16).padStart(2,'0')).join('');
+  if(token!==epoch)return;
+  if(localStorage.getItem(KEY)!==raw)throw new Error('本机草稿仍在更新，稍后会重新合并');
+  if(localStorage.getItem(`${KEY}:legacy-receipt:${session.uid}`)===digest)return;
+  const merged=new Map(state.plans.filter(p=>!blankPlan(p)).map(p=>[p.id,p]));let active=state.active;
+  for(const original of incoming){
+    const existing=merged.get(original.id);
+    const plan=existing&&!same(existing,original)?{...copy(original),id:uid(),title:`${original.title}（本机原始草稿）`}:copy(original);
+    merged.set(plan.id,plan);if(source.active===original.id)active=plan.id;
+  }
+  const migrated={...state,plans:[...merged.values()],active};
+  // Preserve the original key and immutable backup; claim ownership only after the account cache is saved.
+  localStorage.setItem(storageKey,JSON.stringify({...migrated,cloudBase:{plans:basePlans,revision:baseRevision}}));
+  localStorage.setItem(`${KEY}:legacy-owner`,session.uid);
+  localStorage.setItem(`${KEY}:legacy-receipt:${session.uid}`,digest);
+  state=migrated;const position=scrollY;render();window.scrollTo(0,position);
+}
 function switchAccount(session){
   clearTimeout(syncTimer);epoch++;accountSession=session;basePlans=[];baseRevision=0;storageBlocked=false;
-  const guest=state, previousKey=storageKey;
   storageKey=session?`${KEY}:account:${session.uid}`:(localStorage.getItem(`${KEY}:legacy-owner`)?`${KEY}:guest`:KEY);
   let cached=null;
   try{
@@ -215,9 +243,6 @@ function switchAccount(session){
     if(raw){cached=JSON.parse(raw);if(!Array.isArray(cached.plans)||!cached.plans.length||!cached.plans.every(validPlan))throw new Error('invalid');}
     state=cached || {version:1,active:'',plans:[newPlan()]};
     if(cached?.cloudBase){if(!Array.isArray(cached.cloudBase.plans)||!cached.cloudBase.plans.every(validPlan)||!Number.isInteger(cached.cloudBase.revision)||cached.cloudBase.revision<0)throw new Error('invalid');basePlans=cached.cloudBase.plans;baseRevision=cached.cloudBase.revision;}
-    if(session && previousKey===KEY && !localStorage.getItem(`${KEY}:legacy-owner`) && guest.plans.some(p=>!blankPlan(p))){
-      const ids=new Set(state.plans.map(p=>p.id));state.plans=state.plans.filter(p=>!blankPlan(p)).concat(guest.plans.filter(p=>!ids.has(p.id)));localStorage.setItem(`${KEY}:legacy-owner`,session.uid);
-    }
   }catch{storageBlocked=true;state={version:1,active:'',plans:[newPlan()]};syncStatus('账号本地草稿读取异常，已停止同步以保留原数据。',true);}
   if(!state.plans.some(p=>p.id===state.active))state.active=state.plans[0].id;
   const position=scrollY;render();window.scrollTo(0,position);
@@ -250,6 +275,7 @@ async function syncCloud(){
     if(!session){$('#account-name').textContent='未登录 · 登录后同步查经记录';syncStatus('未登录 · 草稿保存在此浏览器');return;}
     $('#login-open').hidden=true;$('#login-open').textContent='登录账号';
     if(storageBlocked)return;
+    await migrateLegacyDraft(session,token);if(token!==epoch)return;
     const owner=session.uid, collection=getCloudDb().collection('officialWebsiteBibleReaderState');
     const result=checkCloud(await collection.doc(owner).get());if(token!==epoch)return;
     const record=Array.isArray(result.data)?result.data[0]:result.data;
@@ -322,6 +348,7 @@ tabLinks.forEach((a,i)=>{
 window.addEventListener('hashchange',()=>activateTab(location.hash.slice(1)));
 activateTab(location.hash.slice(1));
 // The remembered identity selects only an offline cache; cloud requests still require getCloudSession().
+try{backupLegacyDraft();}catch{storageBlocked=true;syncStatus('原始草稿备份未成功，请先导出；已停止覆盖和同步。',true);}
 const remembered=getRememberedSession();
 if(remembered)switchAccount(remembered);
 render();rememberLocally();void syncCloud();
