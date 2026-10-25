@@ -152,15 +152,18 @@ const sessionNeedsRefresh = (session: CloudAuthSession) => {
     : session.expires_in !== undefined && session.expires_in <= 60;
 };
 
+const loginRequired = () => Object.assign(new Error('登录会话已失效，请重新登录；本地数据已保留。'), { code: 'SITE_AUTH_REQUIRED' });
+const missingSessionCredentials = (error: unknown) =>
+  /credentials not found|Cannot read properties of (?:null|undefined) \(reading ['"]refresh_token['"]\)/i.test(errorMessage(error, ''));
+
 const renewCloudSession = async () => {
-  const loginRequired = () => Object.assign(new Error('登录会话已失效，请重新登录；本地数据已保留。'), { code: 'SITE_AUTH_REQUIRED' });
   try {
     const data = assertCloudResult(await auth.refreshSession() as CloudResult<CloudSessionResult>, '无法续期登录会话。');
-    if (data && !data.session) throw loginRequired();
+    if (!data?.session) throw loginRequired();
     return data;
   } catch (error) {
     const code = String((error as { code?: string })?.code || '');
-    if (/^(?:refresh_token_expired|invalid_refresh_token)$/i.test(code) || /credentials not found/i.test(errorMessage(error, ''))) {
+    if (/^(?:refresh_token_expired|invalid_refresh_token)$/i.test(code) || missingSessionCredentials(error)) {
       throw loginRequired();
     }
     throw error;
@@ -181,17 +184,19 @@ export const getCloudSession = (): Promise<CloudSession | null> => {
           sessionData = assertCloudResult(await auth.getSession() as CloudResult<CloudSessionResult>, '无法核实登录状态。');
         } catch (error) {
           if (revisionAtStart !== sessionRevision || explicitlySignedOut) return null;
-          const missingCredentials = /credentials not found/i.test(errorMessage(error, ''));
+          const missingCredentials = missingSessionCredentials(error);
           if (missingCredentials && !readRememberedSession()) return null;
-          if (!missingCredentials && !/token_expired|access_token_expired/i.test(String((error as { code?: string })?.code))) throw error;
-          sessionData = await renewCloudSession();
+          if (!missingCredentials) {
+            if (!/token_expired|access_token_expired/i.test(String((error as { code?: string })?.code))) throw error;
+            sessionData = await renewCloudSession();
+          }
         }
         if (revisionAtStart !== sessionRevision || explicitlySignedOut) return null;
         if (sessionData?.session && sessionNeedsRefresh(sessionData.session)) {
           sessionData = await renewCloudSession();
         } else if (!sessionData?.session && readRememberedSession() && attempt === 2) {
-          // Allow delayed SDK restoration first, then actively recover a missing session.
-          sessionData = await renewCloudSession();
+          // A display hint cannot supply refresh credentials; allow restoration, then request explicit login.
+          throw loginRequired();
         }
         if (revisionAtStart !== sessionRevision || explicitlySignedOut) return null;
         const authenticated = sessionData?.session;

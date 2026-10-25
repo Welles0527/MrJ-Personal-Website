@@ -273,6 +273,7 @@ async function syncCloud(){
     if(token!==epoch)return;
     if(session?.uid!==accountSession?.uid){switchAccount(session);token=epoch;}
     if(!session){$('#account-name').textContent='未登录 · 登录后同步查经记录';syncStatus('未登录 · 草稿保存在此浏览器');return;}
+    $('#account-name').textContent=`已登录 · ${session.account}`;
     $('#login-open').hidden=true;$('#login-open').textContent='登录账号';
     if(storageBlocked)return;
     await migrateLegacyDraft(session,token);if(token!==epoch)return;
@@ -319,7 +320,7 @@ async function syncCloud(){
     rememberLocally();
     if(!same(state.plans.filter(p=>!blankPlan(p)),basePlans.filter(p=>!blankPlan(p)))){syncStatus('已保存本地，继续同步最新编辑…');clearTimeout(syncTimer);syncTimer=setTimeout(()=>void syncCloud(),1500);}
     else syncStatus(`已保存到账号云端 · ${new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})}`);
-  }catch(error){if(error?.code==='SITE_AUTH_REQUIRED'){$('#login-open').hidden=false;$('#login-open').textContent='重新登录';}syncStatus(`同步暂不可用，本地编辑已保留。${error instanceof Error?error.message:''}`,true);}
+  }catch(error){if(token!==epoch)return;if(error?.code==='SITE_AUTH_REQUIRED'){$('#login-open').hidden=false;$('#login-open').textContent='重新登录';$('#account-name').textContent=`需要重新登录${accountSession?.account?` · ${accountSession.account}`:''}`;}syncStatus(`同步暂不可用，本地编辑已保留。${error instanceof Error?error.message:''}`,true);}
   finally{syncing=false;}
 }
 $('#login-open').onclick=()=>$('#login-dialog').showModal();
