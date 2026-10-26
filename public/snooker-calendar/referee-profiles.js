@@ -18,6 +18,7 @@
   // Chinese / original name, gender, country or region, highlight, biography, sources, aliases.
   // Historical achievements are dated; inclusion never implies current WST employment.
   const profiles = [
+    ['郑伟利', 'Zheng Weili', 'male', '中国', '中国斯诺克裁判', '执裁现场照片由用户提供。', [], ''],
     ['诸瑛', 'Zhu Ying', 'female', '中国', '首位执裁世锦赛的中国裁判', '2012 年在克鲁斯堡执裁亨德利与宾汉姆的首轮比赛，成为中国裁判登上这一舞台的先行者。', ['zhu', 'cbsa'], '诸英 褚英'],
     ['李安', 'Peggy Li / Li An', 'female', '中国', '国际排名赛决赛裁判', '曾执裁 2018 年中国公开赛、2023 年上海大师赛等决赛；入选 2025 年成都世运会斯诺克裁判名单。', ['li', 'games']],
     ['吕浠琳', 'Queenie Lyu / Lyu Xilin', 'female', '中国', '亦名吕智维 · 国际排名赛裁判', '曾执裁 2019、2023 年国际锦标赛决赛，2024 年赴英国执裁职业赛事。官方赛事名单亦使用“吕智维”。', ['lyu', 'lyuAlias', 'shenzhen'], '吕智维 Lyu Zhiwei Lu Xilin'],
@@ -45,6 +46,7 @@
   }));
   // Photos are tied to named source pages; unresolved portraits remain explicitly pending.
   const portraits = Object.fromEntries([
+    ['郑伟利', 'zheng-weili-user.png', '用户提供的执裁现场照', ''],
   [
     "扬·维尔哈斯",
     "janverhaas.jpg",
@@ -173,6 +175,74 @@
   ]
 ].map(([name, file, credit, url]) => [name, { file, credit, url }]));
   const ui = { region: 'all', gender: 'all', query: '' };
+  const likeIds = ['zheng-weili','zhu-ying','peggy-li','lyu-xilin','wang-wei','michaela-tabb','desislava-bozhilova','tatiana-woollaston','maike-kesseler','proletina-velichkova','malgorzata-kanieska','jan-verhaas','paul-collier','brendan-moore','olivier-marteel','marcel-eckardt','leo-scullion','rob-spencer','ben-williams','colin-humphries','eirian-williams','len-ganley'];
+  profiles.forEach((profile, index) => { profile.likeId = likeIds[index]; });
+  const likes = { counts: {}, mine: new Set(), pending: new Set(), loaded: false, loading: false, attempted: false, error: '', fetchedAt: 0 };
+  const thumb = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10v11H3V10h4Zm0 0 5-8c2 0 3 1 2 4l-1 4h6a2 2 0 0 1 2 2l-2 7a3 3 0 0 1-3 2H7"/></svg>';
+  async function requestLikes(payload) {
+    const env = 'magicj-web-d5g9yvowj6862f7a2';
+    if (!window.cloudbase?.init) throw new Error('SDK unavailable');
+    const app = window.cloudbase.init({ env, region: 'ap-shanghai' });
+    const auth = app.auth();
+    const getToken = async () => {
+      const personal = Boolean(localStorage.getItem('mywebsite.site-auth-session.v1'));
+      let session;
+      try { session = await auth.getSession(); if (session?.error) throw new Error(session.error.message); }
+      catch (error) { if (personal || !/credentials not found/i.test(error.message)) throw error; }
+      if (session?.data?.session?.access_token) return session.data.session.access_token;
+      if (personal) throw new Error('Personal session unavailable');
+      const anonymous = await auth.signInAnonymously();
+      if (anonymous?.error) throw new Error(anonymous.error.message);
+      return anonymous?.data?.session?.access_token;
+    };
+    const token = navigator.locks?.request ? await navigator.locks.request(`mywebsite.auth:${env}`, getToken) : await getToken();
+    if (!token) throw new Error('Session unavailable');
+    const response = await fetch(`https://${env}.ap-shanghai.tcb-api.tencentcloudapi.com/web?env=${env}`, {
+      method: 'POST', headers: { 'content-type': 'application/json' }, signal: AbortSignal.timeout(12000),
+      body: JSON.stringify({ action: 'functions.invokeFunction', dataVersion: '2020-01-10', env,
+        function_name: 'referee-likes', request_data: JSON.stringify(payload), access_token: token })
+    });
+    if (!response.ok) throw new Error('Service unavailable');
+    const body = await response.json();
+    const result = typeof body?.data?.response_data === 'string' ? JSON.parse(body.data.response_data) : body?.data?.response_data;
+    if (!result?.ok) throw new Error('Likes unavailable');
+    return result;
+  }
+  function updateLikeButtons() {
+    document.querySelectorAll('[data-referee-like]').forEach(button => {
+      const id = button.dataset.refereeLike;
+      const liked = likes.mine.has(id), pending = likes.pending.has(id);
+      button.disabled = !likes.loaded || liked || pending;
+      button.setAttribute('aria-pressed', String(liked));
+      button.setAttribute('aria-label', `${liked ? '已点赞' : '点赞'}${button.dataset.refereeName}，${likes.counts[id] ?? '尚未加载'}个赞`);
+      button.title = liked ? '已点赞' : pending ? '正在保存点赞' : '为这位裁判点赞';
+      button.innerHTML = `${thumb}<span>${pending ? '…' : likes.counts[id] ?? '—'}</span>`;
+    });
+    const message = document.getElementById('referee-likes-status');
+    if (message) message.textContent = likes.error || (likes.loading ? '正在加载点赞…' : '共享点赞 · 每位访客可为每位裁判点赞一次');
+    const retry = document.querySelector('[data-referee-likes-retry]');
+    if (retry) retry.hidden = !likes.error || likes.loading;
+  }
+  async function loadLikes() {
+    if (likes.loading || likes.pending.size) return;
+    likes.loading = true; likes.attempted = true; likes.error = ''; updateLikeButtons();
+    try {
+      const result = await requestLikes({ action: 'list' });
+      if (!result.counts || !Array.isArray(result.liked)) throw new Error('Invalid response');
+      likes.counts = result.counts; likes.mine = new Set(result.liked); likes.loaded = true; likes.fetchedAt = Date.now();
+    } catch { likes.error = '点赞暂时不可用，请稍后重试。'; }
+    finally { likes.loading = false; updateLikeButtons(); }
+  }
+  async function likeReferee(id) {
+    if (!likes.loaded || likes.mine.has(id) || likes.pending.has(id)) return;
+    likes.pending.add(id); likes.error = ''; updateLikeButtons();
+    try {
+      const result = await requestLikes({ action: 'like', refereeId: id });
+      if (result.refereeId !== id || !Number.isSafeInteger(result.count) || result.count < 1 || result.liked !== true) throw new Error('Invalid response');
+      likes.counts[id] = result.count; likes.mine.add(id);
+    } catch { likes.error = '点赞未能确认保存，请重试；重复请求不会重复计数。'; }
+    finally { likes.pending.delete(id); updateLikeButtons(); }
+  }
   const escape = value => String(value).replace(/[&<>"']/g, char => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   })[char]);
@@ -197,7 +267,8 @@
     .referee-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.referee-card{min-width:0;padding:20px;border:1px solid var(--line);border-radius:12px;background:var(--card);display:flex;flex-direction:column;gap:14px}
     .referee-photo{margin:0;aspect-ratio:4/3;display:grid;place-items:center;overflow:hidden;border-radius:8px;background:var(--bg);border:1px solid var(--line)}.referee-photo img{display:block;width:100%;height:100%;object-fit:contain}.referee-photo-credit{font-size:10px;color:var(--muted);text-decoration:none;line-height:1.6;overflow-wrap:anywhere}.referee-photo-credit:hover{color:var(--ref-accent);text-decoration:underline}
     .referee-card-head{display:flex;align-items:center;gap:12px}
-    .referee-identity{min-width:0}.referee-card h3{font-size:16px;line-height:1.5;margin:0;overflow-wrap:anywhere}.referee-english{color:var(--muted);font-size:11px;line-height:1.5;margin-top:4px;overflow-wrap:anywhere}.referee-tags{display:flex;flex-wrap:wrap;gap:6px}.referee-tags span{padding:4px 8px;font-size:11px;background:var(--bg);border:1px solid var(--line);border-radius:5px;color:var(--muted)}
+    .referee-identity{min-width:0;width:100%}.referee-name-row{display:flex;align-items:center;justify-content:space-between;gap:10px}.referee-card h3{font-size:16px;line-height:1.5;margin:0;overflow-wrap:anywhere}.referee-english{color:var(--muted);font-size:11px;line-height:1.5;margin-top:4px;overflow-wrap:anywhere}.referee-tags{display:flex;flex-wrap:wrap;gap:6px}.referee-tags span{padding:4px 8px;font-size:11px;background:var(--bg);border:1px solid var(--line);border-radius:5px;color:var(--muted)}
+    .referee-like{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex-shrink:0;min-height:44px;min-width:54px;padding:7px 9px;border:1px solid #d7ad4c66;border-radius:9px;color:#edc35b;background:#d7ad4c0c;cursor:pointer}.referee-like svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7}.referee-like[aria-pressed="true"] svg{fill:currentColor;stroke:var(--card)}.referee-like:disabled{cursor:default}.referee-like:not(:disabled):hover{background:#d7ad4c24;border-color:#edc35b}.referee-like span{font-size:12px;font-variant-numeric:tabular-nums}.referee-likes-note{display:flex;align-items:center;flex-wrap:wrap;gap:8px;color:var(--muted);font-size:12px;margin:0 0 18px}.referee-likes-note button{color:#edc35b;text-decoration:underline}.referee-likes-note button[hidden]{display:none}
     .referee-highlight{color:var(--ref-accent);font-size:12px;line-height:1.6;margin:0;font-weight:600}.referee-bio{font-size:12px;color:var(--muted);line-height:1.9;margin:0}.referee-sources{margin-top:auto;padding-top:12px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px}.referee-sources a{color:var(--muted);font-size:11px;text-decoration:none;line-height:1.6;overflow-wrap:anywhere}.referee-sources a:hover{color:var(--ref-accent);text-decoration:underline}
     .referee-empty{padding:40px 20px;text-align:center;border:1px dashed var(--line);border-radius:12px;color:var(--muted);line-height:1.8}.referee-note{font-size:11px;color:var(--muted);line-height:1.9;border-top:1px solid var(--line);padding-top:18px;margin-top:24px}
     @media(max-width:1200px){.referee-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -214,7 +285,7 @@
     const portrait = portraits[profile.name];
     const photo = `<figure class="referee-photo"><img src="./assets/referees/${escape(portrait.file)}" alt="${escape(profile.name)}裁判照片" loading="lazy" decoding="async"></figure>${portrait.url ? `<a class="referee-photo-credit" href="${escape(portrait.url)}" target="_blank" rel="noopener noreferrer">照片：${escape(portrait.credit)} ↗</a>` : `<span class="referee-photo-credit">照片：${escape(portrait.credit)}</span>`}`;
     return `<article class="referee-card" data-referee-name="${escape(profile.name)}" data-referee-region="${profile.region}" data-referee-gender="${profile.gender}">
-      ${photo}<div class="referee-card-head"><div class="referee-identity"><h3>${escape(profile.name)}</h3><div class="referee-english" lang="en">${escape(profile.english)}</div></div></div>
+      ${photo}<div class="referee-card-head"><div class="referee-identity"><div class="referee-name-row"><h3>${escape(profile.name)}</h3><button type="button" class="referee-like" data-referee-like="${profile.likeId}" data-referee-name="${escape(profile.name)}" aria-pressed="false" aria-label="点赞${escape(profile.name)}" disabled>${thumb}<span>—</span></button></div><div class="referee-english" lang="en">${escape(profile.english)}</div></div></div>
       <div class="referee-tags"><span>${escape(profile.country)}</span><span>${profile.gender === 'female' ? '女裁判' : '男裁判'}</span></div>
       <p class="referee-highlight">${escape(profile.highlight)}</p><p class="referee-bio">${escape(profile.bio)}</p>
       <div class="referee-sources">${profile.refs.map(key => `<a href="${escape(sources[key][1])}" target="_blank" rel="noopener noreferrer">${escape(sources[key][0])} ↗</a>`).join('')}</div></article>`;
@@ -242,6 +313,7 @@
       const group = visible.filter(profile => profile.region === region && profile.gender === gender);
       return group.length ? `<section class="referee-section"><h2>${region === 'domestic' ? '国内' : '国外'} · ${gender === 'female' ? '女裁判' : '男裁判'}<small>${group.length} 位</small></h2><div class="referee-grid">${group.map(card).join('')}</div></section>` : '';
     })).join('') || '<div class="referee-empty">没有找到符合条件的裁判。<br>试试其他姓名，或重置筛选。</div>';
+    updateLikeButtons();
   }
   function filter(key, label, options) {
     return `<div class="referee-filter" role="group" aria-label="${label}筛选"><span class="referee-filter-label">${label}</span>${options.map(([value, text]) => `<button type="button" data-referee-filter="${key}" data-value="${value}" aria-pressed="${ui[key] === value}">${text}<small>0</small></button>`).join('')}<select class="referee-filter-select" data-referee-select="${key}" aria-label="${label}">${options.map(([value, text]) => `<option value="${value}" data-label="${text}">${text}</option>`).join('')}</select></div>`;
@@ -288,6 +360,17 @@
       updateResults();
     };
     updateResults();
+    const status = document.createElement('div');
+    status.className = 'referee-likes-note';
+    status.innerHTML = '<span id="referee-likes-status" role="status" aria-live="polite"></span><button type="button" data-referee-likes-retry hidden>重试</button>';
+    main.querySelector('#referee-result-count').after(status);
+    status.querySelector('button').onclick = loadLikes;
+    main.querySelector('#referee-results').onclick = event => {
+      const button = event.target.closest('[data-referee-like]');
+      if (button && !button.disabled) likeReferee(button.dataset.refereeLike);
+    };
+    updateLikeButtons();
+    if (!likes.loading && (!likes.attempted || (likes.loaded && Date.now() - likes.fetchedAt > 60000))) loadLikes();
   }
   const previousRender = render;
   render = function () { previousRender(); applyReferees(); };

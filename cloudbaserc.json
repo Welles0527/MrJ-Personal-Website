@@ -5,6 +5,15 @@
   "functionRoot": "cloudfunctions",
   "functions": [
     {
+      "name": "referee-likes",
+      "type": "Event",
+      "runtime": "Nodejs20.19",
+      "handler": "index.main",
+      "timeout": 15,
+      "memorySize": 128,
+      "description": "Shared snooker referee likes; one vote per authenticated or anonymous caller and referee."
+    },
+    {
       "name": "home-visits",
       "type": "Event",
       "runtime": "Nodejs20.19",
