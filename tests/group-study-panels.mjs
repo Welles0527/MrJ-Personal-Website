@@ -6,12 +6,15 @@ const seed = { version: 1, active: 'existing', plans: [{ id: 'existing', title: 
 const browser = await chromium.launch({ executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true });
 try {
   for (const width of [1440, 390]) {
-    const context = await browser.newContext({ viewport: { width, height: width === 390 ? 844 : 900 } });
+    const context = await browser.newContext({ viewport: { width, height: width === 390 ? 844 : 900 }, hasTouch: width === 390 });
     await context.addInitScript(seed => { if (!localStorage.getItem('magicj.group-study.v1')) localStorage.setItem('magicj.group-study.v1', JSON.stringify(seed)); }, seed);
     const page = await context.newPage(), errors = [];
     page.on('pageerror', e => errors.push(e.message));
     await page.goto(url);
     assert.deepEqual(await page.getByRole('tab').allTextContents(), ['聚会信息', '查考经文', '视频与资料', '流程安排', '问题互动', '带走与回应']);
+    const goal = page.locator('[data-meta-editor="goal"] .rich-editor');
+    await (width === 390 ? goal.tap() : goal.click());
+    assert.equal(await goal.evaluate(e => document.activeElement === e), true, 'goal editor uses the same focus-safe field container');
     await page.getByRole('tab', { name: '问题互动', exact: true }).click();
     assert.equal(await page.locator('[role=tabpanel]:visible').count(), 1);
     assert.equal(await page.locator('#discussion').isVisible(), true);
@@ -28,14 +31,29 @@ try {
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('magicj.group-study.v1')));
     assert.deepEqual(saved.plans, seed.plans, 'all previously stored fields are unchanged by splitting panels');
     await page.screenshot({ path: `.private/group-response-${width}.png` });
-    await notes.fill('已有分享和代祷，不可删除；新增回应');
-    await followup.fill('已有下次跟进，不可删除；新增跟进');
+    await (width === 390 ? notes.tap() : notes.click());
+    assert.equal(await notes.evaluate(e => document.activeElement === e), true, 'clicking the notes editor must keep keyboard focus');
+    await page.keyboard.press('Control+End'); await page.keyboard.type('；新增回应');
+    await (width === 390 ? followup.tap() : followup.click());
+    assert.equal(await followup.evaluate(e => document.activeElement === e), true, 'clicking the followup editor must keep keyboard focus');
+    await page.keyboard.press('Control+End'); await page.keyboard.type('；新增跟进');
+    await notes.evaluate(e => {
+      const walker = document.createTreeWalker(e, NodeFilter.SHOW_TEXT); let text;
+      while (text = walker.nextNode()) { const start = text.textContent.indexOf('新增回应'); if (start < 0) continue; const range = document.createRange(); range.setStart(text, start); range.setEnd(text, start + 4); const selection = getSelection(); selection.removeAllRanges(); selection.addRange(range); return; }
+      throw new Error('typed text missing from editor');
+    });
+    await notes.locator('..').getByRole('button', { name: '高亮选中文字', exact: true }).click();
+    assert.equal(await notes.locator('mark').innerText(), '新增回应');
+    await page.locator('#present').click(); assert.equal(await notes.getAttribute('contenteditable'), 'false');
+    await page.locator('#present').click(); assert.equal(await notes.getAttribute('contenteditable'), 'true');
     await page.getByRole('tab', { name: '问题互动', exact: true }).click();
     await page.getByRole('tab', { name: '带走与回应', exact: true }).click();
     await page.reload();
     assert.equal(await page.getByRole('tab', { name: '带走与回应', exact: true }).getAttribute('aria-selected'), 'true');
     assert.equal(await notes.innerText(), '已有分享和代祷，不可删除；新增回应');
     assert.equal(await followup.innerText(), '已有下次跟进，不可删除；新增跟进');
+    assert.equal(await notes.locator('mark').innerText(), '新增回应');
+    await page.screenshot({ path: `.private/group-response-editable-${width}.png` });
     await page.locator('.backup-details summary').click();
     const pending = page.waitForEvent('download'); await page.locator('#export').click();
     const stream = await (await pending).createReadStream(); let exported = ''; for await (const part of stream) exported += part.toString();

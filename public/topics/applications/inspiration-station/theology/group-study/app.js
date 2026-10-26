@@ -173,7 +173,12 @@ function renderPassages() {
   if(!current().passages.length)$('#passages').append(node('p','选择书卷、章节与范围，将经文加入本次查经。','empty'));
 }
 function render() { renderPlans();document.querySelectorAll('[data-meta]').forEach(e=>e.value=current()[e.dataset.meta]);renderMetaEditors();renderSteps();renderQuestions();renderResources();renderPassages(); }
-document.querySelectorAll('textarea[data-meta]').forEach(original=>{const host=node('div');host.dataset.metaEditor=original.dataset.meta;host.dataset.label=original.closest('label').firstChild.textContent.trim();host.dataset.placeholder=original.placeholder;original.replaceWith(host);});
+document.querySelectorAll('textarea[data-meta]').forEach(original=>{
+  const label=original.closest('label'), host=node('div');host.dataset.metaEditor=original.dataset.meta;host.dataset.label=label.firstChild.textContent.trim();host.dataset.placeholder=original.placeholder;
+  // A label would activate the first formatting button when the editor is clicked, stealing keyboard focus.
+  const container=node('div',undefined,label.className);container.classList.add('muted');container.append(...label.childNodes);label.replaceWith(container);
+  original.replaceWith(host);
+});
 document.querySelectorAll('[data-meta]').forEach(e=>e.addEventListener('input',()=>{current()[e.dataset.meta]=e.value;save();if(['title','date'].includes(e.dataset.meta))renderPlans();}));
 $('#new-plan').onclick=()=>{const p=newPlan();state.plans.unshift(p);state.active=p.id;save();render();$('#title').focus();};
 $('#add-step').onclick=()=>{current().steps.push({id:uid(),title:'新的环节',minutes:5,content:'',highlights:[],focus:false});save();renderSteps();};
