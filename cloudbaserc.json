@@ -4,6 +4,7 @@
   "envId": "magicj-web-d5g9yvowj6862f7a2",
   "functionRoot": "cloudfunctions",
   "functions": [
+    {"name": "family-health", "type": "Event", "runtime": "Nodejs20.19", "handler": "index.main", "timeout": 60, "memorySize": 256, "description": "Private account health archives and immutable attachment chunks. No HTTP mapping."},
     {
       "name": "referee-likes",
       "type": "Event",
