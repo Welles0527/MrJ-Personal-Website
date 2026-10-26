@@ -188,7 +188,8 @@
       const personal = Boolean(localStorage.getItem('mywebsite.site-auth-session.v1'));
       let session;
       try { session = await auth.getSession(); if (session?.error) throw new Error(session.error.message); }
-      catch (error) { if (personal || !/credentials not found/i.test(error.message)) throw error; }
+      // This SDK also reports a fresh visitor's missing credentials as a null scope.
+      catch (error) { if (personal || !/credentials not found|Cannot read properties of null \(reading 'scope'\)/i.test(error.message)) throw error; }
       if (session?.data?.session?.access_token) return session.data.session.access_token;
       if (personal) throw new Error('Personal session unavailable');
       const anonymous = await auth.signInAnonymously();

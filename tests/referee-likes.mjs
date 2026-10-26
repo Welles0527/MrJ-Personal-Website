@@ -21,3 +21,18 @@ assert.equal(data.size,2);r=await handler({action:'list'});assert.equal(r.counts
 const broken=createHandler({collection:()=>({aggregate:()=>{throw Error('database failure');}})},()=>uid);
 assert.equal((await broken({action:'list'})).error,'UNAVAILABLE');
 console.log('PASS 22 referees, 8 concurrent duplicate likes, 2 visitors, persisted counts, invalid referee, spoofed identity, HTTP rejection, database failure');
+// Regression for the real SDK's fresh-visitor null-scope error; never replace a personal session.
+const fs = await import('node:fs');
+const vm = await import('node:vm');
+const source = fs.readFileSync(new URL('../public/snooker-calendar/referee-profiles.js', import.meta.url), 'utf8');
+const requestCode = source.slice(source.indexOf('  async function requestLikes(payload)'), source.indexOf('  function updateLikeButtons()'));
+for (const [personal, message, succeeds] of [[false,"Cannot read properties of null (reading 'scope')",true],[false,'credentials not found',true],[true,"Cannot read properties of null (reading 'scope')",false],[false,'Network unavailable',false]]) {
+ let anonymousCalls = 0;
+ const context = vm.createContext({ AbortSignal, navigator: {}, localStorage: { getItem: () => personal ? 'personal-account' : null },
+  window: { cloudbase: { init: () => ({ auth: () => ({ getSession: async () => ({ error: { message } }), signInAnonymously: async () => { anonymousCalls++; return { data: { session: { access_token: 'isolated-test' } } }; } }) }) } },
+  fetch: async () => ({ ok: true, json: async () => ({ data: { response_data: JSON.stringify({ ok: true, counts: {}, liked: [] }) } }) }) });
+ vm.runInContext(requestCode,context);
+ if (succeeds) { assert.equal((await context.requestLikes({ action: 'list' })).ok,true); assert.equal(anonymousCalls,1); }
+ else { await assert.rejects(context.requestLikes({ action: 'list' })); assert.equal(anonymousCalls,0); }
+}
+console.log('PASS fresh anonymous SDK sessions recover; personal sessions and network failures never become anonymous');
