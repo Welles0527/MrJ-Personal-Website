@@ -154,7 +154,10 @@ var wu=Math.round(6.6*60),dh=(e,t=0,n=1)=>Math.min(n,Math.max(t,e)),Dr=e=>{let t
     fontFamily:'Inter,"PingFang SC","Microsoft YaHei",sans-serif',
     fontSize:o<900?24:18,fontWeight:400,letterSpacing:4.8,
     opacity:f*(1-Dr((q-3.65)/.15)),pointerEvents:"none"
-  },children:"Loading"
+  },children:[
+    (0,$.jsx)("span",{children:"Loading"}),
+    (0,$.jsx)("span",{"data-loading-dots":"true","aria-hidden":"true",style:{position:"absolute",marginLeft:4,letterSpacing:2,textAlign:"left"},children:".".repeat(1+Math.floor(q/.3)%6)})
+  ]
 }),
 (0,$.jsx)("div",{
   "data-welcome-label":"true", "aria-label":e,"aria-hidden":q<=4.55,
