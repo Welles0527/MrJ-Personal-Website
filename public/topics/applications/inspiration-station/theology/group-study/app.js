@@ -84,7 +84,19 @@ function richEditor(value,label,update,getHighlights,setHighlights,placeholder='
   });
   // Keep the editor selection while using the formatting toolbar, including on touch screens.
   highlight.addEventListener('pointerdown',event=>event.preventDefault());
-  const clear=button('清除高亮',()=>{const text=editor.innerText.replace(/\r\n/g,'\n');setHighlights([]);paint(text);update(text);save();});
+  const clear=button('清除高亮',()=>{
+    const text=editor.innerText.replace(/\r\n/g,'\n'), position=scrollY, selection=window.getSelection();
+    const offsets=selection?.rangeCount && editor.contains(selection.anchorNode) && editor.contains(selection.focusNode)
+      ? [[selection.anchorNode,selection.anchorOffset],[selection.focusNode,selection.focusOffset]].map(([node,offset])=>{const range=document.createRange();range.selectNodeContents(editor);range.setEnd(node,offset);return range.toString().length;}) : null;
+    setHighlights([]);
+    editor.querySelectorAll('mark').forEach(mark=>mark.replaceWith(...mark.childNodes));editor.normalize();
+    update(text);save();
+    if(offsets){
+      const points=offsets.map(offset=>{const walker=document.createTreeWalker(editor,NodeFilter.SHOW_TEXT);let node;while(node=walker.nextNode()){if(offset<=node.length)return [node,offset];offset-=node.length;}return [editor,editor.childNodes.length];});
+      editor.focus({preventScroll:true});selection.setBaseAndExtent(...points.flat());
+    }
+    window.scrollTo(0,position);
+  });
   clear.addEventListener('pointerdown',event=>event.preventDefault());tools.append(highlight,clear);root.append(tools,editor);return root;
 }
 function renderMetaEditors(){
@@ -255,15 +267,15 @@ function switchAccount(session){
   if(!storageBlocked)rememberLocally();
 }
 function checkCloud(result){if(!result || result.error || result.code)throw new Error(result?.error?.message||result?.message||'云端请求失败');return result;}
-function mergePlans(remote,baseline=basePlans){
+function mergePlans(remote,baseline=basePlans,conflictIds=new Map()){
   const merged=new Map(remote.map(p=>[p.id,p])), previous=new Map(baseline.map(p=>[p.id,p]));
   for(const local of state.plans){
     const base=previous.get(local.id),cloud=merged.get(local.id);
     if(same(local,base)||(!base && blankPlan(local)))continue;
     if(cloud && base && !same(cloud,base) && !same(local,cloud)){
-      const conflict={...copy(local),id:uid(),title:`${local.title}（本地冲突副本）`};merged.set(conflict.id,conflict);
+      const conflict={...copy(local),id:uid(),title:`${local.title}（本地冲突副本）`};merged.set(conflict.id,conflict);conflictIds.set(local.id,conflict.id);
     }else if(cloud && !base && !same(local,cloud)){
-      const conflict={...copy(local),id:uid(),title:`${local.title}（本地冲突副本）`};merged.set(conflict.id,conflict);
+      const conflict={...copy(local),id:uid(),title:`${local.title}（本地冲突副本）`};merged.set(conflict.id,conflict);conflictIds.set(local.id,conflict.id);
     }else merged.set(local.id,local);
   }
   return [...merged.values()];
@@ -290,7 +302,7 @@ async function syncCloud(){
     if((record?.groupStudy && record.groupStudy.version!==1)||!Array.isArray(remote)||!remote.every(validPlan))throw new Error('云端查经数据格式异常，已保留本地草稿');
     const revision=record?.groupStudyRevision ?? 0;
     if(!Number.isInteger(revision)||revision<0)throw new Error('云端版本异常');
-    const observed=copy(state.plans), merged=copy(mergePlans(remote));
+    const observed=copy(state.plans), conflictIds=new Map(), merged=copy(mergePlans(remote,basePlans,conflictIds));
     const changed=!same(merged,state.plans) && !(merged.length===0 && state.plans.every(blankPlan));
     if(changed && editing()){syncStatus('云端有更新，结束当前输入后自动同步');return;}
     if(!same(merged,remote)){
@@ -315,10 +327,12 @@ async function syncCloud(){
     if(token!==epoch)return;
     if(changed && editing()){syncStatus('云端有更新，结束当前输入后自动同步');return;}
     // A pending request must never replace text typed after the request started.
-    const latestMerged=mergePlans(merged,observed);
+    const latestMerged=mergePlans(merged,observed,conflictIds);
     basePlans=copy(merged);
     if(changed && !editing()){
       const position=scrollY;state.plans=latestMerged.length?latestMerged:[newPlan()];
+      // Keep the user's edited version visible instead of switching back to the conflicting cloud version.
+      if(conflictIds.has(state.active))state.active=conflictIds.get(state.active);
       if(!state.plans.some(p=>p.id===state.active))state.active=state.plans[0].id;
       render();window.scrollTo(0,position);
     }
