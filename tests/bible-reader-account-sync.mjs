@@ -67,9 +67,9 @@ const firstLogin = resolveAccountSnapshot({
   legacyOwner: null,
   fallback: baseState
 });
-assert.equal(firstLogin.migratedLegacy, true);
-assert.equal(firstLogin.shouldWriteCloud, true);
-assert.equal(firstLogin.snapshot.lastRead.book, 'rev');
+assert.equal(firstLogin.migratedLegacy, false);
+assert.equal(firstLogin.shouldWriteCloud, false);
+assert.equal(firstLogin.snapshot.lastRead.book, 'gen');
 
 const otherAccount = resolveAccountSnapshot({
   uid: 'user-b',
@@ -91,8 +91,15 @@ const sameOwnerMigration = resolveAccountSnapshot({
   legacyOwner: 'user-a',
   fallback: baseState
 });
-assert.deepEqual(sameOwnerMigration.snapshot.bookStatuses, { rev: 'read' });
+assert.deepEqual(sameOwnerMigration.snapshot.bookStatuses, {});
 assert.deepEqual(sameOwnerMigration.snapshot.readVerses, ['heb-5-1']);
-assert.equal(sameOwnerMigration.shouldWriteCloud, true);
+assert.equal(sameOwnerMigration.shouldWriteCloud, false);
+
+const cachedOnly = resolveAccountSnapshot({
+  uid: 'user-a', cloud: null, accountCache: foreignBrowserState,
+  legacy: foreignBrowserState, legacyOwner: 'user-a', fallback: baseState
+});
+assert.deepEqual(cachedOnly.snapshot, baseState, '云端为空时不得恢复浏览器记录');
+assert.equal(cachedOnly.shouldWriteCloud, false, '登录不得自动创建或覆盖云端记录');
 
 console.log('Bible reader account-sync regression test passed.');

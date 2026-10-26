@@ -123,7 +123,6 @@ const STORAGE_KEY = 'mywebsite.bible-reader.v1';
 const DAILY_PRAYER_KEY = 'mywebsite.bible-daily-prayer.v1';
 const READ_VERSES_KEY = 'mywebsite.bible-read-verses.v1';
 const BOOK_STATUS_KEY = 'mywebsite.bible-book-status.v1';
-const LEGACY_OWNER_KEY = 'mywebsite.bible-reader.legacy-owner.v1';
 const READING_THEME_KEY = 'mywebsite.bible-reading-theme.v1';
 const SPEECH_RATE_KEY = 'mywebsite.bible-speech-rate.v1';
 const SPEECH_RATES = [1, 1.2, 1.5, 2, 3];
@@ -143,29 +142,6 @@ const escapeHtml = (value: string) => value
   .replaceAll('"', '&quot;')
   .replaceAll("'", '&#039;');
 
-const readStoredState = (storageKey: string): ReaderState | null => {
-  try {
-    const raw = window.localStorage.getItem(storageKey);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<ReaderState>;
-    if (!parsed || !parsed.lastRead || !Array.isArray(parsed.bookmarks) || !Array.isArray(parsed.notes)) return null;
-    return {
-      lastRead: parsed.lastRead,
-      bookmarks: parsed.bookmarks.filter((item): item is Bookmark => Boolean(item?.id && item.book && item.chapter && item.verse)),
-      notes: parsed.notes.filter((item): item is Note => Boolean(item?.id && item.book && item.chapter && item.verse)),
-      readVerses: Array.isArray(parsed.readVerses) ? parsed.readVerses.filter((item): item is string => typeof item === 'string') : undefined,
-      bookStatuses: parsed.bookStatuses && typeof parsed.bookStatuses === 'object' && !Array.isArray(parsed.bookStatuses)
-        ? Object.fromEntries(Object.entries(parsed.bookStatuses).filter((item): item is [string, BookReadingStatus] => item[1] === 'reading' || item[1] === 'read' || item[1] === 'none'))
-        : undefined,
-      updatedAt: typeof parsed.updatedAt === 'string' ? parsed.updatedAt : parsed.lastRead.updatedAt
-    };
-  } catch {
-    return null;
-  }
-};
-
-const readLocalState = (fallback: ReaderState, storageKey = STORAGE_KEY): ReaderState =>
-  readStoredState(storageKey) ?? fallback;
 
 const writeLocalState = (state: ReaderState, storageKey = STORAGE_KEY) => {
   try {
@@ -176,15 +152,6 @@ const writeLocalState = (state: ReaderState, storageKey = STORAGE_KEY) => {
   }
 };
 
-const readReadVerses = (storageKey = READ_VERSES_KEY) => {
-  try {
-    const raw = window.localStorage.getItem(storageKey);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return new Set(Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string') : []);
-  } catch {
-    return new Set<string>();
-  }
-};
 
 const writeReadVerses = (readVerses: Set<string>, storageKey = READ_VERSES_KEY) => {
   try {
@@ -195,16 +162,6 @@ const writeReadVerses = (readVerses: Set<string>, storageKey = READ_VERSES_KEY) 
   }
 };
 
-const readBookStatuses = (storageKey = BOOK_STATUS_KEY) => {
-  try {
-    const raw = window.localStorage.getItem(storageKey);
-    const parsed = raw ? JSON.parse(raw) : {};
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {} as Record<string, BookReadingStatus>;
-    return Object.fromEntries(Object.entries(parsed).filter((item): item is [string, BookReadingStatus] => item[1] === 'reading' || item[1] === 'read' || item[1] === 'none'));
-  } catch {
-    return {} as Record<string, BookReadingStatus>;
-  }
-};
 
 const writeBookStatuses = (statuses: Record<string, BookReadingStatus>, storageKey = BOOK_STATUS_KEY) => {
   try {
@@ -215,21 +172,6 @@ const writeBookStatuses = (statuses: Record<string, BookReadingStatus>, storageK
   }
 };
 
-const readLegacyOwner = () => {
-  try {
-    return window.localStorage.getItem(LEGACY_OWNER_KEY);
-  } catch {
-    return null;
-  }
-};
-
-const writeLegacyOwner = (uid: string) => {
-  try {
-    window.localStorage.setItem(LEGACY_OWNER_KEY, uid);
-  } catch {
-    // Account-scoped cloud state remains authoritative when local storage is unavailable.
-  }
-};
 
 const readReadingTheme = () => {
   try {
@@ -375,13 +317,9 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   let viewMode: 'grid' | 'list' = 'grid';
   let currentBook = fallbackBook;
   let currentChapter = fallbackChapter;
-  const legacyLocalState = readLocalState(fallbackState);
-  const legacyReadVerses = readReadVerses();
-  const legacyBookStatuses = readBookStatuses();
-  const rememberedSession = getRememberedSession();
-  let state = rememberedSession ? fallbackState : legacyLocalState;
-  let readVerses = rememberedSession ? new Set<string>() : legacyReadVerses;
-  let bookStatuses = rememberedSession ? {} as Record<string, BookReadingStatus> : legacyBookStatuses;
+  let state = fallbackState;
+  let readVerses = new Set<string>();
+  let bookStatuses: Record<string, BookReadingStatus> = {};
   let stateStorageKey = STORAGE_KEY;
   let readVersesStorageKey = READ_VERSES_KEY;
   let bookStatusStorageKey = BOOK_STATUS_KEY;
@@ -2017,18 +1955,6 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     const readerVisible = Boolean(verseList.querySelector('.bible-verse'))
       && readerBounds.top < window.innerHeight && readerBounds.bottom > 0;
     const preserveReaderPosition = stateStorageKey === accountStateKey || readerVisible || params.has('book');
-    const accountCache = readStoredState(accountStateKey);
-    if (accountCache) {
-      const cachedVerses = readReadVerses(accountReadVersesKey);
-      const cachedStatuses = readBookStatuses(accountBookStatusKey);
-      accountCache.readVerses = cachedVerses.size ? [...cachedVerses] : accountCache.readVerses;
-      accountCache.bookStatuses = Object.keys(cachedStatuses).length ? cachedStatuses : accountCache.bookStatuses;
-    }
-    const legacySnapshot: ReaderState = {
-      ...legacyLocalState,
-      readVerses: [...legacyReadVerses],
-      bookStatuses: { ...legacyBookStatuses }
-    };
     const fallbackSnapshot: ReaderState = {
       ...fallbackState,
       readVerses: [],
@@ -2037,9 +1963,9 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     const resolved = resolveAccountSnapshot({
       uid: session.uid,
       cloud: cloudState,
-      accountCache,
-      legacy: legacySnapshot,
-      legacyOwner: readLegacyOwner(),
+      accountCache: null,
+      legacy: null,
+      legacyOwner: null,
       fallback: fallbackSnapshot
     });
 
@@ -2049,7 +1975,6 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     stateStorageKey = accountStateKey;
     readVersesStorageKey = accountReadVersesKey;
     bookStatusStorageKey = accountBookStatusKey;
-    writeLegacyOwner(session.uid);
     if (!preserveReaderPosition) {
       currentBook = state.lastRead.book;
       currentChapter = state.lastRead.chapter;

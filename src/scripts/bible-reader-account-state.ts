@@ -36,44 +36,14 @@ export const accountStorageKey = (baseKey: string, uid: string) =>
   `${baseKey}.account.${encodeURIComponent(uid)}`;
 
 export const resolveAccountSnapshot = <T extends AccountReaderSnapshot>({
-  uid,
   cloud,
-  accountCache,
-  legacy,
-  legacyOwner,
   fallback
 }: ResolveAccountSnapshotOptions<T>) => {
-  const mayUseLegacy = Boolean(legacy) && (!legacyOwner || legacyOwner === uid);
-
-  if (cloud) {
-    const snapshot = cloneSnapshot(cloud);
-    let migratedLegacy = false;
-    if (!cloud.bookStatuses && mayUseLegacy && legacy?.bookStatuses) {
-      snapshot.bookStatuses = { ...legacy.bookStatuses };
-      migratedLegacy = true;
-    }
-    return { snapshot, migratedLegacy, shouldWriteCloud: migratedLegacy };
-  }
-
-  if (accountCache) {
-    return {
-      snapshot: cloneSnapshot(accountCache),
-      migratedLegacy: false,
-      shouldWriteCloud: true
-    };
-  }
-
-  if (mayUseLegacy && legacy) {
-    return {
-      snapshot: cloneSnapshot(legacy),
-      migratedLegacy: true,
-      shouldWriteCloud: true
-    };
-  }
-
+  // Browser snapshots are backups only, never an account data source.
+  // Reading an empty cloud record must not implicitly upload a local snapshot.
   return {
-    snapshot: cloneSnapshot(fallback),
+    snapshot: cloneSnapshot(cloud ?? fallback),
     migratedLegacy: false,
-    shouldWriteCloud: true
+    shouldWriteCloud: false
   };
 };
