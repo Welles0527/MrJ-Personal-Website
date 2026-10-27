@@ -26,7 +26,7 @@ export function mountAccountToolbar() {
   bar.innerHTML = '<details class="mj-account-menu"><summary><span id="mj-account-status" role="status" aria-live="polite">正在核实账号…</span></summary><div class="mj-account-actions"><button data-login>登录 / 注册</button><button data-sync>同步</button><button data-backup>备份全部数据</button><button data-logout disabled>退出</button></div></details>';
   const projectBrand = createProjectBrand();
   document.body.prepend(bar);
-  if (projectBrand) mountProjectBrand(projectBrand, bar);
+  if (projectBrand && projectBrand.dataset.project !== 'resume') mountProjectBrand(projectBrand, bar);
   const travelAtlas = projectBrand?.dataset.project === 'travel' && document.querySelector<HTMLElement>('.atlas');
   if (travelAtlas) { travelAtlas.prepend(bar); bar.dataset.embedded = 'travel'; }
   const menu = bar.querySelector<HTMLDetailsElement>('.mj-account-menu')!;
@@ -76,6 +76,10 @@ export function mountAccountToolbar() {
   const message = dialog.querySelector<HTMLElement>('[role=alert]')!;
   const field = (name: string) => dialog.querySelector<HTMLInputElement>(`[name=${name}]`)!;
   const say = (text: string, error = false) => { status.textContent = text; status.dataset.error = String(error); };
+  const reportError = (error: unknown) => {
+    const sessionNotice = /\/resume(?:\/|$)/.test(location.pathname) && (error as { code?: string })?.code === 'SITE_AUTH_REQUIRED';
+    say(sessionNotice ? '未登录 · 登录 / 注册' : error instanceof Error ? error.message : '操作失败，请重试', !sessionNotice);
+  };
   const reconcile = async () => {
     const revision = ++authRevision;
     let session;
@@ -93,7 +97,7 @@ export function mountAccountToolbar() {
   };
   const run = async (operation: () => Promise<unknown>) => {
     const buttons = [...bar.querySelectorAll('button')]; buttons.forEach(b => b.disabled = true);
-    try { menu.open = false; await operation(); } catch (error) { say(error instanceof Error ? error.message : '操作失败，请重试', true); }
+    try { menu.open = false; await operation(); } catch (error) { reportError(error); }
     finally { buttons.forEach(b => b.disabled = false); }
   };
   window.MagicJAccount = {
@@ -166,8 +170,8 @@ export function mountAccountToolbar() {
     } catch (error) { message.textContent = error instanceof Error ? error.message : '登录失败'; }
     finally { button.disabled = false; }
   };
-  window.addEventListener('site-auth-change', () => { void reconcile().catch(error => say(error.message, true)); });
-  window.addEventListener('focus', () => { void reconcile().catch(error => say(error.message, true)); });
+  window.addEventListener('site-auth-change', () => { void reconcile().catch(reportError); });
+  window.addEventListener('focus', () => { void reconcile().catch(reportError); });
   // Existing links to the old account page become in-place login, not navigation.
   document.addEventListener('click', event => {
     const native = (event.target as Element)?.closest<HTMLElement>(nativeSelector);
@@ -179,6 +183,6 @@ export function mountAccountToolbar() {
       event.preventDefault(); event.stopImmediatePropagation(); window.MagicJAccount!.openLogin();
     }
   }, true);
-  void reconcile().catch(error => say(error.message, true));
+  void reconcile().catch(reportError);
   window.dispatchEvent(new Event('magicj-account-ready'));
 }

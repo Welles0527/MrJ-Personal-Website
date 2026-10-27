@@ -89,3 +89,12 @@
 ## 本次记录
 
 - 2026-10-24：建立本交接文件及两个AGENTS入口。仅文档/协作指引更新，不修改页面源码、数据、依赖、构建或部署配置；不提交、不推送、不发布。
+
+## 简历页三处标注调整（2026-10-27，未发布）
+在最新发布基准6a54f563的D:/UserTemp/huawei/magicj-complete-release-20261027源码工作区修改。src/pages/resume/index.astro将返回个人空间移至主题按钮右侧，同组右对齐；src/scripts/account-toolbar.ts仅在简历页不再挂载职笺Logo/名称，并将SITE_AUTH_REQUIRED会话失效错误显示为简洁的未登录入口，保留登录弹框与认证逻辑，其他页面原有错误提示保留。重建public/account-entry.js；tests/project-brand-layout.mjs同步简历不显示品牌的预期。未修改路由、依赖、数据或部署配置。
+共享入口构建成功；npm run lint为0错误/0警告/9既有提示；生成JS及现有布局测试node --check通过。实际1440x900、849x1105、390x844验证按钮顺序/位置与命中、无横向溢出、主题/语言切换、登录框打开/关闭与尺寸、返回链接原目标通过，无捕获页面异常。隔离浏览器模拟过期会话，首次加载/focus/site-auth-change后无长文字提示且仍可打开登录；非简历页保留原错误提示。非简历对照测试初次在空页面加载阶段超时，改为DOM就绪后挂载夹具后单独重跑通过，未因此修改产品代码。未执行真实账号登录或云端写入。
+检查脚本及截图C:/Users/huawei/.codex/visualizations/2026/10/27/01a17b76-ed04-79e3-93e7-a3c6c69f6af6/check-resume-ui.cjs、resume-ui-{1440,849,390}.png、resume-ui-expired-390.png。本地http://127.0.0.1:4392/officialwebsite/resume/实测HTTP200；4370为旧候选，不作为本次验收源码。未提交、推送或发布；线上仍以此前发布记录为准。
+## 基金页观盈标题局部调整（2026-10-27，未发布）
+沿用D:/UserTemp/huawei/magicj-complete-release-20261027，保留前轮简历页未发布修改。本轮仅修改public/topics/space/investing/funds/index.html和app.css：观盈趋势Logo移到标题右侧，删除基金与经理决策终端小字，下面显示基金看板；标题和副标题对齐下方指标文字，桌面/中屏左内距20px、手机10px。新增局部fund-brand样式以兼容共享品牌挂载，保留原新窗口链接和全部看板功能；更新该CSS引用版本。无新依赖，无数据或部署配置变更。
+PostCSS解析及git diff --check通过。1440x900、1280x920、390x844实测图标在右、字幕在下、两行左边缘与指标一致，无横向溢出或导航重叠；深浅色主题、基金看板按钮原有新窗口行为、观盈链接打开基金视图均通过，无捕获页面异常。最初验收将看板按钮误判为原窗口切换，两次断言失败后定位app.js现有window.open实现，修正测试契约后通过；未修改导航代码。深浅色桌面/手机截图已视觉检查。证据C:/Users/huawei/.codex/visualizations/2026/10/27/01a17b76-ed04-79e3-93e7-a3c6c69f6af6/check-funds-brand.cjs、funds-brand-verification.json与funds-brand-{dark,light}-*.png。
+本地http://127.0.0.1:4392/officialwebsite/topics/space/investing/funds/index.html#kpi返回200；未提交、推送或发布，线上仍未包含本轮及前轮简历页修改。

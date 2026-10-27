@@ -88,7 +88,7 @@ svg { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: 
   grid-template-columns: minmax(180px, .7fr) minmax(720px, 4fr) minmax(230px, .9fr);
   align-items: center;
   gap: 16px;
-  padding: 11px 22px;
+  padding: 11px 20px;
   background: var(--surface);
   border-bottom: 1px solid var(--line);
 }
@@ -101,6 +101,11 @@ svg { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: 
 .brand strong, .brand small { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .brand strong { font-size: 16px; letter-spacing: .01em; }
 .brand small { margin-top: 2px; color: var(--muted); font-size: 10px; }
+#fund-brand { display: grid; grid-template-columns: max-content max-content; gap: 3px 8px; justify-content: start; height: auto; }
+#fund-brand > span:last-child { display: contents; }
+#fund-brand strong { grid-column: 1; grid-row: 1; }
+#fund-brand .brand-mark { grid-column: 2; grid-row: 1; }
+#fund-brand .brand-subtitle { grid-column: 1 / -1; grid-row: 2; color: var(--text); font-size: 14px; font-weight: 600; line-height: 1.4; }
 .dashboard-nav { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 7px; }
 .dashboard-tab { min-width: 0; min-height: 58px; display: flex; align-items: center; justify-content: center; gap: 9px; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-2); transition: border-color 160ms ease, background 160ms ease, color 160ms ease; }
 .dashboard-tab:nth-child(-n+4) { grid-column: span 3; }
@@ -885,7 +890,7 @@ html[data-theme="light"] .score-example tbody th { background: var(--surface-2);
 
 @media (max-width: 1180px) {
   :root { --header-h: 146px; }
-  .app-header { grid-template-columns: 180px minmax(600px, 1fr) 170px; padding-inline: 14px; }
+  .app-header { grid-template-columns: 180px minmax(600px, 1fr) 170px; padding-inline: 20px; }
   .freshness { display: none; }
   .site-auth-pill small { display: none; }
   .dashboard-tab { padding-inline: 6px; }
