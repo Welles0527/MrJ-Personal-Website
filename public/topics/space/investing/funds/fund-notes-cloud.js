@@ -8,6 +8,7 @@
   function responseData(response, fallback) {
     if (!response) throw new Error(fallback);
     if (response.error) throw new Error(response.error.message || fallback);
+    if (response.code && response.code !== "SUCCESS") throw new Error(response.message || fallback);
     return response.data;
   }
 
@@ -81,12 +82,16 @@
         notes: mergeLatestRecords(existing.notes, patch.notes),
         updatedAt: new Date().toISOString()
       };
+      delete payload._id;
+      delete payload._openid;
       responseData(
         await database.collection(COLLECTION).doc(current.uid).set(payload),
         "保存基金经理个人数据失败。"
       );
       const verified = await loadDocument(current);
-      if (JSON.stringify(verified.preferences) !== JSON.stringify(payload.preferences) || JSON.stringify(verified.notes) !== JSON.stringify(payload.notes)) throw new Error('云端保存后核验失败，请保留输入并重试');
+      const canonical = value => JSON.stringify(value, (_key, item) => item && typeof item === 'object' && !Array.isArray(item)
+        ? Object.fromEntries(Object.keys(item).sort().map(key => [key, item[key]])) : item);
+      if (verified.updatedAt !== payload.updatedAt || canonical(verified.preferences) !== canonical(payload.preferences) || canonical(verified.notes) !== canonical(payload.notes)) throw new Error('云端保存后核验失败，请保留输入并重试');
       return payload;
     });
   }

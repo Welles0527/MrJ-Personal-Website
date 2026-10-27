@@ -448,6 +448,9 @@ function bindStaticEvents() {
   document.getElementById("holdings-manager-clear").addEventListener("click", clearHoldingsManagers);
   window.addEventListener("site-auth-change", event => {
     renderSharedAuthStatus(event.detail);
+    state.managerNotes = new Map();
+    document.getElementById("manager-preview-note-text").disabled = true;
+    document.getElementById("manager-preview-note-save").disabled = true;
     scheduleAccountSync(true);
   });
   window.addEventListener("storage", handleCrossWindowStorage);
@@ -1052,17 +1055,22 @@ function renderManagerPreviewNote() {
   setText("manager-preview-note-status", note?.updatedAt ? `上次保存：${formatDateTime(note.updatedAt)}` : "尚未保存备注");
 }
 
-function saveManagerPreviewNote({ closeDialog = false } = {}) {
+async function saveManagerPreviewNote({ closeDialog = false } = {}) {
   const managerId = state.preview.managerId;
   if (!managerId) return;
   const text = document.getElementById("manager-preview-note-text").value.trim();
   const updatedAt = new Date().toISOString();
   state.managerNotes.set(managerId, { text, updatedAt, deleted: !text });
   saveManagerNotesLocal();
-  void persistManagerNotesCloud();
+  const saved = await persistManagerNotesCloud();
+  if (!saved) {
+    setText("manager-preview-note-status", "云端保存未确认，当前输入保留为本机草稿");
+    showToast("备注尚未确认保存到云端，请检查同步提示后重试");
+    return;
+  }
   setText("manager-preview-note-status", text ? `已保存：${formatDateTime(updatedAt)}` : "备注已清空");
   renderScoreNoteList();
-  showToast(text ? "经理备注已保存" : "经理备注已清空");
+  showToast(text ? "经理备注已保存并回读云端" : "经理备注已在云端清空");
   if (closeDialog) document.getElementById("manager-preview-dialog").close();
 }
 
@@ -1302,7 +1310,14 @@ async function initializeNoteSync() {
   if (!bridge?.getSession) return;
   try {
     const session = await bridge.getSession();
-    if (!session?.uid) return;
+    if (!session?.uid) {
+      document.getElementById("manager-preview-note-text").disabled = false;
+      document.getElementById("manager-preview-note-save").disabled = false;
+      return;
+    }
+    updatePreferenceSyncState("syncing");
+    document.getElementById("manager-preview-note-text").disabled = true;
+    document.getElementById("manager-preview-note-save").disabled = true;
     const remote = await bridge.load();
     const remoteNotes = remote?.notes && typeof remote.notes === "object" ? remote.notes : {};
     if ((await bridge.getSession())?.uid !== session.uid) throw new Error('账号已改变，请重新同步');
@@ -1310,6 +1325,9 @@ async function initializeNoteSync() {
     saveManagerNotesLocal();
     renderScoreNoteList();
     if (document.getElementById("manager-preview-dialog")?.open && !document.getElementById("manager-preview-note-panel")?.hidden) renderManagerPreviewNote();
+    document.getElementById("manager-preview-note-text").disabled = false;
+    document.getElementById("manager-preview-note-save").disabled = false;
+    updatePreferenceSyncState("synced");
   } catch (error) {
     updatePreferenceSyncState("pending", error?.message);
   }
@@ -1317,19 +1335,23 @@ async function initializeNoteSync() {
 
 async function persistManagerNotesCloud() {
   const bridge = window.FundNotesCloud;
-  if (!bridge?.getSession) return;
+  if (!bridge?.getSession) return false;
   try {
     const session = await bridge.getSession();
-    if (!session?.uid) return updatePreferenceSyncState("signed-out");
+    if (!session?.uid) { updatePreferenceSyncState("signed-out"); return false; }
     updatePreferenceSyncState("syncing");
     await bridge.save(Object.fromEntries(state.managerNotes));
     updatePreferenceSyncState("synced");
+    return true;
   } catch (error) {
     updatePreferenceSyncState("pending", error?.message);
+    return false;
   }
 }
 
 async function initializePreferenceSync() {
+  document.getElementById("manager-preview-note-text").disabled = true;
+  document.getElementById("manager-preview-note-save").disabled = true;
   updatePreferenceSyncState("local");
   const bridge = window.FundPreferenceCloud;
   if (!bridge?.getSession) {

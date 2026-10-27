@@ -186,9 +186,21 @@ const worshipAssets = {
         },
         async save(key: string, value: unknown) { localStorage.setItem(`worship:${key}`, JSON.stringify(value)); },
       };
-      const readDocument = (result: any) => result?.data?.[0] || result?.data || {};
+      const checked = (result: any) => {
+        if (!result || result.error || (result.code && result.code !== 'SUCCESS')) throw new Error(result?.error?.message || result?.message || '云端请求失败');
+        return result;
+      };
+      const readDocument = (result: any) => {
+        const data = checked(result).data;
+        return (Array.isArray(data) ? data[0] : data) || {};
+      };
+      const status = (text: string) => { const element = document.querySelector('#syncStatus'); if (element) element.textContent = text; };
+      const canonical = (value: unknown) => JSON.stringify(value, (_key, item) => item && typeof item === 'object' && !Array.isArray(item)
+        ? Object.fromEntries(Object.keys(item).sort().map(key => [key, item[key]])) : item);
+      let loadedUid: string | null = null;
+      let writes = Promise.resolve();
       const getIdentity = async () => {
-        try { identity = await getCloudSession(); } catch { identity = null; }
+        identity = await getCloudSession();
         return identity;
       };
       const cloudStore = {
@@ -196,30 +208,46 @@ const worshipAssets = {
         get account() { return identity?.account || null; },
         async load(key: string, fallback: unknown) {
           const account = await getIdentity();
-          const localValue = await localStore.load(key, fallback);
-          if (!account?.uid) return localValue;
+          if (!account?.uid) return localStore.load(key, fallback);
           try {
             const ref = getCloudDb().collection('officialWebsiteWorshipMusic').doc(account.uid);
             const current = readDocument(await ref.get());
-            if (current[key] !== undefined) return current[key];
-            if (Array.isArray(localValue) && localValue.length) {
-              await ref.set({ ...current, ownerId: account.uid, account: account.account, [key]: localValue, updatedAt: new Date().toISOString() });
-            }
-            return localValue;
-          } catch { return localValue; }
+            if ((current.ownerId && current.ownerId !== account.uid) || (await getIdentity())?.uid !== account.uid) throw new Error('账号已改变，请重新读取云端');
+            loadedUid = account.uid;
+            return current[key] === undefined ? fallback : current[key];
+          } catch (error) { loadedUid = null; status('云端读取失败，请重新登录或刷新'); throw error; }
         },
         async save(key: string, value: unknown) {
-          const account = await getIdentity();
-          if (!account?.uid) return localStore.save(key, value);
-          try {
-            const ref = getCloudDb().collection('officialWebsiteWorshipMusic').doc(account.uid);
+          const pending = writes.then(async () => {
+            const account = await getIdentity();
+            if (!account?.uid) { status('未登录，尚未保存到云端'); return localStore.save(key, value); }
+            if (loadedUid !== account.uid) throw new Error('请先完成云端读取后再保存');
+            status('正在保存到云端…');
+            const collection = getCloudDb().collection('officialWebsiteWorshipMusic');
+            const ref = collection.doc(account.uid);
             const current = readDocument(await ref.get());
-            await ref.set({ ...current, ownerId: account.uid, account: account.account, [key]: value, updatedAt: new Date().toISOString() });
-          } catch { await localStore.save(key, value); }
+            if (current.ownerId && current.ownerId !== account.uid) throw new Error('云端记录账号不一致');
+            const payload = { ownerId: account.uid, account: account.account, [key]: value, updatedAt: new Date().toISOString() };
+            if (current._id) {
+              const query = current.updatedAt ? { _id: account.uid, updatedAt: current.updatedAt } : { _id: account.uid };
+              const result = checked(await collection.where(query).update(payload));
+              if ((result.updated ?? result.data?.updated) !== 1) throw new Error('其他页面已更新，请刷新后重试');
+            } else checked(await ref.set(payload));
+            const verified = readDocument(await ref.get());
+            if ((await getIdentity())?.uid !== account.uid || verified.updatedAt !== payload.updatedAt || canonical(verified[key]) !== canonical(value)) throw new Error('云端保存后回读不一致，请重试');
+            status('已保存并回读云端');
+          });
+          writes = pending.catch(() => {});
+          try { await pending; } catch (error) { status('未保存到云端：' + (error instanceof Error ? error.message : '请求失败')); throw error; }
         },
       };
       (window as any).worshipCloudStore = cloudStore;
-      window.addEventListener('site-auth-change', (event) => { identity = (event as CustomEvent).detail || null; });
+      window.addEventListener('site-auth-change', (event) => {
+        const next = (event as CustomEvent).detail || null;
+        if (identity?.uid === next?.uid) return;
+        identity = next; loadedUid = null;
+        setTimeout(() => location.reload(), 0);
+      });
       initializeWorshipApp(cloudStore);
     </script>
   </body>
