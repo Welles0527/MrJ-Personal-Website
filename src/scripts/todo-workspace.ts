@@ -269,6 +269,9 @@ export function mountTodoWorkspace(root: HTMLElement) {
     return;
   }
   const migrationParams = new URLSearchParams(window.location.search);
+  const calendarCreateDate = window.parent !== window && migrationParams.get('calendar-week') === '1'
+    ? parseDateKey(migrationParams.get('calendar-create') || '') : null;
+  let calendarCreateOpened = false;
   const migrationTarget = migrationParams.get('todo-migration-target');
 
   // The hidden localhost iframe only reads its own origin's data and returns it with postMessage.
@@ -1123,6 +1126,10 @@ export function mountTodoWorkspace(root: HTMLElement) {
     await refreshCloudState(session);
     await startCloudWatcher(session);
     if (loginModal.open) loginModal.close();
+    if (calendarCreateDate && !calendarCreateOpened) {
+      calendarCreateOpened = true;
+      openForm(calendarCreateDate);
+    }
     notify(localTestMode ? '本地模拟账号已就绪；测试数据只保存在当前页面内存中。' : successMessage || '已连接云端待办，跨浏览器实时同步已开启。');
   };
 
