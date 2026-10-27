@@ -23,6 +23,7 @@ export function mountAccountToolbar() {
   // Native modal dialogs sit above custom cursor elements, even at maximum z-index.
   style.textContent += 'html.custom-cursor-enabled dialog:modal,html.custom-cursor-enabled dialog:modal *{cursor:auto!important}html.custom-cursor-enabled dialog:modal :is(input,textarea){cursor:text!important}html.custom-cursor-enabled dialog:modal :is(button,a,select){cursor:pointer!important}html.custom-cursor-enabled:has(dialog:modal) .neon-cursor{visibility:hidden!important}';
   const bar = document.createElement('div'); bar.id = 'mj-account'; bar.dataset.auth = 'guest';
+  bar.dataset.home = String(['/', '/index.html', '/officialwebsite/homepage-root.html'].includes(location.pathname));
   bar.innerHTML = '<details class="mj-account-menu"><summary><span id="mj-account-status" role="status" aria-live="polite">正在核实账号…</span></summary><div class="mj-account-actions"><button data-login>登录 / 注册</button><button data-sync>同步</button><button data-backup>备份全部数据</button><button data-logout disabled>退出</button></div></details>';
   const projectBrand = createProjectBrand();
   document.body.prepend(bar);
@@ -38,9 +39,24 @@ export function mountAccountToolbar() {
     #mj-account-status{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     #mj-account .mj-account-actions{position:absolute;right:0;top:calc(100% + 7px);z-index:30;display:grid;min-width:150px;gap:6px;padding:8px;border:1px solid #ad876466;border-radius:11px;background:#201c19;box-shadow:0 8px 24px #0005}
     #mj-account .mj-account-actions button{text-align:left;white-space:nowrap}
-    #mj-account[data-native=true]:not(:has(#mj-account-status[data-error=true])){display:none!important}
+    #mj-account[data-native=true]{display:none!important}
+    #mj-account[data-home=true]{display:none!important}
     #mj-account[data-embedded=travel]{position:absolute;top:12px;right:18px;z-index:15;padding:0;background:transparent}
     .atlas:has(#mj-account[data-embedded=travel])>.topbar{top:58px}
+  `;
+  // Page-wide form/header rules must not change the shared dialog's geometry or type.
+  style.textContent += `
+    #mj-login{position:fixed;inset:0;margin:auto;float:none;transform:none;text-align:left;letter-spacing:normal;word-spacing:normal;font-family:system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;box-shadow:0 20px 70px #0006}
+    #mj-login,#mj-login *{box-sizing:border-box}
+    #mj-login form{display:block;position:static;width:100%;max-width:none;margin:0;padding:0;border:0;background:transparent;color:inherit;box-shadow:none}
+    #mj-login h2{margin:0 0 8px;padding:0;font:600 22px/1.35 system-ui;color:inherit;letter-spacing:normal;text-transform:none;text-shadow:none}
+    #mj-login p{margin:0 0 16px;padding:0;font:inherit;color:inherit;letter-spacing:normal}
+    #mj-login label{position:static;float:none;width:auto;font:inherit;letter-spacing:normal;text-transform:none;color:inherit}
+    #mj-login input{height:auto;min-height:44px;margin:6px 0 0;letter-spacing:normal;text-align:left;box-shadow:none}
+    #mj-login button{position:static;width:auto;height:auto;min-height:40px;margin:0;letter-spacing:normal;text-transform:none;line-height:1.5;box-shadow:none;transform:none}
+    #mj-login .mj-actions{margin-top:20px;justify-content:flex-start}
+    #mj-login [role=alert]:empty{display:none}
+    #mj-account{font-family:system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;letter-spacing:normal}
   `;
   menu.querySelector('summary')!.addEventListener('click', event => {
     if (bar.dataset.auth === 'guest') { event.preventDefault(); window.MagicJAccount?.openLogin(); }
@@ -77,8 +93,13 @@ export function mountAccountToolbar() {
   const field = (name: string) => dialog.querySelector<HTMLInputElement>(`[name=${name}]`)!;
   const say = (text: string, error = false) => { status.textContent = text; status.dataset.error = String(error); };
   const reportError = (error: unknown) => {
-    const sessionNotice = /\/resume(?:\/|$)/.test(location.pathname) && (error as { code?: string })?.code === 'SITE_AUTH_REQUIRED';
-    say(sessionNotice ? '未登录 · 登录 / 注册' : error instanceof Error ? error.message : '操作失败，请重试', !sessionNotice);
+    const sessionNotice = (error as { code?: string })?.code === 'SITE_AUTH_REQUIRED';
+    status.title = error instanceof Error ? error.message : '操作失败，请重试';
+    say(sessionNotice ? '未登录 · 登录 / 注册' : '账号连接异常 · 重试', !sessionNotice);
+    if (bar.dataset.native === 'true') {
+      const native = findNativeLogin();
+      if (native) native.title = status.title;
+    }
   };
   const reconcile = async () => {
     const revision = ++authRevision;
@@ -105,6 +126,16 @@ export function mountAccountToolbar() {
     openLogin: () => { message.textContent = ''; if (!dialog.open) dialog.showModal(); },
     register: next => { actions = { ...actions, ...next }; }
   };
+  // Some pages open their native login after an asynchronous session check.
+  // Transfer that request to the shared dialog instead of stacking two modals.
+  const adoptNativeLogin = () => {
+    const native = [...document.querySelectorAll<HTMLDialogElement>('.todo-login-modal[open],[data-login-modal][open],#login-dialog[open]')];
+    if (!native.length) return;
+    native.forEach(modal => modal.close());
+    window.MagicJAccount!.openLogin();
+  };
+  new MutationObserver(adoptNativeLogin).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['open'] });
+  adoptNativeLogin();
   bar.querySelector<HTMLButtonElement>('[data-login]')!.onclick = () => window.MagicJAccount!.openLogin();
   dialog.querySelector<HTMLButtonElement>('[data-close]')!.onclick = () => dialog.close();
   const reset = document.createElement('button'); reset.type = 'button'; reset.textContent = '忘记密码';

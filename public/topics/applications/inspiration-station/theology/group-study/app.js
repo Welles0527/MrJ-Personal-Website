@@ -1,8 +1,10 @@
-import { getCloudSession, getCloudDb, getRememberedSession, signInWithPassword, signOut } from '../../../../../../src/scripts/site-auth';
+import { getCloudSession, getCloudDb, signInWithPassword, signOut } from '../../../../../../src/scripts/site-auth';
 const $ = (selector) => document.querySelector(selector);
 const KEY = 'magicj.group-study.v1';
-let storageKey = KEY;
-try { if(localStorage.getItem(`${KEY}:legacy-owner`))storageKey=`${KEY}:guest`; } catch { /* Persistence errors are reported by save(). */ }
+const draftId = crypto.randomUUID();
+let storageKey = `${KEY}:pending:${draftId}`;
+let cloudReady = false;
+function setCloudReady(ready){cloudReady=ready;document.querySelector('main').inert=!ready;$('#new-plan').disabled=!ready;$('#import').disabled=!ready;}
 let accountSession = null;
 let syncTimer;
 let syncing = false;
@@ -29,24 +31,18 @@ function validPlan(p) {
 }
 let state = {version:1, active:'', plans:[]};
 let storageBlocked = false;
-try {
-  const raw = localStorage.getItem(storageKey);
-  if (raw) {
-    const data = JSON.parse(raw);
-    if (data.version!==1 || !Array.isArray(data.plans) || !data.plans.length || !data.plans.every(validPlan)) throw new Error('invalid');
-    state = data;
-  }
-} catch { storageBlocked = true; }
 if (!state.plans.length) state.plans.push(newPlan());
 if (!state.plans.some(p=>p.id===state.active)) state.active=state.plans[0].id;
 const current = () => state.plans.find(p=>p.id===state.active);
 let noticeTimer;
 function notice(text) { $('#notice').textContent=text; clearTimeout(noticeTimer); noticeTimer=setTimeout(()=>$('#notice').textContent='',5000); }
 function save() {
+  if(!cloudReady){syncStatus('请先登录并读取云端查经记录');return;}
   try {
     if(storageBlocked) throw new Error('blocked');
     localStorage.setItem(storageKey,JSON.stringify({...state, cloudBase: {plans:basePlans, revision:baseRevision}}));
-    $('#save-state').textContent=`已保存在此浏览器 · ${new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})}`;
+    if(accountSession)localStorage.setItem(`${KEY}:selected:${accountSession.uid}`,state.active);
+    $('#save-state').textContent='正在保存到云端…';
     $('#save-state').classList.remove('save-error');
   } catch { $('#save-state').textContent='本地保存不可用，请导出备份；已有存储未被覆盖。'; $('#save-state').classList.add('save-error'); }
   if(accountSession && !applyingCloud && !storageBlocked){clearTimeout(syncTimer);syncTimer=setTimeout(()=>void syncCloud(),1500);}
@@ -231,49 +227,14 @@ const editing = () => questionDragging || (document.activeElement?.matches('inpu
 const blankPlan = p => p.title === '新的查经聚会' && !p.date && !p.leader && !p.goal && !p.notes && !p.followup && !p.steps.length && !p.resources.length && !p.passages.length && p.questions.length===3 && p.questions.every((q,i)=>!q.answer && !q.focus && q.text===['观察：这段经文中发生了什么？','理解：上下文怎样帮助我们理解这段经文？','应用：这周我可以如何回应？'][i]);
 function syncStatus(text,error=false){$('#save-state').textContent=text;$('#save-state').classList.toggle('save-error',error);}
 function rememberLocally(){applyingCloud=true;try{save();}finally{applyingCloud=false;}}
-function backupLegacyDraft(){
-  const raw=localStorage.getItem(KEY);
-  if(raw && !localStorage.getItem(`${KEY}:legacy-original-backup`))localStorage.setItem(`${KEY}:legacy-original-backup`,raw);
-  return raw;
-}
-async function migrateLegacyDraft(session,token){
-  const owner=localStorage.getItem(`${KEY}:legacy-owner`);
-  if(owner && owner!==session.uid)return;
-  const raw=backupLegacyDraft();if(!raw)return;
-  const source=JSON.parse(raw);
-  if(source.version!==1||!Array.isArray(source.plans)||!source.plans.every(validPlan))throw new Error('原始草稿格式异常，原件已保留，请先导出备份');
-  const incoming=source.plans.filter(p=>!blankPlan(p));if(!incoming.length)return;
-  const digest=[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(raw)))].map(n=>n.toString(16).padStart(2,'0')).join('');
-  if(token!==epoch)return;
-  if(localStorage.getItem(KEY)!==raw)throw new Error('本机草稿仍在更新，稍后会重新合并');
-  if(localStorage.getItem(`${KEY}:legacy-receipt:${session.uid}`)===digest)return;
-  const merged=new Map(state.plans.filter(p=>!blankPlan(p)).map(p=>[p.id,p]));let active=state.active;
-  for(const original of incoming){
-    const existing=merged.get(original.id);
-    const plan=existing&&!same(existing,original)?{...copy(original),id:uid(),title:`${original.title}（本机原始草稿）`}:copy(original);
-    merged.set(plan.id,plan);if(source.active===original.id)active=plan.id;
-  }
-  const migrated={...state,plans:[...merged.values()],active};
-  // Preserve the original key and immutable backup; claim ownership only after the account cache is saved.
-  localStorage.setItem(storageKey,JSON.stringify({...migrated,cloudBase:{plans:basePlans,revision:baseRevision}}));
-  localStorage.setItem(`${KEY}:legacy-owner`,session.uid);
-  localStorage.setItem(`${KEY}:legacy-receipt:${session.uid}`,digest);
-  state=migrated;const position=scrollY;render();window.scrollTo(0,position);
-}
 function switchAccount(session){
+  setCloudReady(false);
   clearTimeout(syncTimer);epoch++;accountSession=session;basePlans=[];baseRevision=0;storageBlocked=false;
-  storageKey=session?`${KEY}:account:${session.uid}`:(localStorage.getItem(`${KEY}:legacy-owner`)?`${KEY}:guest`:KEY);
-  let cached=null;
-  try{
-    const raw=localStorage.getItem(storageKey);
-    if(raw){cached=JSON.parse(raw);if(!Array.isArray(cached.plans)||!cached.plans.length||!cached.plans.every(validPlan))throw new Error('invalid');}
-    state=cached || {version:1,active:'',plans:[newPlan()]};
-    if(cached?.cloudBase){if(!Array.isArray(cached.cloudBase.plans)||!cached.cloudBase.plans.every(validPlan)||!Number.isInteger(cached.cloudBase.revision)||cached.cloudBase.revision<0)throw new Error('invalid');basePlans=cached.cloudBase.plans;baseRevision=cached.cloudBase.revision;}
-  }catch{storageBlocked=true;state={version:1,active:'',plans:[newPlan()]};syncStatus('账号本地草稿读取异常，已停止同步以保留原数据。',true);}
+  storageKey=session?`${KEY}:account:${session.uid}:pending:${draftId}`:`${KEY}:pending:${draftId}`;
+  state={version:1,active:'',plans:[newPlan()]};
   if(!state.plans.some(p=>p.id===state.active))state.active=state.plans[0].id;
   const position=scrollY;render();window.scrollTo(0,position);
   $('#account-name').textContent=session?`已登录 · ${session.account}`:'未登录 · 登录后同步查经记录';$('#login-open').hidden=Boolean(session);$('#logout').hidden=!session;
-  if(!storageBlocked)rememberLocally();
 }
 function checkCloud(result){if(!result || result.error || result.code)throw new Error(result?.error?.message||result?.message||'云端请求失败');return result;}
 function mergePlans(remote,baseline=basePlans,conflictIds=new Map()){
@@ -298,11 +259,10 @@ async function syncCloud(){
     const session=await getCloudSession();
     if(token!==epoch)return;
     if(session?.uid!==accountSession?.uid){switchAccount(session);token=epoch;}
-    if(!session){$('#account-name').textContent='未登录 · 登录后同步查经记录';syncStatus('未登录 · 草稿保存在此浏览器');return;}
+    if(!session){$('#account-name').textContent='未登录 · 登录后同步查经记录';syncStatus('请先登录，查经记录从云端读取');return;}
     $('#account-name').textContent=`已登录 · ${session.account}`;
     $('#login-open').hidden=true;$('#login-open').textContent='登录账号';
     if(storageBlocked)return;
-    await migrateLegacyDraft(session,token);if(token!==epoch)return;
     const owner=session.uid, collection=getCloudDb().collection('officialWebsiteBibleReaderState');
     const result=checkCloud(await collection.doc(owner).get());if(token!==epoch)return;
     const record=Array.isArray(result.data)?result.data[0]:result.data;
@@ -311,7 +271,7 @@ async function syncCloud(){
     if((record?.groupStudy && record.groupStudy.version!==1)||!Array.isArray(remote)||!remote.every(validPlan))throw new Error('云端查经数据格式异常，已保留本地草稿');
     const revision=record?.groupStudyRevision ?? 0;
     if(!Number.isInteger(revision)||revision<0)throw new Error('云端版本异常');
-    const observed=copy(state.plans), conflictIds=new Map(), merged=copy(mergePlans(remote,basePlans,conflictIds));
+    const observed=copy(state.plans), conflictIds=new Map(), merged=copy(cloudReady?mergePlans(remote,basePlans,conflictIds):remote);
     const changed=!same(merged,state.plans) && !(merged.length===0 && state.plans.every(blankPlan));
     if(changed && editing()){syncStatus('云端有更新，结束当前输入后自动同步');return;}
     if(!same(merged,remote)){
@@ -336,7 +296,9 @@ async function syncCloud(){
     if(token!==epoch)return;
     if(changed && editing()){syncStatus('云端有更新，结束当前输入后自动同步');return;}
     // A pending request must never replace text typed after the request started.
-    const latestMerged=mergePlans(merged,observed,conflictIds);
+    const latestMerged=cloudReady?mergePlans(merged,observed,conflictIds):merged;
+    if(!cloudReady){try{const selected=localStorage.getItem(`${KEY}:selected:${owner}`);if(latestMerged.some(p=>p.id===selected))state.active=selected;}catch{/* Selection is optional; content still comes from the cloud. */}}
+    setCloudReady(true);
     basePlans=copy(merged);
     if(changed && !editing()){
       const position=scrollY;state.plans=latestMerged.length?latestMerged:[newPlan()];
@@ -376,11 +338,9 @@ tabLinks.forEach((a,i)=>{
 });
 window.addEventListener('hashchange',()=>activateTab(location.hash.slice(1)));
 activateTab(location.hash.slice(1));
-// The remembered identity selects only an offline cache; cloud requests still require getCloudSession().
-try{backupLegacyDraft();}catch{storageBlocked=true;syncStatus('原始草稿备份未成功，请先导出；已停止覆盖和同步。',true);}
-const remembered=getRememberedSession();
-if(remembered)switchAccount(remembered);
-render();rememberLocally();void syncCloud();
+// Old browser drafts remain untouched; initial account state comes only from the cloud.
+setCloudReady(false);
+render();void syncCloud();
 
 async function assertCloudClean(){
   if(syncing||storageBlocked||!same(state.plans.filter(p=>!blankPlan(p)),basePlans.filter(p=>!blankPlan(p))))throw new Error('有尚未保存到云端的查经编辑，请先同步');

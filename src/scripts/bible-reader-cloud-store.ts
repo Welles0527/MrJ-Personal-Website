@@ -32,6 +32,7 @@ type CloudDocumentRef<T extends BibleReaderCloudSnapshot> = {
   get: () => Promise<unknown>;
   set: (payload: CloudDocument<T>) => Promise<unknown>;
   update?: (payload: CloudDocument<T>) => Promise<unknown>;
+  updateIfUnchanged?: (payload: CloudDocument<T>, updatedAt: string) => Promise<unknown>;
 };
 
 type BibleReaderCloudStoreOptions<T extends BibleReaderCloudSnapshot> = {
@@ -68,9 +69,14 @@ const readDocument = <T extends BibleReaderCloudSnapshot>(
   ownerId: string
 ): T | null => {
   const document = Array.isArray(data) ? data[0] : data;
-  if (!document?.lastRead) return null;
-  if (document.ownerId && document.ownerId !== ownerId) {
+  if (!document) return null;
+  if ((document.ownerId && document.ownerId !== ownerId) || (document._openid && document._openid !== ownerId)) {
     throw new Error('云端阅读记录所属账号不一致。');
+  }
+  if (!document.lastRead && 'groupStudy' in document && !document.readVerses?.length &&
+    !Object.keys(document.bookStatuses ?? {}).length && !document.bookmarks?.length && !document.notes?.length) return null;
+  if (!document.lastRead || !Array.isArray(document.bookmarks) || !Array.isArray(document.notes)) {
+    throw new Error('云端阅读记录格式异常，已停止保存以保护原记录。');
   }
   return cloneSnapshot(document);
 };
@@ -80,6 +86,14 @@ export const createBibleReaderCloudStore = <T extends BibleReaderCloudSnapshot>(
   getOwnedDocuments
 }: BibleReaderCloudStoreOptions<T>) => {
   const legacyRecordsByOwner = new Map<string, Record<string, string>>();
+  const loadedVersions = new Map<string, string | null>();
+  const stableJson = (value: unknown): string => JSON.stringify(value, (_key, item) =>
+    item && typeof item === 'object' && !Array.isArray(item)
+      ? Object.fromEntries(Object.keys(item).sort().map(key => [key, item[key]])) : item);
+  const content = (snapshot: T) => stableJson({
+    lastRead: snapshot.lastRead, bookmarks: snapshot.bookmarks, notes: snapshot.notes,
+    readVerses: [...(snapshot.readVerses ?? [])].sort(), bookStatuses: snapshot.bookStatuses ?? {}, updatedAt: snapshot.updatedAt
+  });
   return {
   async load(ownerId: string): Promise<T | null> {
     const reference = getDocumentRef(ownerId);
@@ -88,8 +102,11 @@ export const createBibleReaderCloudStore = <T extends BibleReaderCloudSnapshot>(
       '读取云端阅读进度失败。'
     );
     let snapshot = readDocument<T>(data, ownerId);
-    if (!getOwnedDocuments) return snapshot;
     const canonical = Array.isArray(data) ? data[0] : data;
+    if (!getOwnedDocuments) {
+      loadedVersions.set(ownerId, canonical?.updatedAt ?? null);
+      return snapshot;
+    }
     const mergedLegacyRecords = { ...canonical?.mergedLegacyRecords };
     const documents = assertCloudResult<CloudDocument<T>[]>(await getOwnedDocuments(ownerId), '读取历史阅读记录失败。') ?? [];
     if (documents.length >= 1000) throw new Error('阅读记录超出单次读取范围，已停止写入以保护数据。');
@@ -123,13 +140,20 @@ export const createBibleReaderCloudStore = <T extends BibleReaderCloudSnapshot>(
       };
     }
     legacyRecordsByOwner.set(ownerId, mergedLegacyRecords);
+    loadedVersions.set(ownerId, canonical?.updatedAt ?? null);
     return snapshot;
   },
 
   async save(ownerId: string, account: string, snapshot: T): Promise<T> {
+    if (!loadedVersions.has(ownerId)) throw new Error('请先读取云端阅读记录，再保存。');
     const reference = getDocumentRef(ownerId);
     const payload = {
-      ...cloneSnapshot(snapshot),
+      lastRead: { ...snapshot.lastRead },
+      bookmarks: snapshot.bookmarks.map(item => item && typeof item === 'object' ? { ...item } : item),
+      notes: snapshot.notes.map(item => item && typeof item === 'object' ? { ...item } : item),
+      readVerses: [...(snapshot.readVerses ?? [])],
+      bookStatuses: { ...(snapshot.bookStatuses ?? {}) },
+      updatedAt: snapshot.updatedAt,
       ownerId,
       account
     } as CloudDocument<T>;
@@ -140,10 +164,14 @@ export const createBibleReaderCloudStore = <T extends BibleReaderCloudSnapshot>(
       const current = Array.isArray(existing) ? existing[0] : existing;
       if (current) {
         readDocument<T>(current, ownerId);
-        const result = await reference.update(payload) as CloudResult<{ updated?: number }>;
+        if (current.updatedAt !== loadedVersions.get(ownerId)) throw new Error('云端记录已在其他页面或设备更新，已阻止旧进度覆盖。请重新打开页面读取最新记录。');
+        const result = await (reference.updateIfUnchanged
+          ? reference.updateIfUnchanged(payload, current.updatedAt)
+          : reference.update(payload)) as CloudResult<{ updated?: number }>;
         assertCloudResult(result, '保存云端阅读进度失败。');
         if ((result.updated ?? result.data?.updated) !== 1) throw new Error('云端阅读记录未更新，请重新同步。');
       } else {
+        if (loadedVersions.get(ownerId) !== null) throw new Error('云端记录已改变，已停止保存。请重新同步。');
         assertCloudResult(await reference.set(payload), '保存云端阅读进度失败。');
       }
     } else {
@@ -155,9 +183,10 @@ export const createBibleReaderCloudStore = <T extends BibleReaderCloudSnapshot>(
       '保存后回读云端阅读进度失败。'
     );
     const verified = readDocument<T>(verifiedData, ownerId);
-    if (!verified || verified.updatedAt !== snapshot.updatedAt || verified.lastRead.updatedAt !== snapshot.lastRead.updatedAt) {
+    if (!verified || content(verified) !== content(snapshot)) {
       throw new Error('云端阅读进度保存后校验不一致。');
     }
+    loadedVersions.set(ownerId, verified.updatedAt);
     return verified;
   }
   };

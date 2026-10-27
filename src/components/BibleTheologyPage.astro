@@ -772,7 +772,7 @@ const hymnCards = [
   }
 
   .bible-app {
-    --bible-account-bar-height: 5.5rem;
+    --bible-account-bar-height: 0px;
     --gold: #d8b35f;
     --gold-soft: #f1d995;
     --night: #030303;
@@ -890,12 +890,12 @@ const hymnCards = [
   }
 
   .bible-account-bar {
-    position: sticky;
+    position: relative;
     z-index: 40;
     top: 0;
     display: flex;
     box-sizing: border-box;
-    height: var(--bible-account-bar-height);
+    min-height: 4.5rem;
     flex-direction: column;
     justify-content: center;
     gap: 0.25rem;

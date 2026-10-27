@@ -116,3 +116,34 @@ assert.deepEqual(historical, historicalBefore, '历史记录必须完整保留')
 await migrationStore.save(ownerId, '49001422@qq.com', { ...merged, notes: [] });
 assert.equal((await migrationStore.load(ownerId)).notes.length, 0, '已合并历史记录不能反复恢复用户后续主动删除的内容');
 console.log('PASS same-account legacy merge, repeat update, metadata protection, historical document retention');
+
+let concurrent = structuredClone({ ...snapshot, ownerId });
+let writes = 0;
+const protectedStore = createBibleReaderCloudStore({ getDocumentRef: () => ({
+  get: async () => ({ data: structuredClone(concurrent) }),
+  set: async () => { writes++; },
+  update: async () => { throw new Error('must use conditional update'); },
+  updateIfUnchanged: async (payload, version) => {
+    if (concurrent.updatedAt !== version) return { updated: 0 };
+    writes++; concurrent = structuredClone(payload); return { updated: 1 };
+  }
+}) });
+await assert.rejects(() => protectedStore.save(ownerId, 'qa@example.test', snapshot), /先读取/);
+await protectedStore.load(ownerId);
+concurrent.updatedAt = '2026-10-28T00:00:00.000Z';
+await assert.rejects(() => protectedStore.save(ownerId, 'qa@example.test', snapshot), /旧进度覆盖/);
+assert.equal(writes, 0, 'stale browser cannot overwrite newer cloud data');
+await protectedStore.load(ownerId);
+await protectedStore.save(ownerId, 'qa@example.test', { ...snapshot, updatedAt: '2026-10-29T00:00:00.000Z' });
+assert.equal(writes, 1);
+
+const corruptStore = createBibleReaderCloudStore({ getDocumentRef: () => ({
+  get: async () => ({ data: concurrent }),
+  set: async () => ({}),
+  update: async payload => { concurrent = { ...payload, readVerses: [] }; return { updated: 1 }; }
+}) });
+await corruptStore.load(ownerId);
+await assert.rejects(() => corruptStore.save(ownerId, 'qa@example.test', snapshot), /校验不一致/, 'matching timestamps must not hide missing progress');
+const malformedStore = createBibleReaderCloudStore({ getDocumentRef: () => ({ get: async () => ({ data: { ownerId, readVerses: ['gen-1-1'] } }), set: async () => ({}) }) });
+await assert.rejects(() => malformedStore.load(ownerId), /格式异常/, 'malformed existing data must never become an empty account');
+console.log('PASS load-before-write, stale-write protection, conditional update, full readback and malformed-data protection');

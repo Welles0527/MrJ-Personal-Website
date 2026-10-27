@@ -137,6 +137,11 @@ try {
     if (request.url().includes('todo-cloud')) browserDiagnostics.push(`todo-cloud request: ${request.url()}`);
   });
   let todoCloudRequestCount = 0;
+  // This suite isolates the Todo module's retry and submit behavior. The shared
+  // login takeover is exercised separately by account-repair-layout.mjs.
+  await page.route('**/account-entry.js*', (route) => route.fulfill({
+    status: 200, contentType: 'application/javascript', body: ''
+  }));
   await page.route('**/*todo-cloud.ts*', async (route) => {
     todoCloudRequestCount += 1;
     if (todoCloudRequestCount === 1) {

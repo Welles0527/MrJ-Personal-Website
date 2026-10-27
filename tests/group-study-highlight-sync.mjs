@@ -55,13 +55,13 @@ try {
     assert.equal(await notes.innerText(), plan.notes);
     const local = await page.evaluate(() => JSON.parse(localStorage.getItem('magicj.group-study.v1:account:owner')));
     const active = local.plans.find(p => p.id === local.active);
-    assert.deepEqual(active.highlights.notes, []);
+    assert.deepEqual(active.highlights.notes, ['重点'], 'old browser backup must remain untouched; current state was read from cloud');
     assert.deepEqual(active.highlights.followup, ['重点'], 'other fields keep their highlights');
     await page.locator('#sync-now').click(); await page.getByText(/^已保存到账号云端/).waitFor();
     assert.equal(record.groupStudy.plans.length, conflict ? 2 : 1, 'repeat sync does not create more copies');
     assert.deepEqual(errors, []);
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
-    await page.screenshot({ path: `.private/group-clear-sync-${width}-${conflict}.png` });
+    await page.screenshot({ path: `D:/UserTemp/huawei/magicj-auth-repair-evidence/group-clear-sync-${width}-${conflict}.png` });
     console.log(`PASS ${width} conflict=${conflict}: clear, sync, active version, refresh, original text and other highlights preserved`);
     await context.close();
   }
