@@ -64,6 +64,7 @@ function createBrowser(uid, cloud) {
     CustomEvent: class CustomEvent {
       constructor(type, options = {}) { this.type = type; this.detail = options.detail; }
     },
+    addEventListener() {},
     dispatchEvent(event) { events.push(event); }
   };
   window.window = window;
@@ -102,7 +103,7 @@ assert.equal(secondBrowser.storage.load('301026').readThroughAt, '2026-08-08T10:
 assert.deepEqual(Array.from(secondBrowser.storage.load('301026').readIds), ['announcement-1']);
 
 await otherAccount.storage.sync(['300750']);
-assert.deepEqual(Array.from(otherAccount.storage.loadWatchlist([])), ['300750']);
+assert.deepEqual(Array.from(otherAccount.storage.loadWatchlist([])), [], 'A new account must not upload or present sample defaults as cloud data');
 assert.equal(Object.keys(otherAccount.storage.load('301026')).length, 0);
 
 secondBrowser.storage.save('301026', { readIds: [] });
@@ -112,7 +113,7 @@ assert.deepEqual(Array.from(firstBrowser.storage.load('301026').readIds), []);
 
 firstBrowser.switchAccount('other-user');
 await firstBrowser.storage.sync(['300750']);
-assert.deepEqual(Array.from(firstBrowser.storage.loadWatchlist([])), ['300750']);
+assert.deepEqual(Array.from(firstBrowser.storage.loadWatchlist([])), []);
 assert.equal(Object.keys(firstBrowser.storage.load('301026')).length, 0);
 assert.equal(firstBrowser.storage.getSyncStatus().mode, 'cloud');
 assert.ok(firstBrowser.events.some(event => event.type === 'stock-preferences-cloud-change'));

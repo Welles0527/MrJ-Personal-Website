@@ -5,7 +5,7 @@ const body = template.split('<body class="theme-dark">')[1].split('</body>')[0];
 ---
 <!doctype html>
 <html lang="zh-CN">
-  <head><Fragment set:html={head} /></head>
+  <head><Fragment set:html={head} /><script is:inline src="/officialwebsite/account-entry.js" defer></script></head>
   <body class="theme-dark">
     <Fragment set:html={body} />
     <script>import '../../../scripts/dianping-account';</script>

@@ -1305,15 +1305,9 @@ async function initializeNoteSync() {
     if (!session?.uid) return;
     const remote = await bridge.load();
     const remoteNotes = remote?.notes && typeof remote.notes === "object" ? remote.notes : {};
-    const ids = new Set([...state.managerNotes.keys(), ...Object.keys(remoteNotes)]);
-    ids.forEach(managerId => {
-      const local = state.managerNotes.get(managerId);
-      const cloud = remoteNotes[managerId] ? normalizeManagerNote(remoteNotes[managerId]) : null;
-      if (!local && cloud) state.managerNotes.set(managerId, cloud);
-      else if (local && cloud && Date.parse(cloud.updatedAt) > Date.parse(local.updatedAt)) state.managerNotes.set(managerId, cloud);
-    });
+    if ((await bridge.getSession())?.uid !== session.uid) throw new Error('账号已改变，请重新同步');
+    state.managerNotes = new Map(Object.entries(remoteNotes).map(([id, value]) => [id, normalizeManagerNote(value)]));
     saveManagerNotesLocal();
-    await bridge.save(Object.fromEntries(state.managerNotes));
     renderScoreNoteList();
     if (document.getElementById("manager-preview-dialog")?.open && !document.getElementById("manager-preview-note-panel")?.hidden) renderManagerPreviewNote();
   } catch (error) {
@@ -1355,17 +1349,11 @@ async function initializePreferenceSync() {
     const remote = await bridge.load();
     const remotePreferences = remote?.preferences && typeof remote.preferences === "object" ? remote.preferences : {};
     mergeRemoteFilterDefaults(remotePreferences[FILTER_DEFAULTS_CLOUD_KEY]);
-    const ids = new Set([...state.preferences.keys(), ...Object.keys(remotePreferences).filter(managerId => managerId !== FILTER_DEFAULTS_CLOUD_KEY)]);
-    ids.forEach(managerId => {
-      const local = state.preferences.get(managerId);
-      const cloud = remotePreferences[managerId] ? normalizePreference(managerId, remotePreferences[managerId]) : null;
-      if (!local && cloud) state.preferences.set(managerId, cloud);
-      else if (local && cloud && Date.parse(cloud.updatedAt) > Date.parse(local.updatedAt)) state.preferences.set(managerId, cloud);
-    });
+    if ((await bridge.getSession())?.uid !== session.uid) throw new Error('账号已改变，请重新同步');
+    state.preferences = new Map(Object.entries(remotePreferences).filter(([id]) => id !== FILTER_DEFAULTS_CLOUD_KEY).map(([id, value]) => [id, normalizePreference(id, value)]));
     savePreferencesLocal();
     applyDefaultFilters("kpi", false);
     applyDefaultFilters("score", false);
-    await bridge.save(preferenceCloudPayload());
     rerenderPreferenceConsumers();
     updatePreferenceSyncState("synced");
   } catch (error) {
@@ -1429,18 +1417,15 @@ function filterDefaultEnvelope(scope) {
 }
 
 function mergeRemoteFilterDefaults(raw) {
-  if (!raw || typeof raw !== "object") return;
   ["kpi", "score"].forEach(scope => {
-    const remote = raw[scope];
-    if (!remote || typeof remote !== "object") return;
-    const remoteSelections = sanitizeFilterSelections(scope, remote.selections);
-    if (remoteSelections === null) return;
-    const local = filterDefaultEnvelope(scope);
-    const remoteTime = Date.parse(stringValue(remote.updatedAt)) || 0;
-    const localTime = Date.parse(stringValue(local?.updatedAt)) || 0;
-    if (!local || remoteTime > localTime) {
-      localStorage.setItem(defaultFilterStorageKey(scope), JSON.stringify(remoteSelections));
-      localStorage.setItem(`${defaultFilterStorageKey(scope)}:updated-at`, new Date(remoteTime || 0).toISOString());
+    const remote = raw?.[scope];
+    const selections = remote ? sanitizeFilterSelections(scope, remote.selections) : null;
+    if (selections === null) {
+      localStorage.removeItem(defaultFilterStorageKey(scope));
+      localStorage.removeItem(`${defaultFilterStorageKey(scope)}:updated-at`);
+    } else {
+      localStorage.setItem(defaultFilterStorageKey(scope), JSON.stringify(selections));
+      localStorage.setItem(`${defaultFilterStorageKey(scope)}:updated-at`, remote.updatedAt || new Date(0).toISOString());
     }
   });
 }
@@ -3677,3 +3662,12 @@ function svgEl(tag, attrs = {}) {
 }
 function polarPoint(index, count, center, radius) { const angle = -Math.PI / 2 + index * Math.PI * 2 / count; return { x: center.x + Math.cos(angle) * radius, y: center.y + Math.sin(angle) * radius }; }
 function polygonPoints(count, center, radius) { return Array.from({ length: count }, (_, index) => { const point = polarPoint(index, count, center, radius); return `${point.x},${point.y}`; }).join(" "); }
+
+function registerFundAccount() {
+  window.MagicJAccount?.register({
+    beforeLeave: async () => { if (['syncing','pending'].includes(state.preferenceSync)) throw new Error('基金数据尚未确认保存成功，请先完成同步'); },
+    sync: async () => { await scheduleAccountSync(true); if (state.preferenceSync !== 'synced') throw new Error('基金云端同步未完成，请检查页面提示'); }
+  });
+}
+window.addEventListener('magicj-account-ready', registerFundAccount);
+registerFundAccount();

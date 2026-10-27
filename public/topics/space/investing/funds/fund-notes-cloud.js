@@ -1,11 +1,9 @@
 (() => {
   "use strict";
 
-  const ENV_ID = "magicj-web-d5g9yvowj6862f7a2";
   const COLLECTION = "officialWebsiteFundManagerPreferences";
   const SCHEMA_VERSION = "fund-manager-preferences-and-notes-v2";
-  const app = window.cloudbase?.init?.({ env: ENV_ID });
-  const database = app?.database?.();
+  const database = window.FundPreferenceCloud?.getCloudDb?.();
 
   function responseData(response, fallback) {
     if (!response) throw new Error(fallback);
@@ -57,8 +55,12 @@
   }
 
   async function loadDocument(current) {
+    if ((await session())?.uid !== current.uid) throw new Error('账号已改变，请重新同步');
+    if (!database) throw new Error('云端数据库尚未就绪');
     const response = await database.collection(COLLECTION).doc(current.uid).get();
-    return documentFrom(response);
+    const document = documentFrom(response);
+    if ((document.ownerId && document.ownerId !== current.uid) || (await session())?.uid !== current.uid) throw new Error('账号不一致，已停止读取');
+    return document;
   }
 
   async function withWriteLock(current, callback) {
@@ -83,6 +85,8 @@
         await database.collection(COLLECTION).doc(current.uid).set(payload),
         "保存基金经理个人数据失败。"
       );
+      const verified = await loadDocument(current);
+      if (JSON.stringify(verified.preferences) !== JSON.stringify(payload.preferences) || JSON.stringify(verified.notes) !== JSON.stringify(payload.notes)) throw new Error('云端保存后核验失败，请保留输入并重试');
       return payload;
     });
   }

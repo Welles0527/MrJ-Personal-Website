@@ -1,4 +1,4 @@
-import { cloudErrorMessage, getCloudDb, getCloudSession, getRememberedSession } from './site-auth';
+import { cloudErrorMessage, getCloudDb, getCloudSession } from './site-auth';
 
 type PreferenceRecord = {
   managerId: string;
@@ -33,11 +33,11 @@ const readDocument = (result: CloudResult<PreferenceDocument[] | PreferenceDocum
 };
 
 const currentSession = async () => {
-  if (location.protocol === 'file:' || ['127.0.0.1', 'localhost'].includes(location.hostname)) return getRememberedSession();
   return await getCloudSession();
 };
 
 const api = {
+  getCloudDb,
   async getSession() {
     try {
       return await currentSession();

@@ -87,6 +87,7 @@ body{background:#dedfe3;color:#151617}.workspace{background:linear-gradient(140d
 .overview-heading-avatar{display:inline-flex;padding:0;border-radius:50%;flex-shrink:0}.overview-heading-avatar .avatar,.overview-heading-avatar .avatar svg{width:42px;height:42px}@media(max-width:600px){.overview-heading-avatar .avatar,.overview-heading-avatar .avatar svg{width:36px;height:36px}}
 .daily-trends{margin:20px 0}.daily-trends .metric-overview-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.daily-trends .metric-overview-chart{min-width:0;margin:0;padding:16px;border:1px solid #e4e8eb;border-radius:15px}.daily-trends .metric-overview-list>.empty{grid-column:1/-1}@media(max-width:600px){.daily-trends .metric-overview-list{grid-template-columns:minmax(0,1fr);gap:14px}}
 </style>
+<script src="/officialwebsite/account-entry.js" defer></script>
 </head>
 <body>
   <div id="app"><div class="loading">家安 · 正在整理健康档案…</div></div>
@@ -168,7 +169,7 @@ function initialOwnerState(){
 function emptyAccountState(){return {schema:1,createdAt:new Date().toISOString(),profiles:[['dad','父亲'],['mom','母亲'],['self','自己'],['wife','太太']].map(([id,name])=>({id,name,age:'',gender:'未填写',allergies:'',blood:'',contact:'',history:'',remark:''})),conditions:[],meds:[],events:[],reports:[],notes:[],logs:[],settings:{demo:false}};}
 let currentAccount=null,accountEpoch=0,accountChecking=false,accountRecheck=false,cloudArchive=null,savingArchive=false;
 const OWNER_EMAIL='49001422@qq.com';
-const LOCAL_PREVIEW=['localhost','127.0.0.1','[::1]'].includes(location.hostname);
+const LOCAL_PREVIEW=false;
 function lockAccount(message='正在确认网站登录状态…'){accountEpoch++;cloudArchive=null;savingArchive=false;clearTimeout(recordClickTimer);clearMedPhotos();currentAccount=null;state=null;stagedBackup=null;clearNavDrag();mobileOpen=false;person='dad';resetFilters();visitDrafts.clear();clearTimeout(toast.timer);$('#toast').textContent='';$('#toast').classList.remove('visible');if(db)db.close();db=null;memoryFiles.clear();closeModal();$('#app').innerHTML=`<main class="account-gate"><div class="brand-mark">${icon('home')}</div><h1>家安 · 家庭医疗管理</h1><p>${esc(message)}</p><a class="btn primary" href="/officialwebsite/topics/space/planning/todo" target="_blank" rel="noopener">前往网站登录</a><button class="btn" data-action="refresh-account">重新检查登录</button><a href="/">返回网站主页</a><small>登录后读取当前账号的云端档案；无法连接时不会使用本机或演示资料替代。</small></main>`;}
 function openAccountDB(name){return new Promise((resolve,reject)=>{const req=indexedDB.open(name,1);req.onupgradeneeded=()=>{req.result.createObjectStore('records');req.result.createObjectStore('files',{keyPath:'id'});};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);req.onblocked=()=>reject(new Error('请关闭其他家庭医疗页面后重试。'));});}
 async function migrateOwnerArchive(target,epoch){const legacy=await openAccountDB('jiaan-family-health-v1');try{const get=store=>new Promise((resolve,reject)=>{const req=legacy.transaction(store).objectStore(store)[store==='records'?'get':'getAll'](...(store==='records'?['main']:[]));req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});const archive=await get('records');if(!archive||epoch!==accountEpoch)return null;const files=await get('files');if(epoch!==accountEpoch)return null;await new Promise((resolve,reject)=>{const tx=target.transaction(['records','files'],'readwrite');tx.objectStore('records').put(archive,'main');for(const file of files)tx.objectStore('files').put(file);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});return archive;}finally{legacy.close();}}
@@ -451,5 +452,13 @@ init();
 </script>
 <script src="/officialwebsite/family-health-cloud.js"></script>
 <script type="module" src="/officialwebsite/family-health-auth.js"></script>
+<script>
+function registerHealthAccount(){window.MagicJAccount?.register({
+ beforeLeave:async()=>{if(savingArchive||cloudArchive?.blocked)throw new Error('有未确认保存的健康档案，请先核对');},
+ sync:async()=>{if(savingArchive)throw new Error('正在保存，请稍候');await refreshAccount();if(!cloudArchive)throw new Error('云端档案读取失败');},
+ backup:async()=>{if(savingArchive||!cloudArchive)throw new Error('请先完成登录及云端保存');return cloudArchive.exportArchive();}
+});}
+window.addEventListener('magicj-account-ready',registerHealthAccount);registerHealthAccount();
+</script>
 </body>
 </html>

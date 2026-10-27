@@ -209,7 +209,16 @@ $('#scripture-form').onsubmit=async e=>{
   }catch{$('#scripture-status').textContent='经文加载失败，请检查网络后再次点击“加入经文”。';}finally{$('#add-scripture').disabled=false;}
 };
 $('#resource-form').onsubmit=e=>{e.preventDefault();const url=safeUrl($('#resource-url').value);if(!url)return notice('仅支持 http 或 https 链接。');current().resources.push({id:uid(),type:$('#resource-type').value,title:$('#resource-title').value.trim()||'未命名资料',url});save();renderResources();e.target.reset();};
-$('#export').onclick=()=>{const url=URL.createObjectURL(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}));const a=node('a');a.href=url;a.download=`小组查经备份-${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+$('#export').onclick=async()=>{try{
+  await assertCloudClean();
+  const owner=await getCloudSession(); if(!owner)throw new Error('请登录后导出');
+  const result=checkCloud(await getCloudDb().collection('officialWebsiteBibleReaderState').doc(owner.uid).get());
+  const record=Array.isArray(result.data)?result.data[0]:result.data;
+  if((await getCloudSession())?.uid!==owner.uid)throw new Error('账号已改变，已停止导出');
+  if(!record?.groupStudy)throw new Error('云端暂无小组查经档案');
+  const url=URL.createObjectURL(new Blob([JSON.stringify({...record.groupStudy,source:'cloud',accountUid:owner.uid,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}));
+  const a=node('a');a.href=url;a.download=`小组查经云端备份-${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}catch(error){notice(error.message||'云端导出失败');}};
 $('#import').onclick=()=>$('#import-file').click();
 $('#import-file').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{
   if(file.size>10*1024*1024)throw new Error();const imported=JSON.parse(await file.text());
@@ -372,3 +381,9 @@ try{backupLegacyDraft();}catch{storageBlocked=true;syncStatus('原始草稿备�
 const remembered=getRememberedSession();
 if(remembered)switchAccount(remembered);
 render();rememberLocally();void syncCloud();
+
+async function assertCloudClean(){
+  if(syncing||storageBlocked||!same(state.plans.filter(p=>!blankPlan(p)),basePlans.filter(p=>!blankPlan(p))))throw new Error('有尚未保存到云端的查经编辑，请先同步');
+}
+function registerGroupAccount(){window.MagicJAccount?.register({beforeLeave:assertCloudClean,sync:async()=>{await syncCloud();await assertCloudClean();if($('#save-state').classList.contains('save-error'))throw new Error($('#save-state').textContent);}});}
+window.addEventListener('magicj-account-ready',registerGroupAccount);registerGroupAccount();

@@ -131,16 +131,17 @@
   function queueCloudWrite(write) {
     const accountKey = getAccount().key;
     const adapter = cloudAdapter();
-    if (!adapter) return;
+    if (!adapter) { setSyncStatus("error", "尚未保存到云端，请登录并重新保存"); dispatchCloudChange(); return; }
+    setSyncStatus("saving"); dispatchCloudChange();
     cloudWriteQueue = cloudWriteQueue
       .catch(() => undefined)
       .then(async () => {
         if (getAccount().key !== accountKey) return;
         await write(adapter);
-        setSyncStatus("cloud");
+        setSyncStatus("cloud"); dispatchCloudChange();
       })
       .catch(error => {
-        setSyncStatus("error", error?.message || error);
+        setSyncStatus("error", error?.message || error); dispatchCloudChange();
       });
   }
 
@@ -198,13 +199,11 @@
     }
 
     try {
-      const localWatchlist = loadWatchlist(defaultCodes);
-      const scopes = localScopes(account.key);
       const snapshot = await adapter.load();
       if (Array.isArray(snapshot?.watchlist?.codes)) {
         window.localStorage.setItem(watchlistKey(), JSON.stringify(snapshot.watchlist));
-      } else if (typeof adapter.saveWatchlist === "function") {
-        await adapter.saveWatchlist(localWatchlist);
+      } else {
+        window.localStorage.setItem(watchlistKey(), JSON.stringify({codes:[],updatedAt:null}));
       }
 
       const remoteScopes = snapshot?.scopes && typeof snapshot.scopes === "object" ? snapshot.scopes : {};
@@ -213,12 +212,6 @@
           window.localStorage.setItem(keyFor(scopeId), JSON.stringify(value));
         }
       });
-      for (const [scopeId, value] of Object.entries(scopes)) {
-        if (!Object.hasOwn(remoteScopes, scopeId) && typeof adapter.saveScope === "function") {
-          await adapter.saveScope(scopeId, value);
-        }
-      }
-
       const currentSnapshot = typeof adapter.load === "function" ? await adapter.load() : snapshot;
       applyCloudSnapshot(currentSnapshot);
       if (!cloudWatcher && typeof adapter.watch === "function") {
@@ -239,13 +232,18 @@
   }
 
   function flushCloudWrites() {
-    return cloudWriteQueue;
+    return cloudWriteQueue.then(() => { if (syncStatus.mode !== "cloud") throw new Error(syncStatus.error || "股票设置尚未确认保存到云端"); });
   }
 
   function getSyncStatus() {
     return { ...syncStatus };
   }
 
+  const registerAccount = () => window.MagicJAccount?.register({
+    beforeLeave: flushCloudWrites,
+    sync: async () => { await cloudWriteQueue; const result = await sync(); if (result.mode !== 'cloud') throw new Error(result.error || '股票云端同步未完成'); }
+  });
+  window.addEventListener('magicj-account-ready', registerAccount); registerAccount();
   window.StockTrackingAccountStorage = {
     getAccount,
     load,

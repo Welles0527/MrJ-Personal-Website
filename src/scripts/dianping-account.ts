@@ -1,5 +1,7 @@
 import { getCloudDb, getCloudSession, getRememberedSession, signInWithPassword, signOut, cloudErrorMessage } from './site-auth';
 import type { CloudSession } from './site-auth';
+import { readCloudBackup } from './cloud-backup';
+import type {} from './account-toolbar';
 
 type FavoritesPayload = {
   version: number;
@@ -147,12 +149,19 @@ form.onsubmit = async event => {
 };
 window.addEventListener('site-auth-change', event => {
   const next = (event as CustomEvent<CloudSession | null>).detail;
-  if (!next || (session && next.uid !== session.uid)) void activate(next);
+  if (!next || next.uid !== session?.uid) void activate(next);
 });
 retrySession.onclick = () => { lock('正在重新连接…', 'loading'); void getCloudSession().then(activate).catch(error => lock(cloudErrorMessage(error, '暂时无法核实登录状态，请重试连接。'), 'retry')); };
 showLogin.onclick = () => { credentials.hidden = false; retrySession.hidden = true; showLogin.hidden = true; message.textContent = '请使用网站账号重新登录。'; };
 window.addEventListener('beforeunload', event => { if (pending || saving) { event.preventDefault(); event.returnValue = ''; } });
 lock('正在检查网站登录状态…', 'loading');
+const registerAccount = () => window.MagicJAccount?.register({
+  beforeLeave: async () => { await save(); if (pending || saving) throw new Error('还有未保存的收藏，请先重试保存'); },
+  sync: async () => { await save(); if (pending) throw new Error('收藏尚未保存到云端'); await activate(await getCloudSession()); },
+  backup: async () => { await save(); if (pending) throw new Error('收藏尚未保存到云端，未导出'); return readCloudBackup('dianping'); }
+});
+window.addEventListener('magicj-account-ready', registerAccount);
+registerAccount();
 void getCloudSession().then(activate).catch(error => {
   if (/credentials not found/i.test(cloudErrorMessage(error, ''))) void activate(null);
   else lock(cloudErrorMessage(error, '无法检查网站登录状态，请重试连接。'), getRememberedSession() ? 'retry' : 'login');

@@ -13,7 +13,8 @@ function setup(overrides = {}, remembered = true) {
   const auth = {
     getSession: async () => { calls.read++; return overrides.read ? overrides.read(calls.read) : { data: { session: null } }; },
     refreshSession: async () => { calls.refresh++; return overrides.refresh ? overrides.refresh() : Promise.reject(new TypeError("Cannot read properties of null (reading 'refresh_token')")); },
-    signInWithPassword: async () => valid()
+    signInWithPassword: async () => valid(),
+    signOut: async () => ({ error: null })
   };
   const module = { exports: {} };
   vm.runInNewContext(code, { module, exports: module.exports, require: () => ({ default: { init: () => ({ auth: () => auth, database: () => ({}) }) } }),
@@ -64,3 +65,15 @@ for (const path of ['read', 'refresh']) {
   assert.equal((await t.api.getCloudSession()).uid, 'owner', 'same-account re-login recovers without signout');
 }
 console.log('PASS site-auth empty-session guard, delayed restoration, null refresh classification, network retry, renewal, empty refresh result, guest and same-account re-login');
+{
+  const t = setup({read:valid});
+  await t.api.signInWithPassword('owner@example.test','fixture');
+  const deadline = Number(t.cache.get('mywebsite.site-auth-deadline.v1'));
+  assert.ok(Math.abs(deadline-Date.now()-30*86400000)<1000);
+  await t.api.getCloudSession();
+  assert.equal(Number(t.cache.get('mywebsite.site-auth-deadline.v1')),deadline,'refresh must not extend the absolute login period');
+  t.cache.set('mywebsite.site-auth-deadline.v1',String(Date.now()-1));
+  await assert.rejects(t.api.getCloudSession(), e=>e.code==='SITE_AUTH_REQUIRED');
+  assert.equal(await t.api.getCloudSession(),null);
+  console.log('PASS 30-day absolute deadline and expiry');
+}

@@ -1,4 +1,10 @@
 (() => {
+  if (window.top === window.self && !window.MagicJAccount && !document.querySelector('script[src*="account-entry.js"]')) {
+    const account = document.createElement('script');
+    account.src = '/officialwebsite/account-entry.js';
+    account.defer = true;
+    document.head.append(account);
+  }
   const pagePath = location.pathname.replace(/\/$/, '') || '/';
   const mainPages = ['/', '/homepage-root.html', '/officialwebsite/homepage-root.html', '/officialwebsite/about.html', '/officialwebsite/workstation.html', '/officialwebsite/resume', '/officialwebsite/resume/index.html'];
   if (mainPages.includes(pagePath) && !document.querySelector('.site-page-back')) {

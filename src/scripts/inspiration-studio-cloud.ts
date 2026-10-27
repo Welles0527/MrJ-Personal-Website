@@ -70,6 +70,9 @@ async function save() {
       const result = check(await collection.where({ _id: uid, ownerId: uid, revision }).update(payload));
       if ((result.updated ?? result.data?.updated) !== 1) throw new Error('其他设备已更新，请点击同步后重试');
     } else { check(await collection.add({ _id: uid, ...payload })); exists = true; }
+    const verified = check(await collection.doc(uid).get());
+    const saved = Array.isArray(verified.data) ? verified.data[0] : verified.data;
+    if ((await getCloudSession())?.uid !== uid || saved?.revision !== payload.revision || saved?.payload !== payload.payload) throw new Error('云端保存核验失败，请重新同步');
     if (token !== epoch) return;
     revision += 1;
     confirmed = data;
@@ -119,3 +122,14 @@ document.getElementById('studioLogout')!.onclick = async () => {
   try { await signOut(); await load(); } catch (error) { status.textContent = message(error); }
 };
 if (studioWindow.InspirationStudioStore) void load();
+const registerAccount = () => window.MagicJAccount?.register({
+  beforeLeave: async () => { if (busy) throw new Error('正在保存或同步，请稍候'); },
+  sync: async () => { if (busy) throw new Error('正在保存或同步，请稍候'); await load(); if (status.textContent !== '已同步') throw new Error(status.textContent || '云端同步未完成'); },
+  backup: async () => {
+    if (busy) throw new Error('正在保存，请稍候再导出');
+    const { readCloudBackup } = await import('./cloud-backup');
+    return readCloudBackup('inspiration');
+  }
+});
+window.addEventListener('magicj-account-ready', registerAccount);
+registerAccount();

@@ -1159,12 +1159,20 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     window.setTimeout(() => URL.revokeObjectURL(url), 0);
   };
 
-  const exportBookmarks = () => {
-    if (!state.bookmarks.length) {
+  const exportBookmarks = async () => {
+    try {
+    await cloudWriteQueue;
+    if (cloudWritesInFlight || cloudEditRevision > savedCloudEditRevision) throw new Error('请先完成云端保存再导出');
+    const owner = await getCloudSession();
+    if (!owner) throw new Error('请先登录');
+    const snapshot = await loadCloudState(owner.uid);
+    if ((await getCloudSession())?.uid !== owner.uid) throw new Error('账号改变，已停止导出');
+    if (!snapshot) throw new Error('云端没有可导出的阅读记录');
+    if (!snapshot.bookmarks.length) {
       notify('还没有可导出的经文收藏。');
       return;
     }
-    const rows = sortedBookmarks().map((item, index) => {
+    const rows = snapshot.bookmarks.map((item, index) => {
       const book = bookBySlug(item.book);
       return [
         String(index + 1),
@@ -1183,14 +1191,23 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       rows
     );
     notify(`已导出 ${rows.length} 条经文收藏。`);
+    } catch (error) { notify(error instanceof Error ? error.message : '云端导出失败'); }
   };
 
-  const exportNotes = () => {
-    if (!state.notes.length) {
+  const exportNotes = async () => {
+    try {
+    await cloudWriteQueue;
+    if (cloudWritesInFlight || cloudEditRevision > savedCloudEditRevision) throw new Error('请先完成云端保存再导出');
+    const owner = await getCloudSession();
+    if (!owner) throw new Error('请先登录');
+    const snapshot = await loadCloudState(owner.uid);
+    if ((await getCloudSession())?.uid !== owner.uid) throw new Error('账号改变，已停止导出');
+    if (!snapshot) throw new Error('云端没有可导出的阅读记录');
+    if (!snapshot.notes.length) {
       notify('还没有可导出的笔记。');
       return;
     }
-    const rows = sortedNotes().map((item, index) => {
+    const rows = snapshot.notes.map((item, index) => {
       const book = bookBySlug(item.book);
       const sample = data.samples[chapterKey(item.book, item.chapter)];
       return [
@@ -1211,6 +1228,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       rows
     );
     notify(`已导出 ${rows.length} 条笔记。`);
+    } catch (error) { notify(error instanceof Error ? error.message : '云端导出失败'); }
   };
 
   const renderNotes = () => {
@@ -2350,4 +2368,24 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   renderPrayer(readPrayerIndex());
   renderAll(Number(params.get('verse') || '') || undefined, { updateLastRead: false });
   void loadFullBibleText();
+  const registerAccount = () => window.MagicJAccount?.register({
+    beforeLeave: async () => {
+      await cloudWriteQueue;
+      if (cloudWritesInFlight || cloudEditRevision > savedCloudEditRevision) throw new Error('阅读记录尚未保存到云端，请先同步');
+    },
+    sync: async () => {
+      const next = await getCloudSession();
+      if (!next) throw new Error('请先登录');
+      await synchronizeCloudSession(next);
+      if (cloudEditRevision > savedCloudEditRevision) throw new Error('阅读记录尚未保存到云端');
+    },
+    backup: async () => {
+      await cloudWriteQueue;
+      if (cloudWritesInFlight || cloudEditRevision > savedCloudEditRevision) throw new Error('有未保存的阅读记录，请先同步后导出');
+      const { readCloudBackup } = await import('./cloud-backup');
+      return readCloudBackup('bible');
+    }
+  });
+  window.addEventListener('magicj-account-ready', registerAccount);
+  registerAccount();
 }

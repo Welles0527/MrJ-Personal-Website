@@ -53,7 +53,8 @@ type RememberedSession = CloudSession & {
 
 const ENV_ID = 'magicj-web-d5g9yvowj6862f7a2';
 const SESSION_KEY = 'mywebsite.site-auth-session.v1';
-const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const LOGIN_DEADLINE_KEY = 'mywebsite.site-auth-deadline.v1';
 const app = cloudbase.init({ env: ENV_ID });
 const auth = app.auth({ persistence: 'local' });
 const db = app.database();
@@ -172,6 +173,10 @@ const renewCloudSession = async () => {
 
 export const getCloudSession = (): Promise<CloudSession | null> => {
   if (explicitlySignedOut) return Promise.resolve(null);
+  const deadline = Number(window.localStorage.getItem(LOGIN_DEADLINE_KEY));
+  if (deadline && deadline <= Date.now()) {
+    return signOut().then(() => { throw loginRequired(); });
+  }
   if (sessionCheck) return sessionCheck;
   const revisionAtStart = sessionRevision;
   const pending = withSessionLock(async () => {
@@ -202,6 +207,10 @@ export const getCloudSession = (): Promise<CloudSession | null> => {
         const authenticated = sessionData?.session;
         const session = authenticated ? sessionFromCurrentUser(sessionData?.user || authenticated.user, authenticated) : null;
         if (session) {
+          // Start the transition period once for existing valid SDK sessions; never slide it on refresh.
+          if (!window.localStorage.getItem(LOGIN_DEADLINE_KEY)) {
+            window.localStorage.setItem(LOGIN_DEADLINE_KEY, String(Date.now() + SESSION_TTL_MS));
+          }
           rememberSession(session);
           return session;
         }
@@ -236,6 +245,7 @@ export const startEmailSignUp = async (email: string, password: string) => {
     explicitlySignedOut = false;
     const verifyResult = await verifyOtp({ token: verificationCode });
     assertCloudResult(verifyResult, '邮箱验证码无效或已过期。');
+    window.localStorage.setItem(LOGIN_DEADLINE_KEY, String(Date.now() + SESSION_TTL_MS));
     const session = await getCloudSession();
     if (!session) throw new Error('验证成功，但未取得登录会话。请重新登录。');
     rememberSession(session);
@@ -250,6 +260,7 @@ export const signInWithPassword = async (email: string, password: string) => {
   const result = await withSessionLock(() => auth.signInWithPassword({ email, password })) as CloudResult<SignInData>;
   if (revisionAtStart !== sessionRevision || explicitlySignedOut) throw new Error('登录操作已取消，请重试。');
   const loginData = assertCloudResult(result, '登录失败。');
+  window.localStorage.setItem(LOGIN_DEADLINE_KEY, String(Date.now() + SESSION_TTL_MS));
   const authenticatedSession = loginData?.session;
   const session = authenticatedSession
     ? sessionFromCurrentUser(loginData?.user || authenticatedSession.user, authenticatedSession)
@@ -293,10 +304,22 @@ export const completePasswordReset = async (email: string, verificationId: strin
 };
 
 export const signOut = async () => {
+  const result = await withSessionLock(() => auth.signOut());
+  if (result?.error) throw new Error(result.error.message || '云端退出失败，请重试');
   explicitlySignedOut = true;
   forgetSession();
-  await withSessionLock(() => auth.signOut());
+  window.localStorage.removeItem(LOGIN_DEADLINE_KEY);
 };
+
+// Static pages can contain more than one built entry. Share explicit sign-in/out in the same document too.
+window.addEventListener('site-auth-change', (event) => {
+  const next = (event as CustomEvent<CloudSession | null>).detail;
+  if ((next?.uid || null) === (knownSession?.uid || null) && Boolean(next) !== explicitlySignedOut) return;
+  knownSession = next || null;
+  explicitlySignedOut = !next;
+  sessionRevision += 1;
+  sessionCheck = null;
+});
 
 window.addEventListener('storage', (event) => {
   if (event.key !== null && event.key !== SESSION_KEY) return;
@@ -321,6 +344,6 @@ window.addEventListener('online', maintainSession);
 document.addEventListener('visibilitychange', maintainSession);
 setInterval(maintainSession, 60_000);
 
-export const describeSessionExpiry = () => '登录状态默认保留 7 天。';
+export const describeSessionExpiry = () => '登录有效期为 30 天；到期需重新登录。';
 
 export const cloudErrorMessage = errorMessage;

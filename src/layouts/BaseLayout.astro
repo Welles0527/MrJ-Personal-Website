@@ -32,7 +32,8 @@ const resolvedFaviconType = faviconType ?? 'image/png';
     <link rel="manifest" href={`${basePath}manifest.webmanifest`} />
     <link rel="apple-touch-icon" href={`${basePath}icons/icon-192.png`} />
     <title>{title}</title>
-  </head>
+  <script is:inline src="/officialwebsite/account-entry.js" defer></script>
+</head>
   <body>
     <div class="site-update-notice" role="status" aria-live="polite" data-site-update-notice hidden>
       <span>网站已有新版本。</span>

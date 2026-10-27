@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+import ts from 'typescript';
+import { webcrypto } from 'node:crypto';
+const source=fs.readFileSync(new URL('../src/scripts/cloud-backup.ts',import.meta.url),'utf8');
+const code=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+let uid='a',reads=0,records=Array.from({length:205},(_,i)=>({_id:String(i),ownerId:'a',title:'cloud '+i})),fail=false,change=false;
+const db={collection:()=>{let skip=0,limit=100;const q={where:()=>q,orderBy:()=>q,skip:n=>(skip=n,q),limit:n=>(limit=n,q),doc:()=>q,get:async()=>{reads++;if(change)uid='b';if(fail)return {error:{message:'offline'}};return {data:records.slice(skip,skip+limit)};}};return q;}};
+const mod={exports:{}};
+vm.runInNewContext(code,{module:mod,exports:mod.exports,require:()=>({getCloudDb:()=>db,getCloudSession:async()=>uid?{uid,account:uid}:null}),crypto:webcrypto,TextEncoder,Date,console});
+const backup=await mod.exports.readCloudBackup('todo');
+assert.equal(reads,3);assert.equal(backup.records.length,205);assert.equal(backup.source,'cloud');assert.equal(backup.sha256.length,64);
+records=[{_id:'foreign',ownerId:'b'}];await assert.rejects(mod.exports.readCloudBackup('todo'),/账号不匹配/);
+records=[{_id:'own',ownerId:'a'}];fail=true;await assert.rejects(mod.exports.readCloudBackup('todo'),/offline/);fail=false;
+change=true;await assert.rejects(mod.exports.readCloudBackup('todo'),/账号改变/);change=false;
+uid=null;await assert.rejects(mod.exports.readCloudBackup('todo'),/登录/);
+console.log('PASS fresh cloud records, pagination, checksum, foreign account, offline and account-switch guards');

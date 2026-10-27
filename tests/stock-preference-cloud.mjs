@@ -41,6 +41,7 @@ function createDatabase() {
         },
         doc(id) {
           return {
+            async get() { return { data: records.has(id) ? [structuredClone(records.get(id))] : [] }; },
             async set(payload) {
               records.set(id, { _id: id, ...structuredClone(payload) });
               publish();

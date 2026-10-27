@@ -12,7 +12,7 @@
 
   async function currentSession() {
     const auth = bridge();
-    return auth.getRememberedSession?.() || await auth.getCloudSession();
+    return await auth.getCloudSession();
   }
 
   function hash(value) {
@@ -117,6 +117,10 @@
       .doc(recordId(session.uid, kind, scopeId))
       .set(record);
     resultData(result, "保存个股跟踪云端设置失败");
+    if ((await currentSession())?.uid !== session.uid) throw new Error('账号已改变，不能确认保存');
+    const verified = resultData(await bridge().getCloudDb().collection(COLLECTION).doc(recordId(session.uid, kind, scopeId)).get(), '云端保存核验失败');
+    const saved = Array.isArray(verified) ? verified[0] : verified;
+    if (!saved || saved.ownerId !== session.uid || saved.updatedAt !== updatedAt) throw new Error('云端保存核验失败，请保留输入');
     return record;
   }
 
@@ -146,16 +150,11 @@
     watch(onChange, onError) {
       let innerWatcher = null;
       let closed = false;
-      const remembered = window.StockTrackingSharedAuth?.getRememberedSession?.();
-      if (remembered?.uid) {
-        innerWatcher = startWatch(remembered, onChange, onError);
-      } else {
-        void currentSession()
+      void currentSession()
           .then(session => {
             if (!closed && session?.uid) innerWatcher = startWatch(session, onChange, onError);
           })
           .catch(error => onError?.(error));
-      }
       return {
         close() {
           closed = true;

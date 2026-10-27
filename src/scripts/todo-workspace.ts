@@ -1420,7 +1420,14 @@ export function mountTodoWorkspace(root: HTMLElement) {
     notify(`旧数据已合并到云端：新增 ${added} 项，更新 ${updated} 项，保留当前 ${kept} 项。`);
   };
 
-  const exportBackup = () => {
+  const exportBackup = async () => {
+    try {
+    if (localTestMode) throw new Error('模拟数据不能导出为云端备份');
+    const owner = await (await getCloudApi()).getCloudSession();
+    if (!owner) throw new Error('请先登录后导出');
+    const { readCloudBackup } = await import('./cloud-backup');
+    const archiveData = await readCloudBackup('todo');
+    const backupTodos = archiveData.records.filter(todo => !todo.deletedAt) as Todo[];
     const escapeXml = (value: string) => value
       .replaceAll('&', '&amp;')
       .replaceAll('<', '&lt;')
@@ -1450,10 +1457,10 @@ export function mountTodoWorkspace(root: HTMLElement) {
     const worksheetForRows = (rows: string[][]) =>
       `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${rows.map((values, index) => `<row r="${index + 1}">${values.map((value, column) => textCell(String.fromCharCode(65 + column), index + 1, value)).join('')}</row>`).join('')}</sheetData></worksheet>`;
     const sheets = [
-      { name: '个人待办', todos: state.todos },
-      { name: 'AI灵感-生活', todos: state.todos.filter((todo) => !todo.date && todo.placement === 'ai-life') },
-      { name: 'AI灵感-投资', todos: state.todos.filter((todo) => !todo.date && todo.placement === 'ai-investing') },
-      { name: '每周必做', todos: state.todos.filter((todo) => !todo.date && todo.placement === 'weekly') }
+      { name: '个人待办', todos: backupTodos },
+      { name: 'AI灵感-生活', todos: backupTodos.filter((todo) => !todo.date && todo.placement === 'ai-life') },
+      { name: 'AI灵感-投资', todos: backupTodos.filter((todo) => !todo.date && todo.placement === 'ai-investing') },
+      { name: '每周必做', todos: backupTodos.filter((todo) => !todo.date && todo.placement === 'weekly') }
     ];
     const encoder = new TextEncoder();
     const crc32 = (bytes: Uint8Array) => {
@@ -1536,7 +1543,8 @@ export function mountTodoWorkspace(root: HTMLElement) {
     link.click();
     link.remove();
     window.setTimeout(() => URL.revokeObjectURL(url), 0);
-    notify('Excel 待办备份已下载。');
+    notify('已重新读取云端，Excel 待办备份已下载。');
+    } catch (error) { notify(error instanceof Error ? error.message : '云端导出失败'); }
   };
 
   const exportReminderTiming = (now: Date) => {
@@ -1553,14 +1561,6 @@ export function mountTodoWorkspace(root: HTMLElement) {
     };
   };
 
-  const readExportReminderKey = () => {
-    try {
-      return window.localStorage.getItem(EXPORT_REMINDER_KEY);
-    } catch {
-      return null;
-    }
-  };
-
   const markExportReminderHandled = () => {
     const { reminderKey } = exportReminderTiming(new Date());
     try {
@@ -1572,12 +1572,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
 
   const scheduleExportReminder = () => {
     window.clearTimeout(exportReminderTimer);
-    const now = new Date();
-    const { reminderKey, reminderDue, nextFriday } = exportReminderTiming(now);
-    if (reminderDue && readExportReminderKey() !== reminderKey && !exportReminderModal.open) {
-      exportReminderModal.showModal();
-    }
-    exportReminderTimer = window.setTimeout(scheduleExportReminder, Math.max(1000, nextFriday.getTime() - now.getTime()));
+    // All website pages use the shared Monday reminder and unified cloud workbook.
   };
 
   const deleteTemplateTodo = async (todo: Todo) => {
@@ -2459,6 +2454,15 @@ export function mountTodoWorkspace(root: HTMLElement) {
     closeCloudWatcher();
     window.clearTimeout(exportReminderTimer);
   });
+  const registerAccount = () => window.MagicJAccount?.register({
+    beforeLeave: async () => { if (!syncRetryButton.hidden) throw new Error('有尚未确认保存的待办，请先完成云端同步'); },
+    sync: async () => {
+      const owner = await (await getCloudApi()).getCloudSession();
+      if (!owner) throw new Error('请先登录');
+      await refreshCloudState(owner);
+    }
+  });
+  window.addEventListener('magicj-account-ready', registerAccount); registerAccount();
   render();
   scheduleExportReminder();
   void initialiseCloud();

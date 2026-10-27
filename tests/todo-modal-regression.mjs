@@ -45,7 +45,7 @@ const waitForServer = async (url, child) => {
       throw new Error(`Astro dev server exited early.\n${serverOutput.join('')}`);
     }
     try {
-      const response = await fetch(url, { cache: 'no-store' });
+      const response = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(2000) });
       if (response.ok) return;
     } catch {
       // The server is still starting.
@@ -106,17 +106,18 @@ const submitTask = async (page, title) => {
   return { modal, openAfterSubmit: await modal.evaluate((dialog) => dialog.open) };
 };
 
-const port = await findFreePort();
+const externalServer = process.env.TODO_MODAL_BASE_URL;
+const port = externalServer ? Number(new URL(externalServer).port) : await findFreePort();
 const pageUrl = `http://127.0.0.1:${port}${routePath}?todo-modal-regression=1`;
 const serverArgs = [astroCli, 'dev', '--host', '127.0.0.1', '--port', String(port), '--strictPort', '--force'];
 if (astroStartsInBackground) serverArgs.push('--background');
-const server = spawn(process.execPath, serverArgs, {
+const server = externalServer ? null : spawn(process.execPath, serverArgs, {
   cwd: projectRoot,
   env: { ...process.env, BROWSER: 'none', ...(process.env.TODO_MODAL_FOREGROUND === '1' ? { ASTRO_DEV_BACKGROUND: '1' } : {}) },
   stdio: ['ignore', 'pipe', 'pipe']
 });
-server.stdout.on('data', (chunk) => serverOutput.push(chunk.toString()));
-server.stderr.on('data', (chunk) => serverOutput.push(chunk.toString()));
+server?.stdout.on('data', (chunk) => serverOutput.push(chunk.toString()));
+server?.stderr.on('data', (chunk) => serverOutput.push(chunk.toString()));
 
 let browser;
 try {
@@ -394,7 +395,7 @@ try {
   console.log('Todo modal, weekly template, search, and date-location regression test passed.');
 } finally {
   await browser?.close();
-  if (astroStartsInBackground) {
+  if (!externalServer && astroStartsInBackground) {
     spawnSync(process.execPath, [astroCli, 'dev', 'stop'], { cwd: projectRoot, stdio: 'ignore' });
   } else {
     stopProcessTree(server);
