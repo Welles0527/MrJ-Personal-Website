@@ -7,7 +7,7 @@ export function mountCalendarTodoSource() {
   if (window.parent === window) return;
   try {
     if (window.parent.location.origin !== location.origin
-      || !window.parent.location.pathname.endsWith('/super-calendar/index.html')) return;
+      || !/\/super-calendar\/(?:index\.html)?$/.test(window.parent.location.pathname)) return;
   } catch { return; }
 
   const planPalette: Record<string, string> = {};
@@ -26,13 +26,14 @@ export function mountCalendarTodoSource() {
   document.head.querySelectorAll('link[rel="stylesheet"], style').forEach(element => element.remove());
   document.body.innerHTML = `<style>body{margin:0;padding:24px;background:var(--account-bg,#fffdf8);color:var(--account-text,#232323);font:15px system-ui;box-sizing:border-box}*{box-sizing:border-box}h2{margin:0 0 12px;font-size:24px}p{line-height:1.6}label{display:block;margin:16px 0}input,button{font:inherit;width:100%;padding:12px;border:1px solid #bbb;border-radius:10px}input{margin-top:7px;background:var(--account-cell,#fff);color:var(--account-text,#232323)}button{cursor:pointer;background:var(--account-accent,#242424);color:var(--account-ink,white)}button:disabled{opacity:.6}#auth-message{min-height:24px;color:#a22836;overflow-wrap:anywhere}[hidden]{display:none!important}</style><h2>登录超级日历</h2><p>使用网站统一账号，登录后自动同步个人计划。</p><form id="calendar-login"><label>邮箱<input name="email" type="email" autocomplete="username" required></label><label>密码<input name="password" type="password" autocomplete="current-password" required></label><button type="submit">登录并同步</button></form><p id="auth-account" hidden></p><button id="auth-logout" hidden>退出登录</button><p id="auth-message" role="status" aria-live="polite"></p>`;
   const loginStyle = document.createElement('style');
-  loginStyle.textContent = `html{background:#3c3c3c;color-scheme:dark}body{margin:18px;padding:24px 28px;border-radius:24px;background:#3c3c3c;color:#eee;box-shadow:7px 7px 16px #292929,-6px -6px 16px #535353}body:before{content:'J. WORKSPACE';display:block;font-size:10px;letter-spacing:2px;color:#ccc;margin-bottom:28px}h2{text-align:center;font-size:22px;font-weight:600}h2:before{content:'J✦';display:grid;place-items:center;width:90px;height:90px;margin:0 auto 24px;border:1px solid #777;border-radius:50%;font:italic 36px Georgia,serif;box-shadow:7px 7px 15px #292929,-7px -7px 15px #535353}body>p{font-size:12px;text-align:center;color:#bbb}label{font-size:12px;margin:24px 0}input{min-height:50px;padding:14px 20px;background:#393939;color:#eee;border:1px solid transparent;border-radius:28px;box-shadow:inset 6px 6px 12px #202020,inset -5px -5px 10px #4a4a4a}input:focus-visible,button:focus-visible{outline:2px solid #ccc;outline-offset:3px}button{min-height:50px;margin:12px 0;border:0;border-radius:28px;background:#3c3c3c;color:#eee;font-weight:600;box-shadow:5px 5px 12px #292929,-5px -5px 12px #525252}button:active{box-shadow:inset 4px 4px 9px #292929,inset -4px -4px 9px #525252}#auth-message{color:#ebc5a6}@media(max-width:400px){body{padding:22px 18px;margin:14px}}`;
+  loginStyle.textContent = `html{background:#202020;color-scheme:dark}body{margin:0;padding:20px 24px;background:#202020;color:#fff;font:15px/1.6 system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif}h2{font-size:22px;line-height:1.35}body>p{color:#ddd}input{background:#303030;color:#fff;border:1px solid #777;border-radius:7px;min-height:44px}button{background:#29231e;color:#ffe2c5;border:1px solid #ae8764;border-radius:8px;min-height:44px}input:focus-visible,button:focus-visible{outline:2px solid #e9bd73;outline-offset:3px}#auth-account{overflow-wrap:anywhere}#auth-message{color:#ffb4a7}body:has(#calendar-login[hidden])>h2{font-size:20px}body:has(#calendar-login[hidden])>p:not(#auth-account):not(#auth-message){display:none}`;
   document.body.append(loginStyle);
   const form = document.querySelector<HTMLFormElement>('#calendar-login')!;
   const message = document.querySelector<HTMLElement>('#auth-message')!;
   const account = document.querySelector<HTMLElement>('#auth-account')!;
   const logout = document.querySelector<HTMLButtonElement>('#auth-logout')!;
   const publishAccount = (session: { account: string } | null) => {
+    document.querySelector('h2')!.textContent = session ? '网站账号' : '登录超级日历';
     form.hidden = !!session;
     account.hidden = logout.hidden = !session;
     account.textContent = session ? `当前账号：${session.account}` : '';
