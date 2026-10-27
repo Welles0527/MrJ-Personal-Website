@@ -74,3 +74,22 @@
   .book-details .details-close {margin-right:-8px;}
   .book-details .book-introduction {font-size:15px;}
 }
+
+
+/* Category navigation: raised selected icon in the existing warm bookshelf palette. */
+.category-tabs{position:relative;isolation:isolate;display:flex;flex:1 1 auto;min-width:0;gap:2px;flex-wrap:nowrap;padding:24px 7px 9px;overflow-x:auto;scrollbar-width:none}
+.category-tabs::before{content:"";position:absolute;z-index:-1;inset:20px 0 0;border:1px solid #e3d6c3;border-radius:15px;background:#fffaf3;box-shadow:0 3px 9px #6f39130a;pointer-events:none}
+.category-tabs::-webkit-scrollbar{display:none}
+.category-tabs button{position:relative;display:flex;flex:1 0 52px;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;padding:0 5px;border-radius:10px;background:transparent;color:#817363;font-size:12px;line-height:1.5;transition:color .2s}
+.category-tabs button:hover,.category-tabs button.active{background:transparent;box-shadow:none}
+.category-tabs button:hover{color:#ad5027}
+.category-symbol{display:grid;place-items:center;width:40px;height:40px;flex:none;border:2px solid transparent;border-radius:50%;transition:transform .2s,color .2s,background .2s}
+.category-tabs button.active{color:#723e26;font-weight:700}
+.category-tabs button.active .category-symbol{transform:translateY(-18px) scale(1.15);border-color:var(--accent);background:#fffaf3;color:var(--accent);box-shadow:0 0 0 5px #f7f1e6,0 5px 10px #a0522220}
+.category-label{white-space:nowrap}
+@media(max-width:700px){.category-tabs{gap:0;padding-right:5px;padding-left:5px}.category-tabs button{flex:1 0 38px;min-width:0;padding:0 1px;font-size:11px}.category-symbol{width:38px;height:38px}}
+@media(prefers-reduced-motion:reduce){.category-tabs button,.category-symbol{transition:none}}
+
+
+/* Keep the existing pointer/keyboard reorder control without a visible grip. */
+.book-move-handle{border:0;background:transparent;box-shadow:none}
