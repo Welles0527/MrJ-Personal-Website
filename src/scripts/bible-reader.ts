@@ -362,6 +362,8 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
   let activeBookStatusSlug: string | null = null;
   let pendingBookSlug: string | null = null;
   let bookClickTimer: number | undefined;
+  let chapterClickTimer: number | undefined;
+  let pendingChapterKey: string | null = null;
   let translationHoverTimer: number | undefined;
   let activeTranslationVerse: HTMLElement | null = null;
   let translationRequestToken = 0;
@@ -662,7 +664,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
       const progress = getProgressSummary(book.slug, chapter);
       const complete = progress.total > 0 && progress.read >= progress.total;
       const classes = [chapter === currentChapter ? 'is-active' : '', complete ? 'is-complete' : ''].filter(Boolean).join(' ');
-      return `<button type="button" class="${classes}" data-chapter="${chapter}" aria-label="${escapeHtml(book.title)} ${chapter}章${complete ? '，已读完' : ''}">${chapter}</button>`;
+      return `<button type="button" class="${classes}" data-chapter="${chapter}" title="单击切换章节，双击标记整章已读" aria-label="${escapeHtml(book.title)} ${chapter}章${complete ? '，已读完' : ''}">${chapter}</button>`;
     }).join('');
     window.setTimeout(() => {
       const activeChapter = chapterList.querySelector<HTMLButtonElement>('.is-active');
@@ -1668,11 +1670,20 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
 
   const playNativeSpeechSegment = (segments: string[], index: number, requestToken: number) => {
     if (requestToken !== speechRequestToken || index >= segments.length) return;
+    const voice = window.speechSynthesis.getVoices().find((candidate) =>
+      candidate.lang.toLowerCase().startsWith('zh')
+      && !/female|女/i.test(candidate.name)
+      && /yunyang|kangkang|云扬|康康|\bmale\b|男声|男性/i.test(candidate.name));
+    if (!voice) {
+      stopSpeech();
+      notify('云端男声暂不可用，设备也没有可用的中文男声，请稍后重试。');
+      return;
+    }
     const utterance = new SpeechSynthesisUtterance(segments[index]);
     utterance.lang = 'zh-CN';
     utterance.rate = speechRate;
-    const voices = window.speechSynthesis.getVoices().filter((voice) => voice.lang.toLowerCase().startsWith('zh'));
-    utterance.voice = voices.find((voice) => /yunyang|male|男/i.test(voice.name)) || voices[0] || null;
+    utterance.voice = voice;
+    notify('正在使用设备中文男声朗读。');
     activeNativeUtterance = utterance;
     utterance.onend = () => {
       if (activeNativeUtterance !== utterance || requestToken !== speechRequestToken) return;
@@ -1707,7 +1718,6 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     if (requestToken !== speechRequestToken || result.error?.name === 'AbortError') return;
     if (!result.audio) {
       if ('speechSynthesis' in window && 'SpeechSynthesisUtterance' in window) {
-        notify('云端男声暂不可用，已改用设备朗读，音色可能不同。');
         playNativeSpeechSegment(segments, index, requestToken);
       } else {
         stopSpeech();
@@ -1836,6 +1846,42 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     chapterButton?.classList.toggle('is-complete', chapterComplete);
     chapterButton?.setAttribute('aria-label', `${currentBookInfo().title} ${currentChapter}章${chapterComplete ? '，已读完' : ''}`);
     persist();
+  };
+
+  const handleChapterClick = (chapter: number) => {
+    const book = currentBook;
+    const key = chapterKey(book, chapter);
+    if (chapterClickTimer && pendingChapterKey === key) {
+      window.clearTimeout(chapterClickTimer);
+      chapterClickTimer = undefined;
+      pendingChapterKey = null;
+      if (!session || !automaticCloudSyncEnabled) {
+        notify(session ? '云端同步不可用，请先重试同步。' : '请先登录后再保存阅读进度。');
+        return;
+      }
+      const sample = data.samples[key];
+      if (fullTextStatus !== 'ready' || !sample?.verses.length) {
+        notify('该章完整经文尚未载入，请稍后重试。');
+        return;
+      }
+      stopSpeech();
+      currentChapter = chapter;
+      sample.verses.forEach((_, index) => readVerses.add(verseKey(book, chapter, index + 1)));
+      state.readVerses = [...readVerses];
+      renderAll(undefined, { updateLastRead: false, preserveReaderPosition: true });
+      persist('整章已标记为已读。');
+      return;
+    }
+    window.clearTimeout(chapterClickTimer);
+    pendingChapterKey = key;
+    chapterClickTimer = window.setTimeout(() => {
+      chapterClickTimer = undefined;
+      pendingChapterKey = null;
+      if (currentBook !== book) return;
+      stopSpeech();
+      currentChapter = chapter;
+      renderAll(1);
+    }, 320);
   };
 
   const openNoteEditor = (book: string, chapter: number, verse: number) => {
@@ -2205,9 +2251,7 @@ export function mountBibleReader(root: HTMLElement, data: BibleData) {
     }
     if (trigger.dataset.book) handleBookCardClick(trigger.dataset.book);
     if (trigger.dataset.chapter) {
-      stopSpeech();
-      currentChapter = Number(trigger.dataset.chapter);
-      renderAll(1);
+      handleChapterClick(Number(trigger.dataset.chapter));
     }
     if (trigger.dataset.gotoBook && trigger.dataset.gotoChapter) {
       gotoReference(trigger.dataset.gotoBook, Number(trigger.dataset.gotoChapter), Number(trigger.dataset.gotoVerse || '') || undefined);
