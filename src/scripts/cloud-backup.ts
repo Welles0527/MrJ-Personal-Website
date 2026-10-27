@@ -3,7 +3,8 @@ import { getCloudDb, getCloudSession } from './site-auth';
 const collections = {
   todo: 'officialWebsiteTodos', bible: 'officialWebsiteBibleReaderState',
   inspiration: 'officialWebsiteInspirationStudios', funds: 'officialWebsiteFundManagerPreferences',
-  stocks: 'officialWebsiteStockTrackingPreferences', dianping: 'officialWebsiteDianpingFavorites'
+  stocks: 'officialWebsiteStockTrackingPreferences', dianping: 'officialWebsiteDianpingFavorites',
+  worship: 'officialWebsiteWorshipMusic'
 } as const;
 export type BackupKind = keyof typeof collections;
 

@@ -161,11 +161,16 @@ export function mountAccountToolbar() {
   bar.querySelector<HTMLButtonElement>('[data-logout]')!.onclick = () => void run(async () => {
     await actions.beforeLeave?.(); await signOut(); await reconcile();
   });
-  const backupAll = () => run(async () => {
-    if (!await reconcile()) { window.MagicJAccount!.openLogin(); return; }
-    await actions.beforeLeave?.();
-    await exportAllCloudBackup(text => say(text));
-    say('全部云端数据 Excel 已导出');
+  const backupAll = (notify: (text: string) => void = () => {}) => run(async () => {
+    try {
+      if (!await reconcile()) { notify('请先登录，再点击备份全部云端数据'); window.MagicJAccount!.openLogin(); return; }
+      notify('正在确认当前页面保存完成…');
+      await actions.beforeLeave?.();
+      await exportAllCloudBackup(text => { say(text); notify(text); });
+      say('全部云端数据 Excel 已导出'); notify('全部云端数据 Excel 已导出，请确认浏览器下载文件');
+    } catch (error) {
+      notify(`未导出：${error instanceof Error ? error.message : '云端读取失败，请重试'}`); throw error;
+    }
   });
   bar.querySelector<HTMLButtonElement>('[data-backup]')!.onclick = () => void backupAll();
   mountWeeklyBackupReminder(backupAll);
