@@ -32,6 +32,7 @@ export function mountAccountToolbar() {
   if (travelAtlas) { travelAtlas.prepend(bar); bar.dataset.embedded = 'travel'; }
   const menu = bar.querySelector<HTMLDetailsElement>('.mj-account-menu')!;
   style.textContent += `
+    #mj-account:has(>.mj-account-menu[open]){z-index:100}
     #mj-account .mj-account-menu{position:relative;max-width:100%;font:inherit}
     #mj-account summary{display:flex;align-items:center;gap:5px;max-width:min(65vw,320px);padding:4px 2px;color:inherit;cursor:pointer;list-style:none}
     #mj-account summary::-webkit-details-marker{display:none}#mj-account summary:after{content:'▾';font-size:11px;opacity:.65}

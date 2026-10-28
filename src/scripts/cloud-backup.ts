@@ -40,9 +40,15 @@ export async function readCloudBackup(kind: BackupKind) {
       }
     }
   }
+  const canonical = records.find(record => record._id === owner.uid);
   for (const record of records) {
+    const verifiedLegacyBible = kind === 'bible' && typeof record._id === 'string' && record._id !== owner.uid
+      && record._openid === owner.uid && record.ownerId === record._id
+      && typeof record.updatedAt === 'string' && record.updatedAt.length > 0
+      && Object.prototype.hasOwnProperty.call(canonical?.mergedLegacyRecords || {}, record._id)
+      && canonical.mergedLegacyRecords[record._id] === record.updatedAt;
     if (record.ownerId ? record.ownerId !== owner.uid : record._openid ? record._openid !== owner.uid : record._id !== owner.uid) {
-      throw new Error('云端返回账号不匹配的数据，已停止导出');
+      if (!verifiedLegacyBible) throw new Error('云端返回账号不匹配的数据，已停止导出');
     }
   }
   if ((await getCloudSession())?.uid !== owner.uid) throw new Error('导出期间账号改变，已停止下载');
