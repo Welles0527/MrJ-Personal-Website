@@ -16,8 +16,10 @@ export function mountAccountSyncStatus() {
   ];
   const config = configs.find(item => item.match.test(path));
   if (!config) return;
+  const studio = config.anchor === '#studioAccount';
   const style = document.createElement('style');
   style.textContent = `.mj-sync-account{display:inline-flex!important;flex-direction:column!important;align-items:flex-start;vertical-align:middle;min-width:0;max-width:100%;gap:3px}.mj-sync-status{display:block!important;font:11px/1.5 system-ui!important;letter-spacing:normal!important;white-space:normal!important;overflow-wrap:anywhere;max-width:min(280px,75vw);color:var(--muted,#8b8b8b)}.mj-sync-status[data-state=success]{color:#329b63}.mj-sync-status[data-state=error]{color:#d85b59}.mj-sync-status small{display:block;font:inherit;color:inherit;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;max-width:100%!important}.shared-account-copy:has(.mj-sync-account)>small,.todo-sync-summary:has(.mj-sync-account)>[data-last-sync],.calendar-account-label:has(.mj-sync-account)>[data-calendar-sync-status]{display:none!important}.mj-sync-account:has(#fund-auth-status){align-items:flex-start;max-width:124px}.mj-sync-account:has(#fund-auth-status) .mj-sync-status{max-width:124px}.bible-account-controls:has(.mj-sync-account){flex-wrap:wrap}@media(max-width:600px){.topbar:has(#coffee-sync-account){flex-wrap:wrap}.topbar:has(#coffee-sync-account)>.mj-sync-account{flex-basis:100%;align-items:flex-end}}`;
+  if (studio) style.textContent += `.profile>.mj-sync-status{align-self:flex-end;display:flex!important;flex-basis:100%;justify-content:flex-end;flex-wrap:nowrap;gap:6px;white-space:nowrap!important;overflow-wrap:normal;max-width:100%;font-size:11px!important}.profile>.mj-sync-status>span{flex-shrink:0}.profile>.mj-sync-status small{display:inline;white-space:nowrap!important;flex-shrink:0}.profile:has(>.mj-sync-status){flex-wrap:wrap;min-width:0;max-width:100%;row-gap:6px}.studio-auth #syncStatus{display:none!important}`;
   document.head.append(style);
   let owner = '';
   let signature = '', lastSuccess = '', state = 'pending', message = '正在核实云端同步…';
@@ -48,8 +50,9 @@ export function mountAccountSyncStatus() {
       wrapper = document.createElement('span'); wrapper.className = 'mj-sync-account';
       anchor.before(wrapper); wrapper.append(anchor);
     }
-    let display = wrapper.querySelector<HTMLElement>(':scope > .mj-sync-status');
-    if (!display) { display = document.createElement('span'); display.className = 'mj-sync-status'; display.setAttribute('role', 'status'); display.setAttribute('aria-live', 'polite'); wrapper.append(display); }
+    const host = studio ? document.querySelector<HTMLElement>('#views')?.parentElement || wrapper : wrapper;
+    let display = host.querySelector<HTMLElement>(':scope > .mj-sync-status');
+    if (!display) { display = document.createElement('span'); display.className = 'mj-sync-status'; display.setAttribute('role', 'status'); display.setAttribute('aria-live', 'polite'); host.append(display); }
     if (config.source === '[data-reading-sync-status]') {
       const account = document.querySelector('[data-login-status]')?.textContent?.split('；')[0] || '';
       let identity = wrapper.querySelector<HTMLElement>('.mj-sync-identity');
@@ -59,10 +62,10 @@ export function mountAccountSyncStatus() {
     const time = lastSuccess ? new Date(lastSuccess).toLocaleString('zh-CN', { hour12: false }) : '';
     const text = message + (time ? ` · 最近成功：${time}` : ' · 尚无成功同步时间');
     const copy = state === 'error' ? '云同步失败，请重试' : message;
-    const summary = copy + (time ? `最近成功：${time}` : '尚无成功同步时间');
+    const summary = copy + (studio ? '· ' : '') + (time ? `最近成功：${time}` : '尚无成功同步时间');
     if (display.textContent !== summary) {
       const label = document.createElement('span'); label.textContent = copy;
-      const stamp = document.createElement('small'); stamp.textContent = time ? `最近成功：${time}` : '尚无成功同步时间';
+      const stamp = document.createElement('small'); stamp.textContent = (studio ? '· ' : '') + (time ? `最近成功：${time}` : '尚无成功同步时间');
       display.replaceChildren(label, stamp);
     }
     if (display.dataset.state !== state) display.dataset.state = state;
