@@ -18,7 +18,7 @@
   }
   const originalPlayersView = playersView;
   playersView = () => {
-    const html = originalPlayersView();
+    const html = originalPlayersView().replace('</section>', '<p class="info-note"><a href="./assets/portraits/credits.html" target="_blank" rel="noopener">头像来源与授权 ↗</a></p></section>');
     if (state.rankingYear !== 2026) return html;
     return html.replace(/按 WPBSA 最新奖金排名；同步日期 [^<]+/,
       rankingSnapshot ? `WST Official 官方排名 · 最后成功同步 ${escape(time(rankingSnapshot.fetchedAt))}（北京时间）` : '历史缓存 · 尚未成功同步 WST 官方排名')
@@ -214,6 +214,29 @@
     "Allan Taylor": ["GB", "17d60b40-9b95-11ee-b2a6-33360e91f939.png"],
     "Patrick Whelan": ["GB", "1d4e7890-6fe2-11f1-99da-8bc343e463ff.png"],
   };
+  // Rankings and event entrants share the verified WST portraits; preserve the
+  // selected photos already used by the page and supplement historical players.
+  for (const [name, [, image]] of Object.entries(assets)) {
+    if (image) playerPhotos[name] ||= `https://images.gc.wstservices.co.uk/600x600/${image}`;
+  }
+  Object.assign(playerPhotos, {
+    'Stephen Hendry': './stephen-hendry-seniors.jpg',
+    'Graeme Dott': './assets/portraits/graeme-dott.jpg',
+    'Mark King': './assets/portraits/mark-king.jpg',
+    'Liang Wenbo': './assets/portraits/liang-wenbo.jpg',
+    'Peter Ebdon': './assets/portraits/peter-ebdon.jpg',
+    'Jamie Cope': './assets/portraits/jamie-cope.jpg',
+    'Stephen Lee': './assets/portraits/stephen-lee.jpg',
+    'Martin Gould': './assets/portraits/martin-gould.jpg',
+    'Mark Davis': './assets/portraits/mark-davis.jpg',
+    'Joe Perry': './assets/portraits/joe-perry.jpg',
+    'Yan Bingtao': './assets/portraits/yan-bingtao.jpg',
+  });
+  const photoKey = name => String(name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[’‘]/g, "'").replace(/\s+/g, ' ').trim().toLowerCase();
+  const photosByName = new Map(Object.entries(playerPhotos).map(([name, url]) => [photoKey(name), url]));
+  window.CUE_PLAYER_PHOTO = name => photosByName.get(photoKey(name === 'Mark J Williams' ? 'Mark Williams' : name));
+  applyOfficialPlayerPhotos();
   const countries = { CN: '中国', GB: '英格兰', NI: '北爱尔兰', SC: '苏格兰',
     WA: '威尔士', AU: '澳大利亚', BE: '比利时', HK: '中国香港', IR: '伊朗', TH: '泰国' };
   const dateParts = value => {
@@ -223,10 +246,9 @@
     return { clock: `${parts.hour}:${parts.minute}`, date: `${parts.month}月${parts.day}日 ${parts.weekday}` };
   };
   const portrait = name => {
-    const photo = assets[name]?.[1] ? `https://images.gc.wstservices.co.uk/600x600/${assets[name][1]}` :
-      playerPhotos[name] || playerPhotos[name?.replace(/'/g, '’')];
+    const photo = window.CUE_PLAYER_PHOTO(name);
     const fallback = /^(Wildcard|Qualifier|Winner of Match|To be decided)/i.test(name) ? '球员待定' : '暂无官方照片';
-    return `<span class="match-portrait"><img src="${escape(photo || './player-placeholder.svg')}" alt="${escape(photo ? player(name) + '的官方照片' : fallback)}" title="${escape(photo ? player(name) : fallback)}" loading="lazy" referrerpolicy="no-referrer"></span>`;
+    return `<span class="match-portrait"><img src="${escape(photo || './player-placeholder.svg')}" alt="${escape(photo ? player(name) + '的头像' : fallback)}" title="${escape(photo ? player(name) : fallback)}" loading="lazy" referrerpolicy="no-referrer"></span>`;
   };
   window.CUE_GET_EVENT_PLAYERS = id => {
     const matches = snapshot?.events?.[id]?.matches || [];
@@ -236,7 +258,7 @@
       if (!name || /^(Wildcard|Qualifier|Winner of Match|To be decided)/i.test(name)) return;
       if (!entrants.has(key(name))) entrants.set(key(name), { name: player(name), en: name,
         countryCode: assets[name]?.[0] || playerMeta[name]?.[3] || '',
-        photo: assets[name]?.[1] ? `https://images.gc.wstservices.co.uk/600x600/${assets[name][1]}` : playerPhotos[name] || playerPhotos[name.replace(/'/g, '’')] || './player-placeholder.svg',
+        photo: window.CUE_PLAYER_PHOTO(name) || './player-placeholder.svg',
         eliminated: false });
     }));
     matches.forEach(match => {
@@ -286,6 +308,15 @@
     /^Round ([3-9]|[1-9]\d+)(?:\b|$)|Quarter|Semi|Final/i.test(name || '');
   const draw = (event, data) => {
     const matches = data.matches.filter(match => knockoutRound(match.round));
+    // WST omits unplayed walkovers from the match feed. Supplement only this
+    // confirmed 2026 draw; a subsequently published match always takes precedence.
+    if (event.id === 'shenzhen' && data.source === 'https://www.wst.tv/matches/07497d0d-1558-408c-82d8-2c42f2876007' &&
+        !matches.some(match => match.number === 29) && matches.some(match =>
+          match.number === 41 && match.round === 'Round 4' && [match.home, match.away].includes('Judd Trump'))) {
+      matches.push({ number: 29, round: 'Round 3', home: 'Judd Trump', away: 'Anthony McGill',
+        status: 'ended', homeScore: null, awayScore: null, walkoverWinner: 'Judd Trump',
+        source: 'https://www.wst.tv/news/2026/september/28/anthony-mcgill-withdraws-from-shenzhen-open/' });
+    }
     const rounds = [...new Set(matches.map(match => match.round))].sort((a, b) => {
       const order = name => /Semi/i.test(name) ? 1001 : /Quarter/i.test(name) ? 1000 : /^Final$/i.test(name) ? 1002 : Number(name.match(/\d+/)?.[0]) || 0;
       return order(a) - order(b);
@@ -302,7 +333,7 @@
         [parent.home, parent.away].forEach((name, side) => {
           const reference = name?.match(/^Winner of Match (\d+)$/i);
           const found = available.findIndex(match => reference ? match.number === Number(reference[1]) :
-            (match.status === 'ended' && Number(match.homeScore) !== Number(match.awayScore) &&
+            match.walkoverWinner === name || (match.status === 'ended' && Number(match.homeScore) !== Number(match.awayScore) &&
               (Number(match.homeScore) > Number(match.awayScore) ? match.home : match.away) === name) ||
             (match.status !== 'ended' && [match.home, match.away].includes(name)));
           if (index * 2 + side < aligned.length) {
@@ -329,13 +360,14 @@
         return `<article class="bracket-match bracket-missing" data-missing-result><span>${escape(player(match.entrant))}${knownPlayer ? ' · 已晋级' : ''}</span><span>${knownPlayer ? '上一轮对阵与赛果未同步' : '上一轮赛果待同步'}</span></article>`;
       }
       const scored = ['ended', 'live', 'suspended'].includes(match.status);
-      const winner = match.status === 'ended' && match.homeScore !== match.awayScore ?
-        Number(match.homeScore) > Number(match.awayScore) ? match.home : match.away : '';
+      const winner = match.walkoverWinner || (match.status === 'ended' && match.homeScore !== match.awayScore ?
+        Number(match.homeScore) > Number(match.awayScore) ? match.home : match.away : '');
       const startTime = match.status === 'upcoming' ? Number.isFinite(Date.parse(match.startsAt)) ?
         ` · <time datetime="${escape(match.startsAt)}" title="北京时间">${escape(time(match.startsAt))}</time>` : ' · 时间待公布' : '';
-      return `<article class="bracket-match"><small>第 ${escape(match.number || '—')} 场${startTime}${match.status === 'live' ? ' · 进行中' : ''}</small>${[
+      const walkover = match.walkoverWinner ? ` · <a href="${escape(match.source)}" target="_blank" rel="noopener">退赛公告 ↗</a>` : '';
+      return `<article class="bracket-match"><small>第 ${escape(match.number || '—')} 场${startTime}${match.status === 'live' ? ' · 进行中' : ''}${walkover}</small>${[
         [match.home, match.homeScore], [match.away, match.awayScore],
-      ].map(([name, score]) => `<div class="bracket-player ${name === winner ? 'won' : ''}"><span>${escape(player(name))}</span><b>${scored ? escape(score ?? '—') : '—'}</b></div>`).join('')}</article>`;
+      ].map(([name, score]) => `<div class="bracket-player ${name === winner ? 'won' : ''}"><span>${escape(player(name))}</span><b>${match.walkoverWinner ? name === winner ? '晋级' : '退赛' : scored ? escape(score ?? '—') : '—'}</b></div>`).join('')}</article>`;
     };
     return `<section class="inline-bracket" data-inline-event-id="${escape(event.id)}" style="--event-color:${color(event)}"><div class="inline-bracket-heading"><strong>赛事对阵</strong>${status(event) === 'live' ? `<button type="button" data-match-bracket="${escape(event.id)}">返回比赛明细</button>` : ''}</div><div class="bracket-scroll"><div class="bracket-stage" style="width:${width}px;height:${height + 32}px"><svg class="bracket-lines" width="${width}" height="${height}" aria-hidden="true"><path d="${paths.join(' ')}"/></svg>${rounds.map((round, index) => `<section class="bracket-round" style="left:${index * 228}px"><h4>${escape(/^Round \d+$/i.test(round) && groups[index].length === 8 ? '1/8决赛' : roundName(round))}</h4>${slots[index].map((match, slot) => `<div class="bracket-slot" style="top:${bracketCenter(index, slot)}px">${card(match)}</div>`).join('')}</section>`).join('')}</div></div><p class="bracket-note">对阵与比分随官方数据自动更新 · 同步于 ${escape(time(data.fetchedAt))}（北京时间）</p></section>`;
   };
