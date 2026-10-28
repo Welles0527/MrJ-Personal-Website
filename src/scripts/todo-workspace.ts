@@ -449,6 +449,8 @@ export function mountTodoWorkspace(root: HTMLElement) {
 
   const setSyncStatus = (message: string, options: { lastSyncAt?: string; retry?: boolean } = {}) => {
     authStatus.textContent = message;
+    authStatus.dataset.status = options.retry ? 'error' : options.lastSyncAt ? 'success' : 'pending';
+    if (options.lastSyncAt) authStatus.dataset.syncedAt = options.lastSyncAt;
     if (window.parent !== window && migrationParams.get('calendar-week') === '1') {
       window.parent.postMessage({ type: 'calendar-sync-status', message,
         status: options.retry ? 'error' : options.lastSyncAt ? 'success' : 'pending',

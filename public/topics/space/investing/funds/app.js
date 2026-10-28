@@ -1315,7 +1315,7 @@ async function initializeNoteSync() {
       document.getElementById("manager-preview-note-save").disabled = false;
       return;
     }
-    updatePreferenceSyncState("syncing");
+    updatePreferenceSyncState("syncing", "", "notes");
     document.getElementById("manager-preview-note-text").disabled = true;
     document.getElementById("manager-preview-note-save").disabled = true;
     const remote = await bridge.load();
@@ -1327,9 +1327,9 @@ async function initializeNoteSync() {
     if (document.getElementById("manager-preview-dialog")?.open && !document.getElementById("manager-preview-note-panel")?.hidden) renderManagerPreviewNote();
     document.getElementById("manager-preview-note-text").disabled = false;
     document.getElementById("manager-preview-note-save").disabled = false;
-    updatePreferenceSyncState("synced");
+    updatePreferenceSyncState("synced", "", "notes");
   } catch (error) {
-    updatePreferenceSyncState("pending", error?.message);
+    updatePreferenceSyncState("pending", error?.message, "notes");
   }
 }
 
@@ -1338,13 +1338,13 @@ async function persistManagerNotesCloud() {
   if (!bridge?.getSession) return false;
   try {
     const session = await bridge.getSession();
-    if (!session?.uid) { updatePreferenceSyncState("signed-out"); return false; }
-    updatePreferenceSyncState("syncing");
+    if (!session?.uid) { updatePreferenceSyncState("signed-out", "", "notes"); return false; }
+    updatePreferenceSyncState("syncing", "", "notes");
     await bridge.save(Object.fromEntries(state.managerNotes));
-    updatePreferenceSyncState("synced");
+    updatePreferenceSyncState("synced", "", "notes");
     return true;
   } catch (error) {
-    updatePreferenceSyncState("pending", error?.message);
+    updatePreferenceSyncState("pending", error?.message, "notes");
     return false;
   }
 }
@@ -1388,13 +1388,26 @@ function renderSharedAuthStatus(session, detail = "") {
   const link = document.getElementById("fund-auth-link");
   if (!link) return;
   const signedIn = Boolean(session?.uid);
+  const syncUid = String(session?.uid || "");
+  if (link.dataset.syncUid !== syncUid) preferenceSyncChannels.clear();
+  link.dataset.syncUid = syncUid;
   setText("fund-auth-status", signedIn ? session.account || "已登录" : "登录主站账号");
   setText("fund-auth-detail", detail || (signedIn ? "已共享主站登录" : "共享登录，无需注册"));
   link.dataset.status = signedIn ? "signed-in" : "signed-out";
   link.setAttribute("aria-label", signedIn ? `主站账号${session.account || "已登录"}` : "使用主站共享账号登录");
 }
 
-function updatePreferenceSyncState(status, detail = "") {
+const preferenceSyncChannels = new Map();
+function updatePreferenceSyncState(status, detail = "", channel = "preferences") {
+  if (status === "signed-out") preferenceSyncChannels.clear();
+  preferenceSyncChannels.set(channel, { status, detail });
+  if (status !== "signed-out") {
+    const results = [...preferenceSyncChannels.values()];
+    const incomplete = results.find(result => result.status === "pending")
+      || results.find(result => result.status === "syncing")
+      || results.find(result => result.status !== "synced");
+    if (incomplete) ({ status, detail } = incomplete);
+  }
   state.preferenceSync = status;
   const labels = { local: "收藏、备注与筛选默认保存在本机", "signed-out": "未登录，收藏、备注与筛选默认保存在本机", syncing: "正在同步收藏、备注与筛选默认", synced: "收藏、备注与筛选默认已与账号同步", pending: "收藏、备注与筛选默认待同步" };
   const node = document.getElementById("preference-sync-state");

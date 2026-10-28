@@ -71,6 +71,7 @@ function lock(text: string, mode: 'loading' | 'login' | 'retry') {
 }
 function showSync(text: string, failed = false) {
   sync.textContent = text;
+  sync.dataset.state = failed ? 'error' : /^(已从云端加载|已保存到云端)$/.test(text) ? 'success' : 'saving';
   retry.hidden = !failed;
 }
 

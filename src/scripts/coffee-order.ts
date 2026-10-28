@@ -117,7 +117,23 @@ const cloudMessage = (error: unknown, fallback = '连接门店失败，请稍后
   return fallback;
 };
 
+// Order confirmation is separate from connectivity and the local cart.
+const coffeeSync = (state: 'pending' | 'success' | 'error' | 'local', message: string) => {
+  let source = document.getElementById('coffee-sync-result');
+  if (!source) {
+    const identity = document.createElement('span'); identity.id = 'coffee-sync-account';
+    const merchant = new URLSearchParams(location.search).get('mode') === 'barista';
+    identity.textContent = merchant ? '商家账号 · 尚未登录' : '匿名点单';
+    source = document.createElement('span'); source.id = 'coffee-sync-result'; source.hidden = true;
+    const host = document.querySelector(merchant ? '.barista-heading' : '.topbar');
+    host?.append(identity, source);
+  }
+  source.dataset.state = state; source.textContent = message;
+  if (state === 'success') source.dataset.syncedAt = new Date().toISOString();
+};
+
 const setCloudStatus = (state: 'connecting' | 'online' | 'offline', label: string) => {
+  if (state === 'offline') coffeeSync('error', label);
   const status = $('#cloudStatus');
   if (!status) return;
   status.dataset.state = state;
@@ -194,7 +210,7 @@ const startCustomerOrderWatch = (orderId: string, ownerId: string, fallbackOrder
       const result = await db.collection(COLLECTION).where({ _id: orderId, _openid: ownerId }).limit(1).get() as { data?: unknown[] | unknown };
       const record = Array.isArray(result.data) ? result.data[0] : result.data;
       const order = normalizeOrder(record);
-      if (order) renderCustomerOrder(order);
+      if (order) { renderCustomerOrder(order); coffeeSync('success', '订单云端读取成功'); }
     } catch {
       setCloudStatus('offline', '订单状态同步中断');
     }
@@ -203,7 +219,7 @@ const startCustomerOrderWatch = (orderId: string, ownerId: string, fallbackOrder
   const realtimeWatcher = db.collection(COLLECTION).where({ _id: orderId, _openid: ownerId }).limit(1).watch({
     onChange: (snapshot: { docs?: unknown[] }) => {
       const order = normalizeOrder(snapshot.docs?.[0]);
-      if (order) renderCustomerOrder(order);
+      if (order) { renderCustomerOrder(order); coffeeSync('success', '订单云端读取成功'); }
     },
     onError: () => { void syncOnce(); },
   }) as CloudWatcher;
@@ -319,7 +335,9 @@ const initializeCustomer = async () => {
         createdAtIso: now,
         updatedAtIso: now,
       };
+      coffeeSync('pending', '正在提交订单到云端…');
       const result = await db.collection(COLLECTION).add(order);
+      coffeeSync('success', '订单云端提交成功');
       const orderId = orderIdFromResult(result) || order._id || '';
       const ownerId = session.user?.uid || '';
       localStorage.setItem(LATEST_ORDER_KEY, JSON.stringify({ orderId, ownerId, order }));
@@ -402,6 +420,7 @@ const initializeBarista = async () => {
       renderBoard();
       const sync = $('#lastSync');
       if (sync) sync.textContent = `已同步 · ${new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+      coffeeSync('success', '订单云端读取成功');
       setCloudStatus('online', '订单实时同步中');
     };
     const syncOnce = async () => {
@@ -441,6 +460,9 @@ const initializeBarista = async () => {
     const state = await getLoginState();
     if (!isMerchant(state)) return false;
     showBoard();
+    coffeeSync('pending', '正在读取订单云端数据…');
+    const identity = document.getElementById('coffee-sync-account');
+    if (identity) identity.textContent = `商家账号 · ${state?.user?.email || '已登录'}`;
     startWatch();
     setCloudStatus('online', '店员端在线');
     return true;
@@ -485,9 +507,12 @@ const initializeBarista = async () => {
       if (!window.confirm('确定删除这笔订单吗？此操作无法恢复。')) return;
       button.disabled = true;
       try {
+        coffeeSync('pending', '正在删除云端订单…');
         await db.collection(COLLECTION).doc(orderId).remove();
+        coffeeSync('success', '订单云端删除成功');
       } catch (error) {
         button.disabled = false;
+        coffeeSync('error', '云端订单删除失败，请重试');
         showToast(cloudMessage(error, '订单删除失败。'));
       }
       return;
@@ -496,9 +521,12 @@ const initializeBarista = async () => {
     const next = NEXT_STATUS[current];
     button.disabled = true;
     try {
+      coffeeSync('pending', '正在更新云端订单…');
       await db.collection(COLLECTION).doc(orderId).update({ status: next, updatedAtIso: new Date().toISOString() });
+      coffeeSync('success', '订单云端状态更新成功');
     } catch (error) {
       button.disabled = false;
+      coffeeSync('error', '云端订单状态更新失败，请重试');
       showToast(cloudMessage(error, '订单状态没有更新成功。'));
     }
   });
@@ -544,3 +572,5 @@ export const initializeCoffeeOrder = () => {
   if (cartBar) cartBar.hidden = isBaristaMode;
   void (isBaristaMode ? initializeBarista() : initializeCustomer());
 };
+
+coffeeSync('local', '购物车仅保存在本机，尚未确认云端订单');
