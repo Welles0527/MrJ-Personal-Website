@@ -2,6 +2,7 @@
 
 const crypto = require("crypto");
 const https = require("https");
+const { generateSecMsGecV2 } = require("./edge-gec-v2");
 
 const EDGE_TTS = Object.freeze({
   voice: "zh-CN-YunyangNeural",
@@ -10,10 +11,10 @@ const EDGE_TTS = Object.freeze({
   volume: "+0%",
   outputFormat: "audio-24khz-48kbitrate-mono-mp3",
   trustedClientToken: "6A5AA1D4EAFF4E9FB37E23D68491D6F4",
-  secMsGecVersion: "1-143.0.3650.75"
+  secMsGecVersion: "2-143.0.3650.75"
 });
-const EDGE_TTS_HOST = "api.msedgeservices.com";
-const EDGE_TTS_PATH = "/tts/cognitiveservices/websocket/v1";
+const EDGE_TTS_HOST = "speech.platform.bing.com";
+const EDGE_TTS_PATH = "/consumer/speech/synthesize/readaloud/edge/v1";
 const EDGE_TTS_TIMEOUT_MS = 13000;
 const WEB_SOCKET_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 let clockSkewMs = 0;
@@ -30,14 +31,7 @@ function edgeTimestamp(date = new Date()) {
 }
 
 function generateSecMsGec() {
-  let seconds = BigInt(Math.floor((Date.now() + clockSkewMs) / 1000));
-  seconds -= seconds % 300n;
-  const windowsFileTime = (seconds + 11644473600n) * 10000000n;
-  return crypto
-    .createHash("sha256")
-    .update(`${windowsFileTime}${EDGE_TTS.trustedClientToken}`, "ascii")
-    .digest("hex")
-    .toUpperCase();
+  return generateSecMsGecV2(Date.now() + clockSkewMs, EDGE_TTS.trustedClientToken);
 }
 
 function escapeXml(value) {
@@ -161,7 +155,7 @@ function synthesizeEdgeSpeechAttempt(text, timeoutMs) {
   return new Promise((resolve, reject) => {
     const connectionId = randomId();
     const query = new URLSearchParams({
-      "Ocp-Apim-Subscription-Key": EDGE_TTS.trustedClientToken,
+      TrustedClientToken: EDGE_TTS.trustedClientToken,
       ConnectionId: connectionId,
       "Sec-MS-GEC": generateSecMsGec(),
       "Sec-MS-GEC-Version": EDGE_TTS.secMsGecVersion
