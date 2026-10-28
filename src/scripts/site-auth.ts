@@ -37,9 +37,9 @@ type VerificationData = {
 type CloudAuthSession = {
   sub?: string;
   user?: CloudUser | null;
-  expires_at?: number;
+  expires_at?: number | string | Date;
   expires_in?: number;
-  issued_at?: number;
+  issued_at?: number | string | Date;
 };
 
 type CloudSessionResult = {
@@ -146,16 +146,27 @@ export const getRememberedSession = () => {
 const withSessionLock = async <T>(operation: () => Promise<T>): Promise<T> =>
   navigator.locks ? await navigator.locks.request(`mywebsite.auth:${ENV_ID}`, operation) : operation();
 
+const sessionTimeMs = (value: CloudAuthSession['expires_at']): number | undefined => {
+  if (value === undefined || value === null || value === '') return undefined;
+  const numeric = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : NaN;
+  const milliseconds = Number.isFinite(numeric) ? (numeric < 1e12 ? numeric * 1000 : numeric)
+    : value instanceof Date ? value.getTime() : Date.parse(String(value));
+  return Number.isFinite(milliseconds) ? milliseconds : undefined;
+};
+
 const sessionNeedsRefresh = (session: CloudAuthSession) => {
-  const expiresAt = session.expires_at ?? (session.issued_at && session.expires_in !== undefined
-    ? session.issued_at + session.expires_in : undefined);
-  return expiresAt !== undefined ? expiresAt <= Date.now() / 1000 + 60
+  const issuedAt = sessionTimeMs(session.issued_at);
+  const expiresAt = sessionTimeMs(session.expires_at) ?? (issuedAt !== undefined && session.expires_in !== undefined
+    ? issuedAt + session.expires_in * 1000 : undefined);
+  return expiresAt !== undefined ? expiresAt <= Date.now() + 60_000
     : session.expires_in !== undefined && session.expires_in <= 60;
 };
 
 const loginRequired = () => Object.assign(new Error('登录会话已失效，请重新登录；本地数据已保留。'), { code: 'SITE_AUTH_REQUIRED' });
 const missingSessionCredentials = (error: unknown) =>
-  /credentials not found|Cannot read properties of (?:null|undefined) \(reading ['"]refresh_token['"]\)/i.test(errorMessage(error, ''));
+  /credentials not found|no refresh token found|Cannot read properties of (?:null|undefined) \(reading ['"]refresh_token['"]\)/i.test(errorMessage(error, ''));
+const revokedSessionCredentials = (error: unknown) =>
+  /^(?:invalid_grant|refresh_token_expired|invalid_refresh_token|refresh_token_revoked)$/i.test(String((error as { code?: string })?.code || ''));
 
 const renewCloudSession = async () => {
   try {
@@ -163,8 +174,7 @@ const renewCloudSession = async () => {
     if (!data?.session) throw loginRequired();
     return data;
   } catch (error) {
-    const code = String((error as { code?: string })?.code || '');
-    if (/^(?:refresh_token_expired|invalid_refresh_token)$/i.test(code) || missingSessionCredentials(error)) {
+    if (revokedSessionCredentials(error) || missingSessionCredentials(error)) {
       throw loginRequired();
     }
     throw error;
@@ -189,6 +199,7 @@ export const getCloudSession = (): Promise<CloudSession | null> => {
           sessionData = assertCloudResult(await auth.getSession() as CloudResult<CloudSessionResult>, '无法核实登录状态。');
         } catch (error) {
           if (revisionAtStart !== sessionRevision || explicitlySignedOut) return null;
+          if (revokedSessionCredentials(error)) throw loginRequired();
           const missingCredentials = missingSessionCredentials(error);
           if (missingCredentials && !readRememberedSession()) return null;
           if (!missingCredentials) {
@@ -200,8 +211,10 @@ export const getCloudSession = (): Promise<CloudSession | null> => {
         if (sessionData?.session && sessionNeedsRefresh(sessionData.session)) {
           sessionData = await renewCloudSession();
         } else if (!sessionData?.session && readRememberedSession() && attempt === 2) {
-          // A display hint cannot supply refresh credentials; allow restoration, then request explicit login.
-          throw loginRequired();
+          // Let the SDK use its own persisted refresh credentials after restoration retries.
+          // Never use the remembered account as authorization. renewCloudSession safely
+          // classifies absent/revoked credentials; network failures remain retryable.
+          sessionData = await renewCloudSession();
         }
         if (revisionAtStart !== sessionRevision || explicitlySignedOut) return null;
         const authenticated = sessionData?.session;
@@ -224,7 +237,7 @@ export const getCloudSession = (): Promise<CloudSession | null> => {
           lastError = new Error('暂时无法核实登录会话，将自动重试。');
         } else lastError = error;
       }
-      if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 150 * (attempt + 1)));
+      if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
     }
     // Never authorize cloud access from the display cache, or broadcast a logout on network failure.
     throw lastError;

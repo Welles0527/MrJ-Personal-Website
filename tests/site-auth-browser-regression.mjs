@@ -27,7 +27,7 @@ for (const [url, entry] of [
   standaloneModules.set(url, result.outputFiles[0].text);
 }
 
-function installFixture({ identity, key, initialFailure }) {
+function installFixture({ identity, key, initialFailure, recoverOnStartup = false }) {
   if (location.protocol !== 'http:') return;
   if (!localStorage.getItem('sync-fixture-initialised')) {
     localStorage.setItem('sync-fixture-initialised', 'yes');
@@ -35,6 +35,7 @@ function installFixture({ identity, key, initialFailure }) {
     localStorage.setItem('sync-fixture-owner', identity.uid);
   }
   const fixture = window.__syncFixture = { offline: initialFailure, expired: false, checks: 0, refreshes: 0, reads: 0, writes: 0, failures: 0, intervals: {} };
+  fixture.missingSession = recoverOnStartup;
   const interval = window.setInterval.bind(window);
   window.setInterval = (callback, delay, ...args) => {
     if ([15000, 30000, 60000].includes(delay)) {
@@ -43,7 +44,7 @@ function installFixture({ identity, key, initialFailure }) {
     }
     return interval(callback, delay, ...args);
   };
-  const session = () => ({ user: { id: localStorage.getItem('sync-fixture-owner'), email: identity.account }, expires_at: Date.now() / 1000 + (fixture.expired ? -1 : 3600) });
+  const session = () => ({ user: { id: localStorage.getItem('sync-fixture-owner'), email: identity.account }, expires_at: new Date(Date.now() + (fixture.expired ? 30000 : 3600000)) });
   const check = () => { if (fixture.offline) { fixture.failures++; throw new Error('fixture network unavailable'); } };
   const recordKey = name => `sync-fixture-record:${name}`;
   const initialBible = { _id: identity.uid, _openid: identity.uid, ownerId: identity.uid, lastRead: { book: 'heb', chapter: 10, verse: 1, updatedAt: '2026-10-01T00:00:00Z' }, bookmarks: [], notes: [], readVerses: [], bookStatuses: {}, updatedAt: '2026-10-01T00:00:00Z' };
@@ -53,8 +54,14 @@ function installFixture({ identity, key, initialFailure }) {
     collection(name) {
       const current = () => name === 'officialWebsiteTodos' ? [] : JSON.parse(localStorage.getItem(recordKey(name)) || 'null');
       const query = {
-        where() { return this; }, limit() { return this; }, skip() { return this; },
+        where(filter) { this.filter = filter; return this; }, limit() { return this; }, skip() { return this; },
         async get() { check(); fixture.reads++; const value = current(); return { data: Array.isArray(value) ? value : value ? [value] : [] }; },
+        async update(payload) {
+          check(); const value = current();
+          if (!value || (this.filter?.updatedAt && this.filter.updatedAt !== value.updatedAt)) return { updated: 0 };
+          fixture.writes++; localStorage.setItem(recordKey(name), JSON.stringify({ ...value, ...payload }));
+          return { updated: 1 };
+        },
         watch() { return { close() {} }; },
         doc() {
           return {
@@ -82,7 +89,7 @@ function installFixture({ identity, key, initialFailure }) {
 const browser = await chromium.launch({ channel: 'chrome', headless: true });
 await mkdir('.private', { recursive: true });
 try {
-  for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+  for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }].filter(viewport => !process.env.SITE_AUTH_TEST_WIDTH || viewport.width === Number(process.env.SITE_AUTH_TEST_WIDTH))) {
     const context = await browser.newContext({ viewport, reducedMotion: 'reduce' });
     await context.addInitScript(installFixture, { identity, key, initialFailure: false });
     await context.route('**/*site-auth.ts*', route => route.fulfill({ contentType: 'application/javascript', body: authModule }));
@@ -93,7 +100,8 @@ try {
     await reader.goto(bibleUrl);
     await reader.waitForFunction(() => document.querySelector('[data-login-account]')?.textContent === 'shared-sync@example.test');
     await reader.locator('#heb-10-25').scrollIntoViewIfNeeded();
-    const position = () => reader.evaluate(() => ({ y: scrollY, reader: document.querySelector('[data-verse-list]').scrollTop }));
+    const position = () => reader.evaluate(() => ({ y: scrollY, reader: document.querySelector('[data-verse-list]').scrollTop,
+      verseTop: document.querySelector('#heb-10-25').getBoundingClientRect().top }));
     const before = await position();
     await reader.evaluate(() => { window.__stableVerse = document.querySelector('#heb-10-25'); window.__syncFixture.expired = true; window.__syncFixture.intervals[60000].forEach(fn => fn()); });
     await reader.waitForFunction(() => window.__syncFixture.refreshes === 1);
@@ -176,11 +184,15 @@ try {
     await stocks.waitForFunction(() => window.__syncFixture.refreshes === 1);
     console.log(`PASS ${viewport.width}px calendar iframe, standalone studio, fund preferences/notes, stock account bridge`);
 
+    const positionBeforeRevocation = await position();
     await reader.evaluate(() => { window.__syncFixture.missingSession = window.__syncFixture.revoked = true; window.__syncFixture.intervals[15000].forEach(fn => fn()); });
     await reader.waitForFunction(() => [...document.querySelectorAll('[data-action="cloud-login"]')].some(node => node.textContent === '重新登录'));
     assert.equal(await reader.locator('dialog[open]').count(), 0, 'revocation must not interrupt reading with a modal');
     const revokedPosition = await position();
-    assert.ok(Math.abs(after.y - revokedPosition.y) <= 3 && Math.abs(after.reader - revokedPosition.reader) <= 3, 'revocation must retain reading position');
+    // Wrapped status text can change document height; browser scroll anchoring
+    // adjusts scrollY to preserve the visible verse, which is the reading contract.
+    assert.ok(Math.abs(positionBeforeRevocation.verseTop - revokedPosition.verseTop) <= 3 && Math.abs(positionBeforeRevocation.reader - revokedPosition.reader) <= 3,
+      `revocation must retain reading position: ${JSON.stringify({ before: positionBeforeRevocation, after: revokedPosition })}`);
     assert.equal(await reader.evaluate(key => Boolean(localStorage.getItem(key)), key), true);
     await reader.screenshot({ path: `.private/shared-sync-reauth-${viewport.width}.png` });
     await reader.locator('[data-action="cloud-login"]').first().click();
@@ -196,6 +208,7 @@ try {
     assert.equal(await widget.locator('[data-site-auth-login]').isVisible(), true, 'shared widget must expose login without requiring logout');
     assert.equal(await widget.locator('[data-site-auth-sign-out]').isVisible(), true);
 
+    const reopenedState = await context.storageState();
     await todo.evaluate(async () => { const auth = await import('/officialwebsite/src/scripts/site-auth.ts'); await auth.signOut(); });
     await reader.waitForFunction(() => document.querySelector('[data-login-account]')?.hidden);
     assert.equal(await reader.locator('dialog[open]').count(), 0, 'explicit cross-tab logout must not force a modal');
@@ -203,6 +216,21 @@ try {
     assert.deepEqual(errors, [], 'no uncaught browser errors');
     console.log(`PASS ${viewport.width}px shared SDK renewal, Bible read/write recovery, retained viewport, Todo recovery, cross-tab logout`);
     await context.close();
+
+    const reopened = await browser.newContext({ viewport, storageState: reopenedState });
+    await reopened.addInitScript(installFixture, { identity, key, initialFailure: false, recoverOnStartup: true });
+    await reopened.route('**/*site-auth.ts*', route => route.fulfill({ contentType: 'application/javascript', body: authModule }));
+    const reopenedReader = await reopened.newPage();
+    await reopenedReader.goto(bibleUrl);
+    await reopenedReader.waitForFunction(() => window.__syncFixture.refreshes === 1
+      && document.querySelector('[data-reading-sync-status]')?.dataset.status === 'saved');
+    assert.equal(await reopenedReader.locator('dialog[open]').count(), 0, 'reopened browser must recover before asking for login');
+    assert.equal(await reopenedReader.evaluate(() => window.__syncFixture.writes), 0, 'opening must not replace cloud records');
+    const restoredRecord = await reopenedReader.evaluate(() => JSON.parse(localStorage.getItem('sync-fixture-record:officialWebsiteBibleReaderState')));
+    assert.ok(restoredRecord.readVerses.includes('heb-10-25'));
+    assert.ok(restoredRecord.bookmarks.some(item => item.verse === 25));
+    console.log(`PASS ${viewport.width}px browser context closed/reopened: SDK renewal, saved reading/bookmark preserved, no login or writes`);
+    await reopened.close();
 
     const offlineContext = await browser.newContext({ viewport });
     await offlineContext.addInitScript(installFixture, { identity, key, initialFailure: true });

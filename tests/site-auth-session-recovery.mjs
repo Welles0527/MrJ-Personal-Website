@@ -28,7 +28,7 @@ function setup(overrides = {}, remembered = true) {
 {
   const t = setup();
   await assert.rejects(t.api.getCloudSession(), e => e.code === 'SITE_AUTH_REQUIRED');
-  assert.equal(t.calls.refresh, 0, 'never refresh a missing session');
+  assert.equal(t.calls.refresh, 1, 'one guarded SDK renewal before requesting login');
   assert.equal(t.calls.read, 3, 'allow delayed restoration before requesting login');
   assert.equal(t.cache.size, 1, 'do not clear cached account or drafts');
   assert.equal(t.events.length, 0, 'do not broadcast automatic logout');
@@ -65,6 +65,29 @@ for (const path of ['read', 'refresh']) {
   assert.equal((await t.api.getCloudSession()).uid, 'owner', 'same-account re-login recovers without signout');
 }
 console.log('PASS site-auth empty-session guard, delayed restoration, null refresh classification, network retry, renewal, empty refresh result, guest and same-account re-login');
+for (const format of ['seconds', 'milliseconds', 'date', 'iso']) {
+  const t = setup({ read: () => {
+    const r = valid(); const expiry = Date.now() + 30000;
+    r.data.session.expires_at = format === 'seconds' ? expiry / 1000 : format === 'milliseconds' ? expiry : format === 'date' ? new Date(expiry) : new Date(expiry).toISOString();
+    return r;
+  }, refresh: valid });
+  assert.equal((await t.api.getCloudSession()).uid, 'owner');
+  assert.equal(t.calls.refresh, 1, `${format} expiry must renew before expiry`);
+}
+{
+  const t = setup({ refresh: valid });
+  assert.equal((await t.api.getCloudSession()).uid, 'owner', 'recoverable empty session renews without logout');
+  assert.equal(t.calls.refresh, 1);
+}
+{
+  let offline = true;
+  const t = setup({ refresh: () => { if (offline) throw new Error('network timeout'); return valid(); } });
+  await assert.rejects(t.api.getCloudSession(), e => e.message === 'network timeout' && e.code !== 'SITE_AUTH_REQUIRED');
+  assert.equal(t.events.length, 0);
+  offline = false;
+  assert.equal((await t.api.getCloudSession()).uid, 'owner', 'network recovery needs no login or logout');
+}
+console.log('PASS SDK Date/ISO/second/millisecond expiry and recoverable empty-session/network recovery');
 {
   const t = setup({read:valid});
   await t.api.signInWithPassword('owner@example.test','fixture');
