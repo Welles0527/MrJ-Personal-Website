@@ -59,6 +59,8 @@
   function align(){
     const intro=document.querySelector('.hero-intro'),nav=document.querySelector('#main-navigation');
     if(!intro||!nav)return;
+    // The project sidebar is not the counter's home-page alignment reference.
+    if(nav.closest('.projects-nav'))return;
     const p=intro.getBoundingClientRect();
     nav.style.setProperty('--visit-nav-scale','1');
     nav.style.removeProperty('scale');
@@ -72,11 +74,13 @@
       nav.style.setProperty('scale',nav.style.getPropertyValue('--visit-nav-scale'),'important');
     }
     const n=nav.getBoundingClientRect();
-    counter.style.left=`${(p.left-origin.left)/scale}px`;counter.style.top=`${(n.bottom-origin.top-origin.height)/scale}px`;counter.style.visibility='visible';
+    counter.style.left=`${(p.left-origin.left)/scale}px`;counter.style.top=`${(n.bottom-scrollY-origin.top-origin.height)/scale}px`;counter.style.visibility='visible';
   }
   show(null);
   const observer=new ResizeObserver(align);
   observer.observe(document.documentElement);
+  const header=document.querySelector('#main-navigation')?.closest('.universe-header');
+  if(header)new MutationObserver(align).observe(header,{attributes:true,attributeFilter:['class']});
   document.fonts.ready.then(align);
   // Follow the existing entrance animation until the intro settles.
   let frames=0;function settle(){align();if(++frames<180)requestAnimationFrame(settle);}requestAnimationFrame(settle);
