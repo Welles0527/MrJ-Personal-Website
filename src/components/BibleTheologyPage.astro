@@ -386,10 +386,6 @@ const hymnCards = [
         返回
       </a>
     </div>
-    <div class="bible-account-feedback">
-      <span class="bible-login-account" data-login-account hidden></span>
-      <span class="bible-reading-sync-status" data-reading-sync-status aria-live="polite"></span>
-    </div>
   </header>
 
   <section class="bible-stage" aria-label="圣经网站">
@@ -482,11 +478,15 @@ const hymnCards = [
       <main class="bible-reading-pane">
         <header class="bible-reading-header">
           <button class="bible-mobile-directory" type="button" data-action="toggle-directory">目录</button>
-          <div>
+          <div class="bible-reading-heading">
             <p data-current-version>和合本 · 阅读器</p>
             <h2 data-current-title>创世记 1</h2>
           </div>
           <div class="bible-reading-actions">
+            <div class="bible-account-feedback">
+              <span class="bible-login-account" data-login-account hidden></span>
+              <span class="bible-reading-sync-status" data-reading-sync-status aria-live="polite"></span>
+            </div>
             <button type="button" class="bible-theme-toggle" data-action="toggle-reading-theme" aria-pressed="false">深色阅读</button>
             <div class="bible-speech-actions" aria-label="章节朗读控制">
               <select class="bible-speech-rate" data-speech-rate aria-label="朗读倍速" title="朗读倍速">
@@ -1695,11 +1695,33 @@ const hymnCards = [
     font-size: clamp(1.55rem, 3vw, 2.45rem);
   }
 
+  .bible-reading-heading {
+    flex-shrink: 0;
+  }
+
   .bible-reading-actions {
     display: flex;
+    min-width: 0;
     flex-wrap: wrap;
     justify-content: flex-end;
     gap: 0.42rem;
+  }
+
+  .bible-reading-actions > .bible-account-feedback {
+    flex-basis: 100%;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.6rem;
+  }
+
+  .bible-reading-actions .bible-account-feedback > span {
+    flex: 0 1 auto;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
+  .bible-reading-actions [hidden] {
+    display: none;
   }
 
   .bible-speech-actions {
@@ -3575,6 +3597,11 @@ const hymnCards = [
       flex-direction: row;
       align-items: center;
       flex-wrap: wrap;
+    }
+
+    .bible-reading-actions > .bible-account-feedback {
+      justify-content: flex-start;
+      text-align: left;
     }
 
     .bible-reading-actions button,
