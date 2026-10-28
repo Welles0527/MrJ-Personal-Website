@@ -18,7 +18,7 @@ export const signInWithPassword=async()=>session;
 export const signOut=async()=>{session=null;window.dispatchEvent(new CustomEvent('site-auth-change',{detail:null}))};
 export const getCloudDb=()=>({collection:()=>({
 doc:uid=>({get:async()=>{await window.readGate;if(window.failRead)throw Error('测试读取中断');refresh();const d=structuredClone(docs[uid]);if(d&&window.badRead&&window.testWrites)d.revision+=100;return {data:d?[d]:[]}}}),
-where:q=>({update:async payload=>{window.testAttempts++;await window.writeGate;if(window.failWrite)throw Error('测试保存中断');refresh();const d=docs[q._id];if(q.revision!==d.revision)return {updated:0};window.testWrites++;docs[q._id]={...d,...payload};persist();if(window.lostResponse)throw Error('测试响应丢失');return {updated:1}}}),
+where:q=>({update:async payload=>{window.testAttempts++;await window.writeGate;if(window.failWrite)throw {code:'TEST_WRITE_FAILURE',message:'测试保存中断'};refresh();const d=docs[q._id];if(q.revision!==d.revision)return {updated:0};window.testWrites++;docs[q._id]={...d,...payload};persist();if(window.lostResponse)throw Error('测试响应丢失');return {updated:1}}}),
 add:async payload=>{window.testAttempts++;if(docs[payload._id])throw Error('duplicate');docs[payload._id]=payload;window.testWrites++;persist();return {id:payload._id}}
 })});`;
 (async () => {
@@ -27,15 +27,16 @@ add:async payload=>{window.testAttempts++;if(docs[payload._id])throw Error('dupl
     b.onResolve({ filter: /^\.\/site-auth$/ }, () => ({ path: 'mock', namespace: 'test' }));
     b.onLoad({ filter: /.*/, namespace: 'test' }, () => ({ contents: mock, loader: 'ts' }));
   } }] });
+  const statusBundle = await build({ stdin: { contents: "import { mountAccountSyncStatus } from './src/scripts/account-sync-status'; mountAccountSyncStatus();", resolveDir: root }, bundle: true, format: 'esm', write: false });
   const server = http.createServer((req, res) => {
     const cloud = req.url.includes('inspiration-studio-cloud.js'), js = req.url.includes('.js');
     res.setHeader('Content-Type', js ? 'application/javascript' : 'text/html; charset=utf-8');
-    res.end(cloud ? bundle.outputFiles[0].text : js ? '' : fs.readFileSync(path.join(root, 'public/inspiration-studio.html')));
+    res.end(cloud ? bundle.outputFiles[0].text : req.url.includes('account-entry.js') ? statusBundle.outputFiles[0].text : js ? '' : fs.readFileSync(path.join(root, 'public/inspiration-studio.html')));
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
   const results = [];
-  const url='http://127.0.0.1:'+server.address().port;
+  const url='http://127.0.0.1:'+server.address().port+'/officialwebsite/inspiration-studio.html';
   const newPage=async width=>{
     const context=await browser.newContext({viewport:{width,height:width===1440?900:844},acceptDownloads:true});
     const page=await context.newPage();
@@ -52,6 +53,18 @@ add:async payload=>{window.testAttempts++;if(docs[payload._id])throw Error('dupl
   const saved=page=>page.waitForFunction(()=>document.querySelector('#syncStatus').textContent==='已保存至账号');
   // runFor advances browser timers; microtasks are explicitly settled without a fake-clock timeout.
   const advance=async(page,ms)=>{await page.clock.runFor(ms);await page.evaluate(()=>Promise.resolve());};
+  const checkLayout = async page => {
+    await page.evaluate(()=>scrollTo({top:0,behavior:'instant'}));
+    const layout = await page.evaluate(() => {
+      const box = selector => document.querySelector(selector).getBoundingClientRect();
+      const a=box('.studio-auth'), v=box('#views'), s=box('.profile>.mj-sync-status'), d=box('.studio-draft-actions');
+      const buttons=[...document.querySelectorAll('.studio-draft-actions button,#views button')].filter(b=>!b.hidden);
+      return {overflow:document.documentElement.scrollWidth>innerWidth, statusBelow:s.top>=Math.max(a.bottom,v.bottom)-1, actionsBelow:d.top>=s.bottom-1,
+        buttons:buttons.every(b=>{const r=b.getBoundingClientRect();const hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return r.width>30&&r.left>=0&&r.right<=innerWidth&&b.contains(hit)}),
+        rounded:parseFloat(getComputedStyle(buttons[0]).borderRadius)>0};
+    });
+    assert.deepEqual(layout,{overflow:false,statusBelow:true,actionsBelow:true,buttons:true,rounded:true});
+  };
   try {
     for(const width of [1440,390]){
       const page=await newPage(width);
@@ -78,10 +91,12 @@ add:async payload=>{window.testAttempts++;if(docs[payload._id])throw Error('dupl
       // Failed writes retain edits and stop automatic retries until explicit sync.
       await page.evaluate(()=>{window.failWrite=true});await edit(page,'断网草稿');await advance(page,5000);
       await page.waitForFunction(()=>document.querySelector('#syncStatus').textContent.startsWith('未保存：'));
+      assert.match(await page.locator('.profile>.mj-sync-status').innerText(),/测试保存中断/);
       const attempts=await page.evaluate(()=>testAttempts);await advance(page,30000);
       assert.equal(await page.evaluate(()=>testAttempts),attempts);
       await edit(page,'断网后继续编辑');assert.equal((await drafts(page))[0].data.items[0].title,'断网后继续编辑');
       assert.equal(await page.locator('#new').isEnabled(),true);
+      await checkLayout(page);
       await page.screenshot({path:path.join(evidence,'failure-'+width+'.png')});
       await page.reload();await page.waitForFunction(()=>!document.querySelector('#new').disabled);
       assert.equal(await page.evaluate(()=>InspirationStudioStore.snapshot().items[0].title),'断网后继续编辑');
@@ -100,7 +115,9 @@ add:async payload=>{window.testAttempts++;if(docs[payload._id])throw Error('dupl
       assert.equal(await page.evaluate(()=>InspirationStudioStore.snapshot().items[0].title),'本机冲突版本');
       const dl=page.waitForEvent('download');await page.getByRole('button',{name:'下载本机草稿',exact:true}).click();
       const file=await dl;const backup=JSON.parse(fs.readFileSync(await file.path(),'utf8'));assert.equal(backup.items[0].title,'本机冲突版本');
-      assert.equal(await page.locator('#syncStatus').isVisible(),true);
+      assert.equal(await page.locator('.profile>.mj-sync-status').isVisible(),true);
+      assert.match(await page.locator('.profile>.mj-sync-status').innerText(),/其他设备或窗口已更新/);
+      await checkLayout(page);
       await page.screenshot({path:path.join(evidence,'conflict-'+width+'.png')});
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
       await page.getByRole('button',{name:'保留草稿并读取云端',exact:true}).click();

@@ -33,18 +33,25 @@ const check = (result: any) => {
   if (!result || result.error || result.code) throw new Error(result?.error?.message || result?.message || '云端请求失败');
   return result;
 };
-const message = (error: unknown) => error instanceof Error ? error.message : '同步失败';
+const message = (error: unknown) => {
+  const detail = error && typeof error === 'object' && 'message' in error ? error.message : '';
+  return typeof detail === 'string' && detail.trim() ? detail.trim().slice(0, 240) : '同步失败';
+};
 const encode = (data: Snapshot) => JSON.stringify(data);
 const keyFor = (uid: string) => draftPrefix + encodeURIComponent(uid) + ':' + writer;
 status.hidden = false;
 const draftActions = document.createElement('div');
-draftActions.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;width:100%;justify-content:flex-end';
+draftActions.className = 'studio-draft-actions';
 const downloadDraft = document.createElement('button');
 downloadDraft.textContent = '下载本机草稿';
+downloadDraft.className = 'secondary';
+downloadDraft.type = 'button';
 const useCloud = document.createElement('button');
 useCloud.textContent = '保留草稿并读取云端';
+useCloud.className = 'secondary';
+useCloud.type = 'button';
 draftActions.append(downloadDraft, useCloud);
-status.after(draftActions);
+document.querySelector('.profile')!.append(draftActions);
 const archivedDrafts = () => {
   const values: Draft[] = [];
   if (!session) return values;
