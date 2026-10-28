@@ -449,6 +449,11 @@ export function mountTodoWorkspace(root: HTMLElement) {
 
   const setSyncStatus = (message: string, options: { lastSyncAt?: string; retry?: boolean } = {}) => {
     authStatus.textContent = message;
+    if (window.parent !== window && migrationParams.get('calendar-week') === '1') {
+      window.parent.postMessage({ type: 'calendar-sync-status', message,
+        status: options.retry ? 'error' : options.lastSyncAt ? 'success' : 'pending',
+        syncedAt: options.lastSyncAt || '' }, location.origin);
+    }
     if (options.lastSyncAt) lastSyncStatus.textContent = `最后同步：${syncTimeLabel(options.lastSyncAt)}`;
     syncRetryButton.hidden = !options.retry;
   };
@@ -526,10 +531,11 @@ export function mountTodoWorkspace(root: HTMLElement) {
         'todo-month-day',
         date.getMonth() !== state.viewMonth ? 'is-outside' : '',
         selectedWeekKeys.has(dateKey) ? 'is-in-week' : '',
+        sameDate(date, currentDate) ? 'is-today' : '',
         sameDate(date, state.selectedDate) ? 'is-selected' : '',
         hasImportant ? 'has-important' : ''
       ].filter(Boolean).join(' ');
-      return `<button class="${classes}" type="button" data-action="select-date" data-date="${dateKey}" data-drop-date="${dateKey}" aria-label="${dateDescription(date)}${hasImportant ? '，有重要待办' : ''}"><span>${date.getDate()}</span>${hasImportant ? '<i class="todo-month-star" aria-hidden="true">★</i>' : ''}</button>`;
+      return `<button class="${classes}" type="button" data-action="select-date" data-date="${dateKey}" data-drop-date="${dateKey}" ${sameDate(date, currentDate) ? 'aria-current="date"' : ''} aria-label="${dateDescription(date)}${hasImportant ? '，有重要待办' : ''}"><span>${date.getDate()}</span>${hasImportant ? '<i class="todo-month-star" aria-hidden="true">★</i>' : ''}</button>`;
     }).join('');
   };
 
