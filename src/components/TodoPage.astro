@@ -471,7 +471,7 @@ const navItems: NavItem[] = [
         });
         window.addEventListener('message', event => {
           if (event.origin === location.origin && event.source === window.parent && event.data?.type === 'calendar-week-sync') {
-            location.reload();
+            window.dispatchEvent(new Event('calendar-week-refresh'));
             return;
           }
           if (event.origin !== location.origin || event.source !== window.parent || event.data?.type !== 'calendar-week-theme') return;

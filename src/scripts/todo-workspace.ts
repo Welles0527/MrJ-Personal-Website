@@ -460,17 +460,26 @@ export function mountTodoWorkspace(root: HTMLElement) {
     syncRetryButton.hidden = !options.retry;
   };
 
+  let lastSuccessfulSyncAt = 0;
   const markSyncSuccess = (session: CloudSession, syncedAt = new Date().toISOString()) => {
     if (localTestMode) {
       setSyncStatus(`本地模拟：${session.account}`, { retry: false });
       lastSyncStatus.textContent = '测试数据只保留在本页面';
       return;
     }
+    lastSuccessfulSyncAt = Date.now();
     setSyncStatus(`已同步：${session.account}`, { lastSyncAt: syncedAt, retry: false });
   };
 
-  const markSyncFailure = (session: CloudSession, message = '同步失败') => {
-    setSyncStatus(`${message}：${session.account}`, { retry: true });
+  const syncFailureReason = (error: unknown) => {
+    if (!navigator.onLine) return '当前网络已离线，联网后请重试';
+    const value = error instanceof Error ? error.message : '';
+    if ((error as { code?: string })?.code === 'SITE_AUTH_REQUIRED') return '登录会话已失效，请重新登录';
+    if (/Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module/i.test(value)) return '同步组件加载失败，请刷新页面';
+    return value.trim().slice(0, 160) || '云端暂时无法连接，请点击同步重试';
+  };
+  const markSyncFailure = (_session: CloudSession, message = '同步失败', error?: unknown) => {
+    setSyncStatus(`${message}：${syncFailureReason(error)}`, { retry: true });
   };
 
   const closeSidebar = () => {
@@ -1100,20 +1109,20 @@ export function mountTodoWorkspace(root: HTMLElement) {
       if (revision !== cloudWatchRevision) return;
       void refreshCloudState(session).catch((error) => {
         if (revision !== cloudWatchRevision || cloudSession?.uid !== session.uid) return;
-        markSyncFailure(session);
+        markSyncFailure(session, '同步失败', error);
         notify(error instanceof Error ? error.message : '刷新云端待办失败。');
       });
     }, (error) => {
       if (revision !== cloudWatchRevision || cloudSession?.uid !== session.uid) return;
       cloudWatcher = null;
-      markSyncFailure(session, '同步中断');
+      markSyncFailure(session, '实时连接中断', error);
       notify(error.message);
       window.clearTimeout(cloudWatchRetryTimer);
       cloudWatchRetryTimer = window.setTimeout(() => {
         if (cloudSession?.uid !== session.uid) return;
         void refreshCloudState(session)
           .then(() => startCloudWatcher(session))
-          .catch(() => { markSyncFailure(session); });
+          .catch(error => { markSyncFailure(session, '同步失败', error); });
       }, 3000);
     });
   };
@@ -1186,7 +1195,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
       markSyncSuccess(session);
       notify('云端数据已重新读取并校验。');
     } catch (error) {
-      markSyncFailure(session);
+      markSyncFailure(session, '同步失败', error);
       throw error;
     }
   };
@@ -2404,11 +2413,11 @@ export function mountTodoWorkspace(root: HTMLElement) {
       }
     } catch (error) {
       if (cloudSession) {
-        markSyncFailure(cloudSession);
+        markSyncFailure(cloudSession, '同步失败', error);
         return;
       }
       if (rememberedAccount) {
-        setSyncStatus(`暂时无法同步：${rememberedAccount}`, { retry: true });
+        setSyncStatus(`暂时无法同步：${syncFailureReason(error)}`, { retry: true });
         lastSyncStatus.textContent = '保留登录状态，联网后自动重试';
         return;
       }
@@ -2419,7 +2428,9 @@ export function mountTodoWorkspace(root: HTMLElement) {
   };
 
   const refreshWhenActive = () => {
-    if (document.visibilityState === 'hidden') return;
+    if (document.visibilityState === 'hidden' || todoModal.open || templateModal.open || aiModal.open) return;
+    // Focusing a freshly verified iframe must not replace the button under the pointer.
+    if (syncRetryButton.hidden && Date.now() - lastSuccessfulSyncAt < 1500) return;
     if (!cloudSession) {
       void getCloudApi().then(api => { if (api.getRememberedSession()) void initialiseCloud(); }).catch(() => undefined);
       return;
@@ -2432,7 +2443,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
       })
       .catch((error) => {
         if (cloudSession?.uid !== session.uid) return;
-        markSyncFailure(session);
+        markSyncFailure(session, '同步失败', error);
         notify(error instanceof Error ? error.message : '刷新云端待办失败。');
       });
   };
@@ -2441,6 +2452,13 @@ export function mountTodoWorkspace(root: HTMLElement) {
   window.addEventListener('focus', () => {
     refreshWhenActive();
     scheduleExportReminder();
+  });
+  window.addEventListener('calendar-week-refresh', () => {
+    if (todoModal.open || templateModal.open || aiModal.open) {
+      setSyncStatus('正在编辑，请先保存或取消后再同步；输入已保留', { retry: true });
+      return;
+    }
+    void retryCloudSync().catch(error => notify(syncFailureReason(error)));
   });
   window.addEventListener('online', refreshWhenActive);
   const cloudRefreshTimer = window.setInterval(() => {

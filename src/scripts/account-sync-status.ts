@@ -27,7 +27,7 @@ export function mountAccountSyncStatus() {
     const text = node.textContent?.trim() || '';
     const code = node.dataset.status || node.dataset.state || '';
     if (/未登录|请先登录|登录后|本地模拟|本地预览|仅.*本机|保存在本机|本地草稿|购物车/.test(text)) return { state: 'local', message: text || '尚未同步云端' };
-    if (/失败|未保存|未确认|不可用|中断|离线|待同步|需要重新登录/.test(text) || ['error', 'offline'].includes(code) || node.dataset.status === 'pending') return { state: 'error', message: text || '云同步失败，请重试' };
+    if (/失败|未保存|未确认|不可用|中断|离线|待同步|需要重新登录/.test(text) || ['error', 'offline'].includes(code)) return { state: 'error', message: text || '云同步失败，请重试' };
     if (/正在|继续同步|有更新|账号已改变/.test(text) || ['pending', 'saving', 'syncing', 'loading'].includes(code)) return { state: 'pending', message: text || '正在同步云端…' };
     if (['saved', 'synced', 'success'].includes(code) || /^(已从云端加载|已同步|已保存至账号|已保存到账号云端|云端阅读记录已核实|已保存并回读云端|收藏、备注与筛选默认已与账号同步|自选股与已读状态已同步云端|当前账号 · 云端已保存 v|云端空档案|云端收藏已|已保存到云端|订单云端)/.test(text)) return { state: 'success', message: '云同步成功' };
     return { state: 'pending', message: text || '尚未完成云端同步' };
@@ -61,7 +61,7 @@ export function mountAccountSyncStatus() {
     }
     const time = lastSuccess ? new Date(lastSuccess).toLocaleString('zh-CN', { hour12: false }) : '';
     const text = message + (time ? ` · 最近成功：${time}` : ' · 尚无成功同步时间');
-    const copy = state === 'error' && !studio ? '云同步失败，请重试' : message;
+    const copy = state === 'error' && !studio && !/super-calendar\//.test(path) ? '云同步失败，请重试' : message;
     const summary = copy + (studio ? '· ' : '') + (time ? `最近成功：${time}` : '尚无成功同步时间');
     if (display.textContent !== summary) {
       const label = document.createElement('span'); label.textContent = copy;
