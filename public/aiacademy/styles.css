@@ -1160,6 +1160,20 @@ h1 {
   margin-inline: auto;
 }
 
+.onboarding-card h2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 12px;
+}
+
+.onboarding-note {
+  flex: 1 1 280px;
+  font-size: 14px;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
 .onboarding-card {
   width: min(760px, calc(100vw - 40px));
 }

@@ -1,3 +1,4 @@
+const isGuestVisitor = new URLSearchParams(window.location.search).get("visitor") === "guest";
 const USER_STORAGE_KEY = "jma-current-user-id";
 const DEVICE_USER_KEY = "jma-device-user-id";
 const AUTH_PASSWORD_KEY = "jma-current-user-password";
@@ -5,6 +6,7 @@ const AUTH_NAME_KEY = "jma-current-user-name";
 const CLOUDBASE_API_BASE = "https://magicj-web-d5g9yvowj6862f7a2-1439083941.ap-shanghai.app.tcloudbase.com";
 
 function getDeviceUserId() {
+  if (isGuestVisitor) return "academy-visitor";
   let id = localStorage.getItem(DEVICE_USER_KEY);
   if (!id) {
     id = `student-${Math.random().toString(36).slice(2, 8)}-${Date.now().toString(36).slice(-4)}`;
@@ -719,6 +721,7 @@ let authMode = "register";
 let authSubmitting = false;
 
 function loadState() {
+  if (isGuestVisitor) return { ...defaultState, completed: trials.map(() => []) };
   try {
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
     return {
@@ -732,6 +735,7 @@ function loadState() {
 }
 
 function saveState() {
+  if (isGuestVisitor) return;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
@@ -753,6 +757,7 @@ function getLearningUserId() {
 }
 
 async function apiRequest(path, options = {}) {
+  if (isGuestVisitor) throw new Error("访客模式不提交学习数据");
   const configuredApiBase = String(window.JMA_API_BASE || "").replace(/\/$/, "");
   const apiBase = configuredApiBase || (window.location.hostname.endsWith(".tcloudbaseapp.com") ? CLOUDBASE_API_BASE : "");
   const apiPath = path.startsWith("/") ? path : `/${path}`;
@@ -971,6 +976,7 @@ function lessonStorageKey(question, field) {
 }
 
 function migrateOldLessonStorage() {
+  if (isGuestVisitor) return;
   const firstQuestion = getCurrentLessonConfig().homework.questions[0];
   const contentKey = lessonStorageKey(firstQuestion, "content");
   const visibilityKey = lessonStorageKey(firstQuestion, "visibility");
@@ -1009,6 +1015,7 @@ function migrateOldLessonStorage() {
 }
 
 function getLessonQuestionState(question) {
+  if (isGuestVisitor) return { content: "", visibility: question.defaultVisibility, submittedContent: "", completed: false };
   const visibilityKey = lessonStorageKey(question, "visibility");
   const visibility = normalizeVisibility(localStorage.getItem(visibilityKey) || question.defaultVisibility);
   if (localStorage.getItem(visibilityKey) !== visibility) {
@@ -1043,6 +1050,7 @@ function isLessonRecordedCompleted() {
 }
 
 function syncLessonCourseCompleted() {
+  if (isGuestVisitor) return false;
   const completed = isLessonLiveCompleted() || isLessonRecordedCompleted();
   localStorage.setItem(lessonCourseKey("course_completed"), completed ? "true" : "false");
   return completed;
@@ -2415,6 +2423,7 @@ async function showAdminPage() {
 }
 
 function syncMapStateFromAcademyStorage() {
+  if (isGuestVisitor) return;
   if (localStorage.getItem(userStorageKey("academy_spell_completed")) === "true" || localStorage.getItem(userStorageKey("spell_lesson1_all_completed")) === "true") {
     if (!state.completed[0]?.length) state.completed[0] = [0, 1, 2];
     if (!state.lit.includes(0)) state.lit.push(0);
@@ -2462,6 +2471,7 @@ function syncMapStateFromAcademyStorage() {
 }
 
 function bindLessonPage() {
+  if (isGuestVisitor) return;
   if (!lessonPage) return;
 
   document.querySelector("[data-return-map]").addEventListener("click", () => {
@@ -2774,6 +2784,7 @@ function toInternalUrl(url) {
 
 function goTo(url) {
   if (!url) return;
+  if (isGuestVisitor) { showStudentOnlyNotice(); return; }
   window.location.href = toInternalUrl(url);
 }
 
@@ -2904,6 +2915,7 @@ function openCastlePopup(index) {
   saveState();
   castlePopup.classList.toggle("is-magic-sample", trial.id === "spell");
   castlePopup.hidden = false;
+  enableGuestActionButtons();
 }
 
 function focusCurrentGuide() {
@@ -3087,6 +3099,7 @@ function render() {
   const enterCurrentButton = document.querySelector("[data-enter-current]");
   enterCurrentButton.disabled = selectedLocked;
   enterCurrentButton.textContent = selectedLocked ? "尚未解锁" : "进入学院";
+  enableGuestActionButtons();
 }
 
 function renderScoreActions(trialIndex) {
@@ -3214,6 +3227,7 @@ function setAuthMode(mode) {
   const isLogin = mode === "login";
   if (authEyebrowEl) authEyebrowEl.textContent = isLogin ? "Login" : "First Login";
   if (authTitleEl) authTitleEl.textContent = isLogin ? "登录" : "入院登记";
+  onboardingForm.querySelector("[data-enrollment-note]").hidden = isLogin;
   if (authCopyEl) {
     authCopyEl.textContent = isLogin
       ? "请输入入院登记时使用的昵称和 6 位数字密码，登录后会恢复你的学习数据。"
@@ -3396,6 +3410,7 @@ function confirmReenroll() {
 }
 
 function requireLogin() {
+  if (isGuestVisitor) { showStudentOnlyNotice(); return true; }
   if (currentUser || isAdminPath) return false;
   setAuthMode(localStorage.getItem(AUTH_NAME_KEY) ? "login" : "register");
   onboardingModal.showModal();
@@ -3594,6 +3609,33 @@ document.querySelector("[data-submit-feedback]").addEventListener("click", async
 document.querySelector("[data-open-certificate]").addEventListener("click", () => certificateModal.showModal());
 document.querySelector("[data-close-certificate]").addEventListener("click", () => certificateModal.close());
 
+const guestActionSelector = "[data-popup-enter], [data-popup-courses], [data-popup-homework], [data-popup-exam], [data-enter-current], [data-entry-route], [data-tool-route], [data-score-action], [data-checkin], [data-start-exam], [data-open-course-resource], [data-restart], [data-reset], [data-reenroll], [data-submit-feedback], [data-admin-link], [data-admin-route]";
+
+function enableGuestActionButtons() {
+  if (!isGuestVisitor) return;
+  document.querySelectorAll(guestActionSelector).forEach((button) => { button.disabled = false; });
+}
+
+function showStudentOnlyNotice() {
+  let notice = document.querySelector("[data-student-only-notice]");
+  if (!notice) {
+    notice = document.createElement("dialog");
+    notice.className = "modal";
+    notice.dataset.studentOnlyNotice = "";
+    notice.setAttribute("aria-labelledby", "student-only-title");
+    notice.innerHTML = '<form method="dialog" class="modal-card"><h2 id="student-only-title">学员专属功能</h2><p class="modal-copy">该功能目前只对J先生学员开放，请联系J先生报名学习AI课程</p><button class="primary-button wide-button" type="submit">我知道了</button></form>';
+    document.body.appendChild(notice);
+  }
+  if (!notice.open) notice.showModal();
+}
+
+document.addEventListener("click", (event) => {
+  if (!isGuestVisitor || !event.target.closest(guestActionSelector)) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  showStudentOnlyNotice();
+}, true);
+
 function initMagicCursor() {}
 
 bindLessonPage();
@@ -3601,6 +3643,13 @@ syncMapStateFromAcademyStorage();
 initMagicCursor();
 
 async function startApp() {
+  if (isGuestVisitor) {
+    renderUserControls();
+    render();
+    showMapPage();
+    if (currentPath !== "/") showStudentOnlyNotice();
+    return;
+  }
   if (isCircleLessonPath || isLegionLessonPath) showLessonPage();
 
   await loadCurrentUser();
