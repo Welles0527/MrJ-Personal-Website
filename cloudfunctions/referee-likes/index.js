@@ -11,8 +11,11 @@ exports.createHandler = (db, getUid) => async (event = {}) => {
     if (event.action === 'like') {
       if (!visitor) return { ok: false, error: 'AUTH_REQUIRED' };
       if (!refereeIds.includes(event.refereeId)) return { ok: false, error: 'INVALID_REFEREE' };
-      // One deterministic document per referee/caller: retries and concurrent clicks cannot add duplicate votes.
-      await votes.doc(hash(`${event.refereeId}:${visitor}`)).set({ refereeId: event.refereeId, visitor });
+      // Each click has its own ID; replaying that click cannot add a second vote.
+      // Keep old clients' per-caller ID compatible with already saved votes.
+      if (event.requestId !== undefined && !/^[a-f0-9-]{36}$/i.test(event.requestId)) return { ok: false, error: 'INVALID_REQUEST' };
+      const key = `${event.refereeId}:${visitor}${event.requestId ? `:${event.requestId}` : ''}`;
+      await votes.doc(hash(key)).set({ refereeId: event.refereeId, visitor });
       const result = await votes.where({ refereeId: event.refereeId }).count();
       return { ok: true, refereeId: event.refereeId, count: result.total, liked: true };
     }

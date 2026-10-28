@@ -177,34 +177,57 @@
   const ui = { region: 'all', gender: 'all', query: '' };
   const likeIds = ['zheng-weili','zhu-ying','peggy-li','lyu-xilin','wang-wei','michaela-tabb','desislava-bozhilova','tatiana-woollaston','maike-kesseler','proletina-velichkova','malgorzata-kanieska','jan-verhaas','paul-collier','brendan-moore','olivier-marteel','marcel-eckardt','leo-scullion','rob-spencer','ben-williams','colin-humphries','eirian-williams','len-ganley'];
   profiles.forEach((profile, index) => { profile.likeId = likeIds[index]; });
-  const likes = { counts: {}, mine: new Set(), pending: new Set(), loaded: false, loading: false, attempted: false, error: '', fetchedAt: 0 };
+  const likes = { counts: {}, mine: new Set(), pending: new Set(), requests: new Map(), loaded: false, loading: false, attempted: false, error: '', fetchedAt: 0 };
   const thumb = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10v11H3V10h4Zm0 0 5-8c2 0 3 1 2 4l-1 4h6a2 2 0 0 1 2 2l-2 7a3 3 0 0 1-3 2H7"/></svg>';
   async function requestLikes(payload) {
     const env = 'magicj-web-d5g9yvowj6862f7a2';
     if (!window.cloudbase?.init) throw new Error('SDK unavailable');
     const app = window.cloudbase.init({ env, region: 'ap-shanghai' });
     const auth = app.auth();
+    const expired = value => /(?:access_)?token[_ -]?expired|invalid[_ -]?(?:access_)?token|credentials not found|Cannot read properties of null \(reading 'scope'\)/i.test(`${value?.code || ''} ${value?.message || ''}`);
+    let renewedOnce = false;
+    const refresh = async () => {
+      if (renewedOnce) throw new Error('登录状态已过期，请重新登录后重试。');
+      renewedOnce = true;
+      const renewed = await auth.refreshSession();
+      if (renewed?.error) {
+        if (expired(renewed.error) || /invalid_grant|refresh_token|revoked/i.test(`${renewed.error.code} ${renewed.error.message}`)) throw new Error('登录状态已过期，请重新登录后重试。');
+        throw new Error(renewed.error.message || 'Session renewal unavailable');
+      }
+      const token = renewed?.data?.session?.access_token;
+      if (!token) throw new Error('登录状态已过期，请重新登录后重试。');
+      return token;
+    };
     const getToken = async () => {
       const personal = Boolean(localStorage.getItem('mywebsite.site-auth-session.v1'));
       let session;
-      try { session = await auth.getSession(); if (session?.error) throw new Error(session.error.message); }
+      try { session = await auth.getSession(); if (session?.error) throw Object.assign(new Error(session.error.message), { code: session.error.code }); }
       // This SDK also reports a fresh visitor's missing credentials as a null scope.
-      catch (error) { if (personal || !/credentials not found|Cannot read properties of null \(reading 'scope'\)/i.test(error.message)) throw error; }
+      catch (error) {
+        if (!expired(error)) throw error;
+        if (personal || /token[_ -]?expired/i.test(`${error.code} ${error.message}`)) return refresh();
+      }
       if (session?.data?.session?.access_token) return session.data.session.access_token;
-      if (personal) throw new Error('Personal session unavailable');
+      if (personal) return refresh();
       const anonymous = await auth.signInAnonymously();
       if (anonymous?.error) throw new Error(anonymous.error.message);
       return anonymous?.data?.session?.access_token;
     };
-    const token = navigator.locks?.request ? await navigator.locks.request(`mywebsite.auth:${env}`, getToken) : await getToken();
+    const locked = operation => navigator.locks?.request ? navigator.locks.request(`mywebsite.auth:${env}`, operation) : operation();
+    const token = await locked(getToken);
     if (!token) throw new Error('Session unavailable');
-    const response = await fetch(`https://${env}.ap-shanghai.tcb-api.tencentcloudapi.com/web?env=${env}`, {
-      method: 'POST', headers: { 'content-type': 'application/json' }, signal: AbortSignal.timeout(12000),
-      body: JSON.stringify({ action: 'functions.invokeFunction', dataVersion: '2020-01-10', env,
-        function_name: 'referee-likes', request_data: JSON.stringify(payload), access_token: token })
-    });
-    if (!response.ok) throw new Error('Service unavailable');
-    const body = await response.json();
+    const invoke = async accessToken => {
+      const response = await fetch(`https://${env}.ap-shanghai.tcb-api.tencentcloudapi.com/web?env=${env}`, {
+        method: 'POST', headers: { 'content-type': 'application/json' }, signal: AbortSignal.timeout(12000),
+        body: JSON.stringify({ action: 'functions.invokeFunction', dataVersion: '2020-01-10', env,
+          function_name: 'referee-likes', request_data: JSON.stringify(payload), access_token: accessToken })
+      });
+      if (!response.ok) throw new Error('Service unavailable');
+      return response.json();
+    };
+    let body = await invoke(token);
+    // One renewal only; the server's deterministic vote ID makes a retry idempotent.
+    if (expired(body) || expired(body?.error)) body = await invoke(await locked(refresh));
     const result = typeof body?.data?.response_data === 'string' ? JSON.parse(body.data.response_data) : body?.data?.response_data;
     if (!result?.ok) throw new Error('Likes unavailable');
     return result;
@@ -213,14 +236,14 @@
     document.querySelectorAll('[data-referee-like]').forEach(button => {
       const id = button.dataset.refereeLike;
       const liked = likes.mine.has(id), pending = likes.pending.has(id);
-      button.disabled = !likes.loaded || liked || pending;
+      button.disabled = !likes.loaded || pending;
       button.setAttribute('aria-pressed', String(liked));
-      button.setAttribute('aria-label', `${liked ? '已点赞' : '点赞'}${button.dataset.refereeName}，${likes.counts[id] ?? '尚未加载'}个赞`);
-      button.title = liked ? '已点赞' : pending ? '正在保存点赞' : '为这位裁判点赞';
+      button.setAttribute('aria-label', `点赞${button.dataset.refereeName}，${likes.counts[id] ?? '尚未加载'}个赞，可再次点赞`);
+      button.title = pending ? '正在保存点赞' : '为这位裁判点赞，可重复点击';
       button.innerHTML = `${thumb}<span>${pending ? '…' : likes.counts[id] ?? '—'}</span>`;
     });
     const message = document.getElementById('referee-likes-status');
-    if (message) message.textContent = likes.error || (likes.loading ? '正在加载点赞…' : '共享点赞 · 每位访客可为每位裁判点赞一次');
+    if (message) message.textContent = likes.error || (likes.loading ? '正在加载点赞…' : '共享点赞 · 可重复点赞，每次点击增加一个赞');
     const retry = document.querySelector('[data-referee-likes-retry]');
     if (retry) retry.hidden = !likes.error || likes.loading;
   }
@@ -231,17 +254,18 @@
       const result = await requestLikes({ action: 'list' });
       if (!result.counts || !Array.isArray(result.liked)) throw new Error('Invalid response');
       likes.counts = result.counts; likes.mine = new Set(result.liked); likes.loaded = true; likes.fetchedAt = Date.now();
-    } catch { likes.error = '点赞暂时不可用，请稍后重试。'; }
+    } catch (error) { likes.error = error.message === '登录状态已过期，请重新登录后重试。' ? error.message : '点赞暂时不可用，请稍后重试。'; }
     finally { likes.loading = false; updateLikeButtons(); }
   }
   async function likeReferee(id) {
-    if (!likes.loaded || likes.mine.has(id) || likes.pending.has(id)) return;
+    if (!likes.loaded || likes.pending.has(id)) return;
+    if (!likes.requests.has(id)) likes.requests.set(id, crypto.randomUUID());
     likes.pending.add(id); likes.error = ''; updateLikeButtons();
     try {
-      const result = await requestLikes({ action: 'like', refereeId: id });
+      const result = await requestLikes({ action: 'like', refereeId: id, requestId: likes.requests.get(id) });
       if (result.refereeId !== id || !Number.isSafeInteger(result.count) || result.count < 1 || result.liked !== true) throw new Error('Invalid response');
-      likes.counts[id] = result.count; likes.mine.add(id);
-    } catch { likes.error = '点赞未能确认保存，请重试；重复请求不会重复计数。'; }
+      likes.counts[id] = result.count; likes.mine.add(id); likes.requests.delete(id);
+    } catch (error) { likes.error = error.message === '登录状态已过期，请重新登录后重试。' ? error.message : '点赞未能确认保存，请重试；重复请求不会重复计数。'; }
     finally { likes.pending.delete(id); updateLikeButtons(); }
   }
   const escape = value => String(value).replace(/[&<>"']/g, char => ({

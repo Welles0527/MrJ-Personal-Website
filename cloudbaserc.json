@@ -12,7 +12,7 @@
       "handler": "index.main",
       "timeout": 15,
       "memorySize": 128,
-      "description": "Shared snooker referee likes; one vote per authenticated or anonymous caller and referee."
+      "description": "Shared snooker referee likes; repeat clicks count, retries of the same click are idempotent."
     },
     {
       "name": "home-visits",
