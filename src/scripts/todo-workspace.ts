@@ -2392,6 +2392,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
   loginModal.addEventListener('cancel', (event) => event.preventDefault());
 
   let initialisingCloud = false;
+  let reauthenticateAfterInitialisation = false;
   const initialiseCloud = async () => {
     if (initialisingCloud) return;
     initialisingCloud = true;
@@ -2424,6 +2425,7 @@ export function mountTodoWorkspace(root: HTMLElement) {
       showLogin(error instanceof Error ? error.message : '无法连接云端服务，请检查网络后重试。');
     } finally {
       initialisingCloud = false;
+      if (reauthenticateAfterInitialisation) { reauthenticateAfterInitialisation = false; void initialiseCloud(); }
     }
   };
 
@@ -2466,8 +2468,15 @@ export function mountTodoWorkspace(root: HTMLElement) {
   }, 30_000);
   window.addEventListener('site-auth-change', (event) => {
     const nextSession = (event as CustomEvent<CloudSession | null>).detail;
-    if (nextSession?.uid === cloudSession?.uid) return;
-    if (!cloudSession && nextSession && initialisingCloud) return;
+    const reauthenticated = Boolean((nextSession as (CloudSession & { reauthenticated?: boolean }) | null)?.reauthenticated);
+    if (nextSession?.uid === cloudSession?.uid) {
+      if (reauthenticated && !syncRetryButton.hidden) refreshWhenActive();
+      return;
+    }
+    if (!cloudSession && nextSession && initialisingCloud) {
+      if (reauthenticated) reauthenticateAfterInitialisation = true;
+      return;
+    }
     closeCloudWatcher();
     cloudSession = null;
     state.todos = [];

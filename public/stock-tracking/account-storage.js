@@ -239,10 +239,15 @@
     return { ...syncStatus };
   }
 
-  const registerAccount = () => window.MagicJAccount?.register({
-    beforeLeave: flushCloudWrites,
-    sync: async () => { await cloudWriteQueue; const result = await sync(); if (result.mode !== 'cloud') throw new Error(result.error || '股票云端同步未完成'); }
-  });
+  const registerAccount = () => {
+    // Other pages import this storage helper for read-only investment views.
+    // Only the stock editor owns its pending-write guard and account sync action.
+    if (!/\/stock-tracking(?:\/(?:index\.html)?)?$/.test(location.pathname)) return;
+    window.MagicJAccount?.register({
+      beforeLeave: flushCloudWrites,
+      sync: async () => { await cloudWriteQueue; const result = await sync(); if (result.mode !== 'cloud') throw new Error(result.error || '股票云端同步未完成'); }
+    });
+  };
   window.addEventListener('magicj-account-ready', registerAccount); registerAccount();
   window.StockTrackingAccountStorage = {
     getAccount,

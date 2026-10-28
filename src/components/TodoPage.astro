@@ -467,7 +467,13 @@ const navItems: NavItem[] = [
       if (document.documentElement.classList.contains('calendar-week-mode')) {
         const sessionKey = 'mywebsite.site-auth-session.v1';
         window.addEventListener('storage', event => {
-          if (event.key === null || (event.key === sessionKey && event.newValue !== event.oldValue)) location.reload();
+          if (event.key === null) { location.reload(); return; }
+          if (event.key !== sessionKey || event.newValue === event.oldValue) return;
+          try {
+            const before = JSON.parse(event.oldValue || 'null'), after = JSON.parse(event.newValue || 'null');
+            if (before?.uid && before.uid === after?.uid) return;
+          } catch { /* A malformed account hint requires a clean identity check. */ }
+          location.reload();
         });
         window.addEventListener('message', event => {
           if (event.origin === location.origin && event.source === window.parent && event.data?.type === 'calendar-week-sync') {

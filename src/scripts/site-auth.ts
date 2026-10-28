@@ -55,6 +55,7 @@ const ENV_ID = 'magicj-web-d5g9yvowj6862f7a2';
 const SESSION_KEY = 'mywebsite.site-auth-session.v1';
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const LOGIN_DEADLINE_KEY = 'mywebsite.site-auth-deadline.v1';
+const CREDENTIALS_VERSION_KEY = 'mywebsite.site-auth-credentials-version.v1';
 const app = cloudbase.init({ env: ENV_ID });
 const auth = app.auth({ persistence: 'local' });
 const db = app.database();
@@ -86,20 +87,20 @@ const readRememberedSession = (): RememberedSession | null => {
 
 let knownSession: CloudSession | null = readRememberedSession();
 
-const rememberSession = (session: CloudSession) => {
+const rememberSession = (session: CloudSession, reauthenticated = false) => {
   const changed = knownSession?.uid !== session.uid || knownSession.account !== session.account;
   const remembered = readRememberedSession();
   try {
-    if (changed || !remembered || remembered.expiresAt <= Date.now()) {
+    if (reauthenticated || changed || !remembered || remembered.expiresAt <= Date.now()) {
       window.localStorage.setItem(SESSION_KEY, JSON.stringify({ ...session, expiresAt: Date.now() + SESSION_TTL_MS }));
     }
   } catch {
     // This cache is only a display hint. CloudBase owns session validity and renewal.
   }
   knownSession = session;
-  if (changed) {
+  if (changed || reauthenticated) {
     sessionRevision += 1;
-    window.dispatchEvent(new CustomEvent('site-auth-change', { detail: session }));
+    window.dispatchEvent(new CustomEvent('site-auth-change', { detail: reauthenticated ? { ...session, reauthenticated: true } : session }));
   }
 };
 
@@ -199,12 +200,15 @@ export const getCloudSession = (): Promise<CloudSession | null> => {
           sessionData = assertCloudResult(await auth.getSession() as CloudResult<CloudSessionResult>, '无法核实登录状态。');
         } catch (error) {
           if (revisionAtStart !== sessionRevision || explicitlySignedOut) return null;
-          if (revokedSessionCredentials(error)) throw loginRequired();
-          const missingCredentials = missingSessionCredentials(error);
-          if (missingCredentials && !readRememberedSession()) return null;
-          if (!missingCredentials) {
-            if (!/token_expired|access_token_expired/i.test(String((error as { code?: string })?.code))) throw error;
+          if (revokedSessionCredentials(error)) {
             sessionData = await renewCloudSession();
+          } else {
+            const missingCredentials = missingSessionCredentials(error);
+            if (missingCredentials && !readRememberedSession()) return null;
+            if (!missingCredentials) {
+              if (!/token_expired|access_token_expired/i.test(String((error as { code?: string })?.code))) throw error;
+              sessionData = await renewCloudSession();
+            }
           }
         }
         if (revisionAtStart !== sessionRevision || explicitlySignedOut) return null;
@@ -279,7 +283,8 @@ export const signInWithPassword = async (email: string, password: string) => {
     ? sessionFromCurrentUser(loginData?.user || authenticatedSession.user, authenticatedSession)
     : await getCloudSession();
   if (!session) throw new Error('登录成功，但未取得登录会话。请重试。');
-  rememberSession(session);
+  rememberSession(session, true);
+  try { window.localStorage.setItem(CREDENTIALS_VERSION_KEY, `${Date.now()}:${Math.random()}`); } catch { /* Same-document recovery still works without storage. */ }
   return session;
 };
 
@@ -326,8 +331,8 @@ export const signOut = async () => {
 
 // Static pages can contain more than one built entry. Share explicit sign-in/out in the same document too.
 window.addEventListener('site-auth-change', (event) => {
-  const next = (event as CustomEvent<CloudSession | null>).detail;
-  if ((next?.uid || null) === (knownSession?.uid || null) && Boolean(next) !== explicitlySignedOut) return;
+  const next = (event as CustomEvent<(CloudSession & { reauthenticated?: boolean }) | null>).detail;
+  if (!next?.reauthenticated && (next?.uid || null) === (knownSession?.uid || null) && Boolean(next) !== explicitlySignedOut) return;
   knownSession = next || null;
   explicitlySignedOut = !next;
   sessionRevision += 1;
@@ -335,6 +340,12 @@ window.addEventListener('site-auth-change', (event) => {
 });
 
 window.addEventListener('storage', (event) => {
+  if (event.key === CREDENTIALS_VERSION_KEY && event.newValue !== event.oldValue) {
+    sessionRevision += 1; sessionCheck = null; explicitlySignedOut = false;
+    // The signal contains no identity or token. Only the SDK may verify the new credentials.
+    void getCloudSession().then(session => { if (session) rememberSession(session, true); }).catch(() => undefined);
+    return;
+  }
   if (event.key !== null && event.key !== SESSION_KEY) return;
   const remembered = readRememberedSession();
   if (remembered?.uid === knownSession?.uid && remembered?.account === knownSession?.account) return;

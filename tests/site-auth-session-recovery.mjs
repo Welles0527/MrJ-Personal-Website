@@ -9,7 +9,7 @@ const code = ts.transpileModule(fs.readFileSync(new URL('../src/scripts/site-aut
 const valid = () => ({ data: { session: { sub: 'owner', user: { id: 'owner', email: 'owner@example.test' }, expires_at: Date.now() / 1000 + 3600 } } });
 function setup(overrides = {}, remembered = true) {
   const cache = new Map(remembered ? [['mywebsite.site-auth-session.v1', JSON.stringify({ uid: 'owner', account: 'owner@example.test', expiresAt: Date.now() + 3600000 })]] : []);
-  const events = [], calls = { read: 0, refresh: 0 };
+  const events = [], listeners = {}, calls = { read: 0, refresh: 0 };
   const auth = {
     getSession: async () => { calls.read++; return overrides.read ? overrides.read(calls.read) : { data: { session: null } }; },
     refreshSession: async () => { calls.refresh++; return overrides.refresh ? overrides.refresh() : Promise.reject(new TypeError("Cannot read properties of null (reading 'refresh_token')")); },
@@ -20,10 +20,10 @@ function setup(overrides = {}, remembered = true) {
   vm.runInNewContext(code, { module, exports: module.exports, require: () => ({ default: { init: () => ({ auth: () => auth, database: () => ({}) }) } }),
     Date, Promise, setTimeout, clearTimeout, setInterval: () => 0, navigator: {},
     document: { addEventListener() {}, visibilityState: 'visible' },
-    window: { localStorage: { getItem: k => cache.get(k) ?? null, setItem: (k, v) => cache.set(k, v), removeItem: k => cache.delete(k) }, addEventListener() {}, dispatchEvent: e => events.push(e) },
+    window: { localStorage: { getItem: k => cache.get(k) ?? null, setItem: (k, v) => cache.set(k, v), removeItem: k => cache.delete(k) }, addEventListener: (name, fn) => (listeners[name] ||= []).push(fn), dispatchEvent: e => { events.push(e); for (const fn of listeners[e.type] || []) fn(e); } },
     CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options?.detail; } }
   });
-  return { api: module.exports, calls, cache, events, auth };
+  return { api: module.exports, calls, cache, events, auth, listeners };
 }
 {
   const t = setup();
@@ -100,3 +100,32 @@ console.log('PASS SDK Date/ISO/second/millisecond expiry and recoverable empty-s
   assert.equal(await t.api.getCloudSession(),null);
   console.log('PASS 30-day absolute deadline and expiry');
 }
+
+{
+  const t = setup({ read: valid });
+  await t.api.getCloudSession();
+  const before = t.events.length;
+  await t.api.signInWithPassword('owner@example.test', 'fixture');
+  assert.ok(t.events.slice(before).some(e => e.type === 'site-auth-change' && e.detail?.uid === 'owner'), 'same-account reauthentication must notify existing page components without prior logout');
+  assert.ok(t.cache.has('mywebsite.site-auth-credentials-version.v1'), 'successful reauthentication must notify other same-origin frames');
+}
+{
+  const t = setup({ read: () => { throw Object.assign(new Error('stale SDK session'), { code: 'invalid_grant' }); }, refresh: valid });
+  assert.equal((await t.api.getCloudSession()).uid, 'owner', 'one SDK renewal must be attempted before treating a read failure as terminal');
+  assert.equal(t.calls.refresh, 1);
+}
+
+{
+  const t = setup({ read: valid });
+  await t.api.getCloudSession();
+  t.listeners.storage[0]({key:'mywebsite.site-auth-credentials-version.v1',oldValue:'before',newValue:'after'});
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert.ok(t.events.some(e => e.detail?.reauthenticated), 'another frame must verify SDK credentials and notify same-account recovery');
+}
+{
+  const t = setup({ read: () => { throw Object.assign(new Error('revoked'), { code:'invalid_grant' }); }, refresh: () => { throw Object.assign(new Error('revoked'), { code:'invalid_grant' }); } });
+  await assert.rejects(t.api.getCloudSession(), e => e.code==='SITE_AUTH_REQUIRED');
+  assert.equal(t.calls.refresh,1,'genuinely revoked credentials stop after one renewal');
+  assert.equal(t.events.length,0,'remembered identity must not authorize a revoked session');
+}
+console.log('PASS same-account notification, cross-frame credential verification, guarded renewal and genuine revocation');
