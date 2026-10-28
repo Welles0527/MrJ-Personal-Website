@@ -39,6 +39,8 @@
 const KEY='mrj-idea-studio-v1',TREE_KEY='mrj-idea-studio-tree-v1';
 const $=id=>document.getElementById(id),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let items=[],studioReady=false;
+function studioUnavailableMessage(){const status=$('syncStatus').textContent.trim();if(status.includes('正在保存'))return '正在保存到云端，请稍候再编辑';if(status.includes('正在同步'))return '正在读取最新云端数据，请稍候再编辑';if(status.startsWith('同步失败')||status.startsWith('未保存'))return status+'；请点击同步后重试';if(status.includes('账号已改变'))return status;return $('studioAccount').textContent.trim()==='登录'?'请先登录账号':'云端尚未就绪，请点击同步后重试'}
+
 const defaults=['主页功能','超级日历','学习与阅读','游戏与卡通','视频','其他'];
 const categoryShapes={
  light:['灵感','<path d="M9 18h6m-5 3h4M8 14a6 6 0 1 1 8 0c-1 1-1 2-1 3H9c0-1 0-2-1-3Z"/>'],
@@ -169,11 +171,11 @@ $('markerMenu').innerHTML=Object.entries(markerColors).map(([key,color])=>'<butt
 $('markerMenu').innerHTML='<div class="marker-stars">'+$('markerMenu').innerHTML+'</div><section class="context-paint"><div class="context-paint-heading"><span>任务背景</span><select id="contextPalette" aria-label="任务背景配色方案">'+Object.entries(mapPalettes).map(([id,palette])=>'<option value="'+id+'">'+palette.name+'</option>').join('')+'</select></div><div id="contextColorSwatches" class="context-color-swatches"></div><div class="context-custom-color"><label>自选<input type="color" id="contextNodeColor" aria-label="右键任务背景颜色"></label><button type="button" id="contextColorReset">跟随层级</button></div></section>';
 function contextColorChoices(){const node=getNode(markedNode),theme=$('contextPalette').value;if(!node)return;$('contextColorSwatches').innerHTML=mapPalettes[theme].colors.map(color=>'<button type="button" data-context-color="'+color+'" aria-label="任务背景 '+color+'" aria-pressed="'+(node.color===color)+'" style="background:'+color+'"></button>').join('');$('contextNodeColor').value=mapColor(node)}
 function prepareContextColors(node){$('contextPalette').value=rootFor(node)?.palette?.theme||'gray';contextColorChoices()}
-function saveContextColor(color){if(!studioReady){toast('请先登录并同步账号');return}const node=getNode(markedNode);if(!node)return;if(color)node.color=color;else delete node.color;closeMarkerMenu();persist('修改单项配色前')}
+function saveContextColor(color){if(!studioReady){toast(studioUnavailableMessage());return}const node=getNode(markedNode);if(!node)return;if(color)node.color=color;else delete node.color;closeMarkerMenu();persist('修改单项配色前')}
 $('contextPalette').onchange=contextColorChoices;$('contextNodeColor').onchange=e=>{if(isMapColor(e.target.value))saveContextColor(e.target.value)};$('contextColorReset').onclick=()=>saveContextColor(null);
 function closeMarkerMenu(){const menu=$('markerMenu');menu.classList.add('hidden');menu.classList.remove('is-context');menu.style.left='';menu.style.top='';document.querySelector('.marker-control').append(menu);$('markerToggle').setAttribute('aria-expanded','false')}
 $('markerToggle').onclick=()=>{const open=$('markerMenu').classList.toggle('hidden')===false;$('markerToggle').setAttribute('aria-expanded',String(open))};
-$('markerMenu').onclick=e=>{const color=e.target.closest('[data-context-color]');if(color){saveContextColor(color.dataset.contextColor);return}const button=e.target.closest('[data-marker]');if(!button)return;if(!studioReady){toast('请先登录并同步账号');closeMarkerMenu();return}const node=getNode(markedNode);if(!node){toast('请先点击要标记的脑图节点');return}if(button.dataset.marker)node.marker=button.dataset.marker;else delete node.marker;closeMarkerMenu();persist()};
+$('markerMenu').onclick=e=>{const color=e.target.closest('[data-context-color]');if(color){saveContextColor(color.dataset.contextColor);return}const button=e.target.closest('[data-marker]');if(!button)return;if(!studioReady){toast(studioUnavailableMessage());closeMarkerMenu();return}const node=getNode(markedNode);if(!node){toast('请先点击要标记的脑图节点');return}if(button.dataset.marker)node.marker=button.dataset.marker;else delete node.marker;closeMarkerMenu();persist()};
 document.addEventListener('click',e=>{if(!e.target.closest('.marker-control,#markerMenu'))closeMarkerMenu()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMarkerMenu()});
 $('board').addEventListener('pointerdown',e=>{const element=e.target.closest('[data-node],[data-mark-node]');if(!element)return;const id=element.dataset.node||element.dataset.markNode;setNodeSelection(id,{preserve:e.button===2&&selectedNodes.has(id)})});
@@ -280,7 +282,7 @@ window.InspirationStudioStore.setReady(false);
 $('studioImport').onclick=()=>{if(!studioReady||items.length||bookmarks.length)return;$('studioImportAccount').textContent='导入到：'+$('studioAccount').textContent;$('studioImportDialog').showModal()};
 $('studioImportCancel').onclick=()=>$('studioImportDialog').close();
 $('studioImportConfirm').onclick=()=>{if(!studioReady||items.length||bookmarks.length)return;try{const data={items:JSON.parse(localStorage.getItem(KEY)||'[]'),tree:JSON.parse(localStorage.getItem(TREE_KEY)||'[]'),bookmarks:JSON.parse(localStorage.getItem(BOOKMARK_KEY)||'[]')};window.InspirationStudioStore.replace(data);$('studioImportDialog').close();window.dispatchEvent(new Event('inspiration-studio-change'))}catch{toast('旧数据格式异常，未导入')}};
-document.addEventListener('click',e=>{if(!studioReady&&e.target.closest('[data-toggle],[data-edit],[data-edit-branch],[data-add-parent],[data-bookmark-edit],#confirmDelete,#deleteBookmark,#confirmBookmarkDelete')){e.preventDefault();e.stopImmediatePropagation();toast('请先登录并同步账号')}},true);
+document.addEventListener('click',e=>{if(!studioReady&&e.target.closest('[data-toggle],[data-edit],[data-edit-branch],[data-add-parent],[data-bookmark-edit],#confirmDelete,#deleteBookmark,#confirmBookmarkDelete')){e.preventDefault();e.stopImmediatePropagation();toast(studioUnavailableMessage())}},true);
 document.addEventListener('submit',e=>{if(!studioReady&&['form','bookmarkForm'].includes(e.target.id)){e.preventDefault();e.stopImmediatePropagation()}},true);
 </script><script>
 (function(){
