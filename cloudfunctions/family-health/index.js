@@ -48,7 +48,7 @@ exports.createHandler = (db, getIdentity) => async (event = {}) => {
     const wanted = refs(snapshot.state), seen = new Set();
     if (wanted.size !== snapshot.files.length) fail('MISSING_FILE');
     for (const file of snapshot.files) {
-      if (!wanted.has(file.id) || seen.has(file.id) || typeof file.name !== 'string' || file.name.length > 500 || !['image/jpeg','image/png','image/webp','application/pdf'].includes(file.type) || !Number.isSafeInteger(file.size) || file.size <= 0 || file.size > 10 * 1024 * 1024 || !Array.isArray(file.chunks) || file.chunks.length !== Math.ceil(file.size / CHUNK)) fail('INVALID_FILE');
+      if (!wanted.has(file.id) || seen.has(file.id) || typeof file.name !== 'string' || file.name.length > 500 || !['image/jpeg','image/png','image/webp','application/pdf','application/msword','application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'].includes(file.type) || !Number.isSafeInteger(file.size) || file.size <= 0 || file.size > 10 * 1024 * 1024 || !Array.isArray(file.chunks) || file.chunks.length !== Math.ceil(file.size / CHUNK)) fail('INVALID_FILE');
       seen.add(file.id);
       let size = 0;
       for (let i = 0; i < file.chunks.length; i++) {
