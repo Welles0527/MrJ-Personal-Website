@@ -14,7 +14,8 @@
         existing = await auth.getSession?.();
         if (existing?.error) throw new Error(existing.error.message || 'CloudBase session unavailable');
       } catch (error) {
-        if (hasPersonalAccount() || !/credentials not found/i.test(error?.message || '')) throw error;
+        // This SDK also reports a fresh visitor's missing credentials as a null scope.
+        if (hasPersonalAccount() || !/credentials not found|Cannot read properties of null \(reading 'scope'\)|null is not an object.*scope/i.test(error?.message || '')) throw error;
       }
       const existingToken = existing?.data?.session?.access_token;
       if (existingToken) return existingToken;
