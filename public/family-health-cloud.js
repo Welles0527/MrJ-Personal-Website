@@ -11,7 +11,7 @@
     return ids;
   }
   class FamilyHealthCloud {
-    constructor(auth, uid) { this.auth = auth; this.uid = uid; this.revision = 0; this.files = []; this.busy = false; this.blocked = false; }
+    constructor(auth, uid) { this.auth = auth; this.uid = uid; this.revision = 0; this.files = []; this.busy = false; this.blocked = false; this.fileCache = new Map(); }
     async call(data) {
       const session = await this.auth.getSession();
       if (session?.uid !== this.uid) throw new Error('账号已改变，请重新加载');
@@ -30,16 +30,38 @@
     async file(id, files = this.files) {
       const file = files.find(f => f.id === id);
       if (!file) return undefined;
-      const parts = [];
-      for (const hash of file.chunks) {
-        const result = await this.call({ action: 'chunk-get', hash });
-        const bytes = decode(result.data);
-        if (await digest(bytes) !== hash) throw new Error('附件校验失败，已停止读取');
-        parts.push(bytes);
+      const key = JSON.stringify(file);
+      if (!this.fileCache.has(key)) {
+        const pending = this.fetchFile(file);
+        this.fileCache.set(key, pending);
+        pending.catch(() => this.fileCache.delete(key));
       }
+      const result = await this.fileCache.get(key);
+      if ((await this.auth.getSession())?.uid !== this.uid) throw new Error('账号已改变，请重新加载');
+      return result;
+    }
+    async fetchFile(file) {
+      const parts = new Array(file.chunks.length);
+      let next = 0;
+      await Promise.all(Array.from({ length: Math.min(4, file.chunks.length) }, async () => {
+        while (next < file.chunks.length) {
+          const index = next++, hash = file.chunks[index];
+          const result = await this.call({ action: 'chunk-get', hash });
+          const bytes = decode(result.data);
+          if (await digest(bytes) !== hash) throw new Error('附件校验失败，已停止读取');
+          parts[index] = bytes;
+        }
+      }));
       const blob = new Blob(parts, { type: file.type });
       if (blob.size !== file.size) throw new Error('附件大小不符，已停止读取');
-      return { id, name: file.name, blob };
+      // Bound retained originals; pending requests remain deduplicated while loading.
+      let retained = 0;
+      for (const [key, value] of this.fileCache) {
+        const size = JSON.parse(key).size;
+        retained += size;
+        if (retained > 32 * 1024 * 1024 && JSON.stringify(file) !== key) this.fileCache.delete(key);
+      }
+      return { id: file.id, name: file.name, blob };
     }
     async save(state, changes = []) {
       if (this.busy || this.blocked) throw new Error('请等待同步完成；若上次保存失败，请保留输入并重新加载');
