@@ -425,7 +425,11 @@
   }
 
   const previousRender = render;
+  let inAnnualView = false;
   render = () => {
+    const annualView = state.nav === 'year' && state.view === 'year';
+    const scrollToCurrentMonth = annualView && !inAnnualView && window.matchMedia('(max-width:680px)').matches;
+    inAnnualView = annualView;
     document.querySelector('.redesign-match-dialog')?.remove(); previousRender(); adaptPage();
     document.querySelectorAll('.inline-bracket').forEach(panel => {
       const id = panel.dataset.inlineEventId || panel.querySelector('[data-inline-close]')?.dataset.inlineClose;
@@ -443,6 +447,11 @@
       back.className = 'calendar-back-link';
       breadcrumb.append(back);
     }
+    if (scrollToCurrentMonth) requestAnimationFrame(() => {
+      if (state.nav === 'year' && state.view === 'year' && window.matchMedia('(max-width:680px)').matches) {
+        document.querySelector('.annual > .month-card.current')?.scrollIntoView({ block: 'start', behavior: 'instant' });
+      }
+    });
   };
   document.addEventListener('click', event => {
     const rosterLayout = event.target.closest?.('[data-roster-layout]');
