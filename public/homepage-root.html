@@ -1116,28 +1116,75 @@ html:not(.dark) .mrj-featured .reading-book-pages{background:repeating-linear-gr
     heading.append(hint);
   }
   const storageKey = 'mrj-project-likes';
+  const pendingKey = 'mrj-project-like-pending';
+  const endpoint = '/officialwebsite/api/home-visits?metric=project-likes';
+  const projectIds = ['calendar','travel','bible','funds','tools','resume'];
+  const buttons = [...document.querySelectorAll('.project-like')];
+  const status = document.querySelector('.project-like-hint');
+  if (status) { status.setAttribute('role','status'); status.setAttribute('aria-live','polite'); }
   let liked = {};
+  let pending = {};
+  const counts = {};
+  const busy = new Set();
   try { liked = JSON.parse(localStorage.getItem(storageKey) || '{}') || {}; } catch {}
+  try { pending = JSON.parse(localStorage.getItem(pendingKey) || '{}') || {}; } catch {}
+  if (typeof liked !== 'object' || Array.isArray(liked)) liked = {};
+  if (typeof pending !== 'object' || Array.isArray(pending)) pending = {};
+  const save = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} };
+  const setStatus = text => { if (status) status.textContent = text; };
+  const validCount = value => Number.isSafeInteger(value) && value >= 0;
   const sync = button => {
     const id = button.closest('[data-project]')?.dataset.project;
     if (!id) return;
     const active = Boolean(liked[id]);
     button.setAttribute('aria-pressed', String(active));
     button.querySelector('.project-like-icon').textContent = active ? '♥' : '♡';
-    button.querySelector('.project-like-count').textContent = active ? '1' : '0';
+    button.querySelector('.project-like-count').textContent = validCount(counts[id]) ? String(counts[id]) : '—';
+    button.disabled = busy.has(id);
+    button.setAttribute('aria-busy', String(busy.has(id)));
+    button.title = pending[id] ? '上次点赞尚未确认，点击重试' : '点击为这个项目再加一赞';
   };
-  document.querySelectorAll('.project-like').forEach(button => {
+  const syncAll = () => buttons.forEach(sync);
+  const request = async options => {
+    const response = await fetch(endpoint, { cache:'no-store', signal:AbortSignal.timeout(12000), ...options });
+    if (!response.ok) throw Error('点赞服务暂不可用');
+    return response.json();
+  };
+  const loadCounts = async () => {
+    try {
+      const data = await request();
+      if (!projectIds.every(id => validCount(data.counts?.[id]))) throw Error('Invalid counts');
+      projectIds.forEach(id => { counts[id] = Math.max(counts[id] || 0, data.counts[id]); });
+      syncAll();
+    } catch { setStatus('点赞总数暂不可用，点击爱心可重试'); }
+  };
+  buttons.forEach(button => {
     sync(button);
-    button.addEventListener('click', event => {
+    button.addEventListener('click', async event => {
       event.preventDefault();
       event.stopPropagation();
       const id = button.closest('[data-project]')?.dataset.project;
-      if (!id) return;
-      liked[id] = !liked[id];
-      localStorage.setItem(storageKey, JSON.stringify(liked));
-      sync(button);
+      if (!projectIds.includes(id) || busy.has(id)) return;
+      busy.add(id);
+      try {
+        const requestId = pending[id] || crypto.randomUUID();
+        pending[id] = requestId;
+        save(pendingKey, pending);
+        syncAll();
+        const data = await request({ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ projectId:id, requestId }) });
+        if (data.projectId !== id || !validCount(data.count)) throw Error('Invalid count');
+        counts[id] = Math.max(counts[id] || 0, data.count);
+        liked[id] = true;
+        delete pending[id];
+        save(pendingKey, pending);
+        save(storageKey, liked);
+        setStatus('请点赞你喜欢的项目');
+      } catch { setStatus('点赞尚未确认，请再次点击爱心重试'); }
+      finally { busy.delete(id); syncAll(); }
     });
   });
+  loadCounts();
+  window.addEventListener('focus', loadCounts);
 })();
 </script>
 <script src="/officialwebsite/project-previews.js" defer></script>
