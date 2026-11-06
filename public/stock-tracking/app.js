@@ -85,6 +85,7 @@
   const state = {
     selectedStockId: requestedStockId || data?.stocks?.[0]?.id || "",
     viewMode: VIEW_MODES.includes(requestedView) ? requestedView : "dashboard",
+    dashboardNavOpen: false,
     activeGroup: requestedGroup,
     query: "",
     dailyStockQuery: "",
@@ -163,6 +164,18 @@
       if (event.key !== THEME_KEY && event.key !== null) return;
       document.documentElement.dataset.theme = event.newValue === "dark" ? "dark" : "paper";
       render();
+    });
+    root.addEventListener("keydown", event => {
+      if (state.viewMode !== "dashboard" || !state.dashboardNavOpen || !window.matchMedia("(max-width: 620px)").matches || state.authMode) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        root.querySelector('[data-action="close-dashboard-nav"]')?.click();
+      } else if (event.key === "Tab") {
+        const buttons = [...root.querySelectorAll('.workspace-nav button:not(:disabled)')].filter(button => button.getClientRects().length);
+        const first = buttons[0], last = buttons[buttons.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+      }
     });
     root.addEventListener("click", handleClick);
     root.addEventListener("input", handleInput);
@@ -1004,6 +1017,9 @@
   }
 
   function render() {
+    const active = document.activeElement;
+    const drawerFocus = state.viewMode === "dashboard" && state.dashboardNavOpen && root.querySelector(".workspace-nav")?.contains(active)
+      ? { action: active.dataset.action, view: active.dataset.view } : null;
     const stock = selectedStock();
     const fullWidthView = ["technical", "score-matrix", "market"].includes(state.viewMode);
     document.title = state.viewMode === "dashboard" ? "实时看板 - A股个股跟踪" : state.viewMode === "score-matrix"
@@ -1022,10 +1038,10 @@
             ? "AI选股 - A股个股跟踪"
             : "A股个股跟踪";
     const workspaceMarkup = `
-      <style>@media(max-width:720px){.dashboard-layout{display:flex!important;flex-direction:column}.dashboard-layout>.workspace-nav{order:0}.dashboard-layout>.tracking-main{order:1}.dashboard-layout>aside.watchlist{order:2}}</style>
       <div class="tracking-layout ${state.viewMode === "dashboard" ? "dashboard-layout" : ""} ${state.viewMode === "ai-selection" ? "ai-selection-layout" : ""} ${state.viewMode === "daily" ? "daily-noir-layout" : ""}">
+        ${state.viewMode === "dashboard" ? `<button class="dashboard-nav-toggle" type="button" data-action="toggle-dashboard-nav" aria-controls="dashboard-page-navigation" aria-expanded="${state.dashboardNavOpen}">${icon("all")}<span>页面导航</span></button><button class="dashboard-nav-backdrop" type="button" data-action="close-dashboard-nav" aria-label="关闭页面导航" tabindex="-1"></button>` : ""}
         ${renderWorkspaceNav(stock)}
-        ${state.viewMode === "market" ? "" : renderSidebar(stock)}
+        ${["dashboard", "market"].includes(state.viewMode) ? "" : renderSidebar(stock)}
         <main class="tracking-main ${fullWidthView ? "technical-main" : ""} ${state.viewMode === "score-matrix" ? "score-matrix-main" : ""} ${state.viewMode === "operation-advice" ? "operation-advice-main" : ""}">
           ${state.viewMode === "dashboard" ? `<section aria-label="实时看板"><iframe id="realtime-dashboard" title="A股实时走势及账号自选" src="../stock-dashboard.html?embedded=1" style="width:100%;height:1050px;border:0;display:block;border-radius:12px;background:#faf5eb"></iframe></section>` : ""}
           ${state.viewMode === "stock" ? renderStockView(stock) : ""}
@@ -1043,11 +1059,12 @@
     if (state.viewMode === "dashboard" && root.querySelector("#realtime-dashboard")) {
       const template = document.createElement("template");
       template.innerHTML = workspaceMarkup;
-      for (const selector of [".workspace-nav", "aside.watchlist", "#stock-auth-overlay"]) {
+      for (const selector of [".workspace-nav", ".dashboard-nav-toggle", ".dashboard-nav-backdrop", "aside.watchlist", "#stock-auth-overlay"]) {
         const current = root.querySelector(selector), next = template.content.querySelector(selector);
         if (current && next) current.replaceWith(next);
       }
     } else root.innerHTML = workspaceMarkup;
+    root.querySelector(".dashboard-layout")?.classList.toggle("dashboard-nav-open", state.dashboardNavOpen);
     syncDashboardContext();
     syncUrl();
     if (state.viewMode === "technical") technicalPage?.mount(root, stock);
@@ -1059,6 +1076,10 @@
     }
     applyPaperCharts();
     keepSelectedWorkspaceTabVisible();
+    if (drawerFocus) {
+      const previous = [...root.querySelectorAll(".workspace-nav button[data-action]")].find(button => !button.disabled && button.dataset.action === drawerFocus.action && button.dataset.view === drawerFocus.view);
+      (previous || root.querySelector(".workspace-tab.selected"))?.focus({ preventScroll: true });
+    }
   }
 
   function analysisWorkspaceView() {
@@ -1066,6 +1087,7 @@
   }
 
   function keepSelectedWorkspaceTabVisible() {
+    if (state.viewMode === "dashboard") return;
     const tabs = root.querySelector(".workspace-tabs");
     const selected = tabs?.querySelector(".workspace-tab.selected");
     if (!tabs || !selected) return;
@@ -1091,17 +1113,19 @@
       ["ai-selection", "ai", "AI选股"]
     ];
     return `
-      <header class="workspace-nav" aria-label="个股投资主导航">
+      <header class="workspace-nav" ${state.viewMode === "dashboard" ? 'id="dashboard-page-navigation"' : ""} aria-label="个股投资主导航">
         <button class="workspace-mark" type="button" data-action="select-view" data-view="dashboard" aria-label="返回实时看板">
           ${icon("all")}
         </button>
+        ${state.viewMode === "dashboard" ? `<button class="dashboard-nav-close" type="button" data-action="close-dashboard-nav" aria-label="关闭页面导航">${icon("remove")}</button>` : ""}
         <nav class="workspace-tabs" aria-label="功能页面">
           ${views.map(([view, iconName, label]) => `
             <button class="workspace-tab ${state.viewMode === view ? "selected" : ""}" type="button"
-              data-action="select-view" data-view="${view}" aria-pressed="${state.viewMode === view}">
+              data-action="select-view" data-view="${view}" aria-pressed="${state.viewMode === view}" aria-label="${label}" title="${label}">
               ${icon(iconName)}<span>${label}</span>
             </button>`).join("")}
         </nav>
+        ${state.viewMode === "dashboard" ? renderSharedAccount() : ""}
         <div class="workspace-actions">
           <button class="workspace-theme" type="button" data-action="toggle-theme" aria-label="切换为${isPaperTheme() ? "暗色" : "浅色"}主题" title="切换为${isPaperTheme() ? "暗色" : "浅色"}主题">
             ${icon(isPaperTheme() ? "sun" : "moon")}<span>${isPaperTheme() ? "浅色" : "暗色"}</span>
@@ -2243,6 +2267,7 @@
       signOutSharedAccount();
       return;
     } else if (action === "select-view") {
+      state.dashboardNavOpen = false;
       state.viewMode = target.dataset.view;
       resetForNavigation();
       refreshDailyAfterRender = watchlistAggregateView();
@@ -2337,6 +2362,8 @@
     } else if (action === "set-daily-stock") {
       state.filters.stock = target.dataset.stockId || "all";
       state.dailyStockQuery = "";
+    } else if (action === "toggle-dashboard-nav" || action === "close-dashboard-nav") {
+      state.dashboardNavOpen = action === "toggle-dashboard-nav" && !state.dashboardNavOpen;
     } else if (action === "toggle-theme") {
       const theme = isPaperTheme() ? "dark" : "paper";
       document.documentElement.dataset.theme = theme;
@@ -2378,6 +2405,7 @@
     render();
     focusEditorIfNeeded();
     if (action === "toggle-theme") root.querySelector('[data-action="toggle-theme"]')?.focus({ preventScroll: true });
+    if (action === "toggle-dashboard-nav" || action === "close-dashboard-nav") root.querySelector(state.dashboardNavOpen ? '#dashboard-page-navigation .workspace-tab.selected' : '.dashboard-nav-toggle')?.focus({ preventScroll: true });
     if (refreshCodeAfterRender) {
       refreshAllInformation({
         silent: true,
