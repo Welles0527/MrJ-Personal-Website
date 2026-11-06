@@ -35,7 +35,7 @@
       })
     : null;
   const aiSelectionProvider = window.AIStockSelectionProvider || null;
-  const VIEW_MODES = ["stock", "daily", "calendar", "market", "macro", "technical", "score-matrix", "operation-advice", "ai-selection"];
+  const VIEW_MODES = ["dashboard", "stock", "daily", "calendar", "market", "macro", "technical", "score-matrix", "operation-advice", "ai-selection"];
   const stockGroups = [
     { id: "all", title: "全部动态", icon: "all", categories: [MESSAGE_CATEGORY.INDUSTRY, MESSAGE_CATEGORY.COMPANY], size: "primary" },
     { id: "industry", title: "行业大事件", icon: "globe", categories: [MESSAGE_CATEGORY.INDUSTRY], size: "secondary" },
@@ -80,7 +80,7 @@
     : legacyGroupMap[requestedCategory] || "all";
   const state = {
     selectedStockId: requestedStockId || data?.stocks?.[0]?.id || "",
-    viewMode: VIEW_MODES.includes(requestedView) ? requestedView : "stock",
+    viewMode: VIEW_MODES.includes(requestedView) ? requestedView : "dashboard",
     activeGroup: requestedGroup,
     query: "",
     dailyStockQuery: "",
@@ -119,6 +119,7 @@
   let completeEmailSignUp;
   let accountSyncPromise = null;
   const refreshTimers = [];
+  let dashboardQuotes = { account: "", stocks: new Map() };
 
   function mount() {
     root = document.getElementById("app");
@@ -139,6 +140,20 @@
     if (window.AIStockSelectionPage) {
       aiSelectionPage = window.AIStockSelectionPage.create(aiSelectionProvider, render);
     }
+    window.addEventListener("message", event => {
+      const frame = root.querySelector("#realtime-dashboard");
+      if (!frame || event.origin !== location.origin || event.source !== frame.contentWindow) return;
+      if (event.data?.type === "dashboard-ready") syncDashboardContext();
+      if (event.data?.type === "dashboard-quotes" && event.data.account === accountStorage.getAccount().key && Array.isArray(event.data.stocks)) {
+        dashboardQuotes = { account: event.data.account, stocks: new Map(event.data.stocks.filter(quote => data.stocks.some(stock => stock.code === quote.id) && (quote.change === null || Number.isFinite(quote.change))).map(quote => [quote.id, quote])) };
+        render();
+      }
+      if (event.data?.type === "dashboard-height" && Number.isFinite(event.data.height)) frame.style.height = Math.max(500, Math.min(15000, event.data.height)) + "px";
+      if (event.data?.type === "dashboard-select" && data.stocks.some(stock => stock.code === event.data.code)) {
+        state.selectedStockId = event.data.code;
+        render();
+      }
+    });
     root.addEventListener("click", handleClick);
     root.addEventListener("input", handleInput);
     root.addEventListener("submit", handleSubmit);
@@ -933,10 +948,18 @@
     if (pendingOptions) refreshAllInformation(pendingOptions);
   }
 
+  function syncDashboardContext() {
+    root.querySelector("#realtime-dashboard")?.contentWindow?.postMessage({
+      type: "dashboard-context", account: accountStorage.getAccount().key,
+      stocks: data.stocks.map(stock => ({ id: stock.code, name: stock.name })),
+      selected: state.selectedStockId
+    }, location.origin);
+  }
+
   function render() {
     const stock = selectedStock();
     const fullWidthView = ["technical", "score-matrix", "market"].includes(state.viewMode);
-    document.title = state.viewMode === "score-matrix"
+    document.title = state.viewMode === "dashboard" ? "实时看板 - A股个股跟踪" : state.viewMode === "score-matrix"
       ? "多周期评分矩阵 - A股个股跟踪"
       : state.viewMode === "operation-advice"
       ? `${stock.name}操作建议 - A股个股跟踪`
@@ -951,11 +974,13 @@
           : state.viewMode === "ai-selection"
             ? "AI选股 - A股个股跟踪"
             : "A股个股跟踪";
-    root.innerHTML = `
-      <div class="tracking-layout ${state.viewMode === "ai-selection" ? "ai-selection-layout" : ""} ${state.viewMode === "daily" ? "daily-noir-layout" : ""}">
+    const workspaceMarkup = `
+      <style>@media(max-width:720px){.dashboard-layout{display:flex!important;flex-direction:column}.dashboard-layout>.workspace-nav{order:0}.dashboard-layout>.tracking-main{order:1}.dashboard-layout>aside.watchlist{order:2}}</style>
+      <div class="tracking-layout ${state.viewMode === "dashboard" ? "dashboard-layout" : ""} ${state.viewMode === "ai-selection" ? "ai-selection-layout" : ""} ${state.viewMode === "daily" ? "daily-noir-layout" : ""}">
         ${renderWorkspaceNav(stock)}
         ${state.viewMode === "market" ? "" : renderSidebar(stock)}
         <main class="tracking-main ${fullWidthView ? "technical-main" : ""} ${state.viewMode === "score-matrix" ? "score-matrix-main" : ""} ${state.viewMode === "operation-advice" ? "operation-advice-main" : ""}">
+          ${state.viewMode === "dashboard" ? `<section aria-label="实时看板"><iframe id="realtime-dashboard" title="A股实时走势及账号自选" src="../stock-dashboard.html?embedded=1" style="width:100%;height:1050px;border:0;display:block;border-radius:12px;background:#faf5eb"></iframe></section>` : ""}
           ${state.viewMode === "stock" ? renderStockView(stock) : ""}
           ${state.viewMode === "daily" ? renderDailyDigestView() : ""}
           ${state.viewMode === "calendar" ? renderCalendarView() : ""}
@@ -967,7 +992,16 @@
           ${state.viewMode === "operation-advice" ? renderOperationAdviceView(stock) : ""}
         </main>
       </div>
-      ${renderAuthModal()}`;
+      <div id="stock-auth-overlay">${renderAuthModal()}</div>`;
+    if (state.viewMode === "dashboard" && root.querySelector("#realtime-dashboard")) {
+      const template = document.createElement("template");
+      template.innerHTML = workspaceMarkup;
+      for (const selector of [".workspace-nav", "aside.watchlist", "#stock-auth-overlay"]) {
+        const current = root.querySelector(selector), next = template.content.querySelector(selector);
+        if (current && next) current.replaceWith(next);
+      }
+    } else root.innerHTML = workspaceMarkup;
+    syncDashboardContext();
     syncUrl();
     if (state.viewMode === "technical") technicalPage?.mount(root, stock);
     if (state.viewMode === "market") marketTechnicalPage?.mount(root, MARKET_INDEX);
@@ -997,6 +1031,7 @@
   function renderWorkspaceNav(stock) {
     const account = accountStorage.getAccount();
     const views = [
+      ["dashboard", "pulse", "实时看板"],
       ["daily", "digest", "今日必读"],
       ["stock", "all", "个股看板"],
       ["calendar", "calendar", "个股日历"],
@@ -1009,7 +1044,7 @@
     ];
     return `
       <header class="workspace-nav" aria-label="个股投资主导航">
-        <button class="workspace-mark" type="button" data-action="select-view" data-view="stock" aria-label="返回个股看板">
+        <button class="workspace-mark" type="button" data-action="select-view" data-view="dashboard" aria-label="返回实时看板">
           ${icon("all")}
         </button>
         <nav class="workspace-tabs" aria-label="功能页面">
@@ -1665,6 +1700,10 @@
   }
 
   function renderStockItem(stock, selected) {
+    if (state.viewMode === "dashboard") {
+      const quote = dashboardQuotes.account === accountStorage.getAccount().key ? dashboardQuotes.stocks.get(stock.code) : null;
+      stock = { ...stock, changePct: quote?.change ?? null, market: "等待实时报价" };
+    }
     const active = stock.id === selected.id && (!watchlistAggregateView() || state.filters.stock !== "all");
     const unread = unreadCount(stock);
     const hasQuote = Number.isFinite(Number(stock.changePct)) && stock.changePct !== null;
@@ -2244,6 +2283,10 @@
       state.filters.stock = target.dataset.stockId || "all";
       state.dailyStockQuery = "";
     } else if (action === "refresh-all") {
+      if (state.viewMode === "dashboard") {
+        root.querySelector("#realtime-dashboard")?.contentWindow?.postMessage({ type: "dashboard-refresh" }, location.origin);
+        return;
+      }
       if (state.viewMode === "operation-advice" && operationAdvicePage) {
         void operationAdvicePage.refresh();
         return;
