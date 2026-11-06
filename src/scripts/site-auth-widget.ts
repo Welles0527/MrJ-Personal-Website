@@ -1,5 +1,6 @@
 import { getCloudSession, getRememberedSession, signOut } from './site-auth';
 import type { CloudSession } from './site-auth';
+import { mountAccountToolbar } from './account-toolbar';
 
 type AuthBlock = {
   root: HTMLElement;
@@ -8,7 +9,6 @@ type AuthBlock = {
   signOut: HTMLButtonElement | null;
 };
 
-const todoLoginUrl = '/officialwebsite/topics/space/planning/todo';
 const sessionStorageKey = 'mywebsite.site-auth-session.v1';
 
 const findBlocks = (root: ParentNode): AuthBlock[] => [...root.querySelectorAll<HTMLElement>('[data-site-auth]')]
@@ -38,6 +38,7 @@ const renderBlocks = (blocks: AuthBlock[], session: CloudSession | null) => {
 export const mountSiteAuthStatus = async (root: ParentNode = document) => {
   const blocks = findBlocks(root);
   if (!blocks.length) return;
+  mountAccountToolbar();
 
   let sessionCheck: Promise<void> | null = null;
   const reconcileSession = () => {
@@ -61,7 +62,8 @@ export const mountSiteAuthStatus = async (root: ParentNode = document) => {
   const remembered = getRememberedSession();
   blocks.forEach((block) => {
     block.status.textContent = remembered ? `已登录：${remembered.account}` : '正在检查登录状态…';
-    if (block.login instanceof HTMLAnchorElement) block.login.href = todoLoginUrl;
+    if (block.login instanceof HTMLAnchorElement) block.login.removeAttribute('href');
+    block.login?.addEventListener('click', event => { event.preventDefault(); window.MagicJAccount?.openLogin(); });
   });
   if (remembered) renderBlocks(blocks, remembered);
 

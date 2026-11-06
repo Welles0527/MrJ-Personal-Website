@@ -49,7 +49,7 @@ const worshipAssets = {
           <button class="side-link" data-nav="library"><span>☷</span>全部歌单</button>
         </nav>
         <div class="source-links"><span>聆听来源</span><a href="https://www.youtube.com/" target="_blank" rel="noreferrer">▶ <b>YouTube</b></a><a href="https://www.bilibili.com/" target="_blank" rel="noreferrer">▣ <b>B站</b></a></div>
-        <div class="account"><div class="avatar" id="accountAvatar">恩</div><div><strong id="accountName">共享主站账号</strong><small id="syncStatus">正在读取主站登录状态…</small></div><a class="account-link" href={accountHref} aria-label="登录或管理主站账号">↗</a></div>
+        <div class="account"><div class="avatar" id="accountAvatar">恩</div><div><strong id="accountName">共享主站账号</strong><small id="syncStatus">正在读取主站登录状态…</small></div><a class="account-link" data-site-auth-login href={accountHref} aria-label="登录或管理主站账号">↗</a></div>
       </aside>
 
       <main id="top">
@@ -199,11 +199,16 @@ const worshipAssets = {
         ? Object.fromEntries(Object.keys(item).sort().map(key => [key, item[key]])) : item);
       let loadedUid: string | null = null;
       let writes = Promise.resolve();
+      const unsavedFields = new Set<string>();
       const getIdentity = async () => {
         identity = await getCloudSession();
         return identity;
       };
       const cloudStore = {
+        async assertClean() {
+          await writes;
+          if (unsavedFields.size) throw new Error('还有未确认保存的诗歌编辑，请先重试保存');
+        },
         get userId() { return identity?.uid || null; },
         get account() { return identity?.account || null; },
         async load(key: string, fallback: unknown) {
@@ -236,9 +241,10 @@ const worshipAssets = {
             const verified = readDocument(await ref.get());
             if ((await getIdentity())?.uid !== account.uid || verified.updatedAt !== payload.updatedAt || canonical(verified[key]) !== canonical(value)) throw new Error('云端保存后回读不一致，请重试');
             status('已保存并回读云端');
+            unsavedFields.delete(key);
           });
           writes = pending.catch(() => {});
-          try { await pending; } catch (error) { status('未保存到云端：' + (error instanceof Error ? error.message : '请求失败')); throw error; }
+          try { await pending; } catch (error) { unsavedFields.add(key); status('未保存到云端：' + (error instanceof Error ? error.message : '请求失败')); throw error; }
         },
       };
       (window as any).worshipCloudStore = cloudStore;

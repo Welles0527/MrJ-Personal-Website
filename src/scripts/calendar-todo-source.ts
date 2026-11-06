@@ -1,6 +1,7 @@
 import { signInWithPassword, signOut } from './site-auth';
 import { getCloudSession, getRememberedSession, loadCloudTodos, watchCloudTodos } from './todo-cloud';
 import type { CloudTodoWatcher } from './todo-cloud';
+import { mountAccountToolbar } from './account-toolbar';
 
 /** Shared account login and read-only Personal Plan bridge for the same-origin calendar. */
 export function mountCalendarTodoSource() {
@@ -71,6 +72,7 @@ export function mountCalendarTodoSource() {
   let ownerId = '';
   let revision = 0;
   let busy = false;
+  const refreshWaiters: (() => void)[] = [];
   let pending = false;
   let stopped = false;
   let debounce: ReturnType<typeof setTimeout> | undefined;
@@ -86,19 +88,33 @@ export function mountCalendarTodoSource() {
     clearTimeout(debounce);
     debounce = setTimeout(() => { void refresh(); }, 200);
   };
-  const refresh = async () => {
-    if (stopped) return;
-    if (busy) { pending = true; return; }
+  const refresh = async (manual = false) => {
+    if (stopped) {
+      if (manual) throw new Error('日历页面已关闭，请重新打开后同步');
+      return;
+    }
+    if (busy) {
+      pending = true;
+      if (manual) {
+        await new Promise<void>(resolve => refreshWaiters.push(resolve));
+        return refresh(true);
+      }
+      return;
+    }
     busy = true;
     const currentRevision = revision;
     try {
       const session = await getCloudSession();
-      if (currentRevision !== revision || stopped) return;
+      if (currentRevision !== revision || stopped) {
+        if (manual) throw new Error('账号状态已变更，请重试同步');
+        return;
+      }
       publishAccount(session);
       if (!session) {
         ownerId = '';
         closeWatcher();
         send('signed-out');
+        if (manual) throw Object.assign(new Error('请先登录'), { code: 'SITE_AUTH_REQUIRED' });
         return;
       }
       if (ownerId !== session.uid) {
@@ -107,7 +123,10 @@ export function mountCalendarTodoSource() {
         send('loading');
       }
       const result = await loadCloudTodos(session.uid);
-      if (currentRevision !== revision || stopped || getRememberedSession()?.uid !== session.uid) return;
+      if (currentRevision !== revision || stopped || getRememberedSession()?.uid !== session.uid) {
+        if (manual) throw new Error('账号状态已变更，请重试同步');
+        return;
+      }
       send('ready', result.todos.filter(todo => !todo.deletedAt && /^\d{4}-\d{2}-\d{2}$/.test(todo.date)).map(todo => ({
         id: todo.id, title: todo.title, date: todo.date, completed: todo.completed,
         important: todo.important, category: todo.category, note: todo.note
@@ -117,10 +136,12 @@ export function mountCalendarTodoSource() {
         closeWatcher();
         send('error');
       });
-    } catch {
+    } catch (error) {
       if (currentRevision === revision && !stopped) { closeWatcher(); send('error'); }
+      if (manual) throw error;
     } finally {
       busy = false;
+      refreshWaiters.splice(0).forEach(resolve => resolve());
       if (pending && !stopped) { pending = false; schedule(); }
     }
   };
@@ -156,5 +177,8 @@ export function mountCalendarTodoSource() {
     closeWatcher();
   });
   showAccount();
+  // This hidden bridge publishes data only. Account operations use the parent page's dialog.
+  mountAccountToolbar();
+  window.MagicJAccount?.register({ sync: () => refresh(true) });
   void refresh();
 }

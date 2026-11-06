@@ -8,6 +8,7 @@ function setCloudReady(ready){cloudReady=ready;document.querySelector('main').in
 let accountSession = null;
 let syncTimer;
 let syncing = false;
+const syncWaiters = [];
 let epoch = 0;
 let basePlans = [];
 let baseRevision = 0;
@@ -250,8 +251,9 @@ function mergePlans(remote,baseline=basePlans,conflictIds=new Map()){
   }
   return [...merged.values()];
 }
-async function syncCloud(){
-  if(syncing || !navigator.onLine)return;
+async function syncCloud(manual=false){
+  if(syncing){if(manual){await new Promise(resolve=>syncWaiters.push(resolve));return syncCloud(true);}return;}
+  if(!navigator.onLine){if(manual)throw new Error('当前离线，尚未同步到云端');return;}
   syncing=true;
   syncStatus('正在同步…');
   let token=epoch;
@@ -311,12 +313,12 @@ async function syncCloud(){
     if(!same(state.plans.filter(p=>!blankPlan(p)),basePlans.filter(p=>!blankPlan(p)))){syncStatus('已保存本地，继续同步最新编辑…');clearTimeout(syncTimer);syncTimer=setTimeout(()=>void syncCloud(),1500);}
     else syncStatus(`已保存到账号云端 · ${new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})}`);
   }catch(error){if(token!==epoch)return;if(error?.code==='SITE_AUTH_REQUIRED'){$('#login-open').hidden=false;$('#login-open').textContent='重新登录';$('#account-name').textContent=`需要重新登录${accountSession?.account?` · ${accountSession.account}`:''}`;}syncStatus(`同步暂不可用，本地编辑已保留。${error instanceof Error?error.message:''}`,true);}
-  finally{syncing=false;}
+  finally{syncing=false;syncWaiters.splice(0).forEach(resolve=>resolve());}
 }
 $('#login-open').onclick=()=>$('#login-dialog').showModal();
 $('#login-cancel').onclick=()=>$('#login-dialog').close();
 $('#login-form').onsubmit=async event=>{event.preventDefault();$('#login-submit').disabled=true;$('#login-error').textContent='';try{await signInWithPassword($('#login-email').value.trim(),$('#login-password').value);$('#login-password').value='';$('#login-dialog').close();await syncCloud();}catch(error){$('#login-error').textContent=error instanceof Error?error.message:'登录失败，请重试';}finally{$('#login-submit').disabled=false;}};
-$('#logout').onclick=async()=>{epoch++;clearTimeout(syncTimer);try{await signOut();switchAccount(null);syncStatus('已退出账号，账号草稿已保留在本机');}catch{syncStatus('退出未完成，请重试',true);}};
+$('#logout').onclick=async()=>{try{await assertCloudClean();epoch++;clearTimeout(syncTimer);await signOut();switchAccount(null);syncStatus('已退出账号，账号草稿已保留在本机');}catch{syncStatus('退出未完成，请重试',true);}};
 $('#sync-now').onclick=()=>void syncCloud();
 window.addEventListener('site-auth-change',()=>{epoch++;clearTimeout(syncTimer);if(!syncing)void syncCloud();else syncTimer=setTimeout(()=>void syncCloud(),500);});
 window.addEventListener('online',()=>void syncCloud());
@@ -343,7 +345,8 @@ setCloudReady(false);
 render();void syncCloud();
 
 async function assertCloudClean(){
-  if(syncing||storageBlocked||!same(state.plans.filter(p=>!blankPlan(p)),basePlans.filter(p=>!blankPlan(p))))throw new Error('有尚未保存到云端的查经编辑，请先同步');
+  if(syncing)await new Promise(resolve=>syncWaiters.push(resolve));
+  if(storageBlocked||!same(state.plans.filter(p=>!blankPlan(p)),basePlans.filter(p=>!blankPlan(p))))throw new Error('有尚未保存到云端的查经编辑，请先同步');
 }
-function registerGroupAccount(){window.MagicJAccount?.register({beforeLeave:assertCloudClean,sync:async()=>{await syncCloud();await assertCloudClean();if($('#save-state').classList.contains('save-error'))throw new Error($('#save-state').textContent);}});}
+function registerGroupAccount(){window.MagicJAccount?.register({beforeLeave:assertCloudClean,sync:async()=>{await syncCloud(true);await assertCloudClean();if(!cloudReady)throw new Error('查经云端读取尚未完成，请重试');if($('#save-state').classList.contains('save-error'))throw new Error($('#save-state').textContent);}});}
 window.addEventListener('magicj-account-ready',registerGroupAccount);registerGroupAccount();

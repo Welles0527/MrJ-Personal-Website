@@ -1037,5 +1037,14 @@ $("#queueCancelSelection").addEventListener("click", () => setQueueSelectionMode
 $("#mobileMenu").addEventListener("click", () => $(".sidebar").classList.toggle("open"));
 $("#fullscreenPlayer").addEventListener("click", () => $(".media-player-shell").requestFullscreen?.());
 
+const registerAccount = () => window.MagicJAccount?.register({
+  beforeLeave: async () => {
+    if (document.querySelector('#songDialog[open],#categoryDialog[open],#lyricsDialog[open]')) throw new Error('请先保存或关闭正在编辑的诗歌');
+    await cloudStore.assertClean?.();
+  },
+  sync: async () => { await cloudStore.assertClean?.(); await loadSavedState(); }
+});
+window.addEventListener('magicj-account-ready', registerAccount);
+registerAccount();
 renderSongs(); renderQueue(); loadSavedState();
 }

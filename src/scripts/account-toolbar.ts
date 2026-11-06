@@ -1,4 +1,4 @@
-import { getCloudSession, signInWithPassword, startEmailSignUp, signOut, startPasswordReset, completePasswordReset } from './site-auth';
+import { getCloudSession, getRememberedSession, signInWithPassword, startEmailSignUp, signOut, startPasswordReset, completePasswordReset } from './site-auth';
 import { exportAllCloudBackup } from './all-cloud-backup';
 import { mountWeeklyBackupReminder } from './weekly-backup-reminder';
 import { readCloudBackup, type BackupKind } from './cloud-backup';
@@ -6,10 +6,12 @@ import { createProjectBrand, mountProjectBrand } from './project-brand';
 
 // A page registers its own verified sync/backup operations; the toolbar never reads browser data.
 export type AccountActions = { sync?: () => Promise<void>; backup?: () => Promise<unknown>; beforeLeave?: () => Promise<void> };
-declare global { interface Window { MagicJAccount?: { openLogin: () => void; register: (actions: AccountActions) => void; readBackup: typeof readCloudBackup } } }
+declare global { interface Window { MagicJAccount?: { openLogin: () => void; register: (actions: AccountActions) => void; readBackup: typeof readCloudBackup; prepareLeave: () => Promise<void>; sync: () => Promise<void> } } }
 
 export function mountAccountToolbar() {
-  if (window.MagicJAccount || window.top !== window.self) return;
+  if (window.MagicJAccount) return;
+  // The read-only calendar source replaces its document before registering account actions.
+  if (new URLSearchParams(location.search).has('calendar-source') && !document.getElementById('auth-account')) return;
   let actions: AccountActions = {}, verify: ((code: string) => Promise<unknown>) | undefined;
   let passwordResetId: string | undefined;
   const style = document.createElement('style');
@@ -77,6 +79,10 @@ export function mountAccountToolbar() {
   const dialog = document.createElement('dialog'); dialog.id = 'mj-login';
   dialog.innerHTML = '<form><h2>登录网站账号</h2><p>本站页面共享登录状态，有效期30天。</p><label>邮箱<input name="email" type="email" autocomplete="username" required></label><label>密码<input name="password" type="password" autocomplete="current-password" required></label><label hidden data-code>邮箱验证码<input name="code" autocomplete="one-time-code"></label><p role="alert"></p><div class="mj-actions"><button type="submit">登录</button><button type="button" data-register>注册新账号</button><button type="button" data-close>取消</button></div></form>';
   document.body.append(dialog);
+  const accountActions = document.createElement('div'); accountActions.className = 'mj-actions';
+  accountActions.innerHTML = '<button type="button" data-account-sync>同步当前页面</button><button type="button" data-account-logout>退出登录</button>';
+  dialog.querySelector('form')!.append(accountActions);
+  if (window.top !== window.self) bar.style.setProperty('display', 'none', 'important');
   // Reuse a page's existing account entry, including controls rendered after startup.
   const nativeSelector = '[data-action="cloud-login"],#studioAccount,#login-open,#fund-auth-link,[data-action="open-auth"],[data-action="auth-signout"],[data-action="open-login"],[data-calendar-login],[data-site-auth-login]';
   const findNativeLogin = () => [...document.querySelectorAll<HTMLElement>(nativeSelector)]
@@ -93,10 +99,13 @@ export function mountAccountToolbar() {
   const message = dialog.querySelector<HTMLElement>('[role=alert]')!;
   const field = (name: string) => dialog.querySelector<HTMLInputElement>(`[name=${name}]`)!;
   const say = (text: string, error = false) => { status.textContent = text; status.dataset.error = String(error); };
-  const reportError = (error: unknown) => {
+  const reportError = (error: unknown, prompt = false) => {
     const sessionNotice = (error as { code?: string })?.code === 'SITE_AUTH_REQUIRED';
-    status.title = error instanceof Error ? error.message : '操作失败，请重试';
+    const detail = (error as { message?: unknown })?.message;
+    status.title = typeof detail === 'string' && detail ? detail : '操作失败，请重试';
     say(sessionNotice ? '未登录 · 登录 / 注册' : '账号连接异常 · 重试', !sessionNotice);
+    if (sessionNotice && prompt) window.MagicJAccount!.openLogin();
+    if (dialog.open) message.textContent = status.title;
     if (bar.dataset.native === 'true') {
       const native = findNativeLogin();
       if (native) native.title = status.title;
@@ -118,13 +127,35 @@ export function mountAccountToolbar() {
     return session;
   };
   const run = async (operation: () => Promise<unknown>) => {
-    const buttons = [...bar.querySelectorAll('button')]; buttons.forEach(b => b.disabled = true);
-    try { menu.open = false; await operation(); } catch (error) { reportError(error); }
+    const buttons = [...bar.querySelectorAll('button'), ...accountActions.querySelectorAll('button')]; buttons.forEach(b => b.disabled = true);
+    try { menu.open = false; await operation(); } catch (error) { reportError(error, true); }
     finally { buttons.forEach(b => b.disabled = false); }
+  };
+  const childAccounts = () => [...document.querySelectorAll('iframe')].flatMap(frame => {
+    try { const api = frame.contentWindow?.MagicJAccount; return api ? [api] : []; } catch { return []; }
+  });
+  const prepareLeave = async () => {
+    await actions.beforeLeave?.();
+    for (const child of childAccounts()) await child.prepareLeave();
+  };
+  const sync = async () => {
+    if (!await getCloudSession()) throw Object.assign(new Error('请先登录'), { code: 'SITE_AUTH_REQUIRED' });
+    const children = childAccounts();
+    if (!actions.sync && !children.length) throw new Error('此页面没有可同步的数据。');
+    await actions.sync?.();
+    for (const child of children) await child.sync();
   };
   window.MagicJAccount = {
     readBackup: (kind: BackupKind) => readCloudBackup(kind),
-    openLogin: () => { message.textContent = ''; if (!dialog.open) dialog.showModal(); },
+    openLogin: () => {
+      try { if (window.top !== window.self && window.top?.MagicJAccount) { window.top.MagicJAccount.openLogin(); return; } } catch { /* Cross-origin embeds keep their own dialog. */ }
+      message.textContent = '';
+      const remembered = getRememberedSession();
+      if (!field('email').value && remembered) field('email').value = remembered.account;
+      accountActions.hidden = !remembered;
+      if (!dialog.open) dialog.showModal();
+    },
+    prepareLeave, sync,
     register: next => { actions = { ...actions, ...next }; }
   };
   // Some pages open their native login after an asynchronous session check.
@@ -152,21 +183,27 @@ export function mountAccountToolbar() {
     } catch (error) { message.textContent = error instanceof Error ? error.message : '请求失败'; }
     finally { reset.disabled = false; }
   };
-  bar.querySelector<HTMLButtonElement>('[data-sync]')!.onclick = () => void run(async () => {
+  const syncAccount = () => void run(async () => {
     if (!await reconcile()) { window.MagicJAccount!.openLogin(); return; }
     say('正在同步云端…');
-    if (actions.sync) await actions.sync();
-    else { location.reload(); return; }
+    await sync();
     say('云端同步完成');
+    if (dialog.open) message.textContent = '云端同步完成';
   });
-  bar.querySelector<HTMLButtonElement>('[data-logout]')!.onclick = () => void run(async () => {
-    await actions.beforeLeave?.(); await signOut(); await reconcile();
+  const logoutAccount = () => void run(async () => {
+    await prepareLeave(); await signOut(); await reconcile();
+    accountActions.hidden = true;
+    if (dialog.open) message.textContent = '已退出登录';
   });
+  bar.querySelector<HTMLButtonElement>('[data-sync]')!.onclick = syncAccount;
+  bar.querySelector<HTMLButtonElement>('[data-logout]')!.onclick = logoutAccount;
+  accountActions.querySelector<HTMLButtonElement>('[data-account-sync]')!.onclick = syncAccount;
+  accountActions.querySelector<HTMLButtonElement>('[data-account-logout]')!.onclick = logoutAccount;
   const backupAll = (notify: (text: string) => void = () => {}) => run(async () => {
     try {
       if (!await reconcile()) { notify('请先登录，再点击备份全部云端数据'); window.MagicJAccount!.openLogin(); return; }
       notify('正在确认当前页面保存完成…');
-      await actions.beforeLeave?.();
+      await prepareLeave();
       await exportAllCloudBackup(text => { say(text); notify(text); });
       say('全部云端数据 Excel 已导出'); notify('全部云端数据 Excel 已导出，请确认浏览器下载文件');
     } catch (error) {
@@ -174,7 +211,7 @@ export function mountAccountToolbar() {
     }
   });
   bar.querySelector<HTMLButtonElement>('[data-backup]')!.onclick = () => void backupAll();
-  mountWeeklyBackupReminder(backupAll);
+  if (window.top === window.self) mountWeeklyBackupReminder(backupAll);
   dialog.querySelector<HTMLButtonElement>('[data-register]')!.onclick = async () => {
     const register = dialog.querySelector<HTMLButtonElement>('[data-register]')!;
     register.disabled = true;
@@ -193,7 +230,10 @@ export function mountAccountToolbar() {
   dialog.querySelector('form')!.onsubmit = async event => {
     event.preventDefault(); const button = dialog.querySelector<HTMLButtonElement>('[type=submit]')!; button.disabled = true;
     try {
-      if (await getCloudSession().catch(() => null)) await actions.beforeLeave?.();
+      // Revalidating the same account must remain possible when its pending save needs authentication.
+      // Switching accounts still requires every mounted editor to confirm its pending writes.
+      const remembered = getRememberedSession();
+      if (remembered && remembered.account.toLowerCase() !== field('email').value.trim().toLowerCase()) await prepareLeave();
       if (passwordResetId) {
         if (field('password').value.length < 8) throw new Error('新密码至少8位');
         await completePasswordReset(field('email').value.trim(), passwordResetId, field('code').value.trim(), field('password').value);
@@ -209,10 +249,21 @@ export function mountAccountToolbar() {
   };
   window.addEventListener('site-auth-change', () => { void reconcile().catch(reportError); });
   window.addEventListener('focus', () => { void reconcile().catch(reportError); });
+  const verifiedSyncClicks = new WeakSet<HTMLElement>();
   // Existing links to the old account page become in-place login, not navigation.
   document.addEventListener('click', event => {
+    const syncTarget = (event.target as Element)?.closest<HTMLElement>('[data-calendar-sync],#studioSync,[data-action="cloud-sync"]');
+    if (syncTarget && !verifiedSyncClicks.has(syncTarget)) {
+      event.preventDefault(); event.stopImmediatePropagation();
+      void run(async () => {
+        if (!await reconcile()) { window.MagicJAccount!.openLogin(); return; }
+        verifiedSyncClicks.add(syncTarget);
+        try { syncTarget.click(); } finally { verifiedSyncClicks.delete(syncTarget); }
+      });
+      return;
+    }
     const native = (event.target as Element)?.closest<HTMLElement>(nativeSelector);
-    if (native && bar.dataset.auth === 'guest' && !native.closest('#mj-account,#mj-login')) {
+    if (native && !native.matches('[data-action="auth-signout"]') && !native.closest('#mj-account,#mj-login')) {
       event.preventDefault(); event.stopImmediatePropagation(); window.MagicJAccount!.openLogin(); return;
     }
     const target = (event.target as Element)?.closest<HTMLElement>('[data-site-auth-login],a');
