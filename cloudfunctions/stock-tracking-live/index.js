@@ -610,6 +610,15 @@ async function handleRequest(method, url, origin = "") {
   }
   if (method !== "GET") return jsonResponse(origin, 405, { error: "Method Not Allowed" });
 
+  if (url.searchParams.has("dashboard")) {
+    try {
+      const payload = await require("./dashboard.cjs").handle(url);
+      return jsonResponse(origin, 200, payload, "no-store");
+    } catch (error) {
+      return jsonResponse(origin, 502, { error: error.message || "看板行情暂不可用" });
+    }
+  }
+
   const requested = String(url.searchParams.get("include") || "quote,announcements,news,events")
     .split(",")
     .map(value => value.trim())

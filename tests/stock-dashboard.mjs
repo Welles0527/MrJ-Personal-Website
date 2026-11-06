@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+const require=createRequire(import.meta.url);
+const {aggregate,codesFrom}=require('../cloudfunctions/stock-tracking-live/dashboard.cjs');
+const row=(code,change,price=10,date=20200101)=>({f12:code,f13:0,f3:change,f2:price,f26:date,f124:1});
+const rows=[row('000001',1),row('301026',-1),row('688633',0),row('603507','-','-'),row('810011',0),row('920309',0,10,20990101)];
+const r=aggregate(rows,6,20261106);assert.deepEqual([r.total,r.up,r.down,r.flat,r.unavailable,r.excluded],[4,1,1,1,1,2]);
+assert.throws(()=>aggregate([...rows,rows[0]],7,20261106));
+assert.deepEqual(codesFrom('688633,301026,688633'),['688633','301026']);
+assert.deepEqual(codesFrom(''),[]);assert.throws(()=>codesFrom('bad'));assert.throws(()=>codesFrom('810011'));
+console.log('PASS dashboard universe, counts, duplicates, account-code validation');
