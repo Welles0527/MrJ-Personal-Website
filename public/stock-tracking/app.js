@@ -160,6 +160,7 @@
         render();
       }
     });
+    window.addEventListener("resize", syncDashboardViewport);
     window.addEventListener("storage", event => {
       if (event.key !== THEME_KEY && event.key !== null) return;
       document.documentElement.dataset.theme = event.newValue === "dark" ? "dark" : "paper";
@@ -979,7 +980,15 @@
     if (pendingOptions) refreshAllInformation(pendingOptions);
   }
 
+  function syncDashboardViewport() {
+    const frame = root?.querySelector("#realtime-dashboard");
+    if (!frame) return;
+    const height = Math.max(300, Math.floor(window.innerHeight - Math.max(0, frame.getBoundingClientRect().top) - (window.innerWidth > 980 ? 18 : 0)));
+    frame.contentWindow?.postMessage({ type: "dashboard-viewport", height }, location.origin);
+  }
+
   function syncDashboardContext() {
+    syncDashboardViewport();
     root.querySelector("#realtime-dashboard")?.contentWindow?.postMessage({
       type: "dashboard-context", account: accountStorage.getAccount().key,
       stocks: data.stocks.map(stock => ({ id: stock.code, name: stock.name })),
@@ -1043,7 +1052,7 @@
         ${renderWorkspaceNav(stock)}
         ${["dashboard", "market"].includes(state.viewMode) ? "" : renderSidebar(stock)}
         <main class="tracking-main ${fullWidthView ? "technical-main" : ""} ${state.viewMode === "score-matrix" ? "score-matrix-main" : ""} ${state.viewMode === "operation-advice" ? "operation-advice-main" : ""}">
-          ${state.viewMode === "dashboard" ? `<section aria-label="实时看板"><iframe id="realtime-dashboard" title="A股实时走势及账号自选" src="../stock-dashboard.html?embedded=1" style="width:100%;height:1050px;border:0;display:block;border-radius:12px;background:#faf5eb"></iframe></section>` : ""}
+          ${state.viewMode === "dashboard" ? `<section aria-label="实时看板"><iframe id="realtime-dashboard" title="A股实时走势及板块热力图" src="../stock-dashboard.html?embedded=1&v=20261106-sectors1" style="width:100%;height:1050px;border:0;display:block;border-radius:12px;background:#faf5eb"></iframe></section>` : ""}
           ${state.viewMode === "stock" ? renderStockView(stock) : ""}
           ${state.viewMode === "daily" ? renderDailyDigestView() : ""}
           ${state.viewMode === "calendar" ? renderCalendarView() : ""}

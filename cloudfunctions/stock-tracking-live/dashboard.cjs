@@ -81,6 +81,97 @@ async function breadth(){
     return {...result,startedAt,fetchedAt:new Date().toISOString(),quoteTime,source:'东方财富大盘星图 + 腾讯行情补齐',supplemented:missing.length,supplementQuoteTimeFrom:quoteTimes[0]||null,supplementQuoteTimeTo:quoteTimes.at(-1)||null,scope:'东财沪深京A股口径（含CDR）'};
   }finally{clearTimeout(deadline);controller.abort();}
 }
+const sectorGroups = {
+  'bank-oil': {name:'银行 + 石油石化',boards:[{id:'BK0475',name:'银行Ⅱ'},{id:'BK0464',name:'石油石化'}]},
+  securities: {name:'证券',boards:[{id:'BK0473',name:'证券Ⅱ'}]},
+  semiconductors: {name:'半导体',boards:[{id:'BK1036',name:'半导体'}]}
+};
+function quoteTime(value){
+  const seconds=numeric(value);
+  if(!Number.isInteger(seconds)||seconds<=0)return '';
+  const date=new Date(seconds*1000+8*60*60*1000);
+  return Number.isFinite(date.getTime())?date.toISOString().slice(0,19).replace(/\D/g,''):'';
+}
+async function sectorBoard(board,signal){
+  const stocks=new Map(),pageSize=100;
+  let total;
+  for(let page=1;page===1||page<=Math.ceil(total/pageSize);page++){
+    const query=new URLSearchParams({pn:page,pz:pageSize,po:0,np:1,fltt:2,invt:2,fid:'f12',fs:'b:'+board.id,fields:'f12,f14,f13,f2,f3,f18,f20,f124'});
+    const payload=await request('https://push2.eastmoney.com/api/qt/clist/get?'+query,undefined,signal);
+    const data=payload?.data;
+    if(payload?.rc!==0||!Number.isInteger(data?.total)||data.total<=0||data.total>10000||!Array.isArray(data.diff))throw Error(board.name+'板块名单无效');
+    if(page===1)total=data.total;
+    if(data.total!==total||data.diff.length!==Math.min(pageSize,total-(page-1)*pageSize))throw Error(board.name+'板块分页不完整');
+    for(const row of data.diff){
+      const id=String(row?.f12||''),market=numeric(row?.f13);
+      if(!codePattern.test(id)||market!==(id.startsWith('6')?1:0)||typeof row.f14!=='string'||!row.f14.trim()||stocks.has(id))throw Error(board.name+'板块股票无效或重复');
+      const rawPrice=numeric(row.f2),rawPrevious=numeric(row.f18),rawCap=numeric(row.f20);
+      const price=rawPrice!==null&&rawPrice>0?rawPrice:null;
+      stocks.set(id,{id,name:row.f14.trim(),price,previous:rawPrevious!==null&&rawPrevious>0?rawPrevious:null,change:price===null?null:numeric(row.f3),marketCap:rawCap!==null&&rawCap>0?rawCap:null,time:quoteTime(row.f124)});
+    }
+  }
+  if(stocks.size!==total)throw Error(board.name+'板块成分不完整');
+  return {id:board.id,name:board.name,total,stocks:[...stocks.values()]};
+}
+// The cloud runtime can lose access to push2 while the public hotmap remains available.
+// Preserve Eastmoney membership; use complete Tencent quotes rather than partial snapshots.
+async function hotmapSector(config){
+  const controller=new AbortController(),deadline=setTimeout(()=>controller.abort(),10000);
+  try{
+    const base=await request('https://quote.eastmoney.com/stockhotmap/api/getquotebasedata?hash=',undefined,controller.signal);
+    if(base?.re!==true||!Array.isArray(base.baseinfo)||!base.baseinfo.length)throw Error('东财行业名单不完整');
+    const names=new Map();
+    for(const line of base.baseinfo){
+      if(typeof line!=='string')throw Error('东财行业名单格式无效');
+      const f=line.split('|'),id=f[5];
+      if(!codePattern.test(id)||f[4]!== (id.startsWith('6')?'1':'0')||!f[6]?.includes(',hsj,')||!f[3]?.trim()||names.has(id))throw Error('东财行业名单重复或范围异常');
+      names.set(id,{id,name:f[3].trim(),groups:f.slice(0,3)});
+    }
+    const members=new Map(),boards=config.boards.map(board=>{
+      let selected;
+      for(let column=0;column<3;column++){
+        const groups=base['bk'+(column+1)];if(!Array.isArray(groups))throw Error('东财行业分类缺失');
+        const matches=groups.map((label,index)=>({label,index})).filter(item=>typeof item.label==='string'&&item.label.endsWith('|'+board.id));
+        if(matches.length>1)throw Error('东财行业分类重复');
+        if(matches.length){selected=[...names.values()].filter(stock=>stock.groups[column]===String(matches[0].index));break;}
+      }
+      if(!selected?.length)throw Error(board.name+'板块名单缺失');
+      for(const stock of selected)members.set(stock.id,stock);
+      return {id:board.id,name:board.name,total:selected.length};
+    });
+    const all=[...members.values()],stocks=new Map();
+    await Promise.all(Array.from({length:Math.ceil(all.length/60)},async(_,i)=>{
+      const batch=all.slice(i*60,(i+1)*60),wanted=new Set(batch.map(stock=>symbol(stock.id)));
+      const raw=await request('https://qt.gtimg.cn/q='+[...wanted].join(','),'gb18030',controller.signal);
+      for(const m of raw.matchAll(/v_(\w+)="([^"]+)"/g)){
+        const f=m[2].split('~'),id=f[2];
+        if(!wanted.has(m[1])||f.length<46||!members.has(id)||symbol(id)!==m[1]||stocks.has(id))throw Error('行业补齐报价无效或重复');
+        const p=numeric(f[3]),prev=numeric(f[4]),cap=numeric(f[45]),price=p!==null&&p>0?p:null;
+        if(price!==null&&!/^\d{14}$/.test(f[30]))throw Error('行业补齐报价时间缺失');
+        stocks.set(id,{id,name:members.get(id).name,price,previous:prev!==null&&prev>0?prev:null,change:price===null?null:numeric(f[32]),marketCap:cap!==null&&cap>0?cap*100000000:null,time:/^\d{14}$/.test(f[30])?f[30]:''});
+        wanted.delete(m[1]);
+      }
+      if(wanted.size)throw Error('行业补齐报价不完整');
+    }));
+    if(stocks.size!==members.size)throw Error('行业补齐成分不完整');
+    return {boards,stocks:[...stocks.values()],source:'东方财富大盘星图成分 + 腾讯行情'};
+  }finally{clearTimeout(deadline);controller.abort();}
+}
+async function sector(group){
+  const config=sectorGroups[group];
+  const controller=new AbortController(),deadline=setTimeout(()=>controller.abort(),5000);
+  let boards;
+  try{boards=await Promise.all(config.boards.map(board=>sectorBoard(board,controller.signal)));}
+  catch(error){
+    if(!(error instanceof TypeError)&&!['AbortError','TimeoutError'].includes(error.name)&&!/^行情源返回 (429|5\d\d)$/.test(error.message))throw error;
+    clearTimeout(deadline);controller.abort();
+    const fallback=await hotmapSector(config);
+    return {id:group,name:config.name,stocks:fallback.stocks.sort((a,b)=>a.id.localeCompare(b.id)),total:fallback.stocks.length,source:fallback.source,fetchedAt:new Date().toISOString(),boards:fallback.boards};
+  }finally{clearTimeout(deadline);controller.abort();}
+  const stocks=new Map();
+  for(const board of boards)for(const stock of board.stocks)if(!stocks.has(stock.id))stocks.set(stock.id,stock);
+  return {id:group,name:config.name,stocks:[...stocks.values()].sort((a,b)=>a.id.localeCompare(b.id)),total:stocks.size,source:'东方财富行业板块行情',fetchedAt:new Date().toISOString(),boards:boards.map(({id,name,total})=>({id,name,total}))};
+}
 async function chart(code,period,index){
   if(!codePattern.test(code)||!['minute','day','week'].includes(period)||(index&&code!=='000001'))throw Error('无效股票或周期');
   const ticker=index?'sh000001':symbol(code);
@@ -116,6 +207,7 @@ async function handle(url){
  const route=url.searchParams.get('dashboard');
  if(route==='quotes'){const codes=codesFrom(url.searchParams.get('codes'));return memo('q:'+codes.join(','),15000,()=>quotes(codes));}
  if(route==='breadth')return memo('breadth',120000,breadth);
+ if(route==='sector'){const group=url.searchParams.get('group');if(!Object.prototype.hasOwnProperty.call(sectorGroups,group))throw Error('无效行业分组');return memo('s:'+group,60000,()=>sector(group));}
  if(route==='chart'){const code=url.searchParams.get('code'),period=url.searchParams.get('period')||'minute',index=url.searchParams.get('index')==='1'&&code==='000001';return memo(`c:${code}:${period}:${index}`,period==='minute'?30000:300000,()=>chart(code,period,index));}
  throw Error('未知看板请求');
 }
