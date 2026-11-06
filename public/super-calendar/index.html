@@ -285,7 +285,8 @@ function sportsCardLogo(key){if(key==='斯诺克')return '<img class="sports-sno
 function sportsSelection(){return `<section class="sports-selection" aria-label="选择赛事日历">${[{key:'斯诺克',en:'SNOOKER',symbol:'●',desc:'查看全年斯诺克赛事，安排观赛时间。'},{key:'足球',en:'FOOTBALL',symbol:'⚽',desc:'关注足球比赛，记录期待的赛程。'},{key:'其他',en:'MORE SPORTS',symbol:'✦',desc:'发现更多赛事，收藏下一场精彩。'}].map((c,i)=>`<button class="sports-select-card" data-category="${c.key}" style="--card-delay:${i*90}ms"><span class="sports-card-art" aria-hidden="true">${sportsCardLogo(c.key)}</span><small>${c.en}</small><h2>${c.key}</h2><p>${c.desc}</p><span class="sports-card-enter">进入日历 ↗</span></button>`).join('')}</section>`}
 let codexSnapshot=null;
 const weatherSources={openmeteo:{label:'Open-Meteo'},china:{label:'中国天气网'},apple:{label:'Apple Weather'},moji:{label:'墨迹天气'}};
-let weatherCity='上海';
+let weatherCity='上海',weatherSource='moji';
+try{const saved=localStorage.getItem('super-calendar-weather-source');if(['moji','openmeteo'].includes(saved))weatherSource=saved}catch{}
 const weatherCache=new Map(),weatherPlaces=new Map([['上海',{name:'上海',latitude:31.2304,longitude:121.4737,timezone:'Asia/Shanghai'}]]);
 const weatherCodeLabels={0:'晴',1:'少云',2:'多云',3:'阴',45:'雾',48:'雾凇',51:'毛毛雨',53:'毛毛雨',55:'毛毛雨',56:'冻雨',57:'冻雨',61:'小雨',63:'中雨',65:'大雨',66:'冻雨',67:'冻雨',71:'小雪',73:'中雪',75:'大雪',77:'雪粒',80:'阵雨',81:'阵雨',82:'强阵雨',85:'阵雪',86:'强阵雪',95:'雷雨',96:'雷阵雹',97:'强雷雨',99:'雷阵雹'};
 function weatherDateOffset(date,days){return new Date(Date.parse(date+'T00:00:00Z')+days*86400000).toISOString().slice(0,10)}
@@ -304,21 +305,25 @@ function weatherSymbol(code){
 function travelWeatherDay(date){
  const past=date<today,entry=weatherCache.get(weatherMonthKey()),day=entry?.days.get(date);
  const outside=date>weatherDateOffset(today,15),loading=!entry||entry.status==='loading';
- const label=day?weatherCodeLabels[day.code]:outside?'待发布':loading?'加载中':'无数据';
+ const label=day?(day.label||weatherCodeLabels[day.code]):outside?'待发布':loading?'加载中':entry?.source==='moji'?(past?'无记录':'未发布'):'无数据';
  const symbol=weatherSymbol(day?.code);
- const description=date+' · '+(entry?.place||weatherCity)+' · Open-Meteo · '+(day?label+'（'+day.kind+'）':outside?'超出未来16天预报范围':entry?.error||'暂无天气数据');
- return '<div class="day-weather '+(past?'is-past':'is-future')+'" data-weather-date="'+date+'" data-weather-code="'+(day?.code??'')+'" style="--weather-color:'+symbol.color+'" title="'+esc(description)+'" aria-label="'+esc(description)+'"><span class="weather-icon" style="background-position:'+(symbol.col*20)+'% '+(symbol.row*100/9)+'%" aria-hidden="true"></span><span>'+label+'</span></div>';
+ const description=date+' · '+(entry?.place||weatherCity)+' · '+weatherSources[entry?.source||weatherSource].label+' · '+(day?label+'（'+day.kind+'）'+(day.nightLabel&&day.nightLabel!==label?'，夜间'+day.nightLabel:''):outside?'超出未来16天预报范围':entry?.error||'暂无天气数据');
+ return '<div class="day-weather '+(past?'is-past':'is-future')+'" data-weather-date="'+date+'" data-weather-code="'+(day?.code??'')+'" style="--weather-color:'+symbol.color+'" title="'+esc(description)+'" aria-label="'+esc(description)+'">'+(day?'<span class="weather-icon" style="background-position:'+(symbol.col*20)+'% '+(symbol.row*100/9)+'%" aria-hidden="true"></span>':'')+'<span>'+esc(label)+'</span></div>';
 }
 function travelWeather(){
  const entry=weatherCache.get(weatherMonthKey());
  const message=!entry||entry.status==='loading'?'正在获取天气…':entry.error||('已加载 '+entry.days.size+' 天的天气数据');
- return '<section class="travel-weather" aria-label="每日天气设置"><div class="travel-weather-head"><h2>每日天气</h2><form id="weather-search"><label for="weather-city">城市</label><input id="weather-city" name="city" maxlength="80" value="'+esc(weatherCity)+'" required><label for="weather-source">预报来源</label><select id="weather-source" name="source">'+Object.entries(weatherSources).map(([key,source])=>'<option value="'+key+'" '+(key==='openmeteo'?'selected':'disabled')+'>'+source.label+(key==='openmeteo'?'':'（未接入）')+'</option>').join('')+'</select><button type="submit">查询预报</button></form></div><p id="weather-result" class="weather-message" role="status">'+esc(entry?.place||weatherCity)+' · '+esc(message)+'<span>来源：<a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a> · 未来最多 16 天；更远日期待发布。过去为历史模式数据，非逐站实测。</span></p></section>';
+ return '<section class="travel-weather" aria-label="每日天气设置"><div class="travel-weather-head"><h2>每日天气</h2><form id="weather-search"><label for="weather-city">城市</label><input id="weather-city" name="city" maxlength="80" value="'+esc(weatherCity)+'" required><label for="weather-source">预报来源</label><select id="weather-source" name="source">'+Object.entries(weatherSources).map(([key,source])=>'<option value="'+key+'" '+(key===weatherSource?'selected':['moji','openmeteo'].includes(key)?'':'disabled')+'>'+source.label+(['moji','openmeteo'].includes(key)?'':'（未接入）')+'</option>').join('')+'</select><button type="submit">查询预报</button></form></div><p id="weather-result" class="weather-message" role="status">'+esc(entry?.place||weatherCity)+' · '+esc(message)+'<span>来源：<a href="'+esc(weatherSource==='moji'?(entry?.sourceUrl||'https://www.moji.com/zh-CN'):'https://open-meteo.com/')+'" target="_blank" rel="noopener noreferrer">'+weatherSources[weatherSource].label+'</a> · '+(weatherSource==='moji'?'15天天气预报；仅显示已发布日期。'+(entry?.sourceUpdated?' 更新：'+esc(entry.sourceDate+' '+entry.sourceUpdated):''):'未来最多 16 天；更远日期待发布。过去为历史模式数据，非逐站实测。')+'</span><span>更多天气：<a href="https://www.moji.com/zh-CN" target="_blank" rel="noopener noreferrer" data-moji-weather>墨迹天气官网 ↗</a></span></p></section>';
 }
 function queryTravelWeather(form){
  const city=form.elements.city.value.trim();
  form.elements.city.setCustomValidity(city?'':'请输入城市名称');
  if(!form.reportValidity())return;
- weatherCity=city;
+ const source=form.elements.source.value;
+ if(!['moji','openmeteo'].includes(source))return;
+ if(source!==weatherSource||city!==weatherCity)weatherCache.clear();
+ weatherSource=source;weatherCity=city;
+ try{localStorage.setItem('super-calendar-weather-source',source)}catch{}
  weatherCache.delete(weatherMonthKey());
  render();
 }
@@ -330,12 +335,26 @@ async function weatherFetch(url){
 function ensureTravelWeather(){
  if(state.page!=='travel'&&state.page!=='home')return;
  const key=weatherMonthKey(),cached=weatherCache.get(key);
- if(cached&&(cached.status==='loading'||Date.now()-cached.fetchedAt<30*60000))return;
- const city=weatherCity,monthStart=dateStr(state.month,1),monthEnd=dateStr(state.month,new Date(state.year,state.month+1,0).getDate());
- const entry={status:'loading',days:new Map(),place:city,error:'',fetchedAt:Date.now()};
+ if(cached&&cached.source===weatherSource&&(cached.status==='loading'||Date.now()-cached.fetchedAt<30*60000))return;
+ const city=weatherCity,source=weatherSource,monthStart=dateStr(state.month,1),monthEnd=dateStr(state.month,new Date(state.year,state.month+1,0).getDate());
+ const entry={status:'loading',source,days:new Map(),place:city,error:'',fetchedAt:Date.now()};
  weatherCache.set(key,entry);
  void (async()=>{
   try{
+   if(source==='moji'){
+    const response=await fetch('/api/moji-weather?city='+encodeURIComponent(city),{cache:'no-store',signal:AbortSignal.timeout(25000)});
+    if(!(response.headers.get('content-type')||'').includes('application/json'))throw new Error('墨迹天气服务暂不可用，请稍后查询');
+    const data=await response.json();
+    if(!response.ok)throw new Error(data.error||'墨迹天气暂不可用，请稍后查询');
+    if(data.source!=='moji'||!Array.isArray(data.days)||!data.days.length)throw new Error('墨迹天气数据不完整');
+    entry.place=data.place||city;entry.sourceDate=data.sourceDate;entry.sourceUpdated=data.sourceUpdated;
+    if(/^https:\/\/tianqi\.moji\.com\/forecast15\/china\//.test(data.sourceUrl))entry.sourceUrl=data.sourceUrl;
+    for(const day of data.days){
+     if(/^\d{4}-\d{2}-\d{2}$/.test(day.date)&&day.date>=monthStart&&day.date<=monthEnd&&Object.hasOwn(weatherCodeLabels,day.code))entry.days.set(day.date,{code:day.code,label:day.label,nightLabel:day.nightLabel,kind:day.date<today?'页面记录':'日间预报'});
+    }
+    if(!entry.days.size)entry.error='该月份尚无墨迹天气已发布的预报。';
+    return;
+   }
    let place=weatherPlaces.get(city);
    if(!place){
     const data=await weatherFetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(city)+'&count=1&language=zh&format=json');
@@ -370,6 +389,7 @@ function ensureTravelWeather(){
   }
  })();
 }
+setInterval(()=>{if(!document.hidden&&['travel','home'].includes(state.page))ensureTravelWeather()},30*60000);
 let codexTrendOffset=0;
 let codexPostFilter='relevant';
 function codexEntries(){return (codexSnapshot?.events||[]).map(e=>({...e,id:'codex:'+e.id,calendar:'ai',category:'Codex 重置',name:e.resetType==='banked'?'重置卡发放':'直接用量重置',start:e.date,end:e.date,location:'线上',note:e.detail,readOnly:true}))}
