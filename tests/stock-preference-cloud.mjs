@@ -54,11 +54,11 @@ function createDatabase() {
   };
 }
 
-function createClient(uid, database) {
+function createClient(uid, database, getSession = async () => ({ uid, account: `${uid}@example.com` })) {
   const window = {
     StockTrackingSharedAuth: {
       getRememberedSession: () => ({ uid, account: `${uid}@example.com` }),
-      getCloudSession: async () => ({ uid, account: `${uid}@example.com` }),
+      getCloudSession: getSession,
       getCloudDb: () => database
     },
     dispatchEvent() {},
@@ -99,4 +99,26 @@ assert.equal(isolatedSnapshot.watchlist, null);
 assert.equal(Object.keys(isolatedSnapshot.scopes).length, 0);
 assert.ok(database.collectionNames.every(name => name === 'officialWebsiteStockTrackingPreferences'));
 watcher.close();
+
+// A remembered identity is a display hint, never an authenticated empty account.
+const expired = createClient('same-user', database, async () => null);
+await assert.rejects(expired.load(), error => error.code === 'SITE_AUTH_REQUIRED');
+await assert.rejects(expired.saveWatchlist(['603507']), error => error.code === 'SITE_AUTH_REQUIRED');
+await new Promise((resolve, reject) => {
+  const failedWatch = expired.watch(() => reject(new Error('expired session published a snapshot')), error => {
+    try { assert.equal(error.code, 'SITE_AUTH_REQUIRED'); failedWatch.close(); resolve(); } catch (failure) { reject(failure); }
+  });
+});
+function accountKey(uid) {
+  let hash = 2166136261;
+  for (const character of uid) hash = Math.imul(hash ^ character.charCodeAt(0), 16777619);
+  return `account-${(hash >>> 0).toString(36)}`;
+}
+let releaseSession;
+const switched = createClient('same-user', database, () => new Promise(resolve => { releaseSession = resolve; }));
+const oldAccountWrite = switched.saveWatchlist(['603507'], accountKey('same-user'));
+releaseSession({ uid: 'other-user', account: 'other@example.test' });
+await assert.rejects(oldAccountWrite, error => error.code === 'STOCK_ACCOUNT_CHANGED');
+assert.equal((await otherAccount.load()).watchlist, null, 'an old account write must never reach the new account');
+await assert.rejects(otherAccount.load(accountKey('same-user')), error => error.code === 'STOCK_ACCOUNT_CHANGED');
 console.log('Stock preference CloudBase adapter regression passed.');

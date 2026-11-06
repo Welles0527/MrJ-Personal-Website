@@ -35,6 +35,8 @@
       })
     : null;
   const aiSelectionProvider = window.AIStockSelectionProvider || null;
+  const THEME_KEY = "stock-tracking.theme.v1";
+  const isPaperTheme = () => document.documentElement.dataset.theme !== "dark";
   const VIEW_MODES = ["dashboard", "stock", "daily", "calendar", "market", "macro", "technical", "score-matrix", "operation-advice", "ai-selection"];
   const stockGroups = [
     { id: "all", title: "全部动态", icon: "all", categories: [MESSAGE_CATEGORY.INDUSTRY, MESSAGE_CATEGORY.COMPANY], size: "primary" },
@@ -61,6 +63,8 @@
     plus: "<path d='M12 5v14M5 12h14'/>",
     remove: "<path d='M6 6l12 12M18 6L6 18'/>",
     user: "<circle cx='12' cy='8' r='3.5'/><path d='M5 20c.6-4 3-6 7-6s6.4 2 7 6'/>",
+    sun: "<circle cx='12' cy='12' r='4'/><path d='M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.4 1.4m11.2 11.2L19 19M5 19l1.4-1.4M17.6 6.4L19 5'/>",
+    moon: "<path d='M20 15.1A8.5 8.5 0 018.9 4a8.5 8.5 0 1011.1 11.1z'/>",
     logout: "<path d='M10 5H5v14h5M14 8l4 4-4 4M18 12H9'/>"
   };
 
@@ -118,6 +122,7 @@
   let aiSelectionPage;
   let completeEmailSignUp;
   let accountSyncPromise = null;
+  let accountSyncQueued = false;
   const refreshTimers = [];
   let dashboardQuotes = { account: "", stocks: new Map() };
 
@@ -153,6 +158,11 @@
         state.selectedStockId = event.data.code;
         render();
       }
+    });
+    window.addEventListener("storage", event => {
+      if (event.key !== THEME_KEY && event.key !== null) return;
+      document.documentElement.dataset.theme = event.newValue === "dark" ? "dark" : "paper";
+      render();
     });
     root.addEventListener("click", handleClick);
     root.addEventListener("input", handleInput);
@@ -201,7 +211,11 @@
   }
 
   function syncAccountPreferences() {
-    if (accountSyncPromise || typeof accountStorage.sync !== "function") return accountSyncPromise;
+    if (typeof accountStorage.sync !== "function") return null;
+    if (accountSyncPromise) {
+      accountSyncQueued = true;
+      return accountSyncPromise;
+    }
     accountSyncPromise = accountStorage.sync(seedStockCodes)
       .then(() => {
         state.readStateByScope.clear();
@@ -211,6 +225,10 @@
       })
       .finally(() => {
         accountSyncPromise = null;
+        if (accountSyncQueued) {
+          accountSyncQueued = false;
+          return syncAccountPreferences();
+        }
       });
     return accountSyncPromise;
   }
@@ -956,6 +974,35 @@
     }, location.origin);
   }
 
+  function applyPaperCharts() {
+    if (!isPaperTheme() || !window.echarts) return;
+    const ink = "#24241e", muted = "#756d5d", red = "#b62e1c", green = "#1e6532", blue = "#4b66a0";
+    const axis = () => ({ axisLabel: { color: muted }, axisLine: { lineStyle: { color: "#bcae95" } }, splitLine: { lineStyle: { color: "rgba(90,75,50,.14)" } }, nameTextStyle: { color: muted } });
+    for (const id of ["technical-market-price-chart", "technical-radar-chart", "technical-score-trend-chart"]) {
+      const element = root.querySelector(`#${id}`);
+      const chart = element && window.echarts.getInstanceByDom(element);
+      if (!chart) continue;
+      const current = chart.getOption();
+      if (!current.series?.length) continue;
+      const patch = { textStyle: { color: ink }, tooltip: { backgroundColor: "#fffaf0", borderColor: "#d4c6af", textStyle: { color: ink }, axisPointer: { lineStyle: { color: "rgba(90,75,50,.35)" } } } };
+      if (current.xAxis?.length) patch.xAxis = current.xAxis.map(axis);
+      if (current.yAxis?.length) patch.yAxis = current.yAxis.map(axis);
+      if (current.radar?.length) {
+        patch.radar = current.radar.map(() => ({ axisName: { color: muted }, name: { color: muted }, axisLine: { lineStyle: { color: "#c9bca7" } }, splitLine: { lineStyle: { color: ["#e5dccd", "#ded3c0", "#d4c7ae", "#bdae91"] } }, splitArea: { areaStyle: { color: ["rgba(188,174,145,.04)", "rgba(188,174,145,.09)"] } } }));
+        patch.series = [{ data: current.series[0].data.map(item => ({ ...item, lineStyle: { ...item.lineStyle, color: blue }, itemStyle: { ...item.itemStyle, color: "#fffaf0", borderColor: blue }, areaStyle: { ...item.areaStyle, color: "rgba(75,102,160,.16)" } })) }];
+      } else if (id === "technical-market-price-chart") {
+        const colors = [ink, blue, "#805ba0", green, "#a27725"];
+        patch.series = current.series.map((series, index) => ({ lineStyle: { color: colors[index % colors.length] }, itemStyle: { color: colors[index % colors.length] }, ...(series.markLine?.data ? { markLine: { data: series.markLine.data.map(item => ({ ...item, lineStyle: { ...item.lineStyle, color: item.name === "结构支撑" ? green : "#a27725" }, label: { ...item.label, color: item.name === "结构支撑" ? green : "#a27725" } })) } } : {}) }));
+      } else {
+        patch.series = current.series.map((series, index) => {
+          const color = value => index === 0 ? (value >= 65 ? red : value < 45 ? green : blue) : (value > 0 ? red : value < 0 ? green : muted);
+          return { data: series.data.map(item => ({ ...item, label: { ...item.label, color: color(Number(item.value)) }, itemStyle: { ...item.itemStyle, color: color(Number(item.value)), borderColor: muted } })) };
+        });
+      }
+      chart.setOption(patch);
+    }
+  }
+
   function render() {
     const stock = selectedStock();
     const fullWidthView = ["technical", "score-matrix", "market"].includes(state.viewMode);
@@ -1010,6 +1057,7 @@
     if (state.viewMode === "ai-selection") {
       aiSelectionPage?.mount(root);
     }
+    applyPaperCharts();
     keepSelectedWorkspaceTabVisible();
   }
 
@@ -1055,6 +1103,9 @@
             </button>`).join("")}
         </nav>
         <div class="workspace-actions">
+          <button class="workspace-theme" type="button" data-action="toggle-theme" aria-label="切换为${isPaperTheme() ? "暗色" : "浅色"}主题" title="切换为${isPaperTheme() ? "暗色" : "浅色"}主题">
+            ${icon(isPaperTheme() ? "sun" : "moon")}<span>${isPaperTheme() ? "浅色" : "暗色"}</span>
+          </button>
           <span class="workspace-account" title="${account.signedIn ? escapeHtml(account.label) : "尚未登录"}">
             ${icon("user")}
           </span>
@@ -1621,18 +1672,18 @@
       : sync.mode === "cloud"
         ? "自选股与已读状态已同步云端"
         : sync.mode === "error"
-          ? "云同步暂不可用 · 已保留本机"
+          ? `云同步失败：${sync.error || "请重试"} · 本机数据已保留`
           : "正在同步云端账号";
     return `
       <section class="shared-account ${account.signedIn ? "signed-in" : ""}" aria-label="共享登录账号">
         <span class="shared-account-icon">${icon("user")}</span>
         <span class="shared-account-copy">
           <strong>${account.signedIn ? escapeHtml(account.label) : "官网共享账号"}</strong>
-          <small>${syncCopy}</small>
+          <small data-status="${sync.mode}" data-synced-at="${escapeHtml(sync.updatedAt || "")}" data-sync-owner="${escapeHtml(account.key)}" title="${escapeHtml(syncCopy)}">${escapeHtml(syncCopy)}</small>
         </span>
-        <button type="button" data-action="${account.signedIn ? "auth-signout" : "open-auth"}"
+        <button type="button" data-action="${account.signedIn && !sync.requiresLogin ? "auth-signout" : "open-auth"}"
           ${state.authBusy ? "disabled" : ""}>
-          ${account.signedIn ? icon("logout") : ""}${account.signedIn ? "退出" : "登录"}
+          ${account.signedIn && !sync.requiresLogin ? icon("logout") : ""}${sync.requiresLogin ? "重新登录" : account.signedIn ? "退出" : "登录"}
         </button>
       </section>`;
   }
@@ -2174,6 +2225,10 @@
     let refreshDailyAfterRender = false;
 
     if (action === "open-auth") {
+      if (window.MagicJAccount?.openLogin) {
+        window.MagicJAccount.openLogin();
+        return;
+      }
       state.authMode = "login";
       state.authMessage = "";
     } else if (action === "close-auth") {
@@ -2282,7 +2337,12 @@
     } else if (action === "set-daily-stock") {
       state.filters.stock = target.dataset.stockId || "all";
       state.dailyStockQuery = "";
+    } else if (action === "toggle-theme") {
+      const theme = isPaperTheme() ? "dark" : "paper";
+      document.documentElement.dataset.theme = theme;
+      try { localStorage.setItem(THEME_KEY, theme); } catch { /* Theme still works when browser storage is unavailable. */ }
     } else if (action === "refresh-all") {
+      void syncAccountPreferences();
       if (state.viewMode === "dashboard") {
         root.querySelector("#realtime-dashboard")?.contentWindow?.postMessage({ type: "dashboard-refresh" }, location.origin);
         return;
@@ -2317,6 +2377,7 @@
     }
     render();
     focusEditorIfNeeded();
+    if (action === "toggle-theme") root.querySelector('[data-action="toggle-theme"]')?.focus({ preventScroll: true });
     if (refreshCodeAfterRender) {
       refreshAllInformation({
         silent: true,

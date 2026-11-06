@@ -10,9 +10,14 @@
     return value;
   }
 
-  async function currentSession() {
+  async function currentSession(expectedAccountKey) {
     const auth = bridge();
-    return await auth.getCloudSession();
+    const session = await auth.getCloudSession();
+    if (!session?.uid) throw Object.assign(new Error("登录已失效，请重新登录；本地自选和修改已保留"), { code: "SITE_AUTH_REQUIRED" });
+    if (expectedAccountKey && expectedAccountKey !== `account-${hash(session.uid)}`) {
+      throw Object.assign(new Error("账号已改变，已取消旧账号的同步"), { code: "STOCK_ACCOUNT_CHANGED" });
+    }
+    return session;
   }
 
   function hash(value) {
@@ -91,7 +96,6 @@
   }
 
   async function loadForSession(session) {
-    if (!session?.uid) return { watchlist: null, scopes: {} };
     const result = await bridge().getCloudDb()
       .collection(COLLECTION)
       .where({ ownerId: session.uid })
@@ -121,6 +125,7 @@
     const verified = resultData(await bridge().getCloudDb().collection(COLLECTION).doc(recordId(session.uid, kind, scopeId)).get(), '云端保存核验失败');
     const saved = Array.isArray(verified) ? verified[0] : verified;
     if (!saved || saved.ownerId !== session.uid || saved.updatedAt !== updatedAt) throw new Error('云端保存核验失败，请保留输入');
+    await currentSession(`account-${hash(session.uid)}`);
     return record;
   }
 
@@ -136,25 +141,25 @@
   }
 
   const api = {
-    async load() {
-      return loadForSession(await currentSession());
+    async load(expectedAccountKey) {
+      return loadForSession(await currentSession(expectedAccountKey));
     },
-    async saveWatchlist(codes) {
-      const session = await currentSession();
+    async saveWatchlist(codes, expectedAccountKey) {
+      const session = await currentSession(expectedAccountKey);
       return saveRecord(session, "watchlist", "watchlist", { codes: normalizeCodes(codes) });
     },
-    async saveScope(scopeId, value) {
-      const session = await currentSession();
+    async saveScope(scopeId, value, expectedAccountKey) {
+      const session = await currentSession(expectedAccountKey);
       return saveRecord(session, "scope", String(scopeId), { value: normalizeScope(value) });
     },
-    watch(onChange, onError) {
+    watch(onChange, onError, expectedAccountKey) {
       let innerWatcher = null;
       let closed = false;
-      void currentSession()
+      void currentSession(expectedAccountKey)
           .then(session => {
             if (!closed && session?.uid) innerWatcher = startWatch(session, onChange, onError);
           })
-          .catch(error => onError?.(error));
+          .catch(error => { if (!closed) onError?.(error); });
       return {
         close() {
           closed = true;
