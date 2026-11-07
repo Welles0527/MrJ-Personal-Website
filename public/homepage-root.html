@@ -1188,4 +1188,43 @@ html:not(.dark) .mrj-featured .reading-book-pages{background:repeating-linear-gr
 })();
 </script>
 <script src="/officialwebsite/project-previews.js" defer></script>
-<link rel="icon" href="/officialwebsite/icons/personal-home-orange.png?v=20261012-reference"><script src="/officialwebsite/contact-qr.js"></script><script src="/officialwebsite/home-visit-counter.js?v=20261029-position"></script></body></html>
+<link rel="icon" href="/officialwebsite/icons/personal-home-orange.png?v=20261012-reference"><script src="/officialwebsite/contact-qr.js"></script><script src="/officialwebsite/home-visit-counter.js?v=20261029-position"></script><style>
+.investment-choice{position:fixed;inset:0;margin:auto;width:min(460px,calc(100vw - 32px));max-height:calc(100dvh - 32px);box-sizing:border-box;overflow:auto;padding:28px;border:1px solid #9d7856;border-radius:22px;background:#191715;color:#f4e9de;font-family:inherit;box-shadow:0 24px 80px #0009}
+.investment-choice::backdrop{background:#080706b8;backdrop-filter:blur(6px)}
+.investment-choice h2{margin:0 36px 24px 0;font-size:23px;line-height:1.4}
+.investment-choice-close{position:absolute;right:16px;top:16px;width:34px;height:34px;border:1px solid #9d7856;border-radius:50%;background:transparent;color:inherit;font-size:22px;cursor:pointer}
+.investment-choice-links{display:grid;gap:12px}
+.investment-choice-links a{display:flex;align-items:center;justify-content:space-between;min-height:60px;padding:12px 18px;box-sizing:border-box;border:1px solid #9d7856;border-radius:12px;color:#ffc08c;background:#28211b;text-decoration:none;font-size:18px}
+.investment-choice-links a:hover{background:#3a2b20}
+.investment-choice :focus-visible{outline:2px solid #ffb277;outline-offset:4px}
+</style>
+<dialog class="investment-choice" aria-labelledby="investment-choice-title">
+<button type="button" class="investment-choice-close" aria-label="关闭看板选择">×</button>
+<h2 id="investment-choice-title">选择投资看板</h2>
+<div class="investment-choice-links">
+<a data-investment-funds target="_blank" rel="noopener noreferrer">基金看板 <span aria-hidden="true">↗</span></a>
+<a href="https://www.magicj.cn/officialwebsite/stock-tracking/?view=dashboard&amp;stock=301026" target="_blank" rel="noopener noreferrer">个股看板 <span aria-hidden="true">↗</span></a>
+</div>
+</dialog>
+<script>
+(() => {
+  const dialog = document.querySelector('.investment-choice');
+  const fundLink = dialog.querySelector('[data-investment-funds]');
+  document.querySelectorAll('.feature-card[data-project="funds"]').forEach(card => {
+    card.setAttribute('aria-haspopup', 'dialog');
+    card.addEventListener('click', event => {
+      if (event.target.closest('.project-like')) return;
+      event.preventDefault();
+      fundLink.href = card.href;
+      if (!dialog.open) dialog.showModal();
+    });
+  });
+  dialog.querySelector('.investment-choice-close').addEventListener('click', () => dialog.close());
+  dialog.addEventListener('click', event => {
+    const rect = dialog.getBoundingClientRect();
+    if (event.target === dialog && (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom)) dialog.close();
+    if (event.target.closest('a')) dialog.close();
+  });
+})();
+</script>
+</body></html>
