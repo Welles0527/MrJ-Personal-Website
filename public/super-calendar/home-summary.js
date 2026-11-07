@@ -24,16 +24,24 @@
       .filter(e => datePattern.test(e.start) && datePattern.test(e.end))
       .sort((a,b) => a.start.localeCompare(b.start) || a.name.localeCompare(b.name, 'zh-CN'));
   }
+  const itemThemes = {
+    '斯诺克': { background:'#dce5da', text:'#35483b', accent:'#adbfa9' },
+    '足球': { background:'#dce4ea', text:'#3c4a57', accent:'#acbbc8' },
+    investment: { background:'#efe2cb', text:'#191a18', accent:'#e8a24b' },
+    ai: { background:'#dfe9d9', text:'#191a18', accent:'#71d6b4' },
+    life: { background:'#f0e3dd', text:'#191a18', accent:'#f1a5da' }
+  };
   function item(e) {
+    const colors = itemThemes[e.category] || itemThemes[e.calendar];
     const attribute = e.planId ? 'data-personal-plan="'+esc(e.planId)+'"' : 'data-summary-target="'+esc(e.target)+'"';
-    return `<button class="summary-event" ${attribute} style="--event-color:${calendars[e.calendar].color}" title="${esc(e.name)}">${icon(calendars[e.calendar].icon)}<span>${esc(e.name)}</span></button>`;
+    return `<button class="summary-event" ${attribute} style="--event-color:${colors.accent};--summary-event-bg:${colors.background};--summary-event-ink:${colors.text}" title="${esc(e.name)}">${icon(calendars[e.calendar].icon)}<span>${esc(e.name)}</span></button>`;
   }
   function weather(date) {
     if (!['全部','travel'].includes(state.category)) return '';
     const key = weatherCity+'|'+date.slice(0,7), entry = weatherCache.get(key), day = entry?.days.get(date);
     if (!day) return '';
     const symbol = weatherSymbol(day.code), label = date+' · '+(entry.place || weatherCity)+' · '+weatherCodeLabels[day.code];
-    return `<span class="summary-weather" title="${esc(label)}" aria-label="${esc(label)}"><span class="weather-icon" style="background-position:${symbol.col*20}% ${symbol.row*100/9}%" aria-hidden="true"></span></span>`;
+    return `<span class="summary-weather" title="${esc(label)}" aria-label="${esc(label)}"><span class="weather-icon" style="background-position:${weatherIconPosition(symbol)}" aria-hidden="true"></span></span>`;
   }
   function monthly() {
     const all = filtered().filter(e => isMonth(e,state.month));
@@ -53,15 +61,16 @@
     }).join('')}</div>`;
   }
   const style = document.createElement('style');
-  style.textContent = `.summary-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:1px;background:var(--border);min-width:770px}.summary-scroll{overflow-x:auto}.summary-grid>.weekday{background:var(--card);padding:12px 4px}.summary-day{min-width:0;min-height:126px;background:var(--cell);padding:8px}.summary-day.out{opacity:.5}.summary-day.today{box-shadow:inset 0 0 0 2px var(--purple)}.summary-date{display:flex;align-items:center;justify-content:space-between;min-height:34px;margin-bottom:5px}.summary-event{display:flex;align-items:flex-start;gap:5px;width:100%;min-width:0;margin:5px 0;padding:6px;text-align:left;line-height:1.5;font-size:12px;color:var(--text);border-left:3px solid var(--event-color);border-radius:4px;background:color-mix(in srgb,var(--event-color) 13%,var(--cell))}.summary-event svg{width:14px;height:14px;margin-top:2px}.summary-event span{min-width:0;overflow-wrap:anywhere}.summary-weather{display:inline-flex}.summary-annual .mini-day{min-height:44px;height:auto;position:relative}.summary-annual .weather-icon{width:18px;height:18px}.summary-annual .mini-day .day-dot{background:var(--purple)}.summary-mobile-hint{display:none}.summary-status{font-size:12px;line-height:1.7;color:var(--muted);margin:12px 0}.summary-status a{color:var(--purple)}@media(max-width:680px){.summary-mobile-hint{display:block;font-size:12px;color:var(--muted);padding:0 12px}.summary-day{min-height:108px}.summary-month .calendar-title{flex-wrap:wrap;gap:8px}.summary-month .calendar-title .muted{font-size:11px}}`;
+  style.textContent = `.summary-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:0;border-top:1px solid var(--border);border-left:1px solid var(--border);background:var(--card);min-width:770px}.summary-grid>.weekday,.summary-day{border-right:1px solid var(--border);border-bottom:1px solid var(--border)}.summary-scroll{overflow-x:auto}.summary-grid>.weekday{background:var(--card);padding:12px 4px}.summary-day{min-width:0;min-height:126px;background:var(--cell);padding:8px}.summary-day.out{background:var(--card)}.summary-day.today{box-shadow:inset 0 0 0 2px var(--purple)}.summary-date{display:flex;align-items:center;justify-content:space-between;min-height:34px;margin-bottom:5px}.summary-event{display:flex;align-items:flex-start;gap:5px;width:100%;min-width:0;margin:5px 0;padding:6px;text-align:left;line-height:1.5;font-size:12px;color:var(--summary-event-ink);border:0;border-left:3px solid var(--event-color);border-radius:4px;background:var(--summary-event-bg)}.summary-event svg{width:14px;height:14px;margin-top:2px;color:var(--summary-event-ink)}.summary-event span{min-width:0;overflow-wrap:anywhere}.summary-weather{display:inline-flex}.summary-annual .mini-day{min-height:44px;height:auto;position:relative}.summary-annual .weather-icon{width:18px;height:18px}.summary-annual .mini-day .day-dot{background:var(--purple)}.summary-mobile-hint{display:none}.summary-status{font-size:12px;line-height:1.7;color:var(--muted);margin:12px 0}.summary-status a{color:var(--purple)}@media(max-width:680px){.summary-mobile-hint{display:block;font-size:12px;color:var(--muted);padding:0 12px}.summary-day{min-height:108px}.summary-month .calendar-title{flex-wrap:wrap;gap:8px}.summary-month .calendar-title .muted{font-size:11px}}`;
   document.head.append(style);
+
   style.textContent += `.summary-page .calendar-topbar .period-control strong,.summary-page .calendar-topbar .mobile-menu{color:var(--text)}.summary-page .calendar-topbar select,.summary-page .calendar-topbar select option,.summary-page .calendar-topbar .period-control button{background:var(--surface-strong);color:var(--text)}:root[data-theme="cream"] .summary-page .switch button:not(.active){color:#e1ddcd}.summary-page .title-actions>.primary{display:none}.summary-grid>.weekday{height:auto;min-height:36px;line-height:1.5;padding:8px 4px}`;
   function notice() {
-    const plan = { loading:'重要事项读取中', 'signed-out':'登录后显示生活重要事项及个人自选股', error:'重要事项读取失败，请到生活日历刷新' }[personalPlanState];
-    const entry = weatherCache.get(weatherMonthKey());
-    const weatherStatus = !entry || entry.status === 'loading' ? '天气读取中' : entry.error;
+    const plan = { loading:'重要事项读取中', error:'重要事项读取失败，请到生活日历刷新' }[personalPlanState];
     const probabilityStatus = !codexSnapshot ? '重置概率读取中' : Date.now()-Date.parse(codexSnapshot.syncedAt) > 36*3600000 ? '重置概率数据待更新' : '';
-    return `<p class="summary-status" role="status">${[plan,weatherStatus,probabilityStatus].filter(Boolean).map(esc).join(' · ')}${weatherStatus ? ' · <a href="#travel">天气设置</a>' : ''}</p>`;
+    const messages = [plan,probabilityStatus].filter(Boolean);
+    if (!messages.length) return '';
+    return `<p class="summary-status" role="status">${messages.map(esc).join(' · ')}</p>`;
   }
   window.SuperCalendarHome = { entries:summaryEntries, monthly, annual, notice, bind() {
     document.querySelectorAll('[data-summary-target]').forEach(button => button.onclick = () => { location.hash = button.dataset.summaryTarget; });
