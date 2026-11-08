@@ -61,7 +61,7 @@ try {
   }
   const b=await device(390);
   assert(await b.p.evaluate(id=>!!JSON.parse(localStorage.getItem('cue-match-favorites')||'{}')[id],id));
-  assert(await b.p.evaluate(id=>SuperCalendarHome.entries().some(e=>e.id==='cue-match:'+id),id));
+  assert(!await b.p.evaluate(id=>SuperCalendarHome.entries().some(e=>e.id==='cue-match:'+id),id));
   await b.p.evaluate(()=>{state.view='month';state.month=10;state.year=2026;render();});
   assert((await b.p.locator('[data-date="2026-11-08"]').innerText()).includes('双端验收A'));
   if(evidence)await b.p.screenshot({path:path.join(evidence,'snooker-cloud-real-mobile.png')});
@@ -83,7 +83,7 @@ try {
   await a.p.locator('#snooker-favorites-cloud-status[data-status="cloud"]').waitFor();
   await b.p.evaluate(()=>window.dispatchEvent(new Event('focus')));
   await b.p.waitForFunction(id=>JSON.parse(localStorage.getItem('cue-favorites')||'[]').includes(id),tournamentId);
-  assert(await b.p.evaluate(id=>SuperCalendarHome.entries().some(e=>e.id==='cue:'+id),tournamentId));
+  assert(!await b.p.evaluate(id=>SuperCalendarHome.entries().some(e=>e.id==='cue:'+id),tournamentId));
   await a.p.locator(`[data-save="${tournamentId}"]`).click();
   await a.p.locator('#snooker-favorites-cloud-status[data-status="cloud"]').waitFor();
   await b.p.evaluate(()=>window.dispatchEvent(new Event('focus')));
@@ -104,7 +104,7 @@ try {
   assert(!await b.p.evaluate(()=>document.documentElement.scrollWidth>innerWidth));
   if(evidence)await a.p.screenshot({path:path.join(evidence,'snooker-cloud-real-desktop.png')});
   await b.ctx.close();await a.ctx.close();passed=true;
-  console.log('PASS real CloudBase: same account, two isolated devices, favorite round-trip, summary display, cancellation propagation, foreign-owner read denied, immutable operation update denied, desktop/mobile');
+  console.log('PASS real CloudBase: same account, two isolated devices, favorite round-trip, summary excludes synthetic favorites and individual matches, cancellation propagation, foreign-owner read denied, immutable operation update denied, desktop/mobile');
 } finally {
   await browser.close();
   // Remove only this run's exact synthetic operation IDs through the administrator CLI.

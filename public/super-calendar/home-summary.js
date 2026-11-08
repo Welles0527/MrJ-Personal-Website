@@ -2,16 +2,11 @@
   'use strict';
   const datePattern = /^\d{4}-\d{2}-\d{2}$/;
   const beijingDay = () => new Intl.DateTimeFormat('en-CA', { timeZone:'Asia/Shanghai', year:'numeric', month:'2-digit', day:'2-digit' }).format(new Date());
-  const read = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } };
+  let snookerState = 'loading';
   function snookerEntries() {
-    const index = read('super-calendar-cue-index', {}), tournaments = read('cue-favorites', []);
-    const saved = Object.entries(read('super-calendar-sports-favorites', {})).map(([id, value]) => ({ ...value, ...entries.find(e => e.id === id), id })).filter(e => e.category === '斯诺克');
-    if (Array.isArray(tournaments)) tournaments.forEach(id => { if (index[id]) saved.push({ ...index[id], id:'cue:'+id }); });
-    Object.entries(read('cue-match-favorites', {})).forEach(([id, match]) => {
-      if (match?.eventId) saved.push({ id:'cue-match:'+id, name:match.home+' vs '+match.away, start:match.date, end:match.date, time:match.clock });
-    });
-    const seen = new Set();
-    return saved.filter(e => datePattern.test(e.start) && !seen.has(e.id) && seen.add(e.id)).map(e => ({ ...e, calendar:'sports', category:'斯诺克', end:datePattern.test(e.end) ? e.end : e.start, name:e.name+(/^\d{2}:\d{2}$/.test(e.time) ? ' '+e.time : ''), target:'#sports' }));
+    return (window.CUE_TOURNAMENTS || [])
+      .filter(e => datePattern.test(e.start) && datePattern.test(e.end) && e.end >= e.start)
+      .map(e => ({ id:'cue:'+e.id, name:e.name, start:e.start, end:e.end, calendar:'sports', category:'斯诺克', target:'#sports' }));
   }
   function summaryEntries() {
     const football = footballMatches.map(e => ({ id:e.id, calendar:'sports', category:'足球', start:e.start, end:e.end,
@@ -97,7 +92,8 @@
   function notice() {
     const plan = { loading:'重要事项读取中', error:'重要事项读取失败，请到生活日历刷新' }[personalPlanState];
     const probabilityStatus = !codexSnapshot ? '重置概率读取中' : Date.now()-Date.parse(codexSnapshot.syncedAt) > 36*3600000 ? '重置概率数据待更新' : '';
-    const messages = [plan,probabilityStatus].filter(Boolean);
+    const snookerStatus = { loading:'斯诺克赛事读取中', error:'斯诺克赛事读取失败，请刷新页面重试' }[snookerState];
+    const messages = [plan,probabilityStatus,snookerStatus].filter(Boolean);
     if (!messages.length) return '';
     return `<p class="summary-status" role="status">${messages.map(esc).join(' · ')}</p>`;
   }
@@ -108,8 +104,12 @@
   const loadFootball = loadFootballSnapshot;
   loadFootballSnapshot = async function() { await loadFootball(); if (state.page === 'home') render(); };
   const refresh = () => { if (state.page === 'home') render(); };
+  const tournamentScript = document.createElement('script');
+  tournamentScript.src = new URL('../snooker-calendar/tournaments.js?v=20261108-all-events', document.currentScript.src).href;
+  tournamentScript.onload = () => { snookerState = Array.isArray(window.CUE_TOURNAMENTS) ? 'ready' : 'error'; refresh(); };
+  tournamentScript.onerror = () => { snookerState = 'error'; refresh(); };
+  document.head.append(tournamentScript);
   window.addEventListener('investment-calendar-update', refresh);
-  window.addEventListener('storage', event => { if (['super-calendar-sports-favorites','super-calendar-cue-index','cue-favorites','cue-match-favorites'].includes(event.key)) refresh(); });
   window.addEventListener('focus', refresh);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
   let lastDay = beijingDay();

@@ -20,7 +20,7 @@ try {
     if(process.env.SNOOKER_QA_EVIDENCE)await page.screenshot({path:path.join(process.env.SNOOKER_QA_EVIDENCE,'snooker-cloud-ui-'+width+'.png')});
     await page.goto('http://127.0.0.1:4516/officialwebsite/super-calendar/index.html#home',{waitUntil:'domcontentloaded'});
     await page.locator('#snooker-favorites-cloud-status[data-status="local"]').waitFor();
-    assert(await page.evaluate(id=>SuperCalendarHome.entries().some(e=>e.id.startsWith('cue:')&&e.id.includes(id)),id));
+    await page.waitForFunction(id=>SuperCalendarHome.entries().some(e=>e.id==='cue:'+id),id);
     await page.locator('[data-view="month"]').first().click();
     await page.locator('#snooker-favorites-cloud-status[data-status="local"]').waitFor();
     assert(!await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth));
