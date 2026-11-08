@@ -427,6 +427,7 @@
   const previousRender = render;
   let inAnnualView = false;
   render = () => {
+    const savedBeforeRender = JSON.stringify(matchFavorites);
     const annualView = state.nav === 'year' && state.view === 'year';
     const scrollToCurrentMonth = annualView && !inAnnualView && window.matchMedia('(max-width:680px)').matches;
     inAnnualView = annualView;
@@ -439,6 +440,7 @@
     const count = document.querySelector('[data-nav="favorites"]>span');
     if (count) count.textContent = Object.keys(matchFavorites).length + state.favorites.size;
     if (state.nav === 'favorites') renderMatchFavorites();
+    if (JSON.stringify(matchFavorites) !== savedBeforeRender) persistFavorites();
     const breadcrumb = document.querySelector('header .crumb');
     if (breadcrumb) {
       const back = document.createElement('a');
