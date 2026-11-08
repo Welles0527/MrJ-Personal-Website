@@ -18,7 +18,7 @@ function checked(result: any): any[] {
 // Only freshly fetched authenticated records enter this archive. Never use a local fallback.
 export async function readCloudBackup(kind: BackupKind) {
   const owner = await getCloudSession();
-  if (!owner) throw new Error('请登录后再读取云端备份');
+  if (!owner || typeof owner.uid !== 'string' || !owner.uid.trim()) throw new Error('登录账号标识无效，请重新登录后再读取云端备份');
   const collection = getCloudDb().collection(collections[kind]);
   const records: any[] = [];
   if (kind === 'todo' || kind === 'stocks') {

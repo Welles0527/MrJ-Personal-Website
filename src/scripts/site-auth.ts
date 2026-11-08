@@ -117,7 +117,7 @@ const forgetSession = () => {
 };
 
 const sessionFromCurrentUser = (currentUser: CloudUser | null | undefined, session?: CloudAuthSession | null) => {
-  const uid = currentUser?.id || currentUser?.uid || session?.sub;
+  const uid = [currentUser?.id, currentUser?.uid, session?.sub].find(value => typeof value === 'string' && value.trim().length > 0);
   if (!uid || currentUser?.is_anonymous) return null;
   return { uid, account: currentUser?.email || currentUser?.username || '我的账号' } satisfies CloudSession;
 };

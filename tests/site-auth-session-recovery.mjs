@@ -129,3 +129,13 @@ console.log('PASS SDK Date/ISO/second/millisecond expiry and recoverable empty-s
   assert.equal(t.events.length,0,'remembered identity must not authorize a revoked session');
 }
 console.log('PASS same-account notification, cross-frame credential verification, guarded renewal and genuine revocation');
+for (const user of [{id:{value:'invalid'},uid:'owner'}, {id:{value:'invalid'}}]) {
+  const t=setup({read:async()=>({data:{session:{sub:'owner',user}}})});
+  const session=await t.api.getCloudSession();
+  assert.equal(session.uid,'owner','use only a nonempty string from verified SDK identity fields');
+}
+{
+  const t=setup({read:async()=>({data:{session:{user:{id:{value:'invalid'}}}}}),refresh:async()=>({data:{session:{user:{id:{value:'invalid'}}}}})},false);
+  assert.equal(await t.api.getCloudSession(),null,'invalid identity must not reach database.doc');
+}
+console.log('PASS non-scalar SDK id falls back to verified uid/sub; invalid identity cannot authorize reads');
