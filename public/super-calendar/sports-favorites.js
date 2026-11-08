@@ -8,12 +8,20 @@
   const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
   // Export tournament metadata alongside the existing favorite IDs, without changing them.
   if (isCue) {
-    const sync = () => write(cueIndexKey, Object.fromEntries(events.map(e => [e.id, { name:e.name, start:e.start, end:e.end }])));
+    const notify = () => window.dispatchEvent(new Event('snooker-favorites-local-change'));
+    const sync = () => { write(cueIndexKey, Object.fromEntries(events.map(e => [e.id, { name:e.name, start:e.start, end:e.end }]))); notify(); };
+    const previousSave = save;
+    save = function (...args) { const result = previousSave.apply(this, args); notify(); return result; };
+    window.addEventListener('snooker-favorites-cloud-change', () => {
+      state.favorites = new Set(read('cue-favorites', []));
+      render();
+    });
     const previousRender = render;
-    render = function (...args) { const result = previousRender.apply(this, args); sync(); return result; };
+    render = function (...args) { const result = previousRender.apply(this, args); sync(); window.dispatchEvent(new Event('snooker-favorites-view-change')); return result; };
     sync();
     return;
   }
+  window.addEventListener('snooker-favorites-cloud-change', () => { if (state.page === 'home') render(); else mount(); });
   const style = document.createElement('style');
   style.textContent = `.sports-favorites{margin:32px 0 20px;padding:24px;border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--text)}.sports-favorites h2{font-size:22px;margin:0 0 8px}.sports-favorites-note,.sports-favorite-meta{color:var(--muted);font-size:12px;line-height:1.7}.sports-favorites-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:18px}.sports-favorite-card{border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0}.sports-favorite-card h3{font-size:15px;line-height:1.6;margin:6px 0;overflow-wrap:anywhere}.sports-favorite-countdown{color:var(--purple);font-size:15px;margin:12px 0;font-variant-numeric:tabular-nums}.sports-favorite-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.sports-save,.sports-favorite-actions button,.sports-favorite-actions a{font:inherit;font-size:12px;border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:var(--card);color:var(--text);cursor:pointer;text-decoration:none}.sports-save[aria-pressed=true]{color:var(--purple);border-color:var(--purple)}@media(max-width:680px){.sports-favorites{padding:16px}.sports-favorites-list{grid-template-columns:1fr}}`;
   document.head.append(style);
@@ -56,7 +64,7 @@
     const section = document.createElement('section');
     section.id = 'sports-favorites'; section.className = 'sports-favorites';
     section.setAttribute('aria-label','收藏赛事');
-    section.innerHTML = `<h2>收藏赛事 <small>${list.length}</small></h2><p class="sports-favorites-note">关注的比赛集中在这里 · 北京时间 · 收藏保存在当前浏览器</p><div class="sports-favorites-list">${list.map((e,index) => `<article class="sports-favorite-card"><div class="sports-favorite-meta">${escape(e.category || '赛事')}${e.note?' · '+escape(e.note):''}</div><h3>${escape(e.name)}</h3><div class="sports-favorite-meta">${escape(e.start || '日期待定')}${e.time?' '+escape(e.time):''}${e.end && e.end!==e.start?' — '+escape(e.end):''}</div><div class="sports-favorite-countdown" data-countdown="${index}">${escape(countdown(e))}</div><div class="sports-favorite-actions">${e.sourceKey.startsWith('cue-')?'<a href="../snooker-calendar/index.html?theme=neon&view=year">查看斯诺克日历 ↗</a>':`<button type="button" data-saved-open="${index}">查看比赛</button>`}<button type="button" data-saved-remove="${index}">取消收藏</button></div></article>`).join('')}</div>${list.length?'':'<p class="sports-favorites-note">还没有收藏赛事。打开足球比赛详情点击“收藏比赛”，或在斯诺克日历中收藏赛事和单场比赛。</p>'}`;
+    section.innerHTML = `<h2>收藏赛事 <small>${list.length}</small></h2><p class="sports-favorites-note">关注的比赛集中在这里 · 北京时间 · 斯诺克收藏登录后可跨设备同步，足球收藏保存在本机</p><div class="sports-favorites-list">${list.map((e,index) => `<article class="sports-favorite-card"><div class="sports-favorite-meta">${escape(e.category || '赛事')}${e.note?' · '+escape(e.note):''}</div><h3>${escape(e.name)}</h3><div class="sports-favorite-meta">${escape(e.start || '日期待定')}${e.time?' '+escape(e.time):''}${e.end && e.end!==e.start?' — '+escape(e.end):''}</div><div class="sports-favorite-countdown" data-countdown="${index}">${escape(countdown(e))}</div><div class="sports-favorite-actions">${e.sourceKey.startsWith('cue-')?'<a href="../snooker-calendar/index.html?theme=neon&view=year">查看斯诺克日历 ↗</a>':`<button type="button" data-saved-open="${index}">查看比赛</button>`}<button type="button" data-saved-remove="${index}">取消收藏</button></div></article>`).join('')}</div>${list.length?'':'<p class="sports-favorites-note">还没有收藏赛事。打开足球比赛详情点击“收藏比赛”，或在斯诺克日历中收藏赛事和单场比赛。</p>'}`;
     const main = document.querySelector('main');
     main?.insertBefore(section, main.querySelector('.bottom-note'));
     section.querySelectorAll('[data-saved-open]').forEach(button => button.onclick=()=>showDetail(list[button.dataset.savedOpen].id));
@@ -64,6 +72,7 @@
       const item=list[button.dataset.savedRemove], saved=read(item.sourceKey,item.sourceKey==='cue-favorites'?[]:{});
       if (Array.isArray(saved)) { if (!write(item.sourceKey,saved.filter(id=>id!==item.id))) return alert('无法保存收藏，请检查浏览器存储设置。'); }
       else { delete saved[item.id]; if (!write(item.sourceKey,saved)) return alert('无法保存收藏，请检查浏览器存储设置。'); }
+      window.dispatchEvent(new Event('snooker-favorites-local-change'));
       mount();
     });
   }
@@ -83,7 +92,7 @@
   const previousFootballDetail=footballDetail;
   footballDetail=function(id){const result=previousFootballDetail(id);addSave(id);return result;};
   const previousRender=render;
-  render=function(...args){const result=previousRender.apply(this,args);mount();return result;};
+  render=function(...args){const result=previousRender.apply(this,args);mount();window.dispatchEvent(new Event('snooker-favorites-view-change'));return result;};
   window.addEventListener('storage', event=>{if([key,cueIndexKey,'cue-favorites','cue-match-favorites'].includes(event.key))mount();});
   window.addEventListener('focus',mount);
   setInterval(()=>{const list=records();document.querySelectorAll('[data-countdown]').forEach(el=>{const item=list[el.dataset.countdown];if(item)el.textContent=countdown(item);});},1000);

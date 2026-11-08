@@ -152,6 +152,11 @@
     const saved = JSON.parse(localStorage.getItem(favoriteKey) || '{}');
     if (saved && typeof saved === 'object' && !Array.isArray(saved)) matchFavorites = saved;
   } catch {}
+  window.addEventListener('snooker-favorites-cloud-change', () => {
+    try { const saved = JSON.parse(localStorage.getItem(favoriteKey) || '{}'); matchFavorites = saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {}; } catch { matchFavorites = {}; }
+    state.favorites = new Set(JSON.parse(localStorage.getItem('cue-favorites') || '[]'));
+    render();
+  });
   const favoriteRecords = new Map();
   state.matchViewByEvent ||= {};
   state.rosterLayoutByEvent ||= {};
@@ -182,6 +187,7 @@
   const favoriteButton = key => `<button type="button" class="match-favorite" data-match-favorite="${escape(key)}" aria-pressed="${Boolean(matchFavorites[key])}" aria-label="${matchFavorites[key] ? '取消收藏比赛' : '收藏比赛'}">${matchFavorites[key] ? '★ 已收藏' : '☆ 收藏'}</button>`;
   const persistFavorites = () => {
     try { localStorage.setItem(favoriteKey, JSON.stringify(matchFavorites)); } catch {}
+    window.dispatchEvent(new Event('snooker-favorites-local-change'));
   };
   function decorateFavorite(row, tournament, index) {
     if (!tournament || row.querySelector('[data-match-favorite]') || row.matches('.bracket-missing')) return;
