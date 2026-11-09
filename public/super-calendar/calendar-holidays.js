@@ -27,6 +27,7 @@
       ['2027-06-09','2027-06-09','端午节'], ['2027-09-15','2027-09-15','中秋节'], ['2027-10-01','2027-10-07','国庆节']
     ]
   };
+  const color = 'rgba(217,0,54,0.16)';
   const periods = Object.values(schedules).flat();
   const get = date => periods.find(([start,end]) => date >= start && date <= end);
   function decorate() {
@@ -34,15 +35,7 @@
     document.querySelectorAll('.summary-day[data-date],.big-day[data-date],.mini-day[data-date]').forEach(cell => {
       const date = cell.dataset.date, holiday = get(date);
       if (!holiday) return;
-      const day = new Date(date+'T12:00:00Z'), weekday = day.getUTCDay(), month = date.slice(0,7);
-      const adjacent = offset => {
-        const next = new Date(day); next.setUTCDate(next.getUTCDate()+offset);
-        const key = next.toISOString().slice(0,10);
-        return key.slice(0,7) === month && get(key) === holiday;
-      };
       cell.classList.add('calendar-holiday');
-      cell.classList.toggle('holiday-prev', weekday !== 1 && adjacent(-1));
-      cell.classList.toggle('holiday-next', weekday !== 0 && adjacent(1));
       cell.dataset.holiday = holiday[2];
       const label = date+' · '+holiday[2]+'假期';
       if (!cell.querySelector('.calendar-holiday-label')) {
@@ -51,7 +44,8 @@
         marker.title = label;
         marker.setAttribute('aria-label',label);
         if (cell.classList.contains('mini-day')) {
-          marker.innerHTML = icon('flag');
+          marker.textContent = '休';
+          marker.classList.add('calendar-holiday-rest');
           (cell.querySelector('.summary-day-icons') || cell).append(marker);
         } else {
           marker.textContent = holiday[2];
@@ -69,22 +63,18 @@
   }
   const style = document.createElement('style');
   style.textContent = `
-body:is(.summary-page,.travel-page) .mini-grid{--holiday-gap:3px}
-body.summary-page .summary-grid,body.travel-page .big-grid{--holiday-gap:7px}
-body:is(.summary-page,.travel-page) .calendar-holiday{position:relative;background:#c3e9ca!important;color:#234d32!important;border-color:#c3e9ca!important}
-body:is(.summary-page,.travel-page) .calendar-holiday.holiday-prev{border-top-left-radius:0!important;border-bottom-left-radius:0!important}
-body:is(.summary-page,.travel-page) .calendar-holiday.holiday-next{border-top-right-radius:0!important;border-bottom-right-radius:0!important}
-body:is(.summary-page,.travel-page) .calendar-holiday.holiday-next::after{content:"";position:absolute;left:100%;top:0;bottom:0;width:calc(var(--holiday-gap) + 2px);background:#c3e9ca;pointer-events:none}
+body:is(.summary-page,.travel-page) .calendar-holiday{position:relative;background:var(--summary-day-bg,${color})!important;color:#71152d!important;border-color:${color}!important}
 body:is(.summary-page,.travel-page) :is(.summary-day,.big-day).calendar-holiday{border-width:1px}
-body:is(.summary-page,.travel-page) :is(.summary-day,.big-day).calendar-holiday.holiday-next::after{top:-1px;bottom:-1px}
 body:is(.summary-page,.travel-page) .calendar-holiday.today{box-shadow:inset 0 0 0 2px var(--purple)}
-body:is(.summary-page,.travel-page) .calendar-holiday .day-number{color:#234d32}
-.calendar-holiday-label{display:block;color:#234d32;font-size:11px;line-height:1.4;margin:0 0 5px;overflow-wrap:anywhere}
+body:is(.summary-page,.travel-page) .calendar-holiday .day-number{color:#71152d}
+.calendar-holiday-label{display:block;color:#71152d;font-size:11px;line-height:1.4;margin:0 0 5px;overflow-wrap:anywhere}
 .mini-day .calendar-holiday-label{display:inline-flex;margin:0;align-items:center;justify-content:center}
-.calendar-holiday-label svg{width:12px;height:12px}
+body:is(.summary-page,.travel-page) .mini-day.calendar-holiday{background:rgba(195,233,202,0.7)!important;color:#234d32!important;border-color:rgba(195,233,202,0.7)!important}
+.mini-day .calendar-holiday-rest{width:14px;height:14px;box-sizing:border-box;border:1.3px solid currentColor;border-radius:50%;color:#e00000;font-size:10px;font-weight:800;line-height:1;flex:none}
+body.summary-page .summary-annual .calendar-holiday.has-summary-events::after{display:none}
 .holiday-coverage{font-size:12px}
-@media(max-width:760px){body.summary-page .summary-grid,body.travel-page .big-grid{--holiday-gap:3px}.travel-month .calendar-holiday-label{font-size:9px}}
+@media(max-width:760px){.travel-month .calendar-holiday-label{font-size:9px}}
 `;
   document.head.append(style);
-  window.CalendarHolidays = { get, decorate };
+  window.CalendarHolidays = { get, decorate, color };
 })();
