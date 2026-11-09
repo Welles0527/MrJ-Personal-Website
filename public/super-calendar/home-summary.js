@@ -27,7 +27,7 @@
     '足球': { background:'linear-gradient(180deg,#004d98 0%,#a50044 100%)', text:'#ffffff', accent:'#004d98' },
     investment: { background:'#efe2cb', text:'#191a18', accent:'#e8a24b' },
     ai: { background:'#fce1ed', text:'#662a46', accent:'#e9a1c1' },
-    anniversary: { background:'#ff80c8', text:'#552338', accent:'#c92370' },
+    anniversary: { background:'#fce1ed', text:'#552338', accent:'#c92370' },
     life: { background:'#f0e3dd', text:'#191a18', accent:'#f1a5da' }
   };
   function summaryIcon(category, calendar) {
@@ -118,7 +118,7 @@
 `;
 
 
-  style.textContent += `:root[data-theme] .summary-page :is(.summary-day,.mini-day).has-summary-anniversary{background:#ff80c8!important;color:#552338!important;border-color:#e969b3!important}`;
+  style.textContent += `:root[data-theme] .summary-page :is(.summary-day,.mini-day).has-summary-anniversary{background:#fce1ed!important;color:#552338!important;border-color:#e969b3!important}`;
 
   function notice() {
     return '';
