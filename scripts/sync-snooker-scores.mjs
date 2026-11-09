@@ -116,11 +116,15 @@ export async function synchronize({ now = new Date(), request = getJson, root = 
     const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai' }).format(now);
     const cutoff = new Date(Date.parse(today) - 2 * 86400000).toISOString().slice(0, 10);
     const horizon = new Date(Date.parse(today) + 30 * 86400000).toISOString().slice(0, 10);
-    const events = readEvents(await readFile(path.join(root, 'index.html'), 'utf8'))
-      .filter(e => e.end >= cutoff && e.start <= horizon);
     const tournaments = [];
     let url = endpoint;
     try {
+      const calendar = await readFile(path.join(root, 'index.html'), 'utf8');
+      const source = /<script\b[^>]*\bsrc=["'](?:\.\/)?tournaments\.js(?:\?[^"']*)?["']/i.test(calendar)
+        ? await readFile(path.join(root, 'tournaments.js'), 'utf8') : calendar;
+      const schedule = readEvents(source);
+      if (!schedule.length) throw new Error('未能读取斯诺克赛事列表');
+      const events = schedule.filter(e => e.end >= cutoff && e.start <= horizon);
       for (let page = 0; url && page < 10; page++) {
         const response = await request(url);
         if (!Array.isArray(response.data)) throw new Error('Invalid WST tournament list');

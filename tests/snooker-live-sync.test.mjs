@@ -98,6 +98,63 @@ test('matches event names and dates without mixing qualifiers or different years
   assert.deepEqual(readEvents("add('shenzhen','深圳公开赛','Shenzhen Open','09-28','10-04','ranking');"), [event]);
 });
 
+test('local and cloud sync follow the shared tournament script and retain scores if it fails', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'cue-shared-calendar-'));
+  const now = new Date('2026-11-09T10:00:00Z');
+  const calendar = '<script src="./tournaments.js?v=20261108-all-events"></script>';
+  const source = "add('champions','冠中冠','Champion of Champions','11-09','11-15','invite');";
+  const tournament = { id: 'champions-2026', attributes: { name: 'Sportsbet.io Champion of Champions 2026', startDate: '2026-11-09' } };
+  const official = { data: { ...tournament, attributes: { ...tournament.attributes, matches: [match('champion-opener', 'Scheduled', {
+    round: 'Group Semi Finals', startDateTime: '2026-11-09 13:00:00',
+    homePlayer: { firstName: 'Mark', surname: 'Selby' }, awayPlayer: { firstName: 'Alfie', surname: 'Burden' }
+  })] } } };
+  const request = async url => String(url).includes('rankings.') ? (() => { throw new Error('rankings offline'); })()
+    : String(url).endsWith('/champions-2026') ? official : { data: [tournament] };
+  let saved;
+  const db = { createCollection: async () => {}, collection: () => ({ doc: () => ({
+    get: async () => ({ data: saved ? [{ snapshot: saved }] : [] }), set: async record => { saved = record.snapshot; }
+  }) }) };
+  let sourceFails = false;
+  let sharedSource = source;
+  const fetchImpl = async url => {
+    url = String(url);
+    if (url.endsWith('/snooker-calendar/index.html')) return { ok: true, text: async () => calendar };
+    if (url.endsWith('/snooker-calendar/tournaments.js')) return sourceFails
+      ? { ok: false, status: 503 } : { ok: true, text: async () => sharedSource };
+    if (url.includes('rankings.') || url.includes('/147s/')) return { ok: false, status: 503 };
+    return { ok: true, json: () => request(url) };
+  };
+  try {
+    await writeFile(path.join(root, 'index.html'), calendar);
+    await writeFile(path.join(root, 'tournaments.js'), source);
+    const localResult = await synchronize({ root, now, request });
+    const cloudResult = await cloudSync.refreshSnookerScores(db, { now, fetchImpl });
+    assert.equal(localResult.updated[0].id, 'champions');
+    assert.equal(cloudResult.updated[0].id, 'champions');
+    const read = async () => JSON.parse((await readFile(path.join(root, 'live-scores.js'), 'utf8'))
+      .replace('window.CUE_LIVE_SCORES = ', '').trim().replace(/;$/, ''));
+    assert.deepEqual((await read()).events.champions, saved.events.champions);
+    assert.equal(saved.events.champions.matches[0].home, 'Mark Selby');
+    const valid = structuredClone(saved.events.champions);
+    sourceFails = true;
+    await rm(path.join(root, 'tournaments.js'));
+    await synchronize({ root, now, request });
+    await cloudSync.refreshSnookerScores(db, { now, fetchImpl });
+    assert.deepEqual((await read()).events.champions, valid);
+    assert.deepEqual(saved.events.champions, valid);
+    assert.ok((await read()).failures.source);
+    assert.match(saved.failures.source.message, /503/);
+    await writeFile(path.join(root, 'tournaments.js'), '/* unavailable schedule */');
+    await synchronize({ root, now, request });
+    assert.match((await read()).failures.source.message, /未能读取/);
+    sourceFails = false;
+    sharedSource = '';
+    await cloudSync.refreshSnookerScores(db, { now, fetchImpl });
+    assert.match(saved.failures.source.message, /未能读取/);
+    assert.deepEqual(saved.events.champions, valid);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
 test('follows list pagination and preserves last valid scores and timestamp after upstream failure', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'cue-sync-test-'));
   try {

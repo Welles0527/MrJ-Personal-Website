@@ -212,8 +212,12 @@ async function refreshSnookerScores(db, { now = new Date(), fetchImpl = fetch } 
   const tournaments = [];
   let url = WST_ENDPOINT;
   try {
-    const events = readEvents(await requestText(CALENDAR_URL, fetchImpl))
-      .filter((event) => event.end >= cutoff && event.start <= horizon);
+    const calendar = await requestText(CALENDAR_URL, fetchImpl);
+    const source = /<script\b[^>]*\bsrc=["'](?:\.\/)?tournaments\.js(?:\?[^"']*)?["']/i.test(calendar)
+      ? await requestText(new URL('tournaments.js', CALENDAR_URL).href, fetchImpl) : calendar;
+    const schedule = readEvents(source);
+    if (!schedule.length) throw new Error('未能读取斯诺克赛事列表');
+    const events = schedule.filter((event) => event.end >= cutoff && event.start <= horizon);
     for (let page = 0; url && page < 10; page += 1) {
       const response = await requestJson(url, fetchImpl);
       if (!Array.isArray(response.data)) throw new Error("Invalid WST tournament list");
