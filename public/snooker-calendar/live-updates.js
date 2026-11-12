@@ -245,27 +245,36 @@
       .formatToParts(new Date(value)).map(part => [part.type, part.value]));
     return { clock: `${parts.hour}:${parts.minute}`, date: `${parts.month}月${parts.day}日 ${parts.weekday}` };
   };
+  const isPlaceholder = name => /^(Wildcard|Qualifier|Winner of Match|To be decided)/i.test(name) ||
+    /^Winner Semi (One|Two)$/i.test(name);
+  const completedEliminationLoser = (eventId, match) => {
+    if (match.status !== 'ended' || match.homeScore == null || match.awayScore == null) return;
+    const round = match.round || '';
+    // Champion of Champions groups are knockout mini-brackets, including the opening matches.
+    const groupKnockout = eventId === 'champions' && /^Group (?:Semi[- ]?Finals?|Finals?)$/i.test(round);
+    if (!groupKnockout && /group|round robin|league stage/i.test(round)) return;
+    const home = Number(match.homeScore);
+    const away = Number(match.awayScore);
+    if (Number.isFinite(home) && Number.isFinite(away) && home !== away) return home < away ? match.home : match.away;
+  };
   const portrait = name => {
     const photo = window.CUE_PLAYER_PHOTO(name);
-    const fallback = /^(Wildcard|Qualifier|Winner of Match|To be decided)/i.test(name) ? '球员待定' : '暂无官方照片';
+    const fallback = isPlaceholder(name) ? '球员待定' : '暂无官方照片';
     return `<span class="match-portrait"><img src="${escape(photo || './player-placeholder.svg')}" alt="${escape(photo ? player(name) + '的头像' : fallback)}" title="${escape(photo ? player(name) : fallback)}" loading="lazy" referrerpolicy="no-referrer"></span>`;
   };
   window.CUE_GET_EVENT_PLAYERS = id => {
     const matches = snapshot?.events?.[id]?.matches || [];
-    const key = name => String(name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’‘]/g, "'").trim().toLowerCase();
     const entrants = new Map();
     matches.forEach(match => [match.home, match.away].forEach(name => {
-      if (!name || /^(Wildcard|Qualifier|Winner of Match|To be decided)/i.test(name)) return;
-      if (!entrants.has(key(name))) entrants.set(key(name), { name: player(name), en: name,
+      if (!name || isPlaceholder(name)) return;
+      if (!entrants.has(photoKey(name))) entrants.set(photoKey(name), { name: player(name), en: name,
         countryCode: assets[name]?.[0] || playerMeta[name]?.[3] || '',
         photo: window.CUE_PLAYER_PHOTO(name) || './player-placeholder.svg',
         eliminated: false });
     }));
     matches.forEach(match => {
-      if (match.status !== 'ended' || /group|round robin|league stage/i.test(match.round || '') ||
-          match.homeScore == null || match.awayScore == null || Number(match.homeScore) === Number(match.awayScore)) return;
-      const loser = Number(match.homeScore) < Number(match.awayScore) ? match.home : match.away;
-      const entrant = entrants.get(key(loser));
+      const loser = completedEliminationLoser(id, match);
+      const entrant = entrants.get(photoKey(loser));
       if (entrant) entrant.eliminated = true;
     });
     return [...entrants.values()].sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
@@ -417,19 +426,12 @@
     const knockoutEvent = data.matches.some(match => /^Round ([3-9]|[1-9]\d+)(?:\b|$)|Quarter|Semi|Final/i.test(match.round || ''));
     const knockout = !resultsPage && knockoutEvent;
     const eliminatedPlayers = new Set();
-    if (knockoutEvent) {
-      const playerKey = name => String(name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-        .replace(/[’‘]/g, "'").trim().toLocaleLowerCase();
+    if (knockoutEvent || event.id === 'champions') {
       const activePlayers = new Set(data.matches.filter(match => !['ended', 'cancelled', 'abandoned'].includes(match.status))
-        .flatMap(match => [match.home, match.away]).filter(Boolean).map(playerKey));
+        .flatMap(match => [match.home, match.away]).filter(Boolean).map(photoKey));
       data.matches.forEach(match => {
-        if (match.status !== 'ended' || /group|round robin|league stage/i.test(match.round || '') ||
-            match.homeScore == null || match.awayScore == null) return;
-        const homeScore = Number(match.homeScore);
-        const awayScore = Number(match.awayScore);
-        if (!Number.isFinite(homeScore) || !Number.isFinite(awayScore) || homeScore === awayScore) return;
-        const loser = homeScore < awayScore ? match.home : match.away;
-        if (loser && !activePlayers.has(playerKey(loser))) eliminatedPlayers.add(loser);
+        const loser = completedEliminationLoser(event.id, match);
+        if (loser && !activePlayers.has(photoKey(loser))) eliminatedPlayers.add(loser);
       });
     }
     const soon = match => match.status === 'upcoming' && Date.parse(match.startsAt) >= now &&
