@@ -50,11 +50,11 @@
     'Artemijs Zizins': '阿尔泰米斯·齐津斯', 'Noppon Saengkham': '诺鹏·桑坎姆',
     'Daniel Wells': '丹尼尔·威尔斯', 'Mark Joyce': '马克·乔伊斯',
     'Iulian Boiko': '尤里安·博伊科', 'Lyu Haotian': '吕昊天', 'Long Zehuang': '龙泽煌',
-    'Stan Moody': '斯坦·穆迪' };
+    'Stan Moody': '斯坦·穆迪', 'Winner Semi One': '半决赛一胜者', 'Winner Semi Two': '半决赛二胜者' };
   const player = name => names[name] || playerMeta[name]?.[0] ||
     (/^Winner of Match (\d+)$/i.test(name) ? name.replace(/^Winner of Match (\d+)$/i, '第 $1 场胜者') : name);
   window.CUE_PLAYER_NAME = player;
-  const roundName = name => ({ Final: '决赛', 'Semi Finals': '半决赛', 'Semi-finals': '半决赛',
+  const roundName = name => ({ Final: '决赛', 'Semi Finals': '半决赛', 'Semi-finals': '半决赛', 'Semi-Finals': '半决赛',
     'Quarter Finals': '1/4决赛', 'Quarter-finals': '1/4决赛' })[name] ||
     name.replace(/^Round (\d+) \(Held Over\)$/i, '延期资格赛第 $1 轮').replace(/^Round (\d+)$/i, '第 $1 轮');
   // WST tournament player media and country codes for the published Shenzhen draw.
@@ -340,14 +340,15 @@
       slots[round + 1].forEach((parent, index) => {
         if (!parent) return;
         [parent.home, parent.away].forEach((name, side) => {
-          const reference = name?.match(/^Winner of Match (\d+)$/i);
-          const found = available.findIndex(match => reference ? match.number === Number(reference[1]) :
+          const reference = name?.match(/^Winner of Match (\d+)$/i)?.[1] ||
+            (event.id === 'champions' && parent.round === 'Final' ? { 'Winner Semi One': '13', 'Winner Semi Two': '14' }[name] : undefined);
+          const found = available.findIndex(match => reference ? match.number === Number(reference) :
             match.walkoverWinner === name || (match.status === 'ended' && Number(match.homeScore) !== Number(match.awayScore) &&
               (Number(match.homeScore) > Number(match.awayScore) ? match.home : match.away) === name) ||
             (match.status !== 'ended' && [match.home, match.away].includes(name)));
           if (index * 2 + side < aligned.length) {
             aligned[index * 2 + side] = found >= 0 ? available.splice(found, 1)[0] :
-              name ? { missing: true, entrant: name, reference: reference?.[1] } : null;
+              name ? { missing: true, entrant: name, reference } : null;
           }
         });
       });
@@ -387,9 +388,12 @@
       if (data?.matches?.some(match => knockoutRound(match.round))) return draw(event, data);
       return previousBracket(event);
     }
+    const champions = event.id === 'champions';
     const drawAvailable = status(event) === 'live' && data?.matches?.some(match =>
-      knockoutRound(match.round) && ['ended', 'live', 'suspended'].includes(match.status));
-    if (drawAvailable && state.matchBracketByEvent[event.id] !== false) return draw(event, data);
+      knockoutRound(match.round) && (['ended', 'live', 'suspended'].includes(match.status) ||
+        (champions && match.status === 'upcoming')));
+    const drawSelected = state.matchBracketByEvent[event.id];
+    if (drawAvailable && (champions ? drawSelected === true : drawSelected !== false)) return draw(event, data);
     if (!data?.matches?.length) {
       if (!resultsPage) return previousBracket(event);
       const rows = (event.result?.length ? event.result : event.matches || []).map((row, index) => ({ row, index })).filter(({ row }) =>
@@ -446,7 +450,7 @@
       { title: '今日已结束与进行中', matches: [...finished, ...active] },
       { title: '即将开始（未来48小时）', matches: current.filter(soon) },
     ];
-    const later = resultsPage ? [] : current.filter(match => match.status === 'upcoming' && !soon(match));
+    const later = resultsPage || knockout ? [] : current.filter(match => match.status === 'upcoming' && !soon(match));
     const matchRow = match => {
       const when = match.startsAt ? dateParts(match.startsAt) : null;
       const live = match.status === 'live';
@@ -500,7 +504,9 @@
       }).join('')}</div>`;
     };
     const note = stale(data) ? '暂未取得最新数据，以下为上次同步记录' : '自动更新中 · 每 5 分钟采集';
-    return `<section class="inline-bracket" data-inline-event-id="${escape(event.id)}" style="--event-color:${color(event)}" aria-label="${escape(event.name)}对阵信息">
+    const showAllDates = champions && drawAvailable && data.matches.every(match =>
+      !/^Group\b/i.test(match.round || '') || match.status === 'ended');
+    return `<section class="inline-bracket" data-inline-event-id="${escape(event.id)}"${showAllDates ? ' data-default-all-dates' : ''} style="--event-color:${color(event)}" aria-label="${escape(event.name)}对阵信息">
       ${drawAvailable ? `<div class="inline-bracket-heading"><button type="button" data-match-bracket="${escape(event.id)}">对阵图</button></div>` : ''}
       ${knockout ? bracket() : `<div class="inline-bracket-rounds live-score-rounds">${groups.map(renderGroup).join('')}</div>
       ${later.length ? `<details class="later-matches"><summary>其他待赛对阵 · ${later.length} 场（不在未来48小时内或时间待确认）</summary>${later.map(matchRow).join('')}</details>` : ''}`}

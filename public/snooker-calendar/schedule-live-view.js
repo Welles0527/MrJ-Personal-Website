@@ -308,7 +308,8 @@
       const availableDates = calendarDates.length ? calendarDates : matchDates;
       const today = todayInBeijing();
       const savedDate = state.matchDateByEvent[eventId];
-      const selectedDate = selectedPlayer && !savedDate ? '' : availableDates.includes(savedDate) ? savedDate :
+      const defaultAllDates = panel.hasAttribute('data-default-all-dates') && (!state.championsMatchDateSelected || savedDate === '');
+      const selectedDate = defaultAllDates || (selectedPlayer && !savedDate) ? '' : availableDates.includes(savedDate) ? savedDate :
         availableDates.includes(today) ? today : availableDates[0] || today;
       state.matchDateByEvent[eventId] = selectedDate;
       const datedMatches = allMatches.filter(match => !selectedDate || match.dataset.matchDate === selectedDate);
@@ -422,7 +423,7 @@
       event.preventDefault();
       event.stopImmediatePropagation();
       const id = drawButton.dataset.matchBracket;
-      state.matchBracketByEvent[id] = state.matchBracketByEvent[id] === false;
+      state.matchBracketByEvent[id] = !drawButton.closest('.inline-bracket')?.querySelector('.bracket-stage');
       render();
       return;
     }
@@ -470,6 +471,7 @@
       const eventId = panel?.dataset.inlineEventId;
       if (panel && eventId) {
         const selectedDate = dateButton.dataset.matchDay;
+        if (eventId === 'champions') state.championsMatchDateSelected = true;
         state.matchDateByEvent[eventId] = selectedDate;
         state.matchFilterByEvent[eventId] = 'all';
         panel.querySelectorAll('[data-match-day]').forEach(button => {
