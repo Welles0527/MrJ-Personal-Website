@@ -199,18 +199,39 @@ export function mountAccountToolbar() {
   bar.querySelector<HTMLButtonElement>('[data-logout]')!.onclick = logoutAccount;
   accountActions.querySelector<HTMLButtonElement>('[data-account-sync]')!.onclick = syncAccount;
   accountActions.querySelector<HTMLButtonElement>('[data-account-logout]')!.onclick = logoutAccount;
-  const backupAll = (notify: (text: string) => void = () => {}) => run(async () => {
+  let backupInProgress = false;
+  const backupAll = async (notify: (text: string) => void = () => {}) => {
+    if (backupInProgress) { notify('正在导出云端数据，请稍候…'); return; }
+    backupInProgress = true;
     try {
-      if (!await reconcile()) { notify('请先登录，再点击备份全部云端数据'); window.MagicJAccount!.openLogin(); return; }
-      notify('正在确认当前页面保存完成…');
-      await prepareLeave();
-      await exportAllCloudBackup(text => { say(text); notify(text); });
-      say('全部云端数据 Excel 已导出'); notify('全部云端数据 Excel 已导出，请确认浏览器下载文件');
-    } catch (error) {
-      notify(`未导出：${error instanceof Error ? error.message : '云端读取失败，请重试'}`); throw error;
+      await run(async () => {
+        try {
+          if (!await reconcile()) { notify('请先登录，再点击备份全部云端数据'); window.MagicJAccount!.openLogin(); return; }
+          notify('正在确认当前页面保存完成…');
+          await prepareLeave();
+          await exportAllCloudBackup(text => { say(text); notify(text); });
+          say('全部云端数据 Excel 已导出'); notify('全部云端数据 Excel 已导出，请确认浏览器下载文件');
+        } catch (error) {
+          notify(`未导出：${error instanceof Error ? error.message : '云端读取失败，请重试'}`); throw error;
+        }
+      });
+    } finally {
+      backupInProgress = false;
     }
-  });
+  };
   bar.querySelector<HTMLButtonElement>('[data-backup]')!.onclick = () => void backupAll();
+  document.addEventListener('click', async event => {
+    const button = (event.target as Element | null)?.closest<HTMLButtonElement>('[data-account-backup-all]');
+    if (!button || backupInProgress) return;
+    const notify = (text: string) => {
+      const output = document.querySelector<HTMLElement>('[data-account-backup-status]');
+      if (output) output.textContent = text;
+    };
+    button.disabled = true;
+    notify('正在核实账号…');
+    try { await backupAll(notify); }
+    finally { button.disabled = false; }
+  });
   if (window.top === window.self) mountWeeklyBackupReminder(backupAll);
   dialog.querySelector<HTMLButtonElement>('[data-register]')!.onclick = async () => {
     const register = dialog.querySelector<HTMLButtonElement>('[data-register]')!;

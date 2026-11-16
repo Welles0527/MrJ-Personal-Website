@@ -18,7 +18,11 @@
     const current = beijingDay();
     const probability = codexSnapshot && Number.isFinite(codexSnapshot.probability48h)
       ? [{ id:'reset-probability', calendar:'ai', start:current, end:current, name:'重置概率 '+codexSnapshot.probability48h+'%（48h）', target:'#ai' }] : [];
-    return [...snookerEntries(), ...football, ...(window.InvestmentCalendar?.summaryEntries() || []), ...plans, ...anniversaries, ...savedAnniversaries, ...probability]
+    const proRenewals = monthNames.map((_, month) => {
+      const date = dateStr(month, 4);
+      return { id:'pro-renewal:'+date, calendar:'ai', start:date, end:date, name:'Pro账号充值', iconKey:'pro-renewal' };
+    });
+    return [...snookerEntries(), ...football, ...(window.InvestmentCalendar?.summaryEntries() || []), ...plans, ...anniversaries, ...savedAnniversaries, ...probability, ...proRenewals]
       .filter(e => datePattern.test(e.start) && datePattern.test(e.end))
       .sort((a,b) => a.start.localeCompare(b.start) || a.name.localeCompare(b.name, 'zh-CN'));
   }
@@ -31,6 +35,7 @@
     life: { background:'#f0e3dd', text:'#191a18', accent:'#f1a5da' }
   };
   function summaryIcon(category, calendar) {
+    if (category === 'pro-renewal') return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18M7 15h4"/></svg>';
     if (category === 'personal-snooker') {
       const colors = ['#d6002a','#e8bf00','#d6002a','#168345','#d6002a','#8b4513','#d6002a','#d6002a','#1671cb','#d6002a','#ee89b6','#d6002a','#d6002a','#171717','#d6002a'];
       let index = 0;
@@ -50,8 +55,9 @@
   function item(e) {
     const colors = e.anniversary ? itemThemes.anniversary : itemThemes[e.category] || itemThemes[e.calendar];
     const backgroundLayer = colors.background.startsWith('linear-gradient') ? colors.background : 'linear-gradient('+colors.background+','+colors.background+')';
-    const attribute = e.lifeDate ? 'data-summary-life-date="'+esc(e.lifeDate)+'"' : e.eventId ? 'data-event="'+esc(e.eventId)+'"' : e.planId ? 'data-personal-plan="'+esc(e.planId)+'"' : 'data-summary-target="'+esc(e.target)+'"';
-    return `<button class="summary-event" ${attribute} style="--event-color:${colors.accent};--summary-event-bg:${colors.background};--summary-event-layer:${backgroundLayer};--summary-event-ink:${colors.text}" title="${esc(e.name)}">${summaryIcon(e.iconKey || e.category,e.calendar)}<span>${esc(e.name)}</span></button>`;
+    const attribute = e.lifeDate ? 'data-summary-life-date="'+esc(e.lifeDate)+'"' : e.eventId ? 'data-event="'+esc(e.eventId)+'"' : e.planId ? 'data-personal-plan="'+esc(e.planId)+'"' : e.target ? 'data-summary-target="'+esc(e.target)+'"' : '';
+    const tag = attribute ? 'button' : 'div';
+    return `<${tag} class="summary-event" ${attribute} style="--event-color:${colors.accent};--summary-event-bg:${colors.background};--summary-event-layer:${backgroundLayer};--summary-event-ink:${colors.text}" title="${esc(e.name)}">${summaryIcon(e.iconKey || e.category,e.calendar)}<span>${esc(e.name)}</span></${tag}>`;
   }
   function weather(date) {
     if (!['全部','travel'].includes(state.category)) return '';
@@ -103,6 +109,7 @@
 .summary-heading-row .topic-tabs button{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:44px;padding:0 10px;line-height:1;font-size:14px;box-sizing:border-box}
 .summary-heading-row .summary-filter-icon{display:inline-flex;align-items:center;margin:0}
 .summary-heading-row .summary-filter-icon svg{width:16px;height:16px;flex-shrink:0}
+@media(max-width:760px){div.summary-event{gap:2px;padding-inline:2px}div.summary-event svg{width:12px;height:12px}}
 .summary-heading-row .title-actions{margin-left:auto}
 .summary-heading-row .switch{padding:3px;gap:2px}
 .summary-heading-row .switch button{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 12px;font-size:14px;line-height:1;box-sizing:border-box}
