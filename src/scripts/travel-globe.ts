@@ -8,10 +8,15 @@ declare global { interface Window { CESIUM_BASE_URL: string } }
 window.CESIUM_BASE_URL = base;
 const loading = document.querySelector<HTMLElement>('[data-loading]')!;
 const panel = document.querySelector<HTMLElement>('[data-selection]')!;
+const panelScroll = panel.querySelector<HTMLElement>('[data-selection-scroll]')!;
+const panelGallery = panel.querySelector<HTMLElement>('[data-selection-gallery]')!;
+const panelStatus = panel.querySelector<HTMLElement>('[data-selection-status]')!;
 const status = document.querySelector<HTMLElement>('[data-view-status]')!;
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const fallbackMap = document.querySelector<HTMLElement>('[data-fallback-map]')!;
 let selected: string | null = null;
+let albumRequest: AbortController | undefined;
+let selectionTrigger: HTMLElement | null = null;
 let mapMode = '3d';
 let mapFailed = false;
 let focusMapAlbum: ((album: Album) => void) | undefined;
@@ -19,21 +24,86 @@ let changeSceneMode: ((flat: boolean) => void) | undefined;
 let resetMap: (() => void) | undefined;
 const updateModeButtons = () => document.querySelectorAll<HTMLButtonElement>('[data-mode]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.mode === mapMode)));
 const closeSelection = () => {
+  if (panel.hidden) return;
+  const restoreFocus = panel.contains(document.activeElement);
+  albumRequest?.abort();
   panel.hidden = true;
+  panelGallery.replaceChildren();
+  if (restoreFocus) selectionTrigger?.focus({ preventScroll: true });
+  selectionTrigger = null;
   selected = null;
   status.textContent = '全球视角';
   document.querySelectorAll('.is-selected').forEach(row => row.classList.remove('is-selected'));
   document.querySelectorAll('[data-focus]').forEach(button => button.setAttribute('aria-pressed', 'false'));
 };
-const selectAlbum = (id: string) => {
+
+async function loadPanelPhotos(album: Album) {
+  albumRequest?.abort();
+  const request = new AbortController();
+  albumRequest = request;
+  panelScroll.scrollTop = 0;
+  panelGallery.replaceChildren();
+  panelStatus.hidden = false;
+  panelStatus.textContent = '正在加载照片…';
+
+  try {
+    const response = await fetch(album.href, { signal: request.signal });
+    if (!response.ok) throw new Error('Album preview unavailable');
+    // Read the published gallery markup without mounting it or loading its images.
+    const template = document.createElement('template');
+    template.innerHTML = await response.text();
+    if (request.signal.aborted) return;
+
+    const fragment = document.createDocumentFragment();
+    let groupLabel: string | undefined;
+    let photos: HTMLDivElement | undefined;
+    for (const card of template.content.querySelectorAll<HTMLElement>('.photo-card[data-src]')) {
+      const src = new URL(card.dataset.src!, response.url);
+      if (src.origin !== location.origin || !src.pathname.includes('/images/photo-wall/')) continue;
+      const label = card.dataset.day || card.closest('section')?.querySelector('h2, h3')?.textContent?.trim() || '';
+      if (!photos || groupLabel !== label) {
+        groupLabel = label;
+        const group = document.createElement('section');
+        group.className = 'selection-group';
+        if (label) {
+          const heading = document.createElement('h3');
+          heading.textContent = label;
+          group.append(heading);
+        }
+        photos = document.createElement('div');
+        photos.className = 'selection-photos';
+        group.append(photos);
+        fragment.append(group);
+      }
+      const link = document.createElement('a');
+      link.className = 'selection-photo';
+      link.href = src.href;
+      link.target = '_blank';
+      link.rel = 'noopener';
+      const image = document.createElement('img');
+      image.loading = 'lazy';
+      image.decoding = 'async';
+      image.alt = card.getAttribute('aria-label') || '查看大图';
+      image.src = src.href;
+      link.append(image);
+      photos.append(link);
+    }
+    if (!photos) throw new Error('No photos in album preview');
+    panelGallery.replaceChildren(fragment);
+    panelStatus.hidden = true;
+  } catch {
+    if (!request.signal.aborted) panelStatus.textContent = '照片暂时无法加载，可打开完整相册查看。';
+  }
+}
+
+const selectAlbum = (id: string, moveFocus = false) => {
   const album = albums.find(item => item.id === id);
   if (!album) return;
+  if (document.activeElement instanceof HTMLElement && !panel.contains(document.activeElement)) {
+    selectionTrigger = document.activeElement;
+  }
   selected = id;
-  const image = panel.querySelector<HTMLImageElement>('[data-selection-image]')!;
-  image.src = album.cover;
-  image.alt = `${album.markerName}相册封面`;
   panel.querySelector('[data-selection-title]')!.textContent = album.name;
-  panel.querySelector('[data-selection-region]')!.textContent = album.region;
   panel.querySelector('[data-selection-count]')!.textContent = `${album.count.toLocaleString()} 张照片`;
   panel.querySelector<HTMLAnchorElement>('[data-selection-link]')!.href = album.href;
   panel.hidden = false;
@@ -41,7 +111,9 @@ const selectAlbum = (id: string) => {
   document.querySelectorAll<HTMLButtonElement>('[data-focus]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.focus === id)));
   document.querySelectorAll<HTMLElement>('[data-album-row]').forEach(row => row.classList.toggle('is-selected', row.dataset.albumRow === id));
   focusMapAlbum?.(album);
+  void loadPanelPhotos(album);
   if (innerWidth <= 820) document.querySelector('.world')?.scrollIntoView({ behavior: reducedMotion ? 'instant' : 'smooth', block: 'start' });
+  if (moveFocus) panel.focus({ preventScroll: true });
 };
 const showFlatFallback = (message: string) => {
   if (mapFailed) return;
@@ -59,7 +131,7 @@ const showFlatFallback = (message: string) => {
   document.querySelectorAll<HTMLButtonElement>('[data-zoom]').forEach(button => { button.disabled = true; });
   updateModeButtons();
 };
-document.querySelectorAll<HTMLButtonElement>('[data-focus]').forEach(button => button.addEventListener('click', () => selectAlbum(button.dataset.focus!)));
+document.querySelectorAll<HTMLButtonElement>('[data-focus]').forEach(button => button.addEventListener('click', event => selectAlbum(button.dataset.focus!, event.detail === 0)));
 document.querySelector('[data-close]')!.addEventListener('click', closeSelection);
 document.querySelector('[data-home]')!.addEventListener('click', () => { closeSelection(); resetMap?.(); });
 document.addEventListener('keydown', event => { if (event.key === 'Escape') closeSelection(); });

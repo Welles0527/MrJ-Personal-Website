@@ -1,7 +1,6 @@
 ---
 import travelAlbums from '../../../../data/travel-2018-albums.json';
 import albumData from '../../../../data/jamaica-photo-album.json';
-import coffeeAlbumData from '../../../../data/coffee-latte-art-album.json';
 import japanAlbumData from '../../../../data/japan-kanto-2015-album.json';
 import sanyaAlbumData from '../../../../data/sanya-2016-album.json';
 import { sitePath } from '../../../../data/site';
@@ -48,16 +47,6 @@ const albums = [
     caption: '远方，也成为日常',
     insetIds: ['389ba8f246ec6399401778072e384e94f0483f3d', '4d50b87f485f64b1d38ef71c043fdf5ce276d8fe'],
   },
-  {
-    data: coffeeAlbumData,
-    displayName: '上海',
-    region: 'domestic',
-    title: '上海',
-    date: '2013–2026',
-    note: '一杯咖啡，一段日常。心形、叶片与细密的纹理，记录着城市里温柔的停顿。',
-    caption: '把日常酿成风景',
-    insetIds: ['b55629f5-e011-43b2-b391-9ee1a6ea93a5', '5d2cc5a8-233c-4890-bc6c-d56e523a3b86'],
-  },
 ].map((album, index) => ({
   ...album,
   number: String(index + 1).padStart(2, '0'),
@@ -75,7 +64,7 @@ const photoCount = albums.reduce((total, album) => total + album.data.album.coun
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#cfd0d2" />
     <meta name="robots" content="noindex" />
-    <meta name="description" content="翻开J先生的旅行画册，在伦敦、裸心谷、湖州、三亚、上海、日本与牙买加的真实影像间漫游。" />
+    <meta name="description" content="翻开J先生的旅行画册，在伦敦、裸心谷、湖州、三亚、日本与牙买加的真实影像间漫游。" />
     <title>旅行相册 · J先生的影像志</title>
     <style>
       @font-face {
