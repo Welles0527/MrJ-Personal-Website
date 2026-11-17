@@ -2,6 +2,12 @@
   'use strict';
   const datePattern = /^\d{4}-\d{2}-\d{2}$/;
   const beijingDay = () => new Intl.DateTimeFormat('en-CA', { timeZone:'Asia/Shanghai', year:'numeric', month:'2-digit', day:'2-digit' }).format(new Date());
+  const zodiacSymbols = ['♒','♓','♈','♉','♊','♋','♌','♍','♎','♏','♐','♑'];
+  const zodiacStartDays = [20,19,21,20,21,21,23,23,23,23,22,22];
+  function zodiacMark(month, day) {
+    const sign = day < zodiacStartDays[month] ? (month + 11) % 12 : month;
+    return `<span class="summary-zodiac-mark">${zodiacSymbols[sign]}&#xFE0E;</span>`;
+  }
   function snookerEntries() {
     return (window.CUE_TOURNAMENTS || [])
       .filter(e => datePattern.test(e.start) && datePattern.test(e.end) && e.end >= e.start)
@@ -68,37 +74,45 @@
   }
   function monthly() {
     const all = filtered().filter(e => isMonth(e,state.month));
-    return `<section class="month-panel summary-month" aria-label="超级日历月历"><div class="calendar-title"><h2>${monthNames[state.month]} <span>${state.year}</span></h2><span class="muted">北京时间 · ${esc(weatherCity)}</span></div><div class="summary-scroll" tabindex="0" aria-label="左右滑动查看完整月历"><div class="summary-grid">${['周一','周二','周三','周四','周五','周六','周日'].map(w => '<div class="weekday">'+w+'</div>').join('')}${days(state.month).map(d => {
+    return `<section class="month-panel summary-month" aria-label="超级日历月历"><div class="calendar-title"><h2>${monthNames[state.month]} <span>${state.year}</span></h2></div><div class="summary-scroll" tabindex="0" aria-label="左右滑动查看完整月历"><div class="summary-grid">${['周一','周二','周三','周四','周五','周六','周日'].map(w => '<div class="weekday">'+w+'</div>').join('')}${days(state.month).map(d => {
       const date = dateStr(state.month,d), items = d ? all.filter(e => e.start <= date && e.end >= date) : [];
-      return `<div class="summary-day ${d ? '' : 'out'} ${d && date === beijingDay() ? 'today' : ''} ${items.some(e => e.anniversary) ? 'has-summary-anniversary' : ''}" data-date="${d ? date : ''}">${d ? `<div class="summary-date"><strong>${d}</strong>${weather(date)}</div>${items.map(item).join('')}` : ''}</div>`;
+      return `<div class="summary-day ${d ? '' : 'out'} ${d && date === beijingDay() ? 'today' : ''} ${items.some(e => e.anniversary) ? 'has-summary-anniversary' : ''}" data-date="${d ? date : ''}">${d ? `<div class="summary-date"><span class="summary-date-label"><strong>${d}</strong>${zodiacMark(state.month,d)}</span>${weather(date)}</div>${items.map(item).join('')}` : ''}</div>`;
     }).join('')}</div></div><p class="summary-mobile-hint">左右滑动查看完整周历</p></section>`;
   }
   function annual() {
+    const query = state.query;
+    state.query = '';
     const all = filtered();
+    state.query = query;
     return `<div class="annual summary-annual">${monthNames.map((name,m) => {
-      return `<section class="month-card"><div class="month-top"><button class="month-title" data-month="${m}"><b>${String(m+1).padStart(2,'0')}</b><span>${name}</span></button></div><div class="mini-grid">${['一','二','三','四','五','六','日'].map(w => '<div class="weekday">'+w+'</div>').join('')}${days(m).map(d => {
-        const date = dateStr(m,d), matches = d ? all.filter(e => e.start <= date && e.end >= date) : [];
+      return `<section class="month-card ${beijingDay().startsWith(state.year+'-'+String(m+1).padStart(2,'0')) ? 'summary-current-month' : ''}"><div class="month-top"><button class="month-title" data-month="${m}"><b>${String(m+1).padStart(2,'0')}</b><span>${name}</span></button><div class="summary-month-zodiac">${zodiacMark(m,1)}${zodiacMark(m,zodiacStartDays[m])}</div></div><div class="mini-grid">${['一','二','三','四','五','六','日'].map(w => '<div class="weekday">'+w+'</div>').join('')}${days(m).map(d => {
+        if (!d) return '<div class="mini-day empty" aria-hidden="true"></div>';
+        const date = dateStr(m,d), matches = all.filter(e => e.start <= date && e.end >= date);
         const groups = new Map();
         matches.forEach(e => {
           const key = (e.anniversary ? 'anniversary:' : '')+(e.iconKey || (itemThemes[e.category] ? e.category : e.calendar));
           if (!groups.has(key)) groups.set(key, { colors:e.anniversary ? itemThemes.anniversary : itemThemes[e.category] || itemThemes[e.calendar], category:e.category, iconKey:e.iconKey, calendar:e.calendar, names:[] });
           groups.get(key).names.push(annualName(e));
         });
-        const forecast = d ? weather(date) : '';
+        const forecast = weather(date);
         const label = date+' '+matches.map(annualName).join('；');
-        return `<button class="mini-day ${d ? '' : 'empty'} ${date === beijingDay() ? 'today' : ''} ${matches.some(e => e.anniversary) ? 'has-summary-anniversary' : ''}" ${d ? 'data-date="'+date+'" data-month="'+m+'"' : 'disabled'} title="${esc(label)}" aria-label="${esc(label)}"><span class="summary-day-number">${d || ''}</span><span class="summary-day-icons">${[...groups.values()].map(g => `<span class="summary-type-icon" style="color:${g.category === '足球' ? '#004d98' : g.category === '斯诺克' ? 'var(--text)' : g.colors.text}" title="${esc(g.names.join('；'))}" aria-hidden="true">${summaryIcon(g.iconKey || g.category,g.calendar)}</span>`).join('')}${forecast}</span></button>`;
+        return `<button class="mini-day ${date === beijingDay() ? 'today' : ''} ${matches.some(e => e.anniversary) ? 'has-summary-anniversary' : ''}" data-date="${date}" data-month="${m}" title="${esc(label)}" aria-label="${esc(label)}"><span class="summary-day-number">${d}</span><span class="summary-day-icons">${[...groups.values()].map(g => `<span class="summary-type-icon" style="color:${g.category === '足球' ? '#004d98' : g.category === '斯诺克' ? 'var(--text)' : g.colors.text}" title="${esc(g.names.join('；'))}" aria-hidden="true">${summaryIcon(g.iconKey || g.category,g.calendar)}</span>`).join('')}${forecast}</span></button>`;
       }).join('')}</div></section>`;
     }).join('')}</div>`;
   }
   const style = document.createElement('style');
   style.textContent = `.summary-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px;background:var(--card);min-width:770px}.summary-day{border:1px solid var(--border);border-radius:16px}.summary-scroll{overflow-x:auto}.summary-grid>.weekday{background:var(--card);padding:12px 4px}.summary-day{min-width:0;min-height:126px;background:var(--cell);padding:8px}.summary-day.out{background:var(--card);border-radius:8px}.summary-day.today{box-shadow:inset 0 0 0 2px var(--purple)}.summary-date{display:flex;align-items:center;justify-content:space-between;min-height:34px;margin-bottom:5px}.summary-event{display:flex;align-items:flex-start;gap:5px;width:100%;min-width:0;margin:5px 0;padding:6px;text-align:left;line-height:1.5;font-size:12px;color:var(--summary-event-ink);border:0;border-left:3px solid var(--event-color);border-radius:4px;background:var(--summary-event-layer),var(--summary-event-base,var(--cell))}.summary-event svg{flex:none;width:14px;height:14px;margin-top:2px;color:var(--summary-event-ink)}.summary-event span{min-width:0;overflow-wrap:anywhere}.summary-weather{display:inline-flex}.summary-annual .mini-day{min-height:44px;height:auto;position:relative}.summary-annual .weather-icon{width:18px;height:18px}.summary-annual .mini-day .day-dot{background:var(--purple)}.summary-mobile-hint{display:none}.summary-status{font-size:12px;line-height:1.7;color:var(--muted);margin:12px 0}.summary-status a{color:var(--purple)}@media(max-width:760px){.summary-grid{gap:3px}.summary-day{border-radius:10px}}@media(max-width:680px){.summary-mobile-hint{display:block;font-size:12px;color:var(--muted);padding:0 12px}.summary-day{min-height:108px}.summary-month .calendar-title{flex-wrap:wrap;gap:8px}.summary-month .calendar-title .muted{font-size:11px}}`;
   document.head.append(style);
-  style.textContent += `.summary-annual .mini-day{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;min-height:58px;padding:5px 2px;min-width:0}.summary-day-number{padding:0 3px;border-radius:3px;color:var(--text)}.summary-day-icons{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:3px;min-width:0;max-width:100%}.summary-type-icon{display:inline-flex;padding:2px;border-radius:3px}.summary-type-icon svg{width:13px;height:13px}:root[data-theme] .summary-annual .mini-day:not(.calendar-holiday){background:transparent;color:var(--text)}:root[data-theme] .summary-annual .mini-day.today{box-shadow:inset 0 0 0 2px var(--purple)}`;
+  style.textContent += `.summary-annual .mini-day{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;min-height:58px;padding:5px 2px;min-width:0}.summary-day-number{padding:0 3px;border-radius:3px;color:var(--text)}.summary-day-icons{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:3px;min-width:0;max-width:100%}.summary-type-icon{display:inline-flex;padding:2px;border-radius:3px}.summary-type-icon svg{width:13px;height:13px}:root[data-theme] .summary-annual .mini-day:not(.calendar-holiday){background:transparent;color:var(--text)}:root[data-theme] body.summary-page .summary-annual .mini-day.today{background:#d90036!important;border-color:#d90036!important;box-shadow:none;color:#fff!important}:root[data-theme] .summary-annual .mini-day.today .summary-day-number{color:#fff}`;
 
   style.textContent += `:root[data-theme="cream"] .summary-grid,:root[data-theme="cream"] .summary-grid>.weekday,:root[data-theme="cream"] .summary-day{background:#ffffff;--summary-event-base:#ffffff}`;
 
   style.textContent += `.summary-page .calendar-topbar .period-control strong,.summary-page .calendar-topbar .mobile-menu{color:var(--text)}.summary-page .calendar-topbar select,.summary-page .calendar-topbar select option,.summary-page .calendar-topbar .period-control button{background:var(--surface-strong);color:var(--text)}:root[data-theme="cream"] .summary-page .switch button:not(.active){color:#e1ddcd}.summary-page .title-actions>.primary{display:none}.summary-grid>.weekday{height:auto;min-height:36px;line-height:1.5;padding:8px 4px}`;
   style.textContent += `
+.summary-date-label,.summary-month-zodiac{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.summary-zodiac-mark{color:#b8b8b8;font:400 15px/1 "Segoe UI Symbol",sans-serif}
+.summary-month-zodiac{gap:8px;margin-right:calc((100% - 18px)/14 - 7px)}
+.summary-month-zodiac .summary-zodiac-mark{font-size:24px}
 .summary-page .title-row.summary-heading-row{display:flex;flex-direction:row;align-items:flex-end;flex-wrap:nowrap;gap:20px;max-width:100%;overflow-x:auto;padding-bottom:6px;margin-bottom:18px}
 .summary-heading-row>div:first-child,.summary-heading-row .topic-tabs,.summary-heading-row .title-actions,.summary-heading-row .search{flex:0 0 auto;white-space:nowrap}
 .summary-heading-row .eyebrow{font-size:10px;line-height:14px;margin:0 0 8px}
@@ -127,11 +141,51 @@
 
   style.textContent += `:root[data-theme] .summary-page :is(.summary-day,.mini-day).has-summary-anniversary{background:#fce1ed!important;color:#552338!important;border-color:#e969b3!important}`;
 
+  const zodiacNames = ['水瓶座','双鱼座','白羊座','金牛座','双子座','巨蟹座','狮子座','处女座','天秤座','天蝎座','射手座','摩羯座'];
+  function openZodiacWheel() {
+    const dialog = document.createElement('dialog');
+    dialog.className = 'summary-zodiac-dialog';
+    dialog.innerHTML = `<button class="dialog-close" aria-label="关闭星座转盘">×</button><h2>星座</h2><div class="zodiac-wheel">${zodiacSymbols.map((symbol,index) => `<span class="zodiac-sector" style="--angle:${index*30}deg"></span><span class="zodiac-wheel-sign" style="--angle:${index*30+15}deg" title="${zodiacNames[index]}">${symbol}&#xFE0E;</span>`).join('')}<div class="zodiac-pointer"></div><span class="zodiac-pivot"></span></div><p class="zodiac-current" role="status"></p>`;
+    const update = () => {
+      const date = beijingDay(), month = Number(date.slice(5,7))-1, day = Number(date.slice(8));
+      const sign = day < zodiacStartDays[month] ? (month+11)%12 : month;
+      dialog.querySelector('.zodiac-pointer').style.transform = `rotate(${sign*30+15}deg)`;
+      dialog.querySelectorAll('.zodiac-wheel-sign').forEach((node,index) => node.classList.toggle('active',index===sign));
+      dialog.querySelector('.zodiac-current').textContent = date+' · '+zodiacNames[sign];
+    };
+    document.body.append(dialog);
+    update();
+    dialog.showModal();
+    const timer = setInterval(update,60000);
+    dialog.querySelector('.dialog-close').onclick = () => dialog.close();
+    dialog.addEventListener('close',() => { clearInterval(timer);dialog.remove(); },{once:true});
+  }
+  style.textContent += `
+:root[data-theme] .summary-annual .summary-current-month{border:2px solid #d90036}
+:root[data-theme] .summary-page .months .summary-current-month{background:#d90036;color:#fff;font-weight:700}
+:root[data-theme] .summary-page .months .summary-current-month small{color:#fff}
+.summary-zodiac-button{height:44px;padding:0 22px;border:1px solid var(--border);border-radius:8px;background:var(--surface-strong);color:var(--text);white-space:nowrap}
+.summary-zodiac-dialog{width:min(460px,calc(100vw - 32px));max-height:90dvh;padding:24px;overflow:auto;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:18px}
+.summary-zodiac-dialog h2{margin:0 0 22px}
+.zodiac-wheel{position:relative;width:100%;aspect-ratio:1;border:3px double currentColor;border-radius:50%;color:var(--text)}
+.zodiac-wheel:before{content:'';position:absolute;inset:17%;border:2px solid currentColor;border-radius:50%}
+.zodiac-sector{position:absolute;left:50%;top:0;height:50%;width:1px;transform-origin:bottom;transform:rotate(var(--angle));background:linear-gradient(currentColor 0 34%,transparent 34%)}
+.zodiac-wheel-sign{position:absolute;left:calc(50% - 18px);top:calc(50% - 18px);width:36px;height:36px;display:grid;place-items:center;font:28px/1 "Segoe UI Symbol",sans-serif;transform:rotate(var(--angle)) translateY(calc(-1 * min(162px,36vw))) rotate(calc(-1 * var(--angle)))}
+.zodiac-wheel-sign.active{color:var(--purple);font-weight:700}
+.zodiac-pointer{position:absolute;left:calc(50% - 5px);bottom:50%;width:10px;height:31%;background:var(--purple);clip-path:polygon(50% 0,100% 100%,50% 90%,0 100%);transform-origin:50% 100%}
+.zodiac-pivot{position:absolute;left:calc(50% - 6px);top:calc(50% - 6px);width:12px;height:12px;border-radius:50%;background:var(--purple)}
+.zodiac-current{text-align:center;margin:20px 0 0}
+@media(max-width:500px){.zodiac-wheel-sign{transform:rotate(var(--angle)) translateY(calc(-1 * (100vw - 86px) * .41)) rotate(calc(-1 * var(--angle)));font-size:24px}}
+`;
   function notice() {
     return '';
   }
   window.SuperCalendarHome = { entries:summaryEntries, monthly, annual, notice, bind() {
     if (state.page === 'home') {
+      const current = beijingDay();
+      document.querySelectorAll('.months [data-month]').forEach(button => {
+        button.classList.toggle('summary-current-month', current.startsWith(state.year+'-'+String(Number(button.dataset.month)+1).padStart(2,'0')));
+      });
       const heading = document.querySelector('main > .title-row');
       const toolbar = document.querySelector('main > .hub-toolbar');
       if (heading && toolbar) {
@@ -148,7 +202,13 @@
           document.querySelector('.summary-category-select')?.focus({preventScroll:true});
         };
         heading.insertBefore(filters, heading.querySelector('.title-actions'));
-        heading.append(toolbar.querySelector('.search'));
+        if (state.view === 'year') {
+          const button = document.createElement('button');
+          button.className = 'summary-zodiac-button';
+          button.textContent = '♐ 星座';
+          button.onclick = openZodiacWheel;
+          heading.append(button);
+        } else heading.append(toolbar.querySelector('.search'));
         toolbar.remove();
       }
     }

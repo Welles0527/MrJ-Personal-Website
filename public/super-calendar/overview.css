@@ -93,9 +93,8 @@ body.overview-page[data-overview-theme="dark"] {
 .overview-page .space-themes button { min-width: 56px; min-height: 36px; padding: 7px 12px; border-radius: 999px; font-size: 12px; color: var(--space-muted); transition: background .18s, color .18s; }
 .overview-page .space-themes button:hover { color: var(--space-ink); }
 .overview-page .space-themes button[aria-pressed="true"] { background: var(--space-selected); color: var(--space-selected-ink); font-weight: 700; }
-.overview-page .calendar-login-button { max-width: 160px; min-height: 44px; padding: 10px 16px; border: 1px solid var(--space-line); border-radius: 999px; background: var(--space-control); font-size: 12px; color: var(--space-ink); }
+.overview-page .calendar-login-button { max-width: 160px; min-height: 44px; padding: 10px 16px; border: 1px solid var(--space-line); border-radius: 999px; background: var(--space-control); font-size: 12px; color: var(--space-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .overview-page .calendar-account-tools { flex-wrap: wrap; justify-content: flex-end; }
-.overview-page .calendar-account-tools [role="status"] { display: none !important; }
 .overview-page .space-main { display: grid; align-content: center; width: 100%; margin: 0; padding: 40px 0; flex: 1; }
 .overview-page .space-panel { padding: 0; }
 .overview-page .space-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
@@ -146,7 +145,7 @@ body.overview-page[data-overview-theme="dark"] {
   :root .overview-page .space-header { padding: 20px 0 16px; gap: 18px; }
   .overview-page .space-brand { font-size: 18px; }
   .overview-page .space-mark { width: 40px; height: 40px; }
-  .overview-page .space-controls { width: 100%; justify-content: space-between; gap: 10px; }
+  .overview-page .space-controls { width: 100%; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
   .overview-page .space-themes button { min-width: 58px; min-height: 38px; }
   .overview-page .calendar-login-button { max-width: 100px; }
   .overview-page .space-grid { gap: 12px; }
