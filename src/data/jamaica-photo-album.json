@@ -4,7 +4,7 @@
     "name": "牙买加",
     "eyebrow": "JAMAICA · LIFE ARCHIVE",
     "description": "依照生活照片目录重新编排的牙买加记忆：大事、小事、考察与那些具有标志性的瞬间。",
-    "count": 2154,
+    "count": 2140,
     "chapterCount": 58,
     "cover": "/images/photo-wall/jamaica/a72614b6b37421485e35aa728267669edd077cd7.webp",
     "coverId": "a72614b6b37421485e35aa728267669edd077cd7",
@@ -16,15 +16,15 @@
       "其他"
     ],
     "countsByEvent": {
-      "Jamaica标志性照片": 34,
-      "大事记": 1466,
-      "其他": 100,
+      "Jamaica标志性照片": 33,
+      "大事记": 1461,
+      "其他": 94,
       "前期考察": 196,
-      "小事记": 358
+      "小事记": 356
     },
     "countsByCategory": {
-      "people": 1125,
-      "scenery": 1029
+      "people": 1116,
+      "scenery": 1024
     }
   },
   "photos": [
@@ -39,18 +39,6 @@
       "category": "scenery",
       "fileName": "01.jpg",
       "relativePath": "Jamaica标志性照片/01.jpg"
-    },
-    {
-      "id": "4ad99bd329ea309cf95a6de6fb3f7acafdc6be49",
-      "src": "/images/photo-wall/jamaica/4ad99bd329ea309cf95a6de6fb3f7acafdc6be49.webp",
-      "width": 1600,
-      "height": 1067,
-      "event": "Jamaica标志性照片",
-      "chapter": "Jamaica标志性照片",
-      "chapterPath": [],
-      "category": "people",
-      "fileName": "02.jpg",
-      "relativePath": "Jamaica标志性照片/02.jpg"
     },
     {
       "id": "00d22a503cdc30808e10741beffe1dd72333b114",
@@ -997,20 +985,6 @@
       "relativePath": "大事记/安东尼奥港/IMG_0312_2_1.JPG"
     },
     {
-      "id": "34a41a47f7b1545578a737cb0e4e2e9d74d370fa",
-      "src": "/images/photo-wall/jamaica/34a41a47f7b1545578a737cb0e4e2e9d74d370fa.webp",
-      "width": 640,
-      "height": 480,
-      "event": "大事记",
-      "chapter": "安东尼奥港",
-      "chapterPath": [
-        "安东尼奥港"
-      ],
-      "category": "people",
-      "fileName": "IMG_0312_2.JPG",
-      "relativePath": "大事记/安东尼奥港/IMG_0312_2.JPG"
-    },
-    {
       "id": "ce924d76b4421f310d7d06ede473ce1f713aa789",
       "src": "/images/photo-wall/jamaica/ce924d76b4421f310d7d06ede473ce1f713aa789.webp",
       "width": 640,
@@ -1037,20 +1011,6 @@
       "category": "people",
       "fileName": "IMG_0321_1.JPG",
       "relativePath": "大事记/安东尼奥港/IMG_0321_1.JPG"
-    },
-    {
-      "id": "9ed00b04d04b9c1aec450aa3ef3d3bd9eb458a44",
-      "src": "/images/photo-wall/jamaica/9ed00b04d04b9c1aec450aa3ef3d3bd9eb458a44.webp",
-      "width": 640,
-      "height": 480,
-      "event": "大事记",
-      "chapter": "安东尼奥港",
-      "chapterPath": [
-        "安东尼奥港"
-      ],
-      "category": "people",
-      "fileName": "IMG_0321.JPG",
-      "relativePath": "大事记/安东尼奥港/IMG_0321.JPG"
     },
     {
       "id": "8b0781e817ba60d4f206fe2b485f3c28ab3f88c6",
@@ -10613,21 +10573,6 @@
       "relativePath": "大事记/石波、李子芬婚礼/登记注册/MR & MRS BO SHI 013.jpg"
     },
     {
-      "id": "062979601d3cad03c6eb82a3c35ca4de71b3f14d",
-      "src": "/images/photo-wall/jamaica/062979601d3cad03c6eb82a3c35ca4de71b3f14d.webp",
-      "width": 1600,
-      "height": 1197,
-      "event": "大事记",
-      "chapter": "石波、李子芬婚礼 / 登记注册",
-      "chapterPath": [
-        "石波、李子芬婚礼",
-        "登记注册"
-      ],
-      "category": "people",
-      "fileName": "MR & MRS BO SHI 015.jpg",
-      "relativePath": "大事记/石波、李子芬婚礼/登记注册/MR & MRS BO SHI 015.jpg"
-    },
-    {
       "id": "b5f54131a5153b143e34d4ec7a8e3610edcafe37",
       "src": "/images/photo-wall/jamaica/b5f54131a5153b143e34d4ec7a8e3610edcafe37.webp",
       "width": 1600,
@@ -11151,21 +11096,6 @@
       "category": "people",
       "fileName": "IMGP0700.JPG",
       "relativePath": "大事记/石波、李子芬婚礼/婚礼当天/IMGP0700.JPG"
-    },
-    {
-      "id": "9855d750d41a1da37ea978a88e9b7869fb7bcdf0",
-      "src": "/images/photo-wall/jamaica/9855d750d41a1da37ea978a88e9b7869fb7bcdf0.webp",
-      "width": 1024,
-      "height": 768,
-      "event": "大事记",
-      "chapter": "石波、李子芬婚礼 / 婚礼当天",
-      "chapterPath": [
-        "石波、李子芬婚礼",
-        "婚礼当天"
-      ],
-      "category": "people",
-      "fileName": "IMGP0708.JPG",
-      "relativePath": "大事记/石波、李子芬婚礼/婚礼当天/IMGP0708.JPG"
     },
     {
       "id": "3057d410335b944059d43a56be6f3c43b112d953",
@@ -15517,21 +15447,6 @@
       "category": "people",
       "fileName": "DSC02228.JPG",
       "relativePath": "大事记/迎接曾庆红访牙照片/第一日/DSC02228.JPG"
-    },
-    {
-      "id": "c0f712157a3ff7bc15e59dc61de77c8688df1f47",
-      "src": "/images/photo-wall/jamaica/c0f712157a3ff7bc15e59dc61de77c8688df1f47.webp",
-      "width": 1600,
-      "height": 1067,
-      "event": "大事记",
-      "chapter": "迎接曾庆红访牙照片 / 第一日",
-      "chapterPath": [
-        "迎接曾庆红访牙照片",
-        "第一日"
-      ],
-      "category": "people",
-      "fileName": "GS8L9802.JPG",
-      "relativePath": "大事记/迎接曾庆红访牙照片/第一日/GS8L9802.JPG"
     },
     {
       "id": "957f0d104c70801d6c207e70ab02bacb7acbcd1e",
@@ -21676,18 +21591,6 @@
       "relativePath": "其他/SV300029.JPG"
     },
     {
-      "id": "9c04f43d567ae28626b259d45a91f73c48b2347e",
-      "src": "/images/photo-wall/jamaica/9c04f43d567ae28626b259d45a91f73c48b2347e.webp",
-      "width": 1024,
-      "height": 768,
-      "event": "其他",
-      "chapter": "其他",
-      "chapterPath": [],
-      "category": "scenery",
-      "fileName": "SV300031.JPG",
-      "relativePath": "其他/SV300031.JPG"
-    },
-    {
       "id": "28e0993e122ef32aabe8ae015e6844c594062440",
       "src": "/images/photo-wall/jamaica/28e0993e122ef32aabe8ae015e6844c594062440.webp",
       "width": 1024,
@@ -21964,18 +21867,6 @@
       "relativePath": "其他/SV300061.JPG"
     },
     {
-      "id": "a75b17aee267daf4768cef04f153356c32ba07df",
-      "src": "/images/photo-wall/jamaica/a75b17aee267daf4768cef04f153356c32ba07df.webp",
-      "width": 1024,
-      "height": 768,
-      "event": "其他",
-      "chapter": "其他",
-      "chapterPath": [],
-      "category": "scenery",
-      "fileName": "SV300068.JPG",
-      "relativePath": "其他/SV300068.JPG"
-    },
-    {
       "id": "c32935bc02c34455c06407ac3e419ffc139021cf",
       "src": "/images/photo-wall/jamaica/c32935bc02c34455c06407ac3e419ffc139021cf.webp",
       "width": 1024,
@@ -22204,18 +22095,6 @@
       "relativePath": "其他/SV300119.JPG"
     },
     {
-      "id": "5bcba3b161c6a56ea526ee91616a10c13948cf28",
-      "src": "/images/photo-wall/jamaica/5bcba3b161c6a56ea526ee91616a10c13948cf28.webp",
-      "width": 1024,
-      "height": 768,
-      "event": "其他",
-      "chapter": "其他",
-      "chapterPath": [],
-      "category": "scenery",
-      "fileName": "SV300121.JPG",
-      "relativePath": "其他/SV300121.JPG"
-    },
-    {
       "id": "61a7acc606bfa8d44b4aa9a7737ffa46bfc16583",
       "src": "/images/photo-wall/jamaica/61a7acc606bfa8d44b4aa9a7737ffa46bfc16583.webp",
       "width": 1024,
@@ -22250,42 +22129,6 @@
       "category": "people",
       "fileName": "SV1300073.JPG",
       "relativePath": "其他/SV1300073.JPG"
-    },
-    {
-      "id": "38ca5ea8fd222cd99a29b50dd208f4193a4ce287",
-      "src": "/images/photo-wall/jamaica/38ca5ea8fd222cd99a29b50dd208f4193a4ce287.webp",
-      "width": 1024,
-      "height": 768,
-      "event": "其他",
-      "chapter": "其他",
-      "chapterPath": [],
-      "category": "scenery",
-      "fileName": "SV3000014.JPG",
-      "relativePath": "其他/SV3000014.JPG"
-    },
-    {
-      "id": "2d1a160b4a77258906392505b4dc38bed158abea",
-      "src": "/images/photo-wall/jamaica/2d1a160b4a77258906392505b4dc38bed158abea.webp",
-      "width": 1024,
-      "height": 768,
-      "event": "其他",
-      "chapter": "其他",
-      "chapterPath": [],
-      "category": "people",
-      "fileName": "SV3000024.JPG",
-      "relativePath": "其他/SV3000024.JPG"
-    },
-    {
-      "id": "49ed88b9e4f26b93730fc8da9381ea826429ca85",
-      "src": "/images/photo-wall/jamaica/49ed88b9e4f26b93730fc8da9381ea826429ca85.webp",
-      "width": 1024,
-      "height": 768,
-      "event": "其他",
-      "chapter": "其他",
-      "chapterPath": [],
-      "category": "people",
-      "fileName": "SV3000034.JPG",
-      "relativePath": "其他/SV3000034.JPG"
     },
     {
       "id": "422d402a2aff7d784ea521547963c8ada7902c5d",
@@ -26630,20 +26473,6 @@
       "relativePath": "小事记/山顶富人家/SV301652.JPG"
     },
     {
-      "id": "1079877394d5029ba50819d8c1087a99dfdb0d25",
-      "src": "/images/photo-wall/jamaica/1079877394d5029ba50819d8c1087a99dfdb0d25.webp",
-      "width": 1024,
-      "height": 768,
-      "event": "小事记",
-      "chapter": "山顶富人家",
-      "chapterPath": [
-        "山顶富人家"
-      ],
-      "category": "scenery",
-      "fileName": "SV301653.JPG",
-      "relativePath": "小事记/山顶富人家/SV301653.JPG"
-    },
-    {
       "id": "134498cab1cccd7640386071044c350d5e973077",
       "src": "/images/photo-wall/jamaica/134498cab1cccd7640386071044c350d5e973077.webp",
       "width": 1024,
@@ -29484,20 +29313,6 @@
       "category": "people",
       "fileName": "SV300046.JPG",
       "relativePath": "小事记/Photos In the Jamaica/SV300046.JPG"
-    },
-    {
-      "id": "de1f4484444a8c18af4d6c690c26370677e9c6a4",
-      "src": "/images/photo-wall/jamaica/de1f4484444a8c18af4d6c690c26370677e9c6a4.webp",
-      "width": 1024,
-      "height": 768,
-      "event": "小事记",
-      "chapter": "Photos In the Jamaica",
-      "chapterPath": [
-        "Photos In the Jamaica"
-      ],
-      "category": "people",
-      "fileName": "SV300047.JPG",
-      "relativePath": "小事记/Photos In the Jamaica/SV300047.JPG"
     },
     {
       "id": "878ed117e3b33660198baa0c627e1af577a59eaf",
