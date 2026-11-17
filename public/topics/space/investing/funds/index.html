@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN" data-theme="dark">
+<html lang="zh-CN" data-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,15 +7,20 @@
     if (location.protocol !== "file:" && /\/funds$/.test(location.pathname)) {
       location.replace(`${location.pathname}/${location.search}${location.hash}`);
     }
+    try {
+      if (localStorage.getItem("fund-dashboard-theme-v1") === "dark") {
+        document.documentElement.dataset.theme = "dark";
+      }
+    } catch { /* Keep the default when browser storage is unavailable. */ }
   </script>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23f48120'/%3E%3Cpath d='M8 21h4V11H8zm6 0h4V7h-4zm6 0h4V14h-4z' fill='white'/%3E%3C/svg%3E">
-  <meta name="color-scheme" content="dark light">
+  <meta name="color-scheme" content="light dark">
   <meta name="description" content="中国主动权益基金与基金经理研究看板">
   <title>基金经理KPI</title>
   <link rel="stylesheet" href="./app.css?v=20261027-brand-layout">
   <script src="./fund-preferences-cloud.js?v=20261022-session-recovery" defer></script>
   <script src="./fund-notes-cloud.js?v=20261028-cloud-verified" defer></script>
-  <script src="./app.js?v=20261028-cloud-verified" defer></script>
+  <script src="./app.js?v=20261117-light-default" defer></script>
 <script src="/officialwebsite/account-entry.js" defer></script>
 </head>
 <body>
@@ -70,7 +75,7 @@
         <span><strong id="fund-auth-status">主站账号</strong><small id="fund-auth-detail">共享登录，无需注册</small></span>
       </a>
       <span class="freshness" id="data-freshness">数据待载入</span>
-      <button class="icon-text-button" id="theme-toggle" type="button"><svg><use href="#i-theme"/></svg><span>切换浅色</span></button>
+      <button class="icon-text-button" id="theme-toggle" type="button" aria-label="切换深色"><svg><use href="#i-theme"/></svg><span>切换深色</span></button>
     </div>
   </header>
 

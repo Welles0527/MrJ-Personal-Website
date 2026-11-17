@@ -1052,7 +1052,7 @@
         ${renderWorkspaceNav(stock)}
         ${["dashboard", "market"].includes(state.viewMode) ? "" : renderSidebar(stock)}
         <main class="tracking-main ${fullWidthView ? "technical-main" : ""} ${state.viewMode === "score-matrix" ? "score-matrix-main" : ""} ${state.viewMode === "operation-advice" ? "operation-advice-main" : ""}">
-          ${state.viewMode === "dashboard" ? `<section aria-label="实时看板"><iframe id="realtime-dashboard" title="A股实时走势及板块热力图" src="../stock-dashboard.html?embedded=1&v=20261106-sectors1" style="width:100%;height:1050px;border:0;display:block;border-radius:12px;background:#faf5eb"></iframe></section>` : ""}
+          ${state.viewMode === "dashboard" ? `<section aria-label="实时看板"><iframe id="realtime-dashboard" title="A股实时走势及板块热力图" src="../stock-dashboard.html?embedded=1&v=20261117-stock-layout" style="width:100%;height:1050px;border:0;display:block;border-radius:12px;background:#faf5eb"></iframe></section>` : ""}
           ${state.viewMode === "stock" ? renderStockView(stock) : ""}
           ${state.viewMode === "daily" ? renderDailyDigestView() : ""}
           ${state.viewMode === "calendar" ? renderCalendarView() : ""}

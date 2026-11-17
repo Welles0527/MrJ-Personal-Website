@@ -321,9 +321,6 @@ function showDirectFileWarning() {
 }
 
 function restorePreferences() {
-  const savedTheme = localStorage.getItem(STORAGE.theme);
-  const theme = savedTheme === "light" ? "light" : "dark";
-  document.documentElement.dataset.theme = theme;
   updateThemeButton();
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE.kpiColumns) || "null");
@@ -3664,7 +3661,13 @@ function toggleTheme() {
   localStorage.setItem(STORAGE.theme, document.documentElement.dataset.theme);
   updateThemeButton();
 }
-function updateThemeButton() { const theme = document.documentElement.dataset.theme; const node = document.querySelector("#theme-toggle span"); if (node) node.textContent = theme === "dark" ? "切换浅色" : "切换深色"; }
+function updateThemeButton() {
+  const button = document.getElementById("theme-toggle");
+  if (!button) return;
+  const label = document.documentElement.dataset.theme === "dark" ? "切换浅色" : "切换深色";
+  button.setAttribute("aria-label", label);
+  button.querySelector("span").textContent = label;
+}
 
 function showToast(message) {
   const toast = document.getElementById("toast");

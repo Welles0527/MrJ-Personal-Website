@@ -117,17 +117,34 @@ const dashboardHtml=readFileSync(new URL('../public/stock-dashboard.html',import
 const layoutStart=dashboardHtml.indexOf('function y1('),layoutEnd=dashboardHtml.indexOf('const v1=',layoutStart);
 assert.ok(layoutStart>=0&&layoutEnd>layoutStart);
 const layout=runInNewContext(dashboardHtml.slice(layoutStart,layoutEnd)+'; y1');
-for(const count of [0,3,91,188,300])for(const [width,height] of [[700,360],[550,350],[323,260]])for(const byMarketCap of [false,true]){
+for(const count of [0,3,91,188,300])for(const [width,height] of [[700,360],[550,350],[227,227],[260,260]])for(const byMarketCap of [false,true]){
   const stocks=Array.from({length:count},(_,i)=>({id:String(i).padStart(6,'0'),change:i%9===0?null:(i%31-15)/10,marketCap:i%11===0?null:100000000*(1+(count-i)**2)}));
   const cells=layout(stocks,width,height,byMarketCap);
   assert.equal(cells.length,count);assert.equal(new Set(cells.map(cell=>cell.id)).size,count);
   for(const cell of cells)assert.ok(cell.w>0&&cell.h>0&&cell.x>=0&&cell.y>=0&&cell.x+cell.w<=width+1e-7&&cell.y+cell.h<=height+1e-7);
-  if(count)assert.ok(Math.abs(cells.reduce((sum,cell)=>sum+cell.w*cell.h,0)-width*height)<1e-6);
+  for(const cell of cells)assert.ok(Math.abs(cell.w-cell.h)<1e-7,'Every tile must be square');
   for(let i=0;i<cells.length;i++)for(let j=i+1;j<cells.length;j++){
     const a=cells[i],b=cells[j];
     const overlapWidth=Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x);
     const overlapHeight=Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y);
-    assert.ok(overlapWidth<=1e-7||overlapHeight<=1e-7,'Treemap cells must not overlap');
+    assert.ok(overlapWidth<=1e-7||overlapHeight<=1e-7,'Heatmap cells must not overlap');
   }
 }
-console.log('PASS full treemap coverage, nonoverlap, positive cells and viewport bounds for 0–300 stocks on desktop/mobile');
+const weights=[
+  {id:'large',change:-4,marketCap:900},
+  {id:'small',change:1,marketCap:100},
+  {id:'missing',change:null,marketCap:null},
+  {id:'flat',change:0,marketCap:0},
+];
+for(const [byMarketCap,expected] of [
+  [false,{large:1,small:.25,missing:.1,flat:.1}],
+  [true,{large:1,small:1/9,missing:1/36,flat:1/36}],
+]){
+  const cells=layout(weights,227,227,byMarketCap);
+  const largest=cells.find(cell=>cell.id==='large');
+  for(const cell of cells){
+    const areaRatio=cell.w*cell.h/(largest.w*largest.h);
+    assert.ok(Math.abs(areaRatio-expected[cell.id])<1e-8,'Square area must preserve its original weight');
+  }
+}
+console.log('PASS weighted square areas, nonoverlap, positive cells and viewport bounds for 0–300 stocks on desktop/mobile');

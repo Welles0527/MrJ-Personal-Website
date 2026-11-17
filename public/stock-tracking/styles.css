@@ -3751,7 +3751,7 @@ html:has(#app .dashboard-layout) { min-width: 0; }
 #app .tracking-layout.dashboard-layout {
   display: grid;
   grid-template-areas: "workspace main";
-  grid-template-columns: 224px minmax(0, 1fr);
+  grid-template-columns: 192px minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
   align-items: start;
 }
@@ -3789,10 +3789,10 @@ html:has(#app .dashboard-layout) { min-width: 0; }
 #app .dashboard-layout .shared-account-icon,
 #app .dashboard-layout .workspace-account { display: none; }
 #app .dashboard-layout .workspace-actions { flex: 0 0 auto; justify-content: space-between; gap: 8px; }
-#app .dashboard-layout .workspace-refresh { padding-inline: 12px; }
+#app .dashboard-layout .workspace-refresh { padding-inline: 8px; white-space: nowrap; }
 #app .dashboard-layout > .tracking-main { min-width: 0; padding: 0; }
 @media (max-width: 980px) {
-  #app .tracking-layout.dashboard-layout { grid-template-columns: 200px minmax(0, 1fr); gap: 12px; padding: 0; }
+  #app .tracking-layout.dashboard-layout { grid-template-columns: 176px minmax(0, 1fr); gap: 12px; padding: 0; }
   #app .dashboard-layout > .workspace-nav { top: 0; height: 100dvh; }
   html[data-theme="paper"] #app .dashboard-layout > .workspace-nav { border-radius: 0; border-width: 0 1px 0 0; }
 }
@@ -3802,7 +3802,7 @@ html:has(#app .dashboard-layout) { min-width: 0; }
   #app .dashboard-layout > .workspace-nav {
     position: fixed;
     inset: 0 auto 0 0;
-    width: min(280px, calc(100vw - 64px));
+    width: min(246px, calc(100vw - 64px));
     height: 100dvh;
     z-index: 72;
     transform: translateX(-100%);
