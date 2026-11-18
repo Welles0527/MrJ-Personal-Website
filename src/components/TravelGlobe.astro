@@ -177,7 +177,7 @@ const placeLabel = (place: MapPlace) => place.albumIds.length > 1
   .selection-header a:hover { text-decoration: underline; }
   .selection-header button { width: 36px; height: 36px; border: 1px solid #b1d9ee39; border-radius: 6px; background: #101e2b; font-size: 22px; }
   .selection-header button:hover { background: #194453; }
-  .selection-scroll { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-color: #3a5461 transparent; }
+  .selection-scroll { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-color: #3a5461 transparent; container-type: size; }
   .selection-status { margin: 18px 16px; color: #b3c8d2; font-size: 13px; }
   .selection-albums { margin: 0; padding: 6px 14px; list-style: none; }
   .selection-albums button { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; padding: 8px; border: 0; border-bottom: 1px solid #273a48; background: none; color: #edf4f7; font-size: 13px; text-align: left; }
@@ -186,8 +186,10 @@ const placeLabel = (place: MapPlace) => place.albumIds.length > 1
   .selection-group { padding: 10px 6px 5px; }
   .selection-group h3 { margin: 4px 8px 9px; color: #d8e6ec; font-size: 12px; font-weight: 600; }
   .selection-photos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px; }
-  .selection-photo { display: block; aspect-ratio: 4 / 3; overflow: hidden; background: #13222e; }
+  .selection-photo { display: block; width: 100%; min-width: 0; aspect-ratio: 4 / 3; padding: 0; border: 0; overflow: hidden; background: #13222e; cursor: zoom-in; }
   .selection-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .selection-photo[aria-expanded=true] { grid-column: 1 / -1; aspect-ratio: auto; cursor: zoom-out; }
+  .selection-photo[aria-expanded=true] img { height: auto; max-height: min(42svh, 420px); max-height: min(100cqh, 480px); object-fit: contain; }
   .selection-photo:focus-visible { outline-offset: -3px; }
   @media (min-width: 821px) {
     .atlas:has(.selection:not([hidden])) {

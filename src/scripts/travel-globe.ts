@@ -90,18 +90,17 @@ async function loadPanelPhotos(album: Album) {
         group.append(photos);
         fragment.append(group);
       }
-      const link = document.createElement('a');
-      link.className = 'selection-photo';
-      link.href = src.href;
-      link.target = '_blank';
-      link.rel = 'noopener';
+      const photo = document.createElement('button');
+      photo.type = 'button';
+      photo.className = 'selection-photo';
+      photo.setAttribute('aria-expanded', 'false');
       const image = document.createElement('img');
       image.loading = 'lazy';
       image.decoding = 'async';
-      image.alt = card.getAttribute('aria-label') || '查看大图';
+      image.alt = card.getAttribute('aria-label') || '查看照片';
       image.src = src.href;
-      link.append(image);
-      photos.append(link);
+      photo.append(image);
+      photos.append(photo);
     }
     if (!photos) throw new Error('No photos in album preview');
     panelGallery.replaceChildren(fragment);
@@ -110,6 +109,21 @@ async function loadPanelPhotos(album: Album) {
     if (!request.signal.aborted) panelStatus.textContent = '照片暂时无法加载，可打开完整相册查看。';
   }
 }
+
+panelGallery.addEventListener('click', event => {
+  const photo = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('.selection-photo') : null;
+  if (!photo) return;
+  const frameTop = panelScroll.getBoundingClientRect().top;
+  const offset = photo.getBoundingClientRect().top - frameTop;
+  const expanded = panelGallery.querySelector<HTMLButtonElement>('.selection-photo[aria-expanded="true"]');
+  expanded?.setAttribute('aria-expanded', 'false');
+  if (photo !== expanded) photo.setAttribute('aria-expanded', 'true');
+
+  const bounds = photo.getBoundingClientRect();
+  const maxOffset = Math.max(0, panelScroll.clientHeight - bounds.height);
+  const visibleOffset = Math.max(0, Math.min(offset, maxOffset));
+  panelScroll.scrollTop += bounds.top - frameTop - visibleOffset;
+});
 
 function showSelection(title: string, count: string, href?: string) {
   if (document.activeElement instanceof HTMLElement && !panel.contains(document.activeElement)) {
