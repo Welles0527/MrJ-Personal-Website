@@ -681,7 +681,7 @@
       outline-offset: 2px;
     }
 
-    @media (min-width: 901px) {
+    @media (min-width: 901px) and ((hover: hover) or (pointer: fine) or (pointer: none)) {
       .collection:has(.episode-drawer.is-open) {
         grid-template-columns: minmax(0, 1fr) clamp(265px, 30%, 460px);
       }
@@ -733,7 +733,7 @@
       }
     }
 
-    @media (max-width: 900px) {
+    @media (max-width: 900px), (hover: none) and (pointer: coarse) {
       .collection {
         grid-template-columns: minmax(0, 1fr);
         width: min(100% - 32px, 640px);
@@ -832,6 +832,71 @@
       }
     }
 
+    @media (hover: none) and (pointer: coarse) {
+      .series .guest-directory-home:not(:has(.guest-directory)) {
+        display: none;
+      }
+
+      .guest-groups {
+        --roster-gap: 8px;
+        grid-template: "divider" auto "female" auto "male" auto / minmax(0, 1fr);
+      }
+
+      .guest-group-divider {
+        align-items: flex-start;
+      }
+
+      .guest-group-divider::after {
+        display: none;
+      }
+
+      .guest-directory-label {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+      }
+
+      .guest-group:not([hidden]) {
+        display: grid;
+        grid-template-columns: max-content minmax(0, 1fr);
+        align-items: center;
+        gap: var(--roster-gap);
+      }
+
+      .guest-group h3 {
+        margin: 0;
+      }
+
+      .guest-avatars {
+        display: flex;
+        gap: var(--roster-gap);
+        padding: 4px;
+        overflow-x: auto;
+        overscroll-behavior-inline: contain;
+        scrollbar-width: none;
+      }
+
+      .guest-avatars::-webkit-scrollbar {
+        display: none;
+      }
+
+      .guest-avatars > li {
+        flex: 0 0 clamp(34px, 5vw, 44px);
+      }
+
+      .seasons {
+        inline-size: 100cqi;
+        justify-self: center;
+        zoom: 0.7;
+      }
+    }
+
+    @media (min-width: 1125px) and (hover: none) and (pointer: coarse) {
+      .collection {
+        width: min(100% - 32px, 820px);
+      }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       :root {
         --drawer-duration: 0s;
@@ -843,11 +908,11 @@
       }
     }
   </style>
-  <script src="./season-drawer.js?v=75b6e5396f52" defer></script>
+  <script src="./season-drawer.js?v=57967a3f15f6" defer></script>
 </head>
 <body>
   <div class="gallery-viewport">
-    <main class="collection" id="season-gallery">
+    <main class="collection" id="season-gallery" data-touch-layout>
       <div class="series-layout">
         <div class="series">
           <header class="intro">

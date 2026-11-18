@@ -35,7 +35,12 @@ const guestList = guestDrawer.querySelector('.episode-guests');
 const episodeTemplate = document.querySelector('#episode-template');
 const guestTemplate = document.querySelector('#guest-template');
 const appearanceTemplate = document.querySelector('#guest-appearance-template');
-const compactLayout = window.matchMedia('(max-width: 900px)');
+const touchLayout = gallery.hasAttribute('data-touch-layout')
+  ? window.matchMedia('(hover: none) and (pointer: coarse)')
+  : null;
+const compactLayout = window.matchMedia(touchLayout
+  ? `(max-width: 900px), ${touchLayout.media}`
+  : '(max-width: 900px)');
 
 let catalogRequest;
 let guestProfiles;
@@ -235,6 +240,14 @@ function openGuestAppearances(button) {
   list.replaceChildren(...appearances.map(makeAppearance));
 }
 
+function placeGuestDirectory() {
+  if (touchLayout?.matches) {
+    seasonGrid.before(directoryHome);
+  } else if (directoryHome.parentElement !== gallery) {
+    gallery.append(directoryHome);
+  }
+}
+
 function showDrawerRoster(show) {
   const mount = show ? drawerRoster : directoryHome;
   if (directory.parentElement !== mount) mount.append(directory);
@@ -416,6 +429,8 @@ document.addEventListener('keydown', event => {
   else closeDrawer();
 });
 
+placeGuestDirectory();
+touchLayout?.addEventListener('change', placeGuestDirectory);
 loadGuestDirectory();
 
 compactLayout.addEventListener('change', () => {
