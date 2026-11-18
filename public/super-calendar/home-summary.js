@@ -10,7 +10,7 @@
   }
   function snookerEntries() {
     return (window.CUE_TOURNAMENTS || [])
-      .filter(e => datePattern.test(e.start) && datePattern.test(e.end) && e.end >= e.start)
+      .filter(e => e.type !== 'qualifier' && !/资格赛/.test(e.name) && datePattern.test(e.start) && datePattern.test(e.end) && e.end >= e.start)
       .map(e => ({ id:'cue:'+e.id, name:e.name, start:e.start, end:e.end, calendar:'sports', category:'斯诺克', target:'#sports' }));
   }
   function summaryEntries() {
@@ -43,7 +43,7 @@
   function summaryIcon(category, calendar) {
     if (category === 'pro-renewal') return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18M7 15h4"/></svg>';
     if (category === 'personal-snooker') {
-      const colors = ['#d6002a','#e8bf00','#d6002a','#168345','#d6002a','#8b4513','#d6002a','#d6002a','#1671cb','#d6002a','#ee89b6','#d6002a','#d6002a','#171717','#d6002a'];
+      const colors = ['#171717','#e8bf00','#1671cb','#8b4513','#ee89b6','#168345','#d6002a','#d6002a','#d6002a','#d6002a','#d6002a','#d6002a','#d6002a','#d6002a','#d6002a'];
       let index = 0;
       return summaryIcon('斯诺克',calendar).replace(/fill="currentColor"/g,() => 'fill="'+colors[index++]+'"');
     }
@@ -89,21 +89,23 @@
         if (!d) return '<div class="mini-day empty" aria-hidden="true"></div>';
         const date = dateStr(m,d), matches = all.filter(e => e.start <= date && e.end >= date);
         const groups = new Map();
+        const hasPersonalSnooker = matches.some(e => e.iconKey === 'personal-snooker');
         matches.forEach(e => {
-          const key = (e.anniversary ? 'anniversary:' : '')+(e.iconKey || (itemThemes[e.category] ? e.category : e.calendar));
-          if (!groups.has(key)) groups.set(key, { colors:e.anniversary ? itemThemes.anniversary : itemThemes[e.category] || itemThemes[e.calendar], category:e.category, iconKey:e.iconKey, calendar:e.calendar, names:[] });
+          const iconKey = hasPersonalSnooker && e.category === '斯诺克' ? 'personal-snooker' : e.iconKey;
+          const key = (e.anniversary ? 'anniversary:' : '')+(iconKey || (itemThemes[e.category] ? e.category : e.calendar));
+          if (!groups.has(key)) groups.set(key, { colors:e.anniversary ? itemThemes.anniversary : itemThemes[e.category] || itemThemes[e.calendar], category:e.category, iconKey, calendar:e.calendar, names:[] });
           groups.get(key).names.push(annualName(e));
         });
-        const forecast = weather(date);
+        const forecast = groups.size < 3 ? weather(date) : '';
         const label = date+' '+matches.map(annualName).join('；');
-        return `<button class="mini-day ${date === beijingDay() ? 'today' : ''} ${matches.some(e => e.anniversary) ? 'has-summary-anniversary' : ''}" data-date="${date}" data-month="${m}" title="${esc(label)}" aria-label="${esc(label)}"><span class="summary-day-number">${d}</span><span class="summary-day-icons">${[...groups.values()].map(g => `<span class="summary-type-icon" style="color:${g.category === '足球' ? '#004d98' : g.category === '斯诺克' ? 'var(--text)' : g.colors.text}" title="${esc(g.names.join('；'))}" aria-hidden="true">${summaryIcon(g.iconKey || g.category,g.calendar)}</span>`).join('')}${forecast}</span></button>`;
+        return `<button class="mini-day ${date === beijingDay() ? 'today' : ''} ${matches.some(e => e.anniversary) ? 'has-summary-anniversary' : ''}" data-date="${date}" data-month="${m}" title="${esc(label)}" aria-label="${esc(label)}"><span class="summary-day-number">${d}</span><span class="summary-day-icons">${[...groups.values()].slice(0,3).map(g => `<span class="summary-type-icon" style="color:${g.category === '足球' ? '#004d98' : g.category === '斯诺克' ? 'var(--text)' : g.colors.text}" title="${esc(g.names.join('；'))}" aria-hidden="true">${summaryIcon(g.iconKey || g.category,g.calendar)}</span>`).join('')}${forecast}</span></button>`;
       }).join('')}</div></section>`;
     }).join('')}</div>`;
   }
   const style = document.createElement('style');
   style.textContent = `.summary-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px;background:var(--card);min-width:770px}.summary-day{border:1px solid var(--border);border-radius:16px}.summary-scroll{overflow-x:auto}.summary-grid>.weekday{background:var(--card);padding:12px 4px}.summary-day{min-width:0;min-height:126px;background:var(--cell);padding:8px}.summary-day.out{background:var(--card);border-radius:8px}.summary-day.today{box-shadow:inset 0 0 0 2px var(--purple)}.summary-date{display:flex;align-items:center;justify-content:space-between;min-height:34px;margin-bottom:5px}.summary-event{display:flex;align-items:flex-start;gap:5px;width:100%;min-width:0;margin:5px 0;padding:6px;text-align:left;line-height:1.5;font-size:12px;color:var(--summary-event-ink);border:0;border-left:3px solid var(--event-color);border-radius:4px;background:var(--summary-event-layer),var(--summary-event-base,var(--cell))}.summary-event svg{flex:none;width:14px;height:14px;margin-top:2px;color:var(--summary-event-ink)}.summary-event span{min-width:0;overflow-wrap:anywhere}.summary-weather{display:inline-flex}.summary-annual .mini-day{min-height:44px;height:auto;position:relative}.summary-annual .weather-icon{width:18px;height:18px}.summary-annual .mini-day .day-dot{background:var(--purple)}.summary-mobile-hint{display:none}.summary-status{font-size:12px;line-height:1.7;color:var(--muted);margin:12px 0}.summary-status a{color:var(--purple)}@media(max-width:760px){.summary-grid{gap:3px}.summary-day{border-radius:10px}}@media(max-width:680px){.summary-mobile-hint{display:block;font-size:12px;color:var(--muted);padding:0 12px}.summary-day{min-height:108px}.summary-month .calendar-title{flex-wrap:wrap;gap:8px}.summary-month .calendar-title .muted{font-size:11px}}`;
   document.head.append(style);
-  style.textContent += `.summary-annual .mini-day{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;min-height:58px;padding:5px 2px;min-width:0}.summary-day-number{padding:0 3px;border-radius:3px;color:var(--text)}.summary-day-icons{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:3px;min-width:0;max-width:100%}.summary-type-icon{display:inline-flex;padding:2px;border-radius:3px}.summary-type-icon svg{width:13px;height:13px}:root[data-theme] .summary-annual .mini-day:not(.calendar-holiday){background:transparent;color:var(--text)}:root[data-theme] body.summary-page .summary-annual .mini-day.today{background:#d90036!important;border-color:#d90036!important;box-shadow:none;color:#fff!important}:root[data-theme] .summary-annual .mini-day.today .summary-day-number{color:#fff}`;
+  style.textContent += `.summary-annual .mini-day{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;min-height:58px;padding:5px 2px;min-width:0}.summary-day-number{padding:0 3px;border-radius:3px;color:var(--text)}.summary-day-icons{display:flex;flex-wrap:nowrap;align-items:center;justify-content:center;gap:2px;min-width:0;width:100%;max-width:100%}.summary-day-icons .summary-type-icon{display:inline-flex;flex:0 1 17px;min-width:0;padding:0;border-radius:3px}.summary-day-icons .summary-type-icon svg{display:block;width:100%;height:auto;aspect-ratio:1}.summary-day-icons .summary-weather{flex:none}:root[data-theme] .summary-annual .mini-day:not(.calendar-holiday){background:transparent;color:var(--text)}:root[data-theme] body.summary-page .summary-annual .mini-day.today{background:#d90036!important;border-color:#d90036!important;box-shadow:none;color:#fff!important}:root[data-theme] .summary-annual .mini-day.today .summary-day-number{color:#fff}`;
 
   style.textContent += `:root[data-theme="cream"] .summary-grid,:root[data-theme="cream"] .summary-grid>.weekday,:root[data-theme="cream"] .summary-day{background:#ffffff;--summary-event-base:#ffffff}`;
 
@@ -145,7 +147,7 @@
   function openZodiacWheel() {
     const dialog = document.createElement('dialog');
     dialog.className = 'summary-zodiac-dialog';
-    dialog.innerHTML = `<button class="dialog-close" aria-label="关闭星座转盘">×</button><h2>星座</h2><div class="zodiac-wheel">${zodiacSymbols.map((symbol,index) => `<span class="zodiac-sector" style="--angle:${index*30}deg"></span><span class="zodiac-wheel-sign" style="--angle:${index*30+15}deg" title="${zodiacNames[index]}">${symbol}&#xFE0E;</span>`).join('')}<div class="zodiac-pointer"></div><span class="zodiac-pivot"></span></div><p class="zodiac-current" role="status"></p>`;
+    dialog.innerHTML = `<button class="dialog-close" aria-label="关闭星座转盘">×</button><h2>星座</h2><div class="zodiac-wheel">${zodiacSymbols.map((symbol,index) => `<span class="zodiac-sector" style="--angle:${index*30}deg"></span><span class="zodiac-wheel-sign" style="--angle:${index*30+15}deg" title="${zodiacNames[index]}"><span>${symbol}&#xFE0E;</span><small>${zodiacNames[index]}</small></span>`).join('')}<div class="zodiac-pointer"></div><span class="zodiac-pivot"></span></div><p class="zodiac-current" role="status"></p>`;
     const update = () => {
       const date = beijingDay(), month = Number(date.slice(5,7))-1, day = Number(date.slice(8));
       const sign = day < zodiacStartDays[month] ? (month+11)%12 : month;
@@ -164,13 +166,15 @@
 :root[data-theme] .summary-annual .summary-current-month{border:2px solid #d90036}
 :root[data-theme] .summary-page .months .summary-current-month{background:#d90036;color:#fff;font-weight:700}
 :root[data-theme] .summary-page .months .summary-current-month small{color:#fff}
-.summary-zodiac-button{height:44px;padding:0 22px;border:1px solid var(--border);border-radius:8px;background:var(--surface-strong);color:var(--text);white-space:nowrap}
+.summary-zodiac-button{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:44px;padding:0 22px;border:1px solid var(--border);border-radius:8px;background:var(--surface-strong);color:var(--text);white-space:nowrap}
+.summary-zodiac-button svg{width:18px;height:18px;flex-shrink:0;color:var(--purple)}
 .summary-zodiac-dialog{width:min(460px,calc(100vw - 32px));max-height:90dvh;padding:24px;overflow:auto;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:18px}
 .summary-zodiac-dialog h2{margin:0 0 22px}
 .zodiac-wheel{position:relative;width:100%;aspect-ratio:1;border:3px double currentColor;border-radius:50%;color:var(--text)}
 .zodiac-wheel:before{content:'';position:absolute;inset:17%;border:2px solid currentColor;border-radius:50%}
 .zodiac-sector{position:absolute;left:50%;top:0;height:50%;width:1px;transform-origin:bottom;transform:rotate(var(--angle));background:linear-gradient(currentColor 0 34%,transparent 34%)}
-.zodiac-wheel-sign{position:absolute;left:calc(50% - 18px);top:calc(50% - 18px);width:36px;height:36px;display:grid;place-items:center;font:28px/1 "Segoe UI Symbol",sans-serif;transform:rotate(var(--angle)) translateY(calc(-1 * min(162px,36vw))) rotate(calc(-1 * var(--angle)))}
+.zodiac-wheel-sign{position:absolute;left:calc(50% - 23px);top:calc(50% - 22px);width:46px;height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font:28px/1 "Segoe UI Symbol",sans-serif;transform:rotate(var(--angle)) translateY(calc(-1 * min(162px,36vw))) rotate(calc(-1 * var(--angle)))}
+.zodiac-wheel-sign small{font:10px/1.2 system-ui,sans-serif;white-space:nowrap}
 .zodiac-wheel-sign.active{color:var(--purple);font-weight:700}
 .zodiac-pointer{position:absolute;left:calc(50% - 5px);bottom:50%;width:10px;height:31%;background:var(--purple);clip-path:polygon(50% 0,100% 100%,50% 90%,0 100%);transform-origin:50% 100%}
 .zodiac-pivot{position:absolute;left:calc(50% - 6px);top:calc(50% - 6px);width:12px;height:12px;border-radius:50%;background:var(--purple)}
@@ -205,7 +209,7 @@
         if (state.view === 'year') {
           const button = document.createElement('button');
           button.className = 'summary-zodiac-button';
-          button.textContent = '♐ 星座';
+          button.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19 19 5M10 5h9v9M5 10l9 9"/></svg><span>星座</span>';
           button.onclick = openZodiacWheel;
           heading.append(button);
         } else heading.append(toolbar.querySelector('.search'));
