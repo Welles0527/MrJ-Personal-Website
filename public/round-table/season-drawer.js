@@ -176,15 +176,14 @@ async function loadGuestDirectory() {
 function updateSeasonGuests() {
   if (!appearancesByGuest) return;
   const seasonName = selectedSeason?.querySelector('.season-title').textContent;
+  const filtered = Boolean(seasonName);
   let count = 0;
   for (const button of directory.querySelectorAll('.guest-avatar')) {
     const name = button.dataset.guest;
-    const participated = appearancesByGuest.get(name).some(appearance => appearance.seasonName === seasonName);
+    const participated = filtered && appearancesByGuest.get(name).some(appearance => appearance.seasonName === seasonName);
+    button.parentElement.hidden = filtered && !participated;
     button.classList.toggle('is-in-season', participated);
-    button.classList.toggle('is-out-of-season', Boolean(seasonName) && !participated);
-    button.setAttribute('aria-label', seasonName
-      ? `${name}，${participated ? '参加' : '未参加'}${seasonName}`
-      : name);
+    button.setAttribute('aria-label', participated ? `${name}，参加${seasonName}` : name);
     if (participated) count += 1;
   }
   directoryNote.textContent = seasonName ? `${seasonName} · ${count} 位参与` : '';
