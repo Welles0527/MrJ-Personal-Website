@@ -45,6 +45,7 @@ const compactLayout = window.matchMedia(touchLayout
 let catalogRequest;
 let guestProfiles;
 let appearancesByGuest;
+let guestRosters;
 let tooltipButton = null;
 let activeTrigger = null;
 let selectedSeason = null;
@@ -159,23 +160,39 @@ async function loadGuestDirectory() {
       }
     }
 
-    for (const group of guestGroups) {
+    guestRosters = guestGroups.map(group => {
       const members = profiles.filter(([, profile]) => profile.gender === group.dataset.gender);
-      group.replaceChildren(...members.map(([name, profile]) => makeGuestAvatar(name, profile)));
-      group.parentElement.hidden = members.length === 0;
-    }
-    const count = `${profiles.length} 位`;
-    if (guestDirectoryCount) {
-      guestDirectoryCount.textContent = count;
-    } else {
-      guestDirectoryLabel.textContent = `嘉宾 · ${count}`;
-    }
+      const entries = members.map(([name, profile]) => ({
+        item: makeGuestAvatar(name, profile),
+        appearances: appearancesByGuest.get(name).length,
+      }));
+      const frequent = [...entries].sort((left, right) => right.appearances - left.appearances).slice(0, 10);
+      return { group, all: entries.map(entry => entry.item), frequent: frequent.map(entry => entry.item) };
+    });
+    renderGuestDirectory();
     guestDirectoryStatus.hidden = true;
-    updateSeasonGuests();
   } catch {
     guestDirectoryStatus.textContent = '嘉宾资料暂时无法加载。';
     guestRetry.hidden = false;
   }
+}
+
+function renderGuestDirectory() {
+  if (!guestRosters) return;
+  const showFrequent = touchLayout?.matches && directory.parentElement === directoryHome;
+  let total = 0;
+  for (const { group, all, frequent } of guestRosters) {
+    const items = showFrequent ? frequent : all;
+    group.replaceChildren(...items);
+    group.parentElement.hidden = items.length === 0;
+    total += items.length;
+  }
+  if (guestDirectoryCount) {
+    guestDirectoryCount.textContent = `${total} 位`;
+  } else {
+    guestDirectoryLabel.textContent = `嘉宾 · ${total} 位`;
+  }
+  updateSeasonGuests();
 }
 
 function updateSeasonGuests() {
@@ -246,11 +263,15 @@ function placeGuestDirectory() {
   } else if (directoryHome.parentElement !== gallery) {
     gallery.append(directoryHome);
   }
+  if (directory.parentElement === directoryHome) renderGuestDirectory();
 }
 
 function showDrawerRoster(show) {
   const mount = show ? drawerRoster : directoryHome;
-  if (directory.parentElement !== mount) mount.append(directory);
+  if (directory.parentElement !== mount) {
+    mount.append(directory);
+    if (touchLayout?.matches) renderGuestDirectory();
+  }
   drawerRoster.hidden = !show;
   drawerProgramme.hidden = show;
   rosterToggle.setAttribute('aria-expanded', String(show));
@@ -365,6 +386,7 @@ async function openSeason(card) {
 
 function closeDrawer() {
   const trigger = activeTrigger;
+  const seasonTrigger = selectedSeason;
   closeGuests(false);
   hideGuestTooltip();
   showDrawerRoster(false);
@@ -376,7 +398,8 @@ function closeDrawer() {
   updateSeasonGuests();
   drawer.classList.remove('is-open');
   updatePanelAvailability();
-  trigger?.focus();
+  const focusTarget = trigger?.isConnected ? trigger : seasonTrigger;
+  focusTarget?.focus();
 }
 
 for (const card of seasonCards) {
