@@ -86,6 +86,10 @@ const locations = [
     cover: japanAlbumData.album.cover,
   },
 ];
+const provinces = [
+  { id: 'zhejiang', label: '浙江', placeIds: ['xinchang-2024', 'hangzhou-2024', 'qiandao-lake-2020', 'naked-valley-2018', 'huzhou-2018'] },
+  { id: 'jiangsu', label: '江苏', placeIds: ['yixing-yaohu-2025', 'wuxi-2025', 'nanjing-2021'] },
+];
 
 ---
-<TravelGlobe locations={locations} />
+<TravelGlobe locations={locations} provinces={provinces} />

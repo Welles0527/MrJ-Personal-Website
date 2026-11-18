@@ -2,7 +2,7 @@ import { Viewer, TileMapServiceImageryProvider, ArcGisMapServerImageryProvider, 
 import { attachStarMapSky } from './starmap-sky';
 
 type Album = { id: string; name: string; markerName: string; mapGroup?: string; country: string; region: string; count: number; latitude: number; longitude: number; href: string; cover: string };
-type MapPlace = { id: string; label: string; latitude: number; longitude: number; albumIds: string[] };
+type MapPlace = { id: string; label: string; latitude: number; longitude: number; albumIds: string[]; provinceId?: string; isProvince?: boolean };
 const albums: Album[] = JSON.parse(document.querySelector('#cesium-albums')?.textContent || '[]');
 const places: MapPlace[] = JSON.parse(document.querySelector('#cesium-places')?.textContent || '[]');
 const albumsById = new Map(albums.map(album => [album.id, album]));
@@ -19,6 +19,8 @@ const panelLink = panel.querySelector<HTMLAnchorElement>('[data-selection-link]'
 const status = document.querySelector<HTMLElement>('[data-view-status]')!;
 const homeButton = document.querySelector<HTMLButtonElement>('.map-toolbar [data-home]')!;
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const provinceDetailHeight = 850000;
+const provinceFocusHeight = 560000;
 const fallbackMap = document.querySelector<HTMLElement>('[data-fallback-map]')!;
 const selectionButtons = document.querySelectorAll<HTMLButtonElement>('[data-focus], [data-place]');
 let selected: string | null = null;
@@ -27,6 +29,7 @@ let selectionTrigger: HTMLElement | null = null;
 let mapMode = '3d';
 let mapFailed = false;
 let focusMapAlbum: ((album: Album) => void) | undefined;
+let focusMapProvince: ((place: MapPlace, moveFocus: boolean) => void) | undefined;
 let refreshMapMarkers: (() => void) | undefined;
 let changeSceneMode: ((flat: boolean) => void) | undefined;
 let resetMap: (() => void) | undefined;
@@ -135,6 +138,11 @@ const selectAlbum = (id: string, moveFocus = false) => {
 };
 
 function selectPlace(place: MapPlace, moveFocus = false) {
+  if (place.isProvince && focusMapProvince) {
+    closeSelection();
+    focusMapProvince(place, moveFocus);
+    return;
+  }
   const { albumIds, label } = place;
   if (albumIds.length === 1) {
     selectAlbum(albumIds[0], moveFocus);
@@ -168,6 +176,7 @@ const showFlatFallback = (message: string) => {
   mapFailed = true;
   mapMode = '2d';
   focusMapAlbum = undefined;
+  focusMapProvince = undefined;
   refreshMapMarkers = undefined;
   changeSceneMode = undefined;
   resetMap = undefined;
@@ -275,7 +284,7 @@ async function start() {
   viewer.canvas.setAttribute('aria-label', '交互式地球：拖动旋转，滚轮缩放');
   viewer.canvas.tabIndex = 0;
   const positions = places.map(place => Cartesian3.fromDegrees(place.longitude, place.latitude, 500));
-  positions.forEach((position, i) => viewer.entities.add({ id: places[i].id, position, point: { pixelSize: 5, color: Color.fromCssColorString('#dae9d0'), outlineColor: Color.fromCssColorString('#5b968e'), outlineWidth: 2 } }));
+  const entities = positions.map((position, i) => viewer.entities.add({ id: places[i].id, position, show: !places[i].provinceId, point: { pixelSize: 5, color: Color.fromCssColorString('#dae9d0'), outlineColor: Color.fromCssColorString('#5b968e'), outlineWidth: 2 } }));
   const pins = places.map(place => document.querySelector<HTMLButtonElement>(`[data-pin="${place.id}"]`)!);
   const leaders = places.map(place => document.querySelector<SVGLineElement>(`[data-leader="${place.id}"]`)!);
   const markerLayer = document.querySelector<HTMLElement>('[data-markers]')!;
@@ -308,11 +317,19 @@ async function start() {
   const skyOptions = { overviewHeight: overviewHeight(), overviewLat: 28, overviewLng: 80, isInteracting: () => motionActive };
   let detachSky = attachStarMapSky(viewer, skyOptions);
   document.querySelector('[data-imagery]')!.textContent = '本地底图 · 正在连接高清影像';
-  focusMapAlbum = (album: Album) => {
-    const destination = Cartesian3.fromDegrees(album.longitude, album.latitude, 2800000);
+  const focusLocation = (longitude: number, latitude: number, height: number) => {
+    const destination = Cartesian3.fromDegrees(longitude, latitude, height);
     useMotionResolution();
     viewer.camera.flyTo({ destination, duration: reducedMotion ? 0 : 1.6, orientation: { heading: 0, pitch: -Math.PI/2, roll: 0 } });
     restoreResolution();
+  };
+  focusMapAlbum = (album: Album) => {
+    const place = placesById.get(album.mapGroup ?? album.id);
+    focusLocation(album.longitude, album.latitude, place?.provinceId ? provinceFocusHeight : 2800000);
+  };
+  focusMapProvince = (place, moveFocus) => {
+    focusLocation(place.longitude, place.latitude, provinceFocusHeight);
+    if (moveFocus) viewer.canvas.focus({ preventScroll: true });
   };
   viewer.selectedEntityChanged.addEventListener(entity => {
     const place = entity && placesById.get(entity.id);
@@ -344,15 +361,24 @@ async function start() {
   };
   const previousView = new Matrix4();
   let previousWidth = 0, previousHeight = 0, previousScale = 0, previousSelected: string | null = null;
+  let provinceDetailsVisible = false;
   refreshMapMarkers = () => { previousWidth = 0; viewer.scene.requestRender(); };
   const headerObserver = new ResizeObserver(refreshMapMarkers);
   headerObserver.observe(topbar);
   viewer.scene.postRender.addEventListener(() => {
     const width = viewer.canvas.clientWidth, height = viewer.canvas.clientHeight;
-    const scale = viewer.scene.mode === SceneMode.SCENE2D ? viewer.camera.positionCartographic.height : 0;
+    const cameraHeight = viewer.camera.positionCartographic.height;
+    const flat = viewer.scene.mode === SceneMode.SCENE2D;
+    const scale = flat ? cameraHeight : 0;
     if (width === previousWidth && height === previousHeight && scale === previousScale && previousSelected === selected && Matrix4.equals(previousView, viewer.camera.viewMatrix)) return;
     Matrix4.clone(viewer.camera.viewMatrix, previousView);
     previousWidth = width; previousHeight = height; previousScale = scale; previousSelected = selected;
+    const showProvinceDetails = cameraHeight <= provinceDetailHeight * (flat ? Math.max(1, width / height) : 1);
+    if (showProvinceDetails !== provinceDetailsVisible) {
+      provinceDetailsVisible = showProvinceDetails;
+      places.forEach((place, i) => { entities[i].show = showProvinceDetails ? !place.isProvince : !place.provinceId; });
+      viewer.scene.requestRender();
+    }
     const mapTop = markerLayer.getBoundingClientRect().top;
     const controls = toolbar.getBoundingClientRect();
     const controlsAtTop = controls.top - mapTop < height / 2;
@@ -367,11 +393,13 @@ async function start() {
     for (let y = minY; y <= maxY; y += rowGap) {
       for (let x = inset; x <= width - inset; x += columnGap) candidates.push({ x, y });
     }
-    const available = (point: { x: number; y: number }) => !placements.some(other => Math.abs(other.x - point.x) < columnGap && Math.abs(other.y - point.y) < rowGap);
+    const available = ({ x, y }: { x: number; y: number }) =>
+      !placements.some(other => Math.abs(other.x - x) < columnGap && Math.abs(other.y - y) < rowGap);
     const album = selected ? albumsById.get(selected) : undefined;
     const selectedPlace = album?.mapGroup ?? album?.id;
-    const order = places.map((_,i)=>i).sort((a,b)=>Number(places[b].id===selectedPlace)-Number(places[a].id===selectedPlace));
+    const order = places.map((_, i) => i).sort((a, b) => Number(places[b].id === selectedPlace) - Number(places[a].id === selectedPlace));
     for (const i of order) {
+      if (!entities[i].show) continue;
       const point = SceneTransforms.worldToWindowCoordinates(viewer.scene, positions[i], new Cartesian2());
       const normal = viewer.scene.globe.ellipsoid.geodeticSurfaceNormal(positions[i]);
       const toCamera = Cartesian3.subtract(viewer.camera.positionWC, positions[i], new Cartesian3());
@@ -381,7 +409,7 @@ async function start() {
       point.x = Math.max(inset, Math.min(width - inset, point.x));
       point.y = Math.max(minY, Math.min(maxY, point.y));
       if (!available(point)) {
-        const candidate = candidates.filter(available).sort((a,b) => Math.hypot(a.x-anchor.x,a.y-anchor.y)-Math.hypot(b.x-anchor.x,b.y-anchor.y))[0];
+        const candidate = candidates.filter(available).sort((a, b) => Math.hypot(a.x - anchor.x, a.y - anchor.y) - Math.hypot(b.x - anchor.x, b.y - anchor.y))[0];
         if (candidate) { point.x = candidate.x; point.y = candidate.y; }
       }
       placements.push({ i, x: point.x, y: point.y, anchorX: anchor.x, anchorY: anchor.y });
