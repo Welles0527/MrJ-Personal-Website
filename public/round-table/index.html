@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="《圆桌派》第一季至第八季，选择一季即可前往 ZIP0 对应的播放页。">
+  <meta name="description" content="《圆桌派》第一季至第八季节目单，查看各期主题、嘉宾和 ZIP0 播放入口。">
   <meta name="theme-color" content="#101210">
   <title>圆桌派 · 第一季至第八季</title>
   <style>
@@ -15,6 +15,8 @@
       --text: #f1f3ef;
       --muted: #a7afa4;
       --accent: #ccf47d;
+      --drawer-duration: 280ms;
+      --drawer-easing: cubic-bezier(.22, .7, .24, 1);
       font-family: system-ui, "PingFang SC", "Microsoft YaHei", sans-serif;
     }
 
@@ -24,21 +26,44 @@
 
     body {
       margin: 0;
+      overflow-x: clip;
       background: var(--background);
       color: var(--text);
     }
 
+    .gallery-viewport {
+      contain: paint;
+    }
+
     .collection {
-      width: min(100% - 64px, 1000px);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) clamp(320px, 35%, 500px);
+      align-items: start;
+      gap: 20px;
+      width: min(100% - 48px, 1536px);
       margin-inline: auto;
       padding-block: 38px 48px;
+    }
+
+    .series-layout {
+      --left-drawer-width: min(50vw, 100% - 280px);
+      position: relative;
+      min-width: 0;
+      scroll-margin-block-start: 16px;
+    }
+
+    .series {
+      display: grid;
+      gap: 20px;
+      min-width: 0;
+      container-type: inline-size;
+      transition: margin-inline-start var(--drawer-duration) var(--drawer-easing);
     }
 
     .intro {
       position: relative;
       isolation: isolate;
       overflow: hidden;
-      margin-block-end: 22px;
       padding: 27px 34px 30px;
       border: 1px solid var(--border);
       border-radius: 18px;
@@ -94,10 +119,185 @@
       line-height: 1.5;
     }
 
+    .guest-directory-home {
+      min-width: 0;
+    }
+
+    .guest-directory {
+      padding: 17px 16px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--surface);
+    }
+
+    .guest-directory-heading {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px 10px;
+      margin-bottom: 13px;
+    }
+
+    .guest-directory-label {
+      margin: 0;
+      color: var(--accent);
+      font-size: 1rem;
+      font-weight: 650;
+    }
+
+    .guest-directory-note {
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .guest-group + .guest-group {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .guest-group h3 {
+      margin: 0 0 6px;
+      font-size: 0.85rem;
+      font-weight: 650;
+    }
+
+    .guest-directory-status,
+    .guest-retry {
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .guest-directory-status {
+      margin: 0 0 4px;
+    }
+
+    .guest-retry,
+    .drawer-roster-toggle {
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface);
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .drawer-roster-toggle {
+      display: none;
+    }
+
+    .guest-avatars {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .guest-avatar {
+      display: grid;
+      gap: 6px;
+      justify-items: center;
+      inline-size: 100%;
+      min-inline-size: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--text);
+      font: inherit;
+      font-size: 0.88rem;
+      line-height: 1.35;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .guest-avatar-photo {
+      display: grid;
+      inline-size: min(100%, 128px);
+      aspect-ratio: 1;
+      place-items: center;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      background: #283325;
+      color: var(--accent);
+      font-size: 1rem;
+    }
+
+    .guest-avatar-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      pointer-events: none;
+    }
+
+    .guest-avatar-label {
+      max-inline-size: 100%;
+      overflow-wrap: anywhere;
+    }
+
+    .guest-avatar:is(:hover, :focus-visible, [aria-expanded="true"]) .guest-avatar-photo {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    .guest-avatar.is-in-season .guest-avatar-photo {
+      border-color: var(--accent);
+    }
+
+    .guest-avatar.is-out-of-season {
+      color: var(--muted);
+    }
+
+    .guest-avatar.is-out-of-season .guest-avatar-photo {
+      background: #1e251d;
+      color: #778370;
+    }
+
+    .guest-avatar.is-out-of-season img {
+      opacity: 0.28;
+      filter: grayscale(1);
+    }
+
+    .guest-tooltip {
+      position: fixed;
+      inset: 0 auto auto 0;
+      z-index: 3;
+      width: min(248px, 100vw - 24px);
+      padding: 10px 12px;
+      border: 1px solid #526345;
+      border-radius: 9px;
+      background: #20281b;
+      color: var(--text);
+      box-shadow: 0 10px 24px #0007;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      pointer-events: none;
+    }
+
+    .guest-tooltip span {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+
+    .guest-appearance-copy {
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+      padding: 8px 0 8px 12px;
+      font-size: 0.9rem;
+      line-height: 1.45;
+    }
+
     .seasons {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 18px;
+      min-width: 0;
       margin: 0;
       padding: 0;
       list-style: none;
@@ -162,11 +362,11 @@
       transition: background-color 160ms ease, color 160ms ease;
     }
 
-    .season:is(:hover, :focus-visible) {
+    .season:is(:hover, :focus-visible, .is-season-selected) {
       border-color: var(--accent);
     }
 
-    .season:is(:hover, :focus-visible) .watch-icon {
+    .season:is(:hover, :focus-visible, .is-season-selected) .watch-icon {
       background-color: var(--accent);
       color: var(--background);
     }
@@ -176,113 +376,561 @@
       outline-offset: 3px;
     }
 
+    .season-drawer {
+      inset-block: 0;
+      display: flex;
+      flex-direction: column;
+      visibility: hidden;
+      overflow: hidden;
+      background: var(--surface);
+      transition: transform var(--drawer-duration) var(--drawer-easing),
+        visibility 0s var(--drawer-duration);
+    }
+
+    .episode-drawer {
+      position: absolute;
+      z-index: 1;
+      inset-inline-start: 0;
+      width: var(--left-drawer-width);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      transform: translateX(-100%);
+    }
+
+    .episode-drawer > .drawer-scroll {
+      flex: 1;
+      scrollbar-width: thin;
+      scrollbar-color: #5b694b transparent;
+    }
+
+    .guest-drawer {
+      position: fixed;
+      z-index: 2;
+      inset-inline-end: 0;
+      width: min(760px, 50vw);
+      border-inline-start: 1px solid var(--border);
+      box-shadow: -12px 0 32px #0004;
+      transform: translateX(100%);
+    }
+
+    .season-drawer.is-open {
+      visibility: visible;
+      transform: translateX(0);
+      transition-delay: 0s;
+    }
+
+    .drawer-header {
+      display: flex;
+      flex: none;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 23px 26px 20px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(110deg, #222b1b, var(--surface));
+    }
+
+    .drawer-header h2 {
+      margin: 0;
+      font-size: clamp(1.25rem, 4.5vw, 1.8rem);
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+    }
+
+    .drawer-meta,
+    .drawer-status {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 0.82rem;
+      line-height: 1.5;
+    }
+
+    .drawer-close {
+      flex: 0 0 44px;
+      height: 44px;
+      padding: 0;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      background: var(--background);
+      color: inherit;
+      font: inherit;
+      font-size: 1.4rem;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .drawer-close:hover,
+    .drawer-close:focus-visible {
+      border-color: var(--accent);
+    }
+
+    .drawer-scroll {
+      min-height: 0;
+      padding: 16px 26px 28px;
+      overflow: auto;
+      overscroll-behavior: contain;
+    }
+
+    .drawer-status {
+      margin: 0 0 12px;
+    }
+
+    .drawer-fallback {
+      color: var(--accent);
+      text-underline-offset: 3px;
+    }
+
+    .episode-list,
+    .episode-guests {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .episode-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .episode-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--background);
+    }
+
+    .episode-row:has(.episode-select[aria-expanded="true"]) {
+      border-color: #53643f;
+      background: #20281b;
+    }
+
+    .episode-select {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+      min-height: 52px;
+      padding: 10px 12px;
+      border: 0;
+      border-radius: 9px;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      font-size: 0.95rem;
+      font-weight: 650;
+      line-height: 1.45;
+      text-align: start;
+      cursor: pointer;
+    }
+
+    .episode-select:hover {
+      color: var(--accent);
+    }
+
+    .episode-title {
+      overflow-wrap: anywhere;
+    }
+
+    .episode-watch:not([hidden]) {
+      display: grid;
+      min-height: 40px;
+      margin: 5px 6px 5px 0;
+      padding-inline: 14px;
+      place-items: center;
+      border: 1px solid #ccf47d42;
+      border-radius: 7px;
+      background: #ccf47d14;
+      color: var(--accent);
+      font-size: 0.85rem;
+      font-weight: 650;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .episode-watch:is(:hover, :focus-visible) {
+      background: var(--accent);
+      color: var(--background);
+    }
+
+    .episode-number {
+      color: var(--accent);
+      font-size: 0.76rem;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .episode-guests {
+      display: grid;
+      gap: 12px;
+    }
+
+    .episode-guest {
+      --portrait-size: 96px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      min-width: 0;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--background);
+    }
+
+    .guest-photo {
+      display: grid;
+      flex: 0 0 var(--portrait-size);
+      height: var(--portrait-size);
+      place-items: center;
+      overflow: hidden;
+      border-radius: 10px;
+      background: #283325;
+      color: var(--accent);
+      font-size: 1.6rem;
+    }
+
+    .guest-photo img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .guest-name,
+    .guest-background {
+      display: block;
+      overflow-wrap: anywhere;
+    }
+
+    .guest-name {
+      margin-block-end: 5px;
+      font-size: 1.125rem;
+      line-height: 1.3;
+    }
+
+    .guest-background {
+      color: var(--muted);
+      font-size: 0.98rem;
+      line-height: 1.6;
+    }
+
+    .guest-name a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .guest-name a:hover,
+    .guest-name a:focus-visible {
+      color: var(--accent);
+      text-decoration: underline;
+    }
+
+    .season-drawer :is(button, a):focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    @media (min-width: 901px) {
+      .collection:has(.episode-drawer.is-open) {
+        grid-template-columns: minmax(0, 1fr) clamp(265px, 30%, 460px);
+      }
+
+      .series-layout:has(.episode-drawer.is-open) .series {
+        margin-inline-start: calc(var(--left-drawer-width) + 12px);
+      }
+
+      .series-layout:has(.episode-drawer.is-open) .intro {
+        padding-inline: 8px 12px;
+      }
+
+      .series-layout:has(.episode-drawer.is-open) h1 {
+        font-size: clamp(2.5rem, 4.6vw, 4.1rem);
+      }
+    }
+
+    @container (max-width: 680px) {
+      .seasons {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @container (max-width: 475px) {
+      .season-info {
+        gap: 4px;
+        padding-inline: 8px;
+      }
+
+      .watch-icon {
+        flex-basis: 24px;
+        height: 24px;
+      }
+    }
+
+    @media (max-width: 900px) {
+      body:has(.guest-drawer.is-open) {
+        overflow: hidden;
+      }
+
+      .collection {
+        grid-template-columns: minmax(0, 1fr);
+        width: min(100% - 32px, 640px);
+      }
+
+      .series-layout {
+        --left-drawer-width: 100%;
+      }
+
+      .series {
+        transition: transform var(--drawer-duration) var(--drawer-easing);
+      }
+
+      .drawer-roster-toggle:not([hidden]) {
+        display: inline-flex;
+        align-items: center;
+        min-height: 40px;
+        margin-bottom: 12px;
+        color: var(--accent);
+        font-size: 0.85rem;
+      }
+
+      .series-layout:has(.episode-drawer.is-open) .series {
+        transform: translateX(calc(100% + 16px));
+      }
+
+      .guest-drawer {
+        width: min(760px, 100vw - 16px);
+      }
+    }
+
     @media (max-width: 710px) {
       .collection {
-        width: min(100% - 32px, 496px);
+        gap: 14px;
         padding-block: 22px 32px;
       }
 
+      .series {
+        gap: 14px;
+      }
+
       .intro {
-        margin-block-end: 16px;
         padding: 22px 21px 24px;
       }
 
+      .guest-directory {
+        padding: 12px 10px;
+      }
+
+      .guest-avatars {
+        gap: 10px;
+      }
+
       .seasons {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 12px;
+      }
+
+      .drawer-header {
+        padding: 18px 16px;
+      }
+
+      .drawer-scroll {
+        padding: 12px 16px 22px;
+      }
+
+      .episode-guest {
+        --portrait-size: 80px;
+        gap: 12px;
+        padding: 12px;
+      }
+
+      .episode-title,
+      .guest-background {
+        text-wrap: balance;
       }
     }
 
     @media (prefers-reduced-motion: reduce) {
+      :root {
+        --drawer-duration: 0s;
+      }
+
       .season,
       .watch-icon {
         transition: none;
       }
     }
   </style>
+  <script src="./season-drawer.js" defer></script>
 </head>
 <body>
-  <main class="collection">
-    <header class="intro">
-      <p class="category">文化访谈</p>
-      <h1>圆桌派</h1>
-      <p class="intro-note">全 8 季 · 点击封面前往 ZIP0 观看</p>
-    </header>
+  <div class="gallery-viewport">
+    <main class="collection" id="season-gallery">
+      <div class="series-layout">
+        <div class="series">
+          <header class="intro">
+            <p class="category">文化访谈</p>
+            <h1>圆桌派</h1>
+            <p class="intro-note">全 8 季 · 选择一季查看各期节目与嘉宾</p>
+          </header>
 
-    <ul class="seasons" aria-label="第一季至第八季">
-      <li>
-        <a class="season" href="https://zip0.com/watch?source=bfzy&amp;id=43774&amp;episode=1">
-          <img class="cover" src="./covers/season-01.jpg" width="270" height="405" alt="">
-          <div class="season-info">
-            <div><span class="season-title">第一季</span><time datetime="2016">2016</time></div>
-            <span class="watch-icon" aria-hidden="true">↗</span>
+          <ul class="seasons" aria-label="第一季至第八季">
+            <li>
+              <a class="season" data-season="1" href="https://zip0.com/watch?source=mdzy&amp;id=35769&amp;episode=1">
+                <img class="cover" src="./covers/season-01.jpg" width="270" height="405" alt="">
+                <div class="season-info">
+                  <div><span class="season-title">第一季</span><time datetime="2016">2016</time></div>
+                  <span class="watch-icon" aria-hidden="true">→</span>
+                </div>
+              </a>
+            </li>
+            <li>
+              <a class="season" data-season="2" href="https://zip0.com/watch?source=mdzy&amp;id=35764&amp;episode=1">
+                <img class="cover" src="./covers/season-02.jpg" width="270" height="360" alt="">
+                <div class="season-info">
+                  <div><span class="season-title">第二季</span><time datetime="2017">2017</time></div>
+                  <span class="watch-icon" aria-hidden="true">→</span>
+                </div>
+              </a>
+            </li>
+            <li>
+              <a class="season" data-season="3" href="https://zip0.com/watch?source=mdzy&amp;id=35766&amp;episode=1">
+                <img class="cover" src="./covers/season-03.jpg" width="270" height="405" alt="">
+                <div class="season-info">
+                  <div><span class="season-title">第三季</span><time datetime="2018">2018</time></div>
+                  <span class="watch-icon" aria-hidden="true">→</span>
+                </div>
+              </a>
+            </li>
+            <li>
+              <a class="season" data-season="4" href="https://zip0.com/watch?source=mdzy&amp;id=35767&amp;episode=1">
+                <img class="cover" src="./covers/season-04.jpg" width="270" height="405" alt="">
+                <div class="season-info">
+                  <div><span class="season-title">第四季</span><time datetime="2019">2019</time></div>
+                  <span class="watch-icon" aria-hidden="true">→</span>
+                </div>
+              </a>
+            </li>
+            <li>
+              <a class="season" data-season="5" href="https://zip0.com/watch?source=ruyi&amp;id=15667&amp;episode=1">
+                <img class="cover" src="./covers/season-05.jpg" width="270" height="405" alt="" loading="lazy">
+                <div class="season-info">
+                  <div><span class="season-title">第五季</span><time datetime="2021">2021</time></div>
+                  <span class="watch-icon" aria-hidden="true">→</span>
+                </div>
+              </a>
+            </li>
+            <li>
+              <a class="season" data-season="6" href="https://zip0.com/watch?source=ruyi&amp;id=16033&amp;episode=1">
+                <img class="cover" src="./covers/season-06.jpg" width="270" height="405" alt="" loading="lazy">
+                <div class="season-info">
+                  <div><span class="season-title">第六季</span><time datetime="2022">2022</time></div>
+                  <span class="watch-icon" aria-hidden="true">→</span>
+                </div>
+              </a>
+            </li>
+            <li>
+              <a class="season" data-season="7" href="https://zip0.com/watch?source=jisu&amp;id=58017&amp;episode=1">
+                <img class="cover" src="./covers/season-07.jpg" width="270" height="405" alt="" loading="lazy">
+                <div class="season-info">
+                  <div><span class="season-title">第七季</span><time datetime="2024">2024</time></div>
+                  <span class="watch-icon" aria-hidden="true">→</span>
+                </div>
+              </a>
+            </li>
+            <li>
+              <a class="season" data-season="8" href="https://zip0.com/watch?source=mdzy&amp;id=63500&amp;episode=1">
+                <img class="cover" src="./covers/season-08.jpg" width="270" height="405" alt="" loading="lazy">
+                <div class="season-info">
+                  <div><span class="season-title">第八季</span><time datetime="2025">2025</time></div>
+                  <span class="watch-icon" aria-hidden="true">→</span>
+                </div>
+              </a>
+            </li>
+          </ul>
+        </div>
+        <section class="season-drawer episode-drawer" id="season-drawer" aria-labelledby="drawer-title" inert>
+          <header class="drawer-header">
+            <div>
+              <h2 id="drawer-title"></h2>
+              <p class="drawer-meta" id="drawer-meta"></p>
+            </div>
+            <button class="drawer-close" type="button" aria-label="关闭左侧抽屉">×</button>
+          </header>
+          <div class="drawer-scroll">
+            <button class="drawer-roster-toggle" type="button" aria-controls="drawer-roster" aria-expanded="false" hidden>本季嘉宾</button>
+            <div id="drawer-roster" hidden></div>
+            <div class="drawer-programme">
+              <p class="drawer-status" role="status"></p>
+              <a class="drawer-fallback" hidden>在 ZIP0 打开本季 ↗</a>
+              <ol class="episode-list" aria-label="本季节目单"></ol>
+            </div>
           </div>
-        </a>
-      </li>
-      <li>
-        <a class="season" href="https://zip0.com/watch?source=bfzy&amp;id=43769&amp;episode=1">
-          <img class="cover" src="./covers/season-02.jpg" width="270" height="360" alt="">
-          <div class="season-info">
-            <div><span class="season-title">第二季</span><time datetime="2017">2017</time></div>
-            <span class="watch-icon" aria-hidden="true">↗</span>
+        </section>
+      </div>
+
+      <div class="guest-directory-home">
+        <aside class="guest-directory" aria-labelledby="guest-directory-label">
+          <div class="guest-directory-heading">
+            <h2 class="guest-directory-label" id="guest-directory-label">嘉宾</h2>
+            <span class="guest-directory-note" role="status"></span>
           </div>
-        </a>
-      </li>
-      <li>
-        <a class="season" href="https://zip0.com/watch?source=bfzy&amp;id=43771&amp;episode=1">
-          <img class="cover" src="./covers/season-03.jpg" width="270" height="405" alt="">
-          <div class="season-info">
-            <div><span class="season-title">第三季</span><time datetime="2018">2018</time></div>
-            <span class="watch-icon" aria-hidden="true">↗</span>
-          </div>
-        </a>
-      </li>
-      <li>
-        <a class="season" href="https://zip0.com/watch?source=bfzy&amp;id=43772&amp;episode=1">
-          <img class="cover" src="./covers/season-04.jpg" width="270" height="405" alt="">
-          <div class="season-info">
-            <div><span class="season-title">第四季</span><time datetime="2019">2019</time></div>
-            <span class="watch-icon" aria-hidden="true">↗</span>
-          </div>
-        </a>
-      </li>
-      <li>
-        <a class="season" href="https://zip0.com/watch?source=bfzy&amp;id=43773&amp;episode=1">
-          <img class="cover" src="./covers/season-05.jpg" width="270" height="405" alt="" loading="lazy">
-          <div class="season-info">
-            <div><span class="season-title">第五季</span><time datetime="2021">2021</time></div>
-            <span class="watch-icon" aria-hidden="true">↗</span>
-          </div>
-        </a>
-      </li>
-      <li>
-        <a class="season" href="https://zip0.com/watch?source=bfzy&amp;id=43770&amp;episode=1">
-          <img class="cover" src="./covers/season-06.jpg" width="270" height="405" alt="" loading="lazy">
-          <div class="season-info">
-            <div><span class="season-title">第六季</span><time datetime="2022">2022</time></div>
-            <span class="watch-icon" aria-hidden="true">↗</span>
-          </div>
-        </a>
-      </li>
-      <li>
-        <a class="season" href="https://zip0.com/watch?source=bfzy&amp;id=70108&amp;episode=1">
-          <img class="cover" src="./covers/season-07.jpg" width="270" height="405" alt="" loading="lazy">
-          <div class="season-info">
-            <div><span class="season-title">第七季</span><time datetime="2024">2024</time></div>
-            <span class="watch-icon" aria-hidden="true">↗</span>
-          </div>
-        </a>
-      </li>
-      <li>
-        <a class="season" href="https://zip0.com/watch?source=dyttzy&amp;id=64101&amp;episode=1">
-          <img class="cover" src="./covers/season-08.jpg" width="270" height="405" alt="" loading="lazy">
-          <div class="season-info">
-            <div><span class="season-title">第八季</span><time datetime="2025">2025</time></div>
-            <span class="watch-icon" aria-hidden="true">↗</span>
-          </div>
-        </a>
-      </li>
-    </ul>
-  </main>
+          <p class="guest-directory-status" role="status"></p>
+          <button class="guest-retry" type="button" hidden>重试</button>
+          <section class="guest-group" hidden>
+            <h3 id="female-guests">女嘉宾</h3>
+            <ul class="guest-avatars" data-gender="female" aria-labelledby="female-guests"></ul>
+          </section>
+          <section class="guest-group" hidden>
+            <h3 id="male-guests">男嘉宾</h3>
+            <ul class="guest-avatars" data-gender="male" aria-labelledby="male-guests"></ul>
+          </section>
+        </aside>
+      </div>
+    </main>
+  </div>
+  <section class="season-drawer guest-drawer" id="guest-drawer" aria-labelledby="guest-drawer-title" inert>
+    <header class="drawer-header">
+      <div>
+        <h2 id="guest-drawer-title"></h2>
+        <p class="drawer-meta" id="guest-drawer-meta"></p>
+      </div>
+      <button class="drawer-close" type="button" aria-label="返回节目单" title="返回节目单">×</button>
+    </header>
+    <div class="drawer-scroll">
+      <ul class="episode-guests" aria-label="本期嘉宾"></ul>
+    </div>
+  </section>
+  <div class="guest-tooltip" role="tooltip" hidden>
+    <strong></strong>
+    <span id="guest-tooltip-background"></span>
+  </div>
+  <template id="episode-template">
+    <li class="episode-row">
+      <button class="episode-select" type="button" aria-controls="guest-drawer" aria-expanded="false">
+        <span class="episode-number"></span>
+        <span class="episode-title"></span>
+      </button>
+      <a class="episode-watch" target="_blank" rel="noopener">观看</a>
+    </li>
+  </template>
+  <template id="guest-appearance-template">
+    <li class="episode-row">
+      <div class="guest-appearance-copy">
+        <span class="episode-number"></span>
+        <span class="episode-title"></span>
+      </div>
+      <a class="episode-watch" target="_blank" rel="noopener">观看</a>
+    </li>
+  </template>
+  <template id="guest-template">
+    <li class="episode-guest">
+      <span class="guest-photo" aria-hidden="true"></span>
+      <div>
+        <strong class="guest-name"></strong>
+        <span class="guest-background"></span>
+      </div>
+    </li>
+  </template>
 </body>
 </html>
