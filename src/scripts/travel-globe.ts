@@ -1,8 +1,12 @@
 import { Viewer, TileMapServiceImageryProvider, ArcGisMapServerImageryProvider, ImageryLayer, Cartesian3, Cartesian2, Color, DirectionalLight, Matrix4, PerspectiveFrustum, Rectangle, SceneTransforms, SceneMode } from 'cesium';
 import { attachStarMapSky } from './starmap-sky';
 
-type Album = { id: string; name: string; markerName: string; country: string; region: string; count: number; latitude: number; longitude: number; href: string; cover: string };
+type Album = { id: string; name: string; markerName: string; mapGroup?: string; country: string; region: string; count: number; latitude: number; longitude: number; href: string; cover: string };
+type MapPlace = { id: string; label: string; latitude: number; longitude: number; albumIds: string[] };
 const albums: Album[] = JSON.parse(document.querySelector('#cesium-albums')?.textContent || '[]');
+const places: MapPlace[] = JSON.parse(document.querySelector('#cesium-places')?.textContent || '[]');
+const albumsById = new Map(albums.map(album => [album.id, album]));
+const placesById = new Map(places.map(place => [place.id, place]));
 const base = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/cesium/`;
 declare global { interface Window { CESIUM_BASE_URL: string } }
 window.CESIUM_BASE_URL = base;
@@ -11,15 +15,21 @@ const panel = document.querySelector<HTMLElement>('[data-selection]')!;
 const panelScroll = panel.querySelector<HTMLElement>('[data-selection-scroll]')!;
 const panelGallery = panel.querySelector<HTMLElement>('[data-selection-gallery]')!;
 const panelStatus = panel.querySelector<HTMLElement>('[data-selection-status]')!;
+const panelLink = panel.querySelector<HTMLAnchorElement>('[data-selection-link]')!;
 const status = document.querySelector<HTMLElement>('[data-view-status]')!;
+const homeButton = document.querySelector<HTMLButtonElement>('.map-toolbar [data-home]')!;
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const compactMarkers = matchMedia('(max-width: 1180px), (max-width: 1400px) and (any-pointer: coarse)');
 const fallbackMap = document.querySelector<HTMLElement>('[data-fallback-map]')!;
+const albumClusters = new Map<string, string[]>();
+const selectionButtons = document.querySelectorAll<HTMLButtonElement>('[data-focus], [data-place]');
 let selected: string | null = null;
 let albumRequest: AbortController | undefined;
 let selectionTrigger: HTMLElement | null = null;
 let mapMode = '3d';
 let mapFailed = false;
 let focusMapAlbum: ((album: Album) => void) | undefined;
+let refreshMapMarkers: (() => void) | undefined;
 let changeSceneMode: ((flat: boolean) => void) | undefined;
 let resetMap: (() => void) | undefined;
 const updateModeButtons = () => document.querySelectorAll<HTMLButtonElement>('[data-mode]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.mode === mapMode)));
@@ -29,12 +39,16 @@ const closeSelection = () => {
   albumRequest?.abort();
   panel.hidden = true;
   panelGallery.replaceChildren();
-  if (restoreFocus) selectionTrigger?.focus({ preventScroll: true });
+  if (restoreFocus) {
+    const trigger = selectionTrigger?.getClientRects().length ? selectionTrigger : homeButton;
+    trigger.focus({ preventScroll: true });
+  }
   selectionTrigger = null;
   selected = null;
   status.textContent = '全球视角';
   document.querySelectorAll('.is-selected').forEach(row => row.classList.remove('is-selected'));
-  document.querySelectorAll('[data-focus]').forEach(button => button.setAttribute('aria-pressed', 'false'));
+  selectionButtons.forEach(button => button.setAttribute('aria-pressed', 'false'));
+  refreshMapMarkers?.();
 };
 
 async function loadPanelPhotos(album: Album) {
@@ -96,30 +110,67 @@ async function loadPanelPhotos(album: Album) {
   }
 }
 
-const selectAlbum = (id: string, moveFocus = false) => {
-  const album = albums.find(item => item.id === id);
-  if (!album) return;
+function showSelection(title: string, count: string, href?: string) {
   if (document.activeElement instanceof HTMLElement && !panel.contains(document.activeElement)) {
     selectionTrigger = document.activeElement;
   }
-  selected = id;
-  panel.querySelector('[data-selection-title]')!.textContent = album.name;
-  panel.querySelector('[data-selection-count]')!.textContent = `${album.count.toLocaleString()} 张照片`;
-  panel.querySelector<HTMLAnchorElement>('[data-selection-link]')!.href = album.href;
+  panel.querySelector('[data-selection-title]')!.textContent = title;
+  panel.querySelector('[data-selection-count]')!.textContent = count;
+  panelLink.hidden = !href;
+  if (href) panelLink.href = href;
   panel.hidden = false;
+  refreshMapMarkers?.();
+}
+
+const selectAlbum = (id: string, moveFocus = false) => {
+  const album = albumsById.get(id);
+  if (!album) return;
+  selected = id;
+  showSelection(album.name, `${album.count.toLocaleString()} 张照片`, album.href);
   status.textContent = `${album.markerName} · ${album.latitude.toFixed(2)}° / ${album.longitude.toFixed(2)}°`;
-  document.querySelectorAll<HTMLButtonElement>('[data-focus]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.focus === id)));
+  selectionButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.focus === id || button.dataset.place === (album.mapGroup ?? album.id))));
   document.querySelectorAll<HTMLElement>('[data-album-row]').forEach(row => row.classList.toggle('is-selected', row.dataset.albumRow === id));
   focusMapAlbum?.(album);
   void loadPanelPhotos(album);
   if (innerWidth <= 820) document.querySelector('.world')?.scrollIntoView({ behavior: reducedMotion ? 'instant' : 'smooth', block: 'start' });
   if (moveFocus) panel.focus({ preventScroll: true });
 };
+
+function selectAlbumCluster(albumIds: string[], moveFocus: boolean, title = '附近的相册') {
+  closeSelection();
+  showSelection(title, `${albumIds.length} 本相册`);
+  panelStatus.hidden = true;
+  const list = document.createElement('ul');
+  list.className = 'selection-albums';
+  for (const id of albumIds) {
+    const album = albumsById.get(id)!;
+    const row = document.createElement('li');
+    const button = document.createElement('button');
+    const count = document.createElement('small');
+    button.type = 'button';
+    button.textContent = album.markerName;
+    count.textContent = `${album.count.toLocaleString()} 张`;
+    button.append(count);
+    button.addEventListener('click', () => selectAlbum(album.id, true));
+    row.append(button);
+    list.append(row);
+  }
+  panelGallery.replaceChildren(list);
+  panelScroll.scrollTop = 0;
+  if (moveFocus) panel.focus({ preventScroll: true });
+}
+
+function selectPlace(place: MapPlace, moveFocus = false) {
+  if (place.albumIds.length > 1) selectAlbumCluster(place.albumIds, moveFocus, place.label);
+  else selectAlbum(place.albumIds[0], moveFocus);
+}
+
 const showFlatFallback = (message: string) => {
   if (mapFailed) return;
   mapFailed = true;
   mapMode = '2d';
   focusMapAlbum = undefined;
+  refreshMapMarkers = undefined;
   changeSceneMode = undefined;
   resetMap = undefined;
   document.querySelector<HTMLElement>('#cesium-globe')!.hidden = true;
@@ -131,9 +182,15 @@ const showFlatFallback = (message: string) => {
   document.querySelectorAll<HTMLButtonElement>('[data-zoom]').forEach(button => { button.disabled = true; });
   updateModeButtons();
 };
-document.querySelectorAll<HTMLButtonElement>('[data-focus]').forEach(button => button.addEventListener('click', event => selectAlbum(button.dataset.focus!, event.detail === 0)));
-document.querySelector('[data-close]')!.addEventListener('click', closeSelection);
-document.querySelector('[data-home]')!.addEventListener('click', () => { closeSelection(); resetMap?.(); });
+selectionButtons.forEach(button => button.addEventListener('click', event => {
+  const moveFocus = event.detail === 0;
+  const group = button.dataset.pin ? albumClusters.get(button.dataset.pin) : undefined;
+  if (group) selectAlbumCluster(group, moveFocus);
+  else if (button.dataset.place) selectPlace(placesById.get(button.dataset.place)!, moveFocus);
+  else selectAlbum(button.dataset.focus!, moveFocus);
+}));
+panel.querySelector('[data-close]')!.addEventListener('click', closeSelection);
+homeButton.addEventListener('click', () => { closeSelection(); resetMap?.(); });
 document.addEventListener('keydown', event => { if (event.key === 'Escape') closeSelection(); });
 document.querySelectorAll<HTMLButtonElement>('[data-mode]').forEach(button => button.addEventListener('click', () => {
   closeSelection();
@@ -221,10 +278,17 @@ async function start() {
   viewer.scene.fog.enabled = true;
   viewer.canvas.setAttribute('aria-label', '交互式地球：拖动旋转，滚轮缩放');
   viewer.canvas.tabIndex = 0;
-  const positions = albums.map(album => Cartesian3.fromDegrees(album.longitude, album.latitude, 500));
-  positions.forEach((position, i) => viewer.entities.add({ id: albums[i].id, position, point: { pixelSize: 5, color: Color.fromCssColorString('#dae9d0'), outlineColor: Color.fromCssColorString('#5b968e'), outlineWidth: 2 } }));
-  const pins = albums.map(album => document.querySelector<HTMLButtonElement>(`[data-pin="${album.id}"]`)!);
-  const leaders = albums.map(album => document.querySelector<SVGLineElement>(`[data-leader="${album.id}"]`)!);
+  const positions = places.map(place => Cartesian3.fromDegrees(place.longitude, place.latitude, 500));
+  positions.forEach((position, i) => viewer.entities.add({ id: places[i].id, position, point: { pixelSize: 5, color: Color.fromCssColorString('#dae9d0'), outlineColor: Color.fromCssColorString('#5b968e'), outlineWidth: 2 } }));
+  const pins = places.map(place => document.querySelector<HTMLButtonElement>(`[data-pin="${place.id}"]`)!);
+  const pinLabels = pins.map(pin => pin.getAttribute('aria-label')!);
+  const pinCounts = pins.map(pin => pin.querySelector<HTMLElement>('.pin-count')!);
+  const leaders = places.map(place => document.querySelector<SVGLineElement>(`[data-leader="${place.id}"]`)!);
+  // Allow one 11px character cell per letter, plus the label's border and padding.
+  const compactWidths = places.map(place => Math.max(44, place.label.length * 11 + 16));
+  const markerLayer = document.querySelector<HTMLElement>('[data-markers]')!;
+  const topbar = document.querySelector<HTMLElement>('.topbar')!;
+  const toolbar = document.querySelector<HTMLElement>('.map-toolbar')!;
   const overviewHeight = () => {
     const { clientWidth: width, clientHeight: height } = viewer.canvas;
     const diameter = Math.min(height * 0.74, width * (innerWidth <= 820 ? 0.82 : 0.42));
@@ -258,7 +322,10 @@ async function start() {
     viewer.camera.flyTo({ destination, duration: reducedMotion ? 0 : 1.6, orientation: { heading: 0, pitch: -Math.PI/2, roll: 0 } });
     restoreResolution();
   };
-  viewer.selectedEntityChanged.addEventListener(entity => { if (entity) selectAlbum(entity.id); });
+  viewer.selectedEntityChanged.addEventListener(entity => {
+    const place = entity && placesById.get(entity.id);
+    if (place) selectPlace(place);
+  });
   document.querySelectorAll<HTMLButtonElement>('[data-zoom]').forEach(button => {
     button.disabled = false;
     button.addEventListener('click', () => { const distance = viewer.camera.positionCartographic.height * .35; if (button.dataset.zoom === 'in') viewer.camera.zoomIn(distance); else viewer.camera.zoomOut(distance); viewer.scene.requestRender(); });
@@ -284,15 +351,31 @@ async function start() {
     globalView(false);
   };
   const previousView = new Matrix4();
-  let previousWidth = 0, previousHeight = 0, previousSelected: string | null = null;
+  let previousWidth = 0, previousHeight = 0, previousScale = 0, previousSelected: string | null = null;
+  refreshMapMarkers = () => { previousWidth = 0; viewer.scene.requestRender(); };
+  compactMarkers.addEventListener('change', refreshMapMarkers, { signal: interactionEvents.signal });
+  const headerObserver = new ResizeObserver(refreshMapMarkers);
+  headerObserver.observe(topbar);
   viewer.scene.postRender.addEventListener(() => {
     const width = viewer.canvas.clientWidth, height = viewer.canvas.clientHeight;
-    if (width === previousWidth && height === previousHeight && previousSelected === selected && Matrix4.equals(previousView, viewer.camera.viewMatrix)) return;
+    const scale = viewer.scene.mode === SceneMode.SCENE2D ? viewer.camera.positionCartographic.height : 0;
+    if (width === previousWidth && height === previousHeight && scale === previousScale && previousSelected === selected && Matrix4.equals(previousView, viewer.camera.viewMatrix)) return;
     Matrix4.clone(viewer.camera.viewMatrix, previousView);
-    previousWidth = width; previousHeight = height; previousSelected = selected;
+    previousWidth = width; previousHeight = height; previousScale = scale; previousSelected = selected;
+    const compact = compactMarkers.matches;
+    let compactTop = 0, compactBottom = height;
+    if (compact) {
+      const mapTop = markerLayer.getBoundingClientRect().top;
+      const controls = toolbar.getBoundingClientRect();
+      const controlsAtTop = controls.top - mapTop < height / 2;
+      compactTop = Math.max(topbar.getBoundingClientRect().bottom, controlsAtTop ? controls.bottom : mapTop) - mapTop + 26;
+      compactBottom = (controlsAtTop ? height - 55 : controls.top - mapTop) - 26;
+    }
     const occupied: {x:number;y:number}[] = [];
-    const placements: { i: number; x: number; y: number; anchorX: number; anchorY: number }[] = [];
-    const order = albums.map((_,i)=>i).sort((a,b)=>Number(albums[b].id===selected)-Number(albums[a].id===selected));
+    const placements: { i: number; x: number; y: number; anchorX: number; anchorY: number; group?: string[] }[] = [];
+    const album = selected ? albumsById.get(selected) : undefined;
+    const selectedPlace = album?.mapGroup ?? album?.id;
+    const order = places.map((_,i)=>i).sort((a,b)=>Number(places[b].id===selectedPlace)-Number(places[a].id===selectedPlace));
     for (const i of order) {
       const point = SceneTransforms.worldToWindowCoordinates(viewer.scene, positions[i], new Cartesian2());
       const normal = viewer.scene.globe.ellipsoid.geodeticSurfaceNormal(positions[i]);
@@ -300,6 +383,18 @@ async function start() {
       const visible = point && (viewer.scene.mode !== SceneMode.SCENE3D || Cartesian3.dot(normal, toCamera)>0) && point.x > 45 && point.x < width - 45 && point.y > 80 && point.y < height - 55;
       if (!visible) continue;
       const anchor = { x: point.x, y: point.y };
+      if (compact) {
+        const inset = compactWidths[i] / 2 + 4;
+        const x = Math.max(inset, Math.min(width - inset, point.x));
+        const y = Math.max(compactTop, Math.min(compactBottom, point.y));
+        const nearby = placements.find(item => {
+          const otherWidth = item.group ? 44 : compactWidths[item.i];
+          return Math.abs(item.x - x) < (otherWidth + compactWidths[i]) / 2 + 6 && Math.abs(item.y - y) < 50;
+        });
+        if (nearby) (nearby.group ??= [...places[nearby.i].albumIds]).push(...places[i].albumIds);
+        else placements.push({ i, x, y, anchorX: anchor.x, anchorY: anchor.y });
+        continue;
+      }
       // Leave the header and map controls clear when spreading nearby albums.
       const minY = 150, maxY = height - 125;
       point.x = Math.max(55, Math.min(width-55, point.x));
@@ -318,13 +413,29 @@ async function start() {
       occupied.push({ x: point.x, y: point.y });
     }
     // Finish projection/layout reads before changing the overlay DOM.
+    markerLayer.toggleAttribute('data-compact', compact);
+    viewer.entities.show = !compact;
+    albumClusters.clear();
     for (let i = 0; i < pins.length; i++) {
       const placement = placements.find(item => item.i === i);
       const pin = pins[i], leader = leaders[i];
       if (!placement) { pin.hidden = true; leader.style.display = 'none'; continue; }
-      leader.style.display='';
-      leader.setAttribute('x1',String(placement.anchorX)); leader.setAttribute('y1',String(placement.anchorY));
-      leader.setAttribute('x2',String(placement.x)); leader.setAttribute('y2',String(placement.y));
+      if (!compact) {
+        leader.style.display='';
+        leader.setAttribute('x1',String(placement.anchorX)); leader.setAttribute('y1',String(placement.anchorY));
+        leader.setAttribute('x2',String(placement.x)); leader.setAttribute('y2',String(placement.y));
+      }
+      if (placement.group) {
+        albumClusters.set(places[i].id, placement.group);
+        const count = `${placement.group.length} 本`;
+        if (pinCounts[i].textContent !== count || !pin.hasAttribute('data-cluster')) {
+          pinCounts[i].textContent = count;
+          pin.setAttribute('aria-label', `${count}相册，查看附近地点`);
+        }
+      } else if (pin.hasAttribute('data-cluster')) {
+        pin.setAttribute('aria-label', pinLabels[i]);
+      }
+      pin.toggleAttribute('data-cluster', !!placement.group);
       pin.hidden=false;
       pin.style.left='0'; pin.style.top='0';
       pin.style.transform=`translate3d(${placement.x}px,${placement.y}px,0) translate(-50%,-50%)`;
@@ -347,6 +458,6 @@ async function start() {
   }).catch(() => {
     if (!mapFailed && !viewer.isDestroyed()) document.querySelector('[data-imagery]')!.textContent = '本地底图 · 高清影像暂不可用';
   });
-  window.addEventListener('pagehide',()=>{interactionEvents.abort();window.clearTimeout(restoreTimer);detachSky();if(!viewer.isDestroyed())viewer.destroy();},{once:true});
+  window.addEventListener('pagehide',()=>{interactionEvents.abort();headerObserver.disconnect();window.clearTimeout(restoreTimer);detachSky();if(!viewer.isDestroyed())viewer.destroy();},{once:true});
 }
 start().catch(error => { console.error('Travel globe initialization failed', error); showFlatFallback('3D暂时无法显示，已切换平面地图，可从列表打开相册。'); });
