@@ -1139,9 +1139,10 @@
           <button class="workspace-theme" type="button" data-action="toggle-theme" aria-label="切换为${isPaperTheme() ? "暗色" : "浅色"}主题" title="切换为${isPaperTheme() ? "暗色" : "浅色"}主题">
             ${icon(isPaperTheme() ? "sun" : "moon")}<span>${isPaperTheme() ? "浅色" : "暗色"}</span>
           </button>
-          <span class="workspace-account" title="${account.signedIn ? escapeHtml(account.label) : "尚未登录"}">
-            ${icon("user")}
-          </span>
+          <button class="workspace-account" type="button" data-action="${account.signedIn ? "auth-signout" : "open-auth"}"
+            aria-label="${account.signedIn ? "退出登录" : "登录"}" title="${account.signedIn ? "退出登录" : "登录"}" ${state.authBusy ? "disabled" : ""}>
+            ${icon(account.signedIn ? "logout" : "user")}
+          </button>
           <button class="workspace-refresh ${state.refreshing ? "refreshing" : ""}" type="button" data-action="refresh-all"
             ${state.refreshing ? "disabled" : ""} aria-label="刷新行情与动态">
             ${icon("refresh")}<span>${state.refreshing ? "刷新中" : "刷新数据"}</span>
@@ -1716,7 +1717,7 @@
         </span>
         <button type="button" data-action="${account.signedIn && !sync.requiresLogin ? "auth-signout" : "open-auth"}"
           ${state.authBusy ? "disabled" : ""}>
-          ${account.signedIn && !sync.requiresLogin ? icon("logout") : ""}${sync.requiresLogin ? "重新登录" : account.signedIn ? "退出" : "登录"}
+          ${account.signedIn && !sync.requiresLogin ? icon("logout") : ""}${sync.requiresLogin ? "重新登录" : account.signedIn ? "退出登录" : "登录"}
         </button>
       </section>`;
   }

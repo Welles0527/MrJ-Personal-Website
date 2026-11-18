@@ -2150,7 +2150,7 @@ body {
 }
 
 @media (max-width: 620px) {
-  .workspace-nav { grid-template-columns: 40px minmax(0, 1fr) 42px; gap: 8px; padding: 8px 10px; }
+  .workspace-nav { grid-template-columns: 40px minmax(0, 1fr) auto; gap: 8px; padding: 8px 10px; }
   .workspace-tabs {
     padding-bottom: 2px;
     scrollbar-width: thin;
@@ -2162,7 +2162,7 @@ body {
   .workspace-mark { width: 40px; height: 40px; border-radius: 13px; }
   .workspace-tab { min-height: 38px; padding: 0 12px; scroll-snap-align: center; }
   .workspace-tab svg { width: 15px; height: 15px; }
-  .workspace-account { display: none; }
+  .workspace-account { width: 34px; height: 36px; padding: 0; }
   .workspace-refresh { width: 42px; min-height: 40px; justify-content: center; padding: 0; }
   .workspace-refresh span { display: none; }
   .watchlist { padding: 16px 12px 18px; }
