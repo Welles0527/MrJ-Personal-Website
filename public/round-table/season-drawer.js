@@ -7,6 +7,7 @@ const directoryHome = gallery.querySelector('.guest-directory-home');
 const directory = directoryHome.querySelector('.guest-directory');
 const guestGroups = Array.from(directory.querySelectorAll('.guest-avatars'));
 const guestDirectoryLabel = directory.querySelector('#guest-directory-label');
+const guestDirectoryCount = guestDirectoryLabel.querySelector('.guest-directory-count');
 const directoryNote = directory.querySelector('.guest-directory-note');
 const guestDirectoryStatus = directory.querySelector('.guest-directory-status');
 const guestRetry = directory.querySelector('.guest-retry');
@@ -15,6 +16,7 @@ const guestTooltipName = guestTooltip.querySelector('strong');
 const guestTooltipBackground = guestTooltip.querySelector('#guest-tooltip-background');
 const drawer = document.querySelector('#season-drawer');
 const drawerTitle = drawer.querySelector('#drawer-title');
+const drawerGuestIntro = drawer.querySelector('.drawer-guest-intro');
 const drawerMeta = drawer.querySelector('#drawer-meta');
 const drawerClose = drawer.querySelector('.drawer-close');
 const drawerScroll = drawer.querySelector('.drawer-scroll');
@@ -157,7 +159,12 @@ async function loadGuestDirectory() {
       group.replaceChildren(...members.map(([name, profile]) => makeGuestAvatar(name, profile)));
       group.parentElement.hidden = members.length === 0;
     }
-    guestDirectoryLabel.textContent = `嘉宾 · ${profiles.length} 位`;
+    const count = `${profiles.length} 位`;
+    if (guestDirectoryCount) {
+      guestDirectoryCount.textContent = count;
+    } else {
+      guestDirectoryLabel.textContent = `嘉宾 · ${count}`;
+    }
     guestDirectoryStatus.hidden = true;
     updateSeasonGuests();
   } catch {
@@ -220,6 +227,10 @@ function openGuestAppearances(button) {
   const name = button.dataset.guest;
   const appearances = appearancesByGuest.get(name);
   drawerTitle.textContent = name;
+  if (drawerGuestIntro) {
+    drawerGuestIntro.textContent = guestProfiles[name].background;
+    drawerGuestIntro.hidden = !drawerGuestIntro.textContent;
+  }
   drawerMeta.textContent = `参与节目 · ${appearances.length} 期`;
   list.setAttribute('aria-label', `${name}参与的节目单`);
   list.replaceChildren(...appearances.map(makeAppearance));
@@ -243,6 +254,13 @@ function updatePanelAvailability() {
   guestDrawer.inert = !guestOpen;
 }
 
+function revealDrawer(closeButton) {
+  if (seriesLayout.getBoundingClientRect().top < 16) {
+    seriesLayout.scrollIntoView({ block: 'start' });
+  }
+  closeButton.focus({ preventScroll: true });
+}
+
 function openGuests(episode, button, guests) {
   activeEpisodeButton?.setAttribute('aria-expanded', 'false');
   activeEpisodeButton = button;
@@ -255,7 +273,7 @@ function openGuests(episode, button, guests) {
   guestDrawer.classList.add('is-open');
   updatePanelAvailability();
   guestScroll.scrollTop = 0;
-  guestClose.focus({ preventScroll: true });
+  revealDrawer(guestClose);
 }
 
 function closeGuests(restoreFocus = true) {
@@ -265,7 +283,7 @@ function closeGuests(restoreFocus = true) {
   button.setAttribute('aria-expanded', 'false');
   guestDrawer.classList.remove('is-open');
   updatePanelAvailability();
-  if (restoreFocus) button.focus({ preventScroll: true });
+  if (restoreFocus) button.focus();
 }
 
 function makeEpisode(episode, watchRoute, guests) {
@@ -286,15 +304,13 @@ function openDrawer(trigger) {
   trigger.setAttribute('aria-expanded', 'true');
   openVersion += 1;
   showDrawerRoster(false);
+  if (drawerGuestIntro) drawerGuestIntro.hidden = true;
   rosterToggle.hidden = true;
   drawerStatus.hidden = true;
   fallback.hidden = true;
   drawer.classList.add('is-open');
   updatePanelAvailability();
-  if (seriesLayout.getBoundingClientRect().top < 16) {
-    seriesLayout.scrollIntoView({ block: 'start' });
-  }
-  drawerClose.focus({ preventScroll: true });
+  revealDrawer(drawerClose);
 }
 
 async function openSeason(card) {

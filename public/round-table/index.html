@@ -36,13 +36,15 @@
     }
 
     .collection {
+      --collection-gap: 20px;
       display: grid;
       grid-template-columns: minmax(0, 1fr) clamp(320px, 35%, 500px);
       align-items: start;
-      gap: 20px;
+      gap: var(--collection-gap);
       width: min(100% - 48px, 1536px);
       margin-inline: auto;
       padding-block: 38px 48px;
+      container-type: inline-size;
     }
 
     .series-layout {
@@ -130,37 +132,75 @@
       background: var(--surface);
     }
 
-    .guest-directory-heading {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 4px 10px;
-      margin-bottom: 13px;
-    }
-
     .guest-directory-label {
       margin: 0;
+      padding: 4px;
+      border: 1px solid #ccf47d40;
+      border-radius: 7px;
+      background: #20281b;
       color: var(--accent);
-      font-size: 1rem;
+      font-size: 0.78rem;
       font-weight: 650;
+      line-height: 1.4;
+      text-align: center;
+    }
+
+    .guest-directory-count {
+      display: block;
+      color: var(--muted);
+      font-size: 0.68rem;
+      white-space: nowrap;
     }
 
     .guest-directory-note {
+      display: block;
       color: var(--muted);
       font-size: 0.8rem;
+      text-align: end;
     }
 
-    .guest-group + .guest-group {
-      margin-top: 14px;
-      padding-top: 12px;
-      border-top: 1px solid var(--border);
+    .guest-directory-note:not(:empty) {
+      margin-bottom: 12px;
+    }
+
+    .guest-groups {
+      --roster-gap: 8px;
+      display: grid;
+      grid-template-areas: "female female female divider male male male male";
+      grid-template-columns: repeat(3, minmax(0, 1fr)) max-content repeat(4, minmax(0, 1fr));
+      align-items: start;
+      gap: var(--roster-gap);
+    }
+
+    .guest-group:first-of-type {
+      grid-area: female;
+    }
+
+    .guest-group:last-of-type {
+      grid-area: male;
+    }
+
+    .guest-group-divider {
+      grid-area: divider;
+      display: flex;
+      flex-direction: column;
+      gap: var(--roster-gap);
+      align-items: center;
+      align-self: stretch;
+    }
+
+    .guest-group-divider::after {
+      flex: 1;
+      width: 1px;
+      background: var(--border);
+      content: "";
     }
 
     .guest-group h3 {
-      margin: 0 0 6px;
+      margin: 0 0 8px;
       font-size: 0.85rem;
       font-weight: 650;
+      text-align: center;
     }
 
     .guest-directory-status,
@@ -189,15 +229,20 @@
 
     .guest-avatars {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px var(--roster-gap);
       margin: 0;
       padding: 0;
       list-style: none;
     }
 
+    .guest-avatars[data-gender="male"] {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
     .guest-avatar {
       display: grid;
+      grid-template-columns: minmax(0, 1fr);
       gap: 6px;
       justify-items: center;
       inline-size: 100%;
@@ -234,7 +279,8 @@
     }
 
     .guest-avatar-label {
-      max-inline-size: 100%;
+      inline-size: max-content;
+      max-inline-size: calc(100% + var(--roster-gap));
       overflow-wrap: anywhere;
     }
 
@@ -377,39 +423,31 @@
     }
 
     .season-drawer {
+      position: absolute;
       inset-block: 0;
       display: flex;
       flex-direction: column;
       visibility: hidden;
       overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 18px;
       background: var(--surface);
       transition: transform var(--drawer-duration) var(--drawer-easing),
         visibility 0s var(--drawer-duration);
     }
 
     .episode-drawer {
-      position: absolute;
       z-index: 1;
       inset-inline-start: 0;
       width: var(--left-drawer-width);
-      border: 1px solid var(--border);
-      border-radius: 18px;
       transform: translateX(-100%);
     }
 
-    .episode-drawer > .drawer-scroll {
-      flex: 1;
-      scrollbar-width: thin;
-      scrollbar-color: #5b694b transparent;
-    }
-
     .guest-drawer {
-      position: fixed;
       z-index: 2;
-      inset-inline-end: 0;
-      width: min(760px, 50vw);
-      border-inline-start: 1px solid var(--border);
-      box-shadow: -12px 0 32px #0004;
+      inset-inline-start: calc(100% + var(--collection-gap));
+      width: calc(100cqi - 100% - var(--collection-gap));
+      container: guest-details / inline-size;
       transform: translateX(100%);
     }
 
@@ -434,6 +472,28 @@
       margin: 0;
       font-size: clamp(1.25rem, 4.5vw, 1.8rem);
       line-height: 1.3;
+      overflow-wrap: anywhere;
+    }
+
+    .drawer-heading {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .drawer-title-line {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 4px 12px;
+    }
+
+    .drawer-guest-intro {
+      flex: 1 1 155px;
+      min-width: 0;
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
       overflow-wrap: anywhere;
     }
 
@@ -465,10 +525,13 @@
     }
 
     .drawer-scroll {
+      flex: 1;
       min-height: 0;
       padding: 16px 26px 28px;
       overflow: auto;
       overscroll-behavior: contain;
+      scrollbar-width: thin;
+      scrollbar-color: #5b694b transparent;
     }
 
     .drawer-status {
@@ -668,11 +731,23 @@
       }
     }
 
-    @media (max-width: 900px) {
-      body:has(.guest-drawer.is-open) {
-        overflow: hidden;
+    @container guest-details (max-width: 325px) {
+      .guest-drawer .drawer-header {
+        padding-inline: 16px;
       }
 
+      .guest-drawer .drawer-scroll {
+        padding-inline: 12px;
+      }
+
+      .guest-drawer .episode-guest {
+        --portrait-size: 64px;
+        gap: 10px;
+        padding: 10px;
+      }
+    }
+
+    @media (max-width: 900px) {
       .collection {
         grid-template-columns: minmax(0, 1fr);
         width: min(100% - 32px, 640px);
@@ -700,7 +775,8 @@
       }
 
       .guest-drawer {
-        width: min(760px, 100vw - 16px);
+        inset-inline-start: 0;
+        width: 100%;
       }
     }
 
@@ -722,8 +798,28 @@
         padding: 12px 10px;
       }
 
+      #drawer-roster {
+        margin-inline: -8px;
+      }
+
+      #drawer-roster .guest-directory {
+        padding-inline: 6px;
+      }
+
+      .guest-groups {
+        --roster-gap: 6px;
+      }
+
       .guest-avatars {
-        gap: 10px;
+        row-gap: 10px;
+      }
+
+      .guest-avatar {
+        font-size: 0.78rem;
+      }
+
+      .guest-avatar-label {
+        text-wrap: balance;
       }
 
       .seasons {
@@ -761,7 +857,7 @@
       }
     }
   </style>
-  <script src="./season-drawer.js" defer></script>
+  <script src="./season-drawer.js?v=83034ffa097f" defer></script>
 </head>
 <body>
   <div class="gallery-viewport">
@@ -851,8 +947,11 @@
         </div>
         <section class="season-drawer episode-drawer" id="season-drawer" aria-labelledby="drawer-title" inert>
           <header class="drawer-header">
-            <div>
-              <h2 id="drawer-title"></h2>
+            <div class="drawer-heading">
+              <div class="drawer-title-line">
+                <h2 id="drawer-title"></h2>
+                <p class="drawer-guest-intro" hidden></p>
+              </div>
               <p class="drawer-meta" id="drawer-meta"></p>
             </div>
             <button class="drawer-close" type="button" aria-label="关闭左侧抽屉">×</button>
@@ -867,40 +966,44 @@
             </div>
           </div>
         </section>
+        <section class="season-drawer guest-drawer" id="guest-drawer" aria-labelledby="guest-drawer-title" inert>
+          <header class="drawer-header">
+            <div>
+              <h2 id="guest-drawer-title"></h2>
+              <p class="drawer-meta" id="guest-drawer-meta"></p>
+            </div>
+            <button class="drawer-close" type="button" aria-label="返回节目单" title="返回节目单">×</button>
+          </header>
+          <div class="drawer-scroll">
+            <ul class="episode-guests" aria-label="本期嘉宾"></ul>
+          </div>
+        </section>
       </div>
 
       <div class="guest-directory-home">
         <aside class="guest-directory" aria-labelledby="guest-directory-label">
-          <div class="guest-directory-heading">
-            <h2 class="guest-directory-label" id="guest-directory-label">嘉宾</h2>
-            <span class="guest-directory-note" role="status"></span>
-          </div>
+          <span class="guest-directory-note" role="status"></span>
           <p class="guest-directory-status" role="status"></p>
           <button class="guest-retry" type="button" hidden>重试</button>
-          <section class="guest-group" hidden>
-            <h3 id="female-guests">女嘉宾</h3>
-            <ul class="guest-avatars" data-gender="female" aria-labelledby="female-guests"></ul>
-          </section>
-          <section class="guest-group" hidden>
-            <h3 id="male-guests">男嘉宾</h3>
-            <ul class="guest-avatars" data-gender="male" aria-labelledby="male-guests"></ul>
-          </section>
+          <div class="guest-groups">
+            <div class="guest-group-divider">
+              <h2 class="guest-directory-label" id="guest-directory-label">
+                嘉宾<span class="guest-directory-count"></span>
+              </h2>
+            </div>
+            <section class="guest-group" hidden>
+              <h3 id="female-guests">女嘉宾</h3>
+              <ul class="guest-avatars" data-gender="female" aria-labelledby="female-guests"></ul>
+            </section>
+            <section class="guest-group" hidden>
+              <h3 id="male-guests">男嘉宾</h3>
+              <ul class="guest-avatars" data-gender="male" aria-labelledby="male-guests"></ul>
+            </section>
+          </div>
         </aside>
       </div>
     </main>
   </div>
-  <section class="season-drawer guest-drawer" id="guest-drawer" aria-labelledby="guest-drawer-title" inert>
-    <header class="drawer-header">
-      <div>
-        <h2 id="guest-drawer-title"></h2>
-        <p class="drawer-meta" id="guest-drawer-meta"></p>
-      </div>
-      <button class="drawer-close" type="button" aria-label="返回节目单" title="返回节目单">×</button>
-    </header>
-    <div class="drawer-scroll">
-      <ul class="episode-guests" aria-label="本期嘉宾"></ul>
-    </div>
-  </section>
   <div class="guest-tooltip" role="tooltip" hidden>
     <strong></strong>
     <span id="guest-tooltip-background"></span>
