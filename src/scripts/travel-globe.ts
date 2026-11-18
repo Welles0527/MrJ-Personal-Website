@@ -19,9 +19,7 @@ const panelLink = panel.querySelector<HTMLAnchorElement>('[data-selection-link]'
 const status = document.querySelector<HTMLElement>('[data-view-status]')!;
 const homeButton = document.querySelector<HTMLButtonElement>('.map-toolbar [data-home]')!;
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const compactMarkers = matchMedia('(max-width: 1180px), (max-width: 1400px) and (any-pointer: coarse)');
 const fallbackMap = document.querySelector<HTMLElement>('[data-fallback-map]')!;
-const albumClusters = new Map<string, string[]>();
 const selectionButtons = document.querySelectorAll<HTMLButtonElement>('[data-focus], [data-place]');
 let selected: string | null = null;
 let albumRequest: AbortController | undefined;
@@ -136,9 +134,14 @@ const selectAlbum = (id: string, moveFocus = false) => {
   if (moveFocus) panel.focus({ preventScroll: true });
 };
 
-function selectAlbumCluster(albumIds: string[], moveFocus: boolean, title = '附近的相册') {
+function selectPlace(place: MapPlace, moveFocus = false) {
+  const { albumIds, label } = place;
+  if (albumIds.length === 1) {
+    selectAlbum(albumIds[0], moveFocus);
+    return;
+  }
   closeSelection();
-  showSelection(title, `${albumIds.length} 本相册`);
+  showSelection(label, `${albumIds.length} 本相册`);
   panelStatus.hidden = true;
   const list = document.createElement('ul');
   list.className = 'selection-albums';
@@ -160,11 +163,6 @@ function selectAlbumCluster(albumIds: string[], moveFocus: boolean, title = '附
   if (moveFocus) panel.focus({ preventScroll: true });
 }
 
-function selectPlace(place: MapPlace, moveFocus = false) {
-  if (place.albumIds.length > 1) selectAlbumCluster(place.albumIds, moveFocus, place.label);
-  else selectAlbum(place.albumIds[0], moveFocus);
-}
-
 const showFlatFallback = (message: string) => {
   if (mapFailed) return;
   mapFailed = true;
@@ -184,9 +182,7 @@ const showFlatFallback = (message: string) => {
 };
 selectionButtons.forEach(button => button.addEventListener('click', event => {
   const moveFocus = event.detail === 0;
-  const group = button.dataset.pin ? albumClusters.get(button.dataset.pin) : undefined;
-  if (group) selectAlbumCluster(group, moveFocus);
-  else if (button.dataset.place) selectPlace(placesById.get(button.dataset.place)!, moveFocus);
+  if (button.dataset.place) selectPlace(placesById.get(button.dataset.place)!, moveFocus);
   else selectAlbum(button.dataset.focus!, moveFocus);
 }));
 panel.querySelector('[data-close]')!.addEventListener('click', closeSelection);
@@ -281,11 +277,7 @@ async function start() {
   const positions = places.map(place => Cartesian3.fromDegrees(place.longitude, place.latitude, 500));
   positions.forEach((position, i) => viewer.entities.add({ id: places[i].id, position, point: { pixelSize: 5, color: Color.fromCssColorString('#dae9d0'), outlineColor: Color.fromCssColorString('#5b968e'), outlineWidth: 2 } }));
   const pins = places.map(place => document.querySelector<HTMLButtonElement>(`[data-pin="${place.id}"]`)!);
-  const pinLabels = pins.map(pin => pin.getAttribute('aria-label')!);
-  const pinCounts = pins.map(pin => pin.querySelector<HTMLElement>('.pin-count')!);
   const leaders = places.map(place => document.querySelector<SVGLineElement>(`[data-leader="${place.id}"]`)!);
-  // Allow one 11px character cell per letter, plus the label's border and padding.
-  const compactWidths = places.map(place => Math.max(44, place.label.length * 11 + 16));
   const markerLayer = document.querySelector<HTMLElement>('[data-markers]')!;
   const topbar = document.querySelector<HTMLElement>('.topbar')!;
   const toolbar = document.querySelector<HTMLElement>('.map-toolbar')!;
@@ -353,7 +345,6 @@ async function start() {
   const previousView = new Matrix4();
   let previousWidth = 0, previousHeight = 0, previousScale = 0, previousSelected: string | null = null;
   refreshMapMarkers = () => { previousWidth = 0; viewer.scene.requestRender(); };
-  compactMarkers.addEventListener('change', refreshMapMarkers, { signal: interactionEvents.signal });
   const headerObserver = new ResizeObserver(refreshMapMarkers);
   headerObserver.observe(topbar);
   viewer.scene.postRender.addEventListener(() => {
@@ -362,17 +353,21 @@ async function start() {
     if (width === previousWidth && height === previousHeight && scale === previousScale && previousSelected === selected && Matrix4.equals(previousView, viewer.camera.viewMatrix)) return;
     Matrix4.clone(viewer.camera.viewMatrix, previousView);
     previousWidth = width; previousHeight = height; previousScale = scale; previousSelected = selected;
-    const compact = compactMarkers.matches;
-    let compactTop = 0, compactBottom = height;
-    if (compact) {
-      const mapTop = markerLayer.getBoundingClientRect().top;
-      const controls = toolbar.getBoundingClientRect();
-      const controlsAtTop = controls.top - mapTop < height / 2;
-      compactTop = Math.max(topbar.getBoundingClientRect().bottom, controlsAtTop ? controls.bottom : mapTop) - mapTop + 26;
-      compactBottom = (controlsAtTop ? height - 55 : controls.top - mapTop) - 26;
+    const mapTop = markerLayer.getBoundingClientRect().top;
+    const controls = toolbar.getBoundingClientRect();
+    const controlsAtTop = controls.top - mapTop < height / 2;
+    const minY = Math.max(150, Math.max(topbar.getBoundingClientRect().bottom, controlsAtTop ? controls.bottom : mapTop) - mapTop + 20);
+    const maxY = controlsAtTop ? height - 80 : Math.min(height - 125, controls.top - mapTop - 20);
+    const narrow = width <= 820;
+    const inset = narrow ? 40 : 55;
+    const columnGap = narrow ? 78 : 105;
+    const rowGap = narrow ? 40 : 48;
+    const placements: { i: number; x: number; y: number; anchorX: number; anchorY: number }[] = [];
+    const candidates: { x: number; y: number }[] = [];
+    for (let y = minY; y <= maxY; y += rowGap) {
+      for (let x = inset; x <= width - inset; x += columnGap) candidates.push({ x, y });
     }
-    const occupied: {x:number;y:number}[] = [];
-    const placements: { i: number; x: number; y: number; anchorX: number; anchorY: number; group?: string[] }[] = [];
+    const available = (point: { x: number; y: number }) => !placements.some(other => Math.abs(other.x - point.x) < columnGap && Math.abs(other.y - point.y) < rowGap);
     const album = selected ? albumsById.get(selected) : undefined;
     const selectedPlace = album?.mapGroup ?? album?.id;
     const order = places.map((_,i)=>i).sort((a,b)=>Number(places[b].id===selectedPlace)-Number(places[a].id===selectedPlace));
@@ -383,59 +378,22 @@ async function start() {
       const visible = point && (viewer.scene.mode !== SceneMode.SCENE3D || Cartesian3.dot(normal, toCamera)>0) && point.x > 45 && point.x < width - 45 && point.y > 80 && point.y < height - 55;
       if (!visible) continue;
       const anchor = { x: point.x, y: point.y };
-      if (compact) {
-        const inset = compactWidths[i] / 2 + 4;
-        const x = Math.max(inset, Math.min(width - inset, point.x));
-        const y = Math.max(compactTop, Math.min(compactBottom, point.y));
-        const nearby = placements.find(item => {
-          const otherWidth = item.group ? 44 : compactWidths[item.i];
-          return Math.abs(item.x - x) < (otherWidth + compactWidths[i]) / 2 + 6 && Math.abs(item.y - y) < 50;
-        });
-        if (nearby) (nearby.group ??= [...places[nearby.i].albumIds]).push(...places[i].albumIds);
-        else placements.push({ i, x, y, anchorX: anchor.x, anchorY: anchor.y });
-        continue;
-      }
-      // Leave the header and map controls clear when spreading nearby albums.
-      const minY = 150, maxY = height - 125;
-      point.x = Math.max(55, Math.min(width-55, point.x));
+      point.x = Math.max(inset, Math.min(width - inset, point.x));
       point.y = Math.max(minY, Math.min(maxY, point.y));
-      const available = (candidate: { x: number; y: number }) => !occupied.some(other => Math.abs(other.x-candidate.x)<105 && Math.abs(other.y-candidate.y)<48);
       if (!available(point)) {
-        const candidates: { x: number; y: number }[] = [];
-        for (let y = minY; y <= maxY; y += 48) {
-          for (let x = 55; x <= width - 55; x += 105) candidates.push({ x, y });
-        }
-        candidates.sort((a,b) => Math.hypot(a.x-anchor.x,a.y-anchor.y)-Math.hypot(b.x-anchor.x,b.y-anchor.y));
-        const candidate = candidates.find(available);
+        const candidate = candidates.filter(available).sort((a,b) => Math.hypot(a.x-anchor.x,a.y-anchor.y)-Math.hypot(b.x-anchor.x,b.y-anchor.y))[0];
         if (candidate) { point.x = candidate.x; point.y = candidate.y; }
       }
       placements.push({ i, x: point.x, y: point.y, anchorX: anchor.x, anchorY: anchor.y });
-      occupied.push({ x: point.x, y: point.y });
     }
     // Finish projection/layout reads before changing the overlay DOM.
-    markerLayer.toggleAttribute('data-compact', compact);
-    viewer.entities.show = !compact;
-    albumClusters.clear();
     for (let i = 0; i < pins.length; i++) {
       const placement = placements.find(item => item.i === i);
       const pin = pins[i], leader = leaders[i];
       if (!placement) { pin.hidden = true; leader.style.display = 'none'; continue; }
-      if (!compact) {
-        leader.style.display='';
-        leader.setAttribute('x1',String(placement.anchorX)); leader.setAttribute('y1',String(placement.anchorY));
-        leader.setAttribute('x2',String(placement.x)); leader.setAttribute('y2',String(placement.y));
-      }
-      if (placement.group) {
-        albumClusters.set(places[i].id, placement.group);
-        const count = `${placement.group.length} 本`;
-        if (pinCounts[i].textContent !== count || !pin.hasAttribute('data-cluster')) {
-          pinCounts[i].textContent = count;
-          pin.setAttribute('aria-label', `${count}相册，查看附近地点`);
-        }
-      } else if (pin.hasAttribute('data-cluster')) {
-        pin.setAttribute('aria-label', pinLabels[i]);
-      }
-      pin.toggleAttribute('data-cluster', !!placement.group);
+      leader.style.display='';
+      leader.setAttribute('x1',String(placement.anchorX)); leader.setAttribute('y1',String(placement.anchorY));
+      leader.setAttribute('x2',String(placement.x)); leader.setAttribute('y2',String(placement.y));
       pin.hidden=false;
       pin.style.left='0'; pin.style.top='0';
       pin.style.transform=`translate3d(${placement.x}px,${placement.y}px,0) translate(-50%,-50%)`;
