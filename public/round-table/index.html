@@ -856,18 +856,26 @@
         gap: 6px;
       }
 
-      .guest-group:not([hidden]) {
+      .guest-directory-home .guest-avatars {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+      }
+
+      .guest-directory-home .guest-avatar-photo {
+        max-inline-size: 80px;
+      }
+
+      #drawer-roster .guest-group:not([hidden]) {
         display: grid;
         grid-template-columns: max-content minmax(0, 1fr);
         align-items: center;
         gap: var(--roster-gap);
       }
 
-      .guest-group h3 {
+      #drawer-roster .guest-group h3 {
         margin: 0;
       }
 
-      .guest-avatars {
+      #drawer-roster .guest-avatars {
         display: flex;
         gap: var(--roster-gap);
         padding: 4px;
@@ -876,11 +884,11 @@
         scrollbar-width: none;
       }
 
-      .guest-avatars::-webkit-scrollbar {
+      #drawer-roster .guest-avatars::-webkit-scrollbar {
         display: none;
       }
 
-      .guest-avatars > li {
+      #drawer-roster .guest-avatars > li {
         flex: 0 0 clamp(34px, 5vw, 44px);
       }
 
