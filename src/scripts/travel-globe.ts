@@ -19,10 +19,63 @@ const panelLink = panel.querySelector<HTMLAnchorElement>('[data-selection-link]'
 const status = document.querySelector<HTMLElement>('[data-view-status]')!;
 const homeButton = document.querySelector<HTMLButtonElement>('.map-toolbar [data-home]')!;
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const provinceDetailHeight = 850000;
+const provinceDetailHeight = 2800000;
 const provinceFocusHeight = 560000;
 const fallbackMap = document.querySelector<HTMLElement>('[data-fallback-map]')!;
 const selectionButtons = document.querySelectorAll<HTMLButtonElement>('[data-focus], [data-place]');
+
+// Preview covers without changing the current camera or album selection.
+const coverPreview = document.createElement('div');
+coverPreview.hidden = true;
+coverPreview.setAttribute('role', 'tooltip');
+coverPreview.id = 'travel-cover-preview';
+coverPreview.style.cssText = 'position:fixed;z-index:50;pointer-events:none;width:220px;max-width:calc(100vw - 24px);padding:9px;border:1px solid #b9dfef66;border-radius:12px;background:#0a1728ed;color:#edf6ff;box-shadow:0 12px 36px #0008;backdrop-filter:blur(12px);font:12px sans-serif';
+document.body.append(coverPreview);
+function hideCoverPreview() {
+  coverPreview.hidden = true;
+  document.querySelectorAll('[aria-describedby="travel-cover-preview"]').forEach(button => button.removeAttribute('aria-describedby'));
+}
+selectionButtons.forEach(button => {
+  const showCoverPreview = () => {
+    const place = button.dataset.place ? placesById.get(button.dataset.place) : undefined;
+    if (place?.isProvince) return;
+    const ids = place?.albumIds ?? (button.dataset.focus ? [button.dataset.focus] : []);
+    const items = ids.map(id => albumsById.get(id)).filter((album): album is Album => !!album);
+    if (!items.length) return;
+    hideCoverPreview();
+    coverPreview.replaceChildren();
+    const title = document.createElement('div');
+    title.textContent = place?.label ?? items[0].markerName;
+    title.style.cssText = 'font-weight:600;margin-bottom:7px';
+    coverPreview.append(title);
+    const images = document.createElement('div');
+    images.style.cssText = 'display:flex;gap:5px';
+    items.slice(0,3).forEach(album => {
+      const image = document.createElement('img');
+      image.src = album.cover;
+      image.alt = album.name + '相册封面';
+      image.style.cssText = 'width:0;flex:1;min-width:0;height:125px;object-fit:cover;border-radius:7px';
+      images.append(image);
+    });
+    coverPreview.append(images);
+    coverPreview.hidden = false;
+    button.setAttribute('aria-describedby', coverPreview.id);
+    const rect = button.getBoundingClientRect();
+    const box = coverPreview.getBoundingClientRect();
+    coverPreview.style.left = Math.max(12, Math.min(innerWidth-box.width-12, rect.left+(rect.width-box.width)/2))+'px';
+    coverPreview.style.top = Math.max(12, Math.min(innerHeight-box.height-12, rect.bottom+box.height+12<innerHeight ? rect.bottom+10 : rect.top-box.height-10))+'px';
+  };
+  button.addEventListener('mouseenter', showCoverPreview);
+  button.addEventListener('focus', showCoverPreview);
+  button.addEventListener('mouseleave', hideCoverPreview);
+  button.addEventListener('blur', hideCoverPreview);
+  button.addEventListener('click', hideCoverPreview);
+});
+window.addEventListener('resize', hideCoverPreview);
+window.addEventListener('wheel', hideCoverPreview, { passive: true, capture: true });
+window.addEventListener('scroll', hideCoverPreview, true);
+document.addEventListener('keydown', event => { if (event.key === 'Escape') hideCoverPreview(); });
+
 let selected: string | null = null;
 let albumRequest: AbortController | undefined;
 let selectionTrigger: HTMLElement | null = null;
@@ -387,6 +440,19 @@ async function start() {
     if (width === previousWidth && height === previousHeight && scale === previousScale && previousSelected === selected && Matrix4.equals(previousView, viewer.camera.viewMatrix)) return;
     Matrix4.clone(viewer.camera.viewMatrix, previousView);
     previousWidth = width; previousHeight = height; previousScale = scale; previousSelected = selected;
+
+    const labelScale = Math.max(.76, Math.min(1.25, .76 + Math.log2(Math.max(1, overviewHeight() / cameraHeight)) * .13));
+    markerLayer.style.setProperty('--map-label-scale', labelScale.toFixed(3));
+    const title = document.querySelector<HTMLElement>('.topbar .brand');
+    if (title) {
+      const rect = title.getBoundingClientRect(), canvasRect = viewer.canvas.getBoundingClientRect();
+      const samples = [rect.left+4, (rect.left+rect.right)/2, rect.right-4];
+      const covered = !flat && samples.some(x => [rect.top+4, (rect.top+rect.bottom)/2, rect.bottom-4].some(y => {
+        const point = new Cartesian2(x-canvasRect.left,y-canvasRect.top);
+        return point.x>=0 && point.x<=width && point.y>=0 && point.y<=height && !!viewer.camera.pickEllipsoid(point, viewer.scene.globe.ellipsoid);
+      }));
+      title.style.visibility = covered ? 'hidden' : '';
+    }
     const showProvinceDetails = cameraHeight <= provinceDetailHeight * (flat ? Math.max(1, width / height) : 1);
     if (showProvinceDetails !== provinceDetailsVisible) {
       provinceDetailsVisible = showProvinceDetails;

@@ -31,6 +31,7 @@ for (const { id, label, placeIds } of provinces) {
   });
 }
 const places = [...placesById.values()];
+for (const place of places) place.label = place.label.replace('德国捷克', '德国+捷克');
 const fallbackPlaces = places.filter(place => !place.provinceId && !place.isProvince);
 const placeLabel = (place: MapPlace) => place.albumIds.length > 1
   ? `${place.label}，查看 ${place.albumIds.length} 本相册`
@@ -48,7 +49,7 @@ const placeLabel = (place: MapPlace) => place.albumIds.length > 1
   </head>
   <body>
     <main class="atlas" data-atlas>
-      <header class="topbar"><a class="other-projects" href="/#projects">查看其他AI项目</a><p>从一个地方到另一个地方，把沿途的时光留在这里。</p><a href={sitePath('/topics/space/travel/photo-wall/')} class="brand"><span class="brand-icon">✧</span> J先生 <span class="divider">/</span> 旅行影像志</a><a class="back" href={sitePath('/topics/space/travel/photo-wall/')}>返回相册墙 ↗</a></header>
+      <header class="topbar"><a class="other-projects" href="/#projects">查看其他AI项目</a><h1 class="brand">J先生 旅行影像志</h1></header>
       <aside class="journal">
         <a class="other-projects" href="/#projects">查看其他AI项目</a>
         <p class="intro">那些远行与日常，都在这颗星球上。<br />选择一册回忆，让视线抵达那里。</p>
@@ -75,10 +76,10 @@ const placeLabel = (place: MapPlace) => place.albumIds.length > 1
           <div class="fallback-earth" role="group" aria-label="旅行相册平面地图">
             <img src={sitePath('/cesium/Assets/Textures/NaturalEarthII/0/0/0.jpg')} alt="" />
             <img src={sitePath('/cesium/Assets/Textures/NaturalEarthII/0/1/0.jpg')} alt="" />
-            {fallbackPlaces.map(place => <button type="button" class="fallback-pin" data-place={place.id} data-multiple={place.albumIds.length > 1 ? '' : undefined} aria-label={placeLabel(place)} style={`left:${(place.longitude + 180) / 360 * 100}%;top:${(90 - place.latitude) / 180 * 100}%`}><i></i><span class="place-tag"><span class="pin-dot" aria-hidden="true"></span>{place.label}</span></button>)}
+            {fallbackPlaces.map(place => <button type="button" class="fallback-pin" data-place={place.id} data-multiple={place.albumIds.length > 1 ? '' : undefined} aria-label={placeLabel(place)} style={`left:${(place.longitude + 180) / 360 * 100}%;top:${(90 - place.latitude) / 180 * 100}%`}><i></i><span class="place-tag"><span class="place-name"><span class="place-title"><span class="pin-dot" aria-hidden="true"></span>{place.label}</span><small>（{place.count.toLocaleString()} 张）</small></span></span></button>)}
           </div>
           <div class="fallback-provinces" role="group" aria-label="按省份查看相册">
-            {places.filter(place => place.isProvince).map(place => <button type="button" class="place-tag" data-place={place.id} aria-label={placeLabel(place)}><span class="pin-dot" aria-hidden="true"></span>{place.label}</button>)}
+            {places.filter(place => place.isProvince).map(place => <button type="button" class="place-tag" data-place={place.id} aria-label={placeLabel(place)}><span class="place-name"><span class="place-title"><span class="pin-dot" aria-hidden="true"></span>{place.label}</span><small>（{place.count.toLocaleString()} 张）</small></span></button>)}
           </div>
         </div>
         <div class="map-toolbar" aria-label="地图控制">
@@ -88,7 +89,7 @@ const placeLabel = (place: MapPlace) => place.albumIds.length > 1
         <p class="loading" data-loading role="status">正在展开3D相册，首次加载较慢，请耐心等待。</p>
         <div class="map-markers" data-markers>
           <svg class="pin-leaders" aria-hidden="true">{places.map(place=><line data-leader={place.id} />)}</svg>
-          {places.map(place => <button type="button" class="map-pin place-tag" data-pin={place.id} data-place={place.id} aria-label={place.isProvince ? `放大查看${place.label}的 ${place.albumIds.length} 本相册` : placeLabel(place)} hidden><span class="pin-dot" aria-hidden="true"></span>{place.label}</button>)}
+          {places.map(place => <button type="button" class="map-pin place-tag" data-pin={place.id} data-place={place.id} aria-label={place.isProvince ? `放大查看${place.label}的 ${place.albumIds.length} 本相册` : placeLabel(place)} hidden><span class="place-name"><span class="place-title"><span class="pin-dot" aria-hidden="true"></span>{place.label}</span><small>（{place.count.toLocaleString()} 张）</small></span></button>)}
         </div>
         <div class="world-footer"><span><i></i> <span data-view-status>全球视角</span></span><span data-imagery>正在连接高清影像</span></div>
       </section>
@@ -226,4 +227,16 @@ const placeLabel = (place: MapPlace) => place.albumIds.length > 1
   .other-projects:hover{color:#edf4f7;text-decoration:underline;text-underline-offset:4px}
   @media(max-width:820px){.journal>.other-projects{display:none}.topbar>.other-projects{position:absolute;display:block;top:14px;right:14px;padding:0;border:0;background:none;font-size:10px}}
   @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+
+<style>
+.topbar{top:12px!important}.topbar .brand{display:block;margin:0;padding:0 14px;border:0;border-radius:0;background:none;font-size:34px;line-height:1.4;font-weight:600;letter-spacing:1px;color:#edf6ff}.topbar>.other-projects{top:58px}
+@media(max-width:820px){.topbar{top:42px!important}.topbar>:global(.mj-project-brand){position:absolute;top:44px;left:14px;margin:0}.topbar .brand{font-size:24px;padding:0 12px}.topbar>.other-projects{top:52px}}
+</style>
+
+<style>.place-name{display:flex;flex-direction:column;align-items:center;gap:3px}.place-name small{font-size:9px;font-weight:400;line-height:1.2;color:#b8d2df}</style>
+
+<style>
+.map-pin.place-tag{padding:calc(4px * var(--map-label-scale,.76)) calc(6px * var(--map-label-scale,.76));font-size:calc(11px * var(--map-label-scale,.76));border-radius:6px;min-width:0}
+.place-name{gap:2px}.place-title{display:flex;align-items:center;justify-content:center;gap:4px;line-height:1.25}.place-name small{font-size:calc(9px * var(--map-label-scale,.76));line-height:1.2}.place-title .pin-dot{width:calc(5px * var(--map-label-scale,.76));height:calc(5px * var(--map-label-scale,.76))}
 </style>
