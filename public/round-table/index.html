@@ -905,6 +905,27 @@
       }
     }
 
+    @media (max-width: 710px) and (hover: none) and (pointer: coarse) {
+      .seasons {
+        zoom: 1;
+      }
+
+      .cover {
+        object-fit: cover;
+      }
+    }
+
+    @media (min-height: 600px) and (orientation: landscape) and (hover: none) and (pointer: coarse) {
+      .seasons {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        zoom: 1;
+      }
+
+      .cover {
+        object-fit: cover;
+      }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       :root {
         --drawer-duration: 0s;
@@ -916,7 +937,7 @@
       }
     }
   </style>
-  <script src="./season-drawer.js?v=fff7f0eb5a1e" defer></script>
+  <script src="./season-drawer.js?v=bab0aabecc6e" defer></script>
 </head>
 <body>
   <div class="gallery-viewport">

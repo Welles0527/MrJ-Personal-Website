@@ -220,6 +220,7 @@ function hideGuestTooltip() {
 
 function showGuestTooltip(button) {
   hideGuestTooltip();
+  if (touchLayout?.matches) return;
   tooltipButton = button;
   const name = button.dataset.guest;
   guestTooltipName.textContent = name;
@@ -259,6 +260,7 @@ function openGuestAppearances(button) {
 
 function placeGuestDirectory() {
   if (touchLayout?.matches) {
+    hideGuestTooltip();
     seasonGrid.before(directoryHome);
   } else if (directoryHome.parentElement !== gallery) {
     gallery.append(directoryHome);
