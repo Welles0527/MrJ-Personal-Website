@@ -10,6 +10,13 @@ const video = 'https://www.youtube.com/watch?v=Gkq-BaA0-Pk';
 // The host's recorded introduction follows the opening teaser.
 const formalOpening = dialogue.findIndex(({ id }) => id === 'turn-1494');
 const fullInterview = dialogue.slice(Math.max(0, formalOpening));
+function formatVideoTime(seconds: number) {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor(seconds / 60) % 60;
+  const remainder = String(seconds % 60).padStart(2, '0');
+  return hours ? `${hours}:${String(minutes).padStart(2, '0')}:${remainder}` : `${minutes}:${remainder}`;
+}
+
 const labels: Record<string, string> = {
   host: '主持人 · Robinson Erhardt',
   guest: '江学勤',
@@ -59,15 +66,24 @@ const labels: Record<string, string> = {
       .search-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 15px; padding: 13px 0; border-block: 1px solid var(--border); }
       #search { flex: 1 0 210px; min-width: 0; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: #222626; color: var(--cream); font: inherit; }
       #search::placeholder { color: var(--muted); }
-      .favorites-toggle, .star {
+      .favorites-toggle {
         min-height: 44px; border: 1px solid var(--border); border-radius: 8px;
         background: transparent; color: var(--cream); cursor: pointer; font: inherit;
       }
       .favorites-toggle { flex: none; padding: 4px 11px; font-size: 14px; }
       .favorites-toggle span { margin-left: 4px; color: var(--muted); font-variant-numeric: tabular-nums; }
-      .favorites-toggle:hover, .star:hover { background: #35423b; }
-      .favorites-toggle[aria-pressed="true"], .star[aria-pressed="true"] { color: #f0cc76; border-color: #9e824c; background: #403a2d; }
-      .star { display: grid; place-items: center; min-width: 44px; padding: 0; font-size: 22px; line-height: 1; }
+      .favorites-toggle:hover { background: #35423b; }
+      .favorites-toggle[aria-pressed="true"] { color: #f0cc76; border-color: #9e824c; background: #403a2d; }
+      .turn-actions { display: flex; flex: none; align-items: center; }
+      .turn-time { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+      .turn-time:hover { color: var(--cream); }
+      .star {
+        display: grid; place-items: center; min-width: 44px; min-height: 44px;
+        padding: 0; border: 0; border-radius: 6px; background: transparent;
+        color: var(--muted); cursor: pointer; font: 16px/1 system-ui, sans-serif;
+      }
+      .star:hover { background: #35423b; }
+      .star[aria-pressed="true"] { color: #f0cc76; }
       #count { color: var(--muted); font-size: 13px; }
       #count:empty { display: none; }
       .dialogue { margin: 0 0 58px; }
@@ -136,14 +152,19 @@ const labels: Record<string, string> = {
       <p class="visually-hidden" id="highlight-status" role="status"></p>
       <p class="empty" id="empty" hidden>没有找到符合条件的对话。</p>
       <div class="dialogue" aria-label="对话逐字稿">
-        {fullInterview.map(({ id, speaker, paragraphs }) => (
+        {fullInterview.map(({ id, speaker, paragraphs, startSeconds }) => (
           <article class="turn" id={id} data-speaker={speaker}>
             <header class="turn-header">
               <h2>
                 <span data-version="zh">{labels[speaker]}</span>
                 <span data-version="en" lang="en" hidden>{speaker === 'host' ? 'Host · Robinson Erhardt' : 'Jiang Xueqin'}</span>
               </h2>
-              <button class="star" type="button" aria-label="收藏此段发言" aria-pressed="false">☆</button>
+              <div class="turn-actions">
+                <a class="turn-time" href={`${video}&t=${startSeconds}s`} target="_blank" rel="noopener noreferrer" title="从此处播放原视频">
+                  {formatVideoTime(startSeconds)}
+                </a>
+                <button class="star" type="button" aria-label="收藏此段发言" aria-pressed="false">☆</button>
+              </div>
             </header>
             <div data-version="zh">{paragraphs.map((paragraph) => <p>{paragraph}</p>)}</div>
             <div data-version="en" lang="en" hidden>{englishParagraphs[id].map((paragraph) => <p>{paragraph}</p>)}</div>
