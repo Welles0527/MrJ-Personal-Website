@@ -50,11 +50,21 @@ const labels: Record<string, string> = {
       .search-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 15px; padding: 13px 0; border-block: 1px solid var(--border); }
       #search { flex: 1 0 210px; min-width: 0; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: #222626; color: var(--cream); font: inherit; }
       #search::placeholder { color: var(--muted); }
+      .favorites-toggle, .star {
+        min-height: 44px; border: 1px solid var(--border); border-radius: 8px;
+        background: transparent; color: var(--cream); cursor: pointer; font: inherit;
+      }
+      .favorites-toggle { flex: none; padding: 4px 11px; font-size: 14px; }
+      .favorites-toggle span { margin-left: 4px; color: var(--muted); font-variant-numeric: tabular-nums; }
+      .favorites-toggle:hover, .star:hover { background: #35423b; }
+      .favorites-toggle[aria-pressed="true"], .star[aria-pressed="true"] { color: #f0cc76; border-color: #9e824c; background: #403a2d; }
+      .star { display: grid; place-items: center; min-width: 44px; padding: 0; font-size: 22px; line-height: 1; }
       #count { color: var(--muted); font-size: 13px; }
       #count:empty { display: none; }
       .dialogue { margin: 0 0 58px; }
       .turn { padding: 21px 0; border-bottom: 1px solid #414644; }
-      .turn h2 { margin: 0 0 4px; color: var(--sage); font-size: 14px; font-weight: 650; }
+      .turn-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 4px; }
+      .turn h2 { margin: 0; color: var(--sage); font-size: 14px; font-weight: 650; }
       .turn[data-speaker="guest"] h2 { color: #e9c990; }
       .turn p { margin: 0; overflow-wrap: anywhere; }
       .turn p + p { margin-top: 9px; }
@@ -64,6 +74,7 @@ const labels: Record<string, string> = {
         .topbar { min-height: 60px; }
         .listen { min-height: 38px; padding-inline: 9px; }
         .intro { margin-top: 24px; }
+        #search { flex-basis: 155px; }
         .turn { padding: 16px 0; }
       }
     </style>
@@ -84,13 +95,17 @@ const labels: Record<string, string> = {
       </header>
       <div class="search-row">
         <input id="search" type="search" aria-label="搜索对话" placeholder="搜索对话内容" autocomplete="off" />
+        <button class="favorites-toggle" type="button" id="show-favorites" aria-pressed="false">我的收藏 <span id="favorites-count">0</span></button>
         <output id="count" for="search" aria-live="polite"></output>
       </div>
       <p class="empty" id="empty" hidden>没有找到符合条件的对话。</p>
       <div class="dialogue" aria-label="对话逐字稿">
-        {dialogue.map(({ speaker, paragraphs }) => (
-          <article class="turn" data-speaker={speaker}>
-            <h2>{labels[speaker]}</h2>
+        {dialogue.map(({ id, speaker, paragraphs }) => (
+          <article class="turn" id={id} data-speaker={speaker}>
+            <header class="turn-header">
+              <h2>{labels[speaker]}</h2>
+              <button class="star" type="button" aria-label="收藏此段发言" aria-pressed="false">☆</button>
+            </header>
             {paragraphs.map((paragraph) => <p>{paragraph}</p>)}
           </article>
         ))}
@@ -100,21 +115,77 @@ const labels: Record<string, string> = {
       const search = document.getElementById('search');
       const count = document.getElementById('count');
       const empty = document.getElementById('empty');
+      const favoritesToggle = document.getElementById('show-favorites');
+      const favoritesCount = document.getElementById('favorites-count');
       const turns = [...document.querySelectorAll('.turn')].map((turn) => ({
         turn,
-        text: turn.textContent.toLowerCase(),
+        star: turn.querySelector('.star'),
+        text: [...turn.querySelectorAll('h2, p')].map((node) => node.textContent).join(' ').toLowerCase(),
       }));
+      const knownIds = new Set(turns.map(({ turn }) => turn.id));
+      const storageKey = 'jiang-xueqin-transcript-favorites-v1';
+      let onlyFavorites = false;
+      let canSave = true;
+
+      function readFavorites() {
+        try {
+          const stored = JSON.parse(localStorage.getItem(storageKey) || '[]');
+          return new Set(Array.isArray(stored) ? stored.filter((id) => knownIds.has(id)) : []);
+        } catch {
+          return null;
+        }
+      }
+      let favorites = readFavorites() ?? new Set();
+
       function filter() {
         const term = search.value.trim().toLowerCase();
         let visible = 0;
-        for (const { turn, text } of turns) {
-          turn.hidden = term !== '' && !text.includes(term);
+        for (const { turn, star, text } of turns) {
+          const saved = favorites.has(turn.id);
+          const needsFocus = document.activeElement === star;
+          turn.hidden = (onlyFavorites && !saved) || (term !== '' && !text.includes(term));
+          star.setAttribute('aria-pressed', String(saved));
+          star.textContent = saved ? '★' : '☆';
+          if (turn.hidden && needsFocus) favoritesToggle.focus({ preventScroll: true });
           if (!turn.hidden) visible++;
         }
+        favoritesCount.textContent = favorites.size;
         empty.hidden = visible !== 0;
+        empty.textContent = onlyFavorites
+          ? favorites.size ? '没有找到符合条件的收藏。' : '还没有收藏的段落，点击「我的收藏」可返回全文。'
+          : '没有找到符合条件的对话。';
         count.textContent = term ? `${visible} 段匹配` : '';
       }
+
+      function toggleFavorite(id) {
+        if (canSave) favorites = readFavorites() ?? favorites;
+        if (favorites.has(id)) favorites.delete(id);
+        else favorites.add(id);
+        if (canSave) {
+          try {
+            localStorage.setItem(storageKey, JSON.stringify([...favorites]));
+          } catch {
+            canSave = false;
+          }
+        }
+        filter();
+      }
+
+      for (const { turn, star } of turns) {
+        star.addEventListener('click', () => toggleFavorite(turn.id));
+      }
+      favoritesToggle.addEventListener('click', () => {
+        onlyFavorites = !onlyFavorites;
+        favoritesToggle.setAttribute('aria-pressed', String(onlyFavorites));
+        filter();
+      });
+      window.addEventListener('storage', (event) => {
+        if (!canSave || (event.key !== storageKey && event.key !== null)) return;
+        favorites = readFavorites() ?? favorites;
+        filter();
+      });
       search.addEventListener('input', filter);
+      filter();
     </script>
   </body>
 </html>
