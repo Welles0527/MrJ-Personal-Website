@@ -4,6 +4,9 @@ import dialogue from '../../data/jiang-xueqin-transcript.json';
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const interview = `${base}/jiang-xueqin-interview/`;
 const video = 'https://www.youtube.com/watch?v=Gkq-BaA0-Pk';
+// The host's recorded introduction follows the opening teaser.
+const formalOpening = dialogue.findIndex(({ id }) => id === 'turn-1494');
+const fullInterview = dialogue.slice(Math.max(0, formalOpening));
 const labels: Record<string, string> = {
   host: '主持人 · Robinson Erhardt',
   guest: '江学勤',
@@ -68,6 +71,23 @@ const labels: Record<string, string> = {
       .turn[data-speaker="guest"] h2 { color: #e9c990; }
       .turn p { margin: 0; overflow-wrap: anywhere; }
       .turn p + p { margin-top: 9px; }
+      .highlight-hint { margin: 9px 0 0; color: var(--muted); font-size: 13px; }
+      .search-highlight, .personal-highlight { border-radius: 2px; color: #152522; }
+      .search-highlight { background: #b4dcf5; }
+      .personal-highlight { background: #f5d784; }
+      .personal-highlight.search-highlight { box-shadow: inset 0 -3px #5494c0; }
+      .selection-actions {
+        position: fixed; z-index: 5; display: flex; gap: 5px; padding: 5px;
+        border: 1px solid #75837d; border-radius: 9px; background: #303833;
+        box-shadow: 0 5px 22px #0008;
+      }
+      .selection-actions button {
+        min-height: 44px; padding: 3px 11px; border: 1px solid var(--border); border-radius: 6px;
+        background: #222626; color: var(--cream); white-space: nowrap; cursor: pointer; font: 14px/1.4 system-ui, sans-serif;
+      }
+      .selection-actions button:hover { background: #46534b; }
+      .selection-actions #add-highlight { color: #221a0d; background: #f5d784; }
+      .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
       .empty { margin: 23px 0 60px; color: var(--muted); }
       @media (max-width: 680px) {
         .shell { width: calc(100% - 34px); }
@@ -98,9 +118,15 @@ const labels: Record<string, string> = {
         <button class="favorites-toggle" type="button" id="show-favorites" aria-pressed="false">我的收藏 <span id="favorites-count">0</span></button>
         <output id="count" for="search" aria-live="polite"></output>
       </div>
+      <p class="highlight-hint">搜索命中会显示为蓝色。选中文字可添加或取消黄色高亮。</p>
+      <div class="selection-actions" id="selection-actions" role="group" aria-label="文字高亮" hidden>
+        <button id="add-highlight" type="button">高亮</button>
+        <button id="remove-highlight" type="button">取消高亮</button>
+      </div>
+      <p class="visually-hidden" id="highlight-status" role="status"></p>
       <p class="empty" id="empty" hidden>没有找到符合条件的对话。</p>
       <div class="dialogue" aria-label="对话逐字稿">
-        {dialogue.map(({ id, speaker, paragraphs }) => (
+        {fullInterview.map(({ id, speaker, paragraphs }) => (
           <article class="turn" id={id} data-speaker={speaker}>
             <header class="turn-header">
               <h2>{labels[speaker]}</h2>
@@ -117,15 +143,34 @@ const labels: Record<string, string> = {
       const empty = document.getElementById('empty');
       const favoritesToggle = document.getElementById('show-favorites');
       const favoritesCount = document.getElementById('favorites-count');
-      const turns = [...document.querySelectorAll('.turn')].map((turn) => ({
-        turn,
-        star: turn.querySelector('.star'),
-        text: [...turn.querySelectorAll('h2, p')].map((node) => node.textContent).join(' ').toLowerCase(),
-      }));
+      const selectionActions = document.getElementById('selection-actions');
+      const addHighlight = document.getElementById('add-highlight');
+      const removeHighlight = document.getElementById('remove-highlight');
+      const highlightStatus = document.getElementById('highlight-status');
+      const highlightKey = 'jiang-xueqin-transcript-highlights-v1';
+      const paragraphs = new Map();
+      const turns = [...document.querySelectorAll('.turn')].map((turn) => {
+        const blocks = [];
+        let text = '';
+        for (const [index, node] of [...turn.querySelectorAll('h2, p')].entries()) {
+          if (index) text += ' ';
+          const block = { node, text: node.textContent, offset: text.length, paintKey: '' };
+          if (index) {
+            block.id = `${turn.id}:${index}`;
+            paragraphs.set(block.id, block);
+          }
+          blocks.push(block);
+          text += block.text;
+        }
+        return { turn, star: turn.querySelector('.star'), blocks, text: text.toLowerCase() };
+      });
       const knownIds = new Set(turns.map(({ turn }) => turn.id));
       const storageKey = 'jiang-xueqin-transcript-favorites-v1';
       let onlyFavorites = false;
       let canSave = true;
+      let selected = [];
+      let selectionFrame = 0;
+      let canSaveHighlights = true;
 
       function readFavorites() {
         try {
@@ -137,17 +182,87 @@ const labels: Record<string, string> = {
       }
       let favorites = readFavorites() ?? new Set();
 
+      function readHighlights() {
+        try {
+          const stored = JSON.parse(localStorage.getItem(highlightKey) || '{}');
+          const valid = new Map();
+          for (const [id, block] of paragraphs) {
+            const record = stored?.[id];
+            if (record?.text !== block.text || !Array.isArray(record.ranges)) continue;
+            const ranges = record.ranges.filter((range) => Array.isArray(range) && range.length === 2
+              && range.every(Number.isInteger) && range[0] >= 0 && range[0] < range[1] && range[1] <= block.text.length);
+            if (ranges.length) valid.set(id, mergeRanges(ranges));
+          }
+          return valid;
+        } catch {
+          return null;
+        }
+      }
+      let highlights = readHighlights() ?? new Map();
+
+      function mergeRanges(ranges) {
+        const merged = [];
+        for (const [start, end] of [...ranges].sort((a, b) => a[0] - b[0])) {
+          const last = merged[merged.length - 1];
+          if (last && start <= last[1]) last[1] = Math.max(last[1], end);
+          else merged.push([start, end]);
+        }
+        return merged;
+      }
+
+      function matchesFor(text, term) {
+        const matches = [];
+        if (!term) return matches;
+        for (let start = text.indexOf(term); start !== -1; start = text.indexOf(term, start + term.length)) {
+          matches.push([start, start + term.length]);
+        }
+        return matches;
+      }
+
+      function paint(block, matches) {
+        const end = block.offset + block.text.length;
+        const searchRanges = matches
+          .filter(([start, finish]) => start < end && finish > block.offset)
+          .map(([start, finish]) => [Math.max(start - block.offset, 0), Math.min(finish, end) - block.offset]);
+        const marked = highlights.get(block.id) ?? [];
+        const paintKey = searchRanges.length || marked.length ? JSON.stringify([searchRanges, marked]) : '';
+        if (paintKey === block.paintKey) return;
+        block.paintKey = paintKey;
+        const boundaries = [...new Set([0, block.text.length, ...searchRanges.flat(), ...marked.flat()])].sort((a, b) => a - b);
+        const result = document.createDocumentFragment();
+        for (let index = 1; index < boundaries.length; index++) {
+          const start = boundaries[index - 1];
+          const text = block.text.slice(start, boundaries[index]);
+          const isMatch = searchRanges.some(([left, right]) => left <= start && start < right);
+          const isMarked = marked.some(([left, right]) => left <= start && start < right);
+          if (isMatch || isMarked) {
+            const mark = document.createElement('mark');
+            mark.classList.toggle('search-highlight', isMatch);
+            mark.classList.toggle('personal-highlight', isMarked);
+            mark.textContent = text;
+            result.append(mark);
+          } else {
+            result.append(text);
+          }
+        }
+        block.node.replaceChildren(result);
+      }
+
       function filter() {
         const term = search.value.trim().toLowerCase();
         let visible = 0;
-        for (const { turn, star, text } of turns) {
+        for (const { turn, star, text, blocks } of turns) {
           const saved = favorites.has(turn.id);
           const needsFocus = document.activeElement === star;
-          turn.hidden = (onlyFavorites && !saved) || (term !== '' && !text.includes(term));
+          const matches = matchesFor(text, term);
+          turn.hidden = (onlyFavorites && !saved) || (term !== '' && !matches.length);
           star.setAttribute('aria-pressed', String(saved));
           star.textContent = saved ? '★' : '☆';
           if (turn.hidden && needsFocus) favoritesToggle.focus({ preventScroll: true });
-          if (!turn.hidden) visible++;
+          if (!turn.hidden) {
+            visible++;
+            for (const block of blocks) paint(block, matches);
+          }
         }
         favoritesCount.textContent = favorites.size;
         empty.hidden = visible !== 0;
@@ -155,6 +270,93 @@ const labels: Record<string, string> = {
           ? favorites.size ? '没有找到符合条件的收藏。' : '还没有收藏的段落，点击「我的收藏」可返回全文。'
           : '没有找到符合条件的对话。';
         count.textContent = term ? `${visible} 段匹配` : '';
+      }
+
+      function offsetWithin(node, container, offset, fallback) {
+        if (!node.contains(container)) return fallback;
+        const prefix = document.createRange();
+        prefix.selectNodeContents(node);
+        prefix.setEnd(container, offset);
+        return prefix.toString().length;
+      }
+
+      function closeActions() {
+        selectionActions.hidden = true;
+        selected = [];
+      }
+
+      function updateSelection() {
+        const selection = window.getSelection();
+        if (!selection?.rangeCount || selection.isCollapsed) {
+          if (!selectionActions.contains(document.activeElement)) closeActions();
+          return;
+        }
+        const range = selection.getRangeAt(0);
+        const segments = [];
+        for (const [id, { node, text }] of paragraphs) {
+          if (!range.intersectsNode(node) || !node.getClientRects().length) continue;
+          const start = offsetWithin(node, range.startContainer, range.startOffset, 0);
+          const finish = offsetWithin(node, range.endContainer, range.endOffset, text.length);
+          if (start < finish && text.slice(start, finish).trim()) segments.push({ id, start, finish });
+        }
+        const width = document.documentElement.clientWidth;
+        const height = document.documentElement.clientHeight;
+        const box = [...range.getClientRects()].reverse().find((rect) => rect.bottom > 0 && rect.top < height && rect.width > 0);
+        if (!box || !segments.length) {
+          closeActions();
+          return;
+        }
+        selected = segments;
+        removeHighlight.hidden = !segments.some(({ id, start, finish }) =>
+          highlights.get(id)?.some(([left, right]) => left < finish && right > start));
+        selectionActions.hidden = false;
+        const { offsetWidth: menuWidth, offsetHeight: menuHeight } = selectionActions;
+        const left = Math.min(width - menuWidth - 8, Math.max(8, box.left + (box.width - menuWidth) / 2));
+        const top = box.bottom + menuHeight + 14 < height ? box.bottom + 7 : Math.max(8, box.top - menuHeight - 7);
+        selectionActions.style.left = `${left}px`;
+        selectionActions.style.top = `${top}px`;
+      }
+
+      function queueSelection() {
+        if (selectionFrame) return;
+        selectionFrame = requestAnimationFrame(() => {
+          selectionFrame = 0;
+          updateSelection();
+        });
+      }
+
+      function changeHighlight(remove) {
+        if (!selected.length) return;
+        if (canSaveHighlights) highlights = readHighlights() ?? highlights;
+        for (const { id, start, finish } of selected) {
+          const current = highlights.get(id) ?? [];
+          let updated = [];
+          if (remove) {
+            for (const [left, right] of current) {
+              if (right <= start || left >= finish) updated.push([left, right]);
+              else {
+                if (left < start) updated.push([left, start]);
+                if (right > finish) updated.push([finish, right]);
+              }
+            }
+          } else {
+            updated = mergeRanges([...current, [start, finish]]);
+          }
+          if (updated.length) highlights.set(id, updated);
+          else highlights.delete(id);
+        }
+        if (canSaveHighlights) {
+          try {
+            const stored = Object.fromEntries([...highlights].map(([id, ranges]) => [id, { text: paragraphs.get(id).text, ranges }]));
+            localStorage.setItem(highlightKey, JSON.stringify(stored));
+          } catch {
+            canSaveHighlights = false;
+          }
+        }
+        window.getSelection()?.removeAllRanges();
+        closeActions();
+        highlightStatus.textContent = remove ? '已取消选中的高亮。' : '已添加高亮。';
+        filter();
       }
 
       function toggleFavorite(id) {
@@ -180,10 +382,23 @@ const labels: Record<string, string> = {
         filter();
       });
       window.addEventListener('storage', (event) => {
-        if (!canSave || (event.key !== storageKey && event.key !== null)) return;
-        favorites = readFavorites() ?? favorites;
+        if (event.key !== storageKey && event.key !== highlightKey && event.key !== null) return;
+        if (canSave && event.key !== highlightKey) favorites = readFavorites() ?? favorites;
+        if (canSaveHighlights && event.key !== storageKey) highlights = readHighlights() ?? highlights;
         filter();
       });
+      document.addEventListener('selectionchange', queueSelection);
+      window.addEventListener('scroll', queueSelection, { passive: true });
+      window.addEventListener('resize', queueSelection);
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !selectionActions.hidden) {
+          window.getSelection()?.removeAllRanges();
+          closeActions();
+        }
+      });
+      selectionActions.addEventListener('pointerdown', (event) => event.preventDefault());
+      addHighlight.addEventListener('click', () => changeHighlight(false));
+      removeHighlight.addEventListener('click', () => changeHighlight(true));
       search.addEventListener('input', filter);
       filter();
     </script>
