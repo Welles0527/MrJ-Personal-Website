@@ -2,6 +2,7 @@
 import dialogue from '../../data/jiang-xueqin-transcript.json';
 
 import englishDialogue from '../../data/jiang-xueqin-transcript-en.json';
+import captionAlignment from '../../data/jiang-xueqin-transcript-alignment.json';
 
 const englishParagraphs: Record<string, string[]> = englishDialogue;
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -166,7 +167,7 @@ const labels: Record<string, string> = {
           <button type="button" data-lang="zh" aria-pressed="true">中文</button>
           <button type="button" data-lang="en" lang="en" aria-pressed="false">English</button>
         </div>
-        <p class="source-note">按原片字幕整理，少量重叠发言可能有识别误差。英文字幕未收录的简短应答按中文字幕译出。</p>
+        <p class="source-note">英文取自原视频字幕，少量重叠发言可能有识别误差。英文字幕未收录的 17 段简短应答按中文字幕译出。</p>
       </header>
       <div class="search-row">
         <input id="search" type="search" aria-label="搜索对话" placeholder="搜索对话内容" autocomplete="off" />
@@ -176,7 +177,7 @@ const labels: Record<string, string> = {
         </div>
         <output id="count" for="search" aria-live="polite"></output>
       </div>
-      <p class="highlight-hint">搜索会匹配中英文，命中显示为蓝色。选中文字可添加或取消黄色高亮。</p>
+      <p class="highlight-hint">搜索命中显示为蓝色。选中文字可添加或取消黄色高亮。中文高亮会同步到英文对应句，可在中文原文调整。</p>
       <div class="selection-actions" id="selection-actions" role="group" aria-label="文字高亮" hidden>
         <button id="add-highlight" type="button">高亮</button>
         <button id="remove-highlight" type="button">取消高亮</button>
@@ -220,7 +221,7 @@ const labels: Record<string, string> = {
         ))}
       </div>
     </main>
-    <script is:inline>
+    <script is:inline define:vars={{ captionAlignment }}>
       const search = document.getElementById('search');
       const count = document.getElementById('count');
       const empty = document.getElementById('empty');
@@ -325,12 +326,26 @@ const labels: Record<string, string> = {
         return matches;
       }
 
-      function paint(block, matches) {
+      function getLinkedHighlights() {
+        const linked = new Map();
+        for (const [id, ranges] of highlights) {
+          // Offsets use the same UTF-16 indexes as selections and saved highlights.
+          for (const [start, end, targetId, targetStart, targetEnd] of captionAlignment[id] ?? []) {
+            if (!ranges.some(([left, right]) => left < end && start < right)) continue;
+            if (!linked.has(targetId)) linked.set(targetId, []);
+            linked.get(targetId).push([targetStart, targetEnd]);
+          }
+        }
+        return linked;
+      }
+
+      function paint(block, matches, linkedRanges) {
         const end = block.offset + block.text.length;
         const searchRanges = matches
           .filter(([start, finish]) => start < end && finish > block.offset)
           .map(([start, finish]) => [Math.max(start - block.offset, 0), Math.min(finish, end) - block.offset]);
-        const marked = highlights.get(block.id) ?? [];
+        const direct = highlights.get(block.id) ?? [];
+        const marked = linkedRanges ? mergeRanges([...direct, ...linkedRanges]) : direct;
         const paintKey = searchRanges.length || marked.length ? JSON.stringify([searchRanges, marked]) : '';
         if (paintKey === block.paintKey) return;
         block.paintKey = paintKey;
@@ -356,6 +371,7 @@ const labels: Record<string, string> = {
 
       function filter() {
         const term = search.value.trim().toLowerCase();
+        const linked = getLinkedHighlights();
         let visible = 0;
         for (const entry of turns) {
           const { turn, star, languageButton, timeButton } = entry;
@@ -381,7 +397,9 @@ const labels: Record<string, string> = {
           if (turn.hidden && needsFocus) favoritesToggle.focus({ preventScroll: true });
           if (!turn.hidden) {
             visible++;
-            for (const block of blocks) paint(block, shown === 'zh' ? zhMatches : enMatches);
+            for (const block of blocks) {
+              paint(block, shown === 'zh' ? zhMatches : enMatches, linked.get(block.id));
+            }
           }
         }
         favoritesCount.textContent = favorites.size;
