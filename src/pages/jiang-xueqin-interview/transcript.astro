@@ -67,13 +67,14 @@ const labels: Record<string, string> = {
       .search-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 15px; padding: 13px 0; border-block: 1px solid var(--border); }
       #search { flex: 1 0 210px; min-width: 0; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: #222626; color: var(--cream); font: inherit; }
       #search::placeholder { color: var(--muted); }
-      .favorites-toggle {
+      .search-actions { display: flex; gap: 8px; }
+      .toolbar-button {
         min-height: 44px; border: 1px solid var(--border); border-radius: 8px;
         background: transparent; color: var(--cream); cursor: pointer; font: inherit;
       }
-      .favorites-toggle { flex: none; padding: 4px 11px; font-size: 14px; }
+      .toolbar-button { flex: none; padding: 4px 11px; font-size: 14px; }
       .favorites-toggle span { margin-left: 4px; color: var(--muted); font-variant-numeric: tabular-nums; }
-      .favorites-toggle:hover { background: #35423b; }
+      .toolbar-button:hover { background: #35423b; }
       .favorites-toggle[aria-pressed="true"] { color: #f0cc76; border-color: #9e824c; background: #403a2d; }
       .turn-actions { display: flex; flex: none; align-items: center; }
       .turn-language, .turn-time, #close-video {
@@ -93,6 +94,25 @@ const labels: Record<string, string> = {
       }
       .star:hover { background: #35423b; }
       .star[aria-pressed="true"] { color: #f0cc76; }
+      .highlights-panel {
+        width: min(620px, calc(100% - 34px)); max-height: min(720px, calc(100dvh - 34px));
+        padding: 0 18px 18px; border: 1px solid var(--border); border-radius: 12px;
+        background: #2d3230; color: var(--cream);
+      }
+      .highlights-panel[open] { display: flex; flex-direction: column; }
+      .highlights-panel::backdrop { background: #141716b8; }
+      .highlights-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; }
+      .highlights-header h2 { margin: 0; font-size: 21px; }
+      #highlights-list { margin: 0; padding: 4px; overflow: auto; list-style: none; }
+      #highlights-list li + li { margin-top: 8px; }
+      .highlight-link {
+        display: block; width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
+        background: #272a2b; color: var(--cream); text-align: start; font: inherit; cursor: pointer;
+      }
+      .highlight-link:hover { border-color: var(--sage); }
+      .highlight-meta { display: block; margin-bottom: 3px; color: var(--muted); font-size: 13px; }
+      .highlight-quote { color: #f5d784; overflow-wrap: anywhere; }
+      #no-highlights { margin: 0; color: var(--muted); }
       #count { color: var(--muted); font-size: 13px; }
       #count:empty { display: none; }
       .dialogue { margin: 0 0 58px; }
@@ -125,7 +145,7 @@ const labels: Record<string, string> = {
         .topbar { min-height: 60px; }
         .listen { min-height: 38px; padding-inline: 9px; }
         .intro { margin-top: 24px; }
-        #search { flex-basis: 155px; }
+        #search { flex-basis: 100%; }
         .turn { padding: 16px 0; }
       }
     </style>
@@ -150,7 +170,10 @@ const labels: Record<string, string> = {
       </header>
       <div class="search-row">
         <input id="search" type="search" aria-label="搜索对话" placeholder="搜索对话内容" autocomplete="off" />
-        <button class="favorites-toggle" type="button" id="show-favorites" aria-pressed="false">我的收藏 <span id="favorites-count">0</span></button>
+        <div class="search-actions">
+          <button class="toolbar-button favorites-toggle" type="button" id="show-favorites" aria-pressed="false">我的收藏 <span id="favorites-count">0</span></button>
+          <button class="toolbar-button" type="button" id="show-highlights" aria-haspopup="dialog" aria-controls="highlights-panel">我的高亮</button>
+        </div>
         <output id="count" for="search" aria-live="polite"></output>
       </div>
       <p class="highlight-hint">搜索会匹配中英文，命中显示为蓝色。选中文字可添加或取消黄色高亮。</p>
@@ -159,6 +182,14 @@ const labels: Record<string, string> = {
         <button id="remove-highlight" type="button">取消高亮</button>
       </div>
       <p class="visually-hidden" id="highlight-status" role="status"></p>
+      <dialog class="highlights-panel" id="highlights-panel" aria-labelledby="highlights-title">
+        <div class="highlights-header">
+          <h2 id="highlights-title">我的高亮</h2>
+          <form method="dialog"><button class="toolbar-button" type="submit" autofocus>关闭</button></form>
+        </div>
+        <p id="no-highlights" hidden>选中逐字稿里的文字并添加高亮，摘录就会出现在这里。</p>
+        <ul id="highlights-list" role="list"></ul>
+      </dialog>
       <p class="empty" id="empty" hidden>没有找到符合条件的对话。</p>
       <div class="turn-player" id="turn-player" data-embed={`https://www.youtube.com/embed/${videoId}`} role="region" aria-label="原视频播放器" hidden>
         <div class="player-controls">
@@ -199,6 +230,10 @@ const labels: Record<string, string> = {
       const addHighlight = document.getElementById('add-highlight');
       const removeHighlight = document.getElementById('remove-highlight');
       const highlightStatus = document.getElementById('highlight-status');
+      const highlightsToggle = document.getElementById('show-highlights');
+      const highlightsPanel = document.getElementById('highlights-panel');
+      const highlightsList = document.getElementById('highlights-list');
+      const noHighlights = document.getElementById('no-highlights');
       const highlightKey = 'jiang-xueqin-transcript-highlights-v1';
       const paragraphs = new Map();
       const languageButtons = document.querySelectorAll('.language-switch button');
@@ -219,6 +254,8 @@ const labels: Record<string, string> = {
           const block = { node, text: node.textContent, offset: text.length, paintKey: '' };
           if (index) {
             block.id = lang === 'zh' ? `${turn.id}:${index}` : `${turn.id}:en:${index}`;
+            block.lang = lang;
+            block.turnId = turn.id;
             paragraphs.set(block.id, block);
           }
           blocks.push(block);
@@ -233,7 +270,7 @@ const labels: Record<string, string> = {
         preferredLanguage: null,
         zh: indexVersion(turn, 'zh'), en: indexVersion(turn, 'en'),
       }));
-      const knownIds = new Set(turns.map(({ turn }) => turn.id));
+      const turnsById = new Map(turns.map((entry) => [entry.turn.id, entry]));
       const storageKey = 'jiang-xueqin-transcript-favorites-v1';
       let onlyFavorites = false;
       let canSave = true;
@@ -244,7 +281,7 @@ const labels: Record<string, string> = {
       function readFavorites() {
         try {
           const stored = JSON.parse(localStorage.getItem(storageKey) || '[]');
-          return new Set(Array.isArray(stored) ? stored.filter((id) => knownIds.has(id)) : []);
+          return new Set(Array.isArray(stored) ? stored.filter((id) => turnsById.has(id)) : []);
         } catch {
           return null;
         }
@@ -442,6 +479,66 @@ const labels: Record<string, string> = {
         filter();
       }
 
+      function jumpToHighlight(entry, block, start) {
+        const wasHidden = entry.turn.hidden;
+        entry.preferredLanguage = block.lang;
+        if (wasHidden) {
+          search.value = '';
+          onlyFavorites = false;
+          favoritesToggle.setAttribute('aria-pressed', 'false');
+        }
+        highlightsPanel.close();
+        filter();
+        block.node.tabIndex = -1;
+        block.node.focus({ preventScroll: true });
+        let end = 0;
+        for (const child of block.node.childNodes) {
+          end += child.textContent.length;
+          if (start >= end) continue;
+          const target = child instanceof HTMLElement ? child : block.node;
+          target.scrollIntoView({ block: 'center' });
+          break;
+        }
+      }
+
+      function renderHighlights() {
+        const results = document.createDocumentFragment();
+        for (const [id, block] of paragraphs) {
+          const ranges = highlights.get(id);
+          if (!ranges) continue;
+          const entry = turnsById.get(block.turnId);
+          const label = entry[block.lang].blocks[0].text;
+          const time = entry.timeButton.textContent.trim();
+          for (const [start, end] of ranges) {
+            const item = document.createElement('li');
+            const button = document.createElement('button');
+            const meta = document.createElement('span');
+            const quote = document.createElement('span');
+            button.type = 'button';
+            button.className = 'highlight-link';
+            meta.className = 'highlight-meta';
+            meta.textContent = `${time} · ${label} · ${block.lang === 'zh' ? '中文' : 'English'}`;
+            quote.className = 'highlight-quote';
+            quote.lang = block.lang === 'zh' ? 'zh-CN' : 'en';
+            quote.textContent = block.text.slice(start, end);
+            button.append(meta, quote);
+            button.addEventListener('click', () => jumpToHighlight(entry, block, start));
+            item.append(button);
+            results.append(item);
+          }
+        }
+        noHighlights.hidden = results.childElementCount > 0;
+        highlightsList.replaceChildren(results);
+      }
+
+      highlightsToggle.addEventListener('click', () => {
+        window.getSelection()?.removeAllRanges();
+        closeActions();
+        if (canSaveHighlights) highlights = readHighlights() ?? highlights;
+        renderHighlights();
+        highlightsPanel.showModal();
+      });
+
       function toggleFavorite(id) {
         if (canSave) favorites = readFavorites() ?? favorites;
         if (favorites.has(id)) favorites.delete(id);
@@ -505,7 +602,10 @@ const labels: Record<string, string> = {
       window.addEventListener('storage', (event) => {
         if (event.key !== storageKey && event.key !== highlightKey && event.key !== null) return;
         if (canSave && event.key !== highlightKey) favorites = readFavorites() ?? favorites;
-        if (canSaveHighlights && event.key !== storageKey) highlights = readHighlights() ?? highlights;
+        if (canSaveHighlights && event.key !== storageKey) {
+          highlights = readHighlights() ?? highlights;
+          if (highlightsPanel.open) renderHighlights();
+        }
         filter();
       });
       document.addEventListener('selectionchange', queueSelection);
