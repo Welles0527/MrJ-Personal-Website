@@ -255,6 +255,7 @@ async function synthesizeHeyGenSpeech(text, voiceId, signal) {
     method: "POST",
     headers: { "X-Api-Key": HEYGEN_API_KEY, "Content-Type": "application/json" },
     body: JSON.stringify({
+      model: "heygen-voice-1-turbo-free",
       voice_id: voiceId,
       language: "zh",
       text,
