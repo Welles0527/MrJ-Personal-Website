@@ -1,0 +1,335 @@
+---
+import chapters from '../data/jiang-xueqin-interview.json';
+
+const siteBase = import.meta.env.BASE_URL.replace(/\/$/, '');
+const video = 'https://www.youtube.com/watch?v=Gkq-BaA0-Pk';
+const total = chapters.reduce((sum, chapter) => sum + chapter.questions.length, 0);
+
+function timestamp(seconds: number) {
+  const minutes = Math.floor(seconds / 60);
+  const rest = String(seconds % 60).padStart(2, '0');
+  return minutes >= 60
+    ? `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}:${rest}`
+    : `${String(minutes).padStart(2, '0')}:${rest}`;
+}
+---
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#292c2e" />
+    <meta name="description" content="江学勤与 Robinson Erhardt 第三次访谈的主题问答，涵盖 AI 泡沫、科技公司、岗位替代与证据争论。" />
+    <title>江学勤访谈 · 他们想要 AI 崩盘</title>
+    <link rel="icon" href={`${siteBase}/favicon.png`} />
+    <style is:inline>
+      :root {
+        color-scheme: dark;
+        --background: #272a2b;
+        --panel: #303435;
+        --line: #4a5050;
+        --cream: #f2e8d8;
+        --muted: #b7c0bb;
+        --sage: #bbd2bf;
+        --gold: #e4bb52;
+        --sans: "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+        --mono: "IBM Plex Mono", ui-monospace, monospace;
+      }
+      *, *::before, *::after { box-sizing: border-box; }
+      html { min-width: 320px; scroll-padding-top: 24px; }
+      body { margin: 0; background: var(--background); color: var(--cream); font: 15px/1.7 var(--sans); }
+      a { color: inherit; text-decoration: none; }
+      button, input { font: inherit; }
+      button { cursor: pointer; }
+      :focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+      [hidden] { display: none !important; }
+      .app { display: grid; grid-template-columns: 250px minmax(0, 1fr); }
+      .sidebar {
+        position: sticky; top: 0; height: 100dvh; overflow: auto; display: flex; flex-direction: column;
+        padding: 30px 22px 25px; border-right: 1px solid var(--line);
+        background: linear-gradient(155deg, #2b2e30, #202224);
+      }
+      .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 29px; }
+      .brand-mark {
+        width: 37px; height: 37px; display: grid; place-items: center; border-radius: 11px;
+        color: #252829; background: var(--cream); box-shadow: 0 4px 0 #111416;
+      }
+      .brand-mark svg { width: 23px; fill: none; stroke: currentColor; stroke-width: 1.6; }
+      .brand-name { font-size: 21px; line-height: 1.25; letter-spacing: .18em; }
+      .brand-name small { display: block; margin-top: 5px; color: var(--muted); font: 9px var(--mono); letter-spacing: .14em; }
+      .side-title { margin: 0 0 9px 9px; color: var(--muted); font-size: 11px; }
+      .side-link {
+        display: flex; width: 100%; align-items: center; gap: 11px; min-height: 36px;
+        padding: 7px 9px; color: var(--cream); background: transparent; border: 1px solid transparent;
+        border-radius: 7px; text-align: left; font-size: 13px;
+      }
+      .side-link:hover, .side-link[aria-pressed="true"] { background: #343b39; border-color: #505b54; }
+      .side-link span:first-child { color: var(--sage); }
+      .side-link .side-count { margin-left: auto; color: var(--muted); font: 11px var(--mono); }
+      .side-nav { margin: 5px 0 13px; }
+      .side-footer { margin-top: auto; padding: 21px 9px 0; color: var(--muted); font-size: 12px; }
+      .progress-label { display: flex; justify-content: space-between; gap: 6px; margin-bottom: 6px; }
+      progress { display: block; width: 100%; height: 6px; accent-color: var(--sage); }
+      .side-footer a { display: inline-block; margin-top: 20px; color: var(--sage); }
+      .main { max-width: 1530px; width: 100%; margin: 0 auto; padding: 0 clamp(24px, 3.6vw, 55px) 36px; min-width: 0; }
+      .topbar {
+        min-height: 70px; display: flex; align-items: center; justify-content: space-between;
+        gap: 12px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 13px;
+      }
+      .topbar b { color: var(--cream); }
+      .topbar a, .source-link { color: var(--sage); }
+      .topbar a:hover, .source-link:hover, .time:hover { text-decoration: underline; }
+      .menu-button, .backdrop { display: none; }
+      .hero { display: grid; grid-template-columns: minmax(230px, .8fr) minmax(0, 1.2fr); align-items: center; gap: clamp(24px, 4vw, 60px); margin: 28px 0 24px; }
+      .hero-cover { display: block; overflow: hidden; border: 1px solid #626363; border-radius: 14px; }
+      .hero-cover img { display: block; width: 100%; height: auto; }
+      .hero-label { margin: 0 0 10px; color: var(--sage); font-size: 12px; letter-spacing: .07em; }
+      h1 { margin: 0; max-width: 16em; color: var(--cream); font-size: clamp(32px, 3.15vw, 54px); font-weight: 640; letter-spacing: -.035em; line-height: 1.3; }
+      .hero-intro { margin: 14px 0; color: var(--muted); font-size: 14px; }
+      .hero-meta { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0; color: var(--sage); font-size: 12px; }
+      .toolbar {
+        display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 14px 0;
+        border-block: 1px solid var(--line);
+      }
+      .view { flex: none; display: flex; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 8px; }
+      .view button, .menu-button {
+        min-height: 34px; padding: 4px 12px; border: 0; border-radius: 5px;
+        background: transparent; color: var(--cream); font-size: 13px;
+      }
+      .view button[aria-pressed="true"] { background: var(--cream); color: var(--background); }
+      .search { flex: 1; min-width: 180px; min-height: 42px; border: 1px solid var(--line); border-radius: 8px; padding: 7px 11px; background: #222626; color: var(--cream); }
+      .search::placeholder { color: var(--muted); }
+      .counter { color: var(--muted); font-size: 12px; white-space: nowrap; }
+      .chapter { max-width: 1030px; margin: 25px auto 39px; }
+      .chapter-header { display: flex; align-items: center; gap: 14px; padding: 6px 0 16px; border-bottom: 1px solid var(--line); }
+      .chapter-number {
+        display: grid; place-items: center; width: 44px; min-height: 40px; flex: none;
+        background: var(--tone, var(--cream)); color: #182021; font: 600 15px var(--mono);
+        border-radius: 11px; box-shadow: 0 3px #141819;
+      }
+      [data-color="blue"] { --tone: #b4c6df; }
+      [data-color="teal"] { --tone: #9ecbc3; }
+      [data-color="terra"] { --tone: #e0af99; }
+      [data-color="mustard"] { --tone: #e1c278; }
+      [data-color="sage"] { --tone: #bbd2bf; }
+      .chapter h2 { margin: 0; font-size: 20px; font-weight: 620; line-height: 1.5; }
+      .chapter-label { margin: 3px 0 0; color: var(--muted); font: 10px var(--mono); letter-spacing: .1em; }
+      .entry { padding: 13px 0; border-bottom: 1px solid var(--line); }
+      .entry-head { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: start; gap: 10px; }
+      .question { min-height: 36px; padding: 4px 0; border: 0; font-size: 16px; font-weight: 620; line-height: 1.6; color: var(--cream); background: none; text-align: left; }
+      .question:hover { color: var(--sage); }
+      .question[aria-expanded="true"] .chevron { display: none; }
+      .chevron { color: var(--sage); margin-right: 6px; }
+      .time { display: grid; align-items: center; min-height: 35px; padding: 0 3px; color: var(--sage); font: 11px var(--mono); }
+      .icon-button { min-width: 34px; min-height: 34px; padding: 0; border: 1px solid var(--line); border-radius: 7px; color: var(--muted); background: transparent; }
+      .icon-button:hover, .icon-button[aria-pressed="true"] { color: var(--gold); border-color: #a99055; }
+      .answer { margin: 3px 89px 6px 0; padding-right: 8px; color: #d0d7d2; line-height: 1.85; }
+      .empty { margin: 25px auto; padding: 25px; border: 1px dashed var(--line); border-radius: 9px; color: var(--muted); text-align: center; }
+      .footer { margin-top: 24px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+      @media (max-width: 980px) {
+        .app { grid-template-columns: 215px minmax(0, 1fr); }
+        .sidebar { padding-inline: 14px; }
+        .hero { gap: 22px; }
+      }
+      @media (max-width: 735px) {
+        .app { display: block; }
+        .sidebar { position: fixed; inset: 0 auto 0 0; width: min(274px, 85vw); z-index: 3; visibility: hidden; transform: translateX(-102%); }
+        .sidebar[data-open] { visibility: visible; transform: translateX(0); }
+        .backdrop { position: fixed; inset: 0; z-index: 2; width: 100%; border: 0; padding: 0; background: #0009; }
+        .sidebar[data-open] + .backdrop { display: block; }
+        .menu-button { display: inline-block; padding: 4px 8px; border: 1px solid var(--line); }
+        .main { padding-inline: 17px; }
+        .topbar { min-height: 58px; gap: 8px; }
+        .hero { grid-template-columns: 1fr; margin: 18px 0; gap: 14px; }
+        .hero-cover img { max-height: 240px; object-fit: cover; }
+        .hero-intro { margin: 8px 0; }
+        .hero-label { margin-bottom: 6px; }
+        .toolbar { gap: 7px; }
+        .counter { width: 100%; }
+        .chapter { margin-top: 20px; }
+        .chapter h2 { font-size: 17px; }
+        .entry-head { grid-template-columns: minmax(0, 1fr) auto auto; gap: 5px; }
+        .question { grid-column: 1 / -1; font-size: 15px; }
+        .time { justify-self: start; }
+        .answer { margin: 8px 0 5px; padding: 0; font-size: 14px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar" id="sidebar" aria-label="访谈主题导航">
+        <a class="brand" href="#top">
+          <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 17 9 6l4 11 4-8 3 8M4 21h16" /><circle cx="18" cy="4" r="1" /></svg></span>
+          <span class="brand-name">智序<small>INSIGHT ARCHIVE</small></span>
+        </a>
+        <p class="side-title">访谈主题</p>
+        <button class="side-link" type="button" id="show-all" aria-pressed="true">阅读全文<span class="side-count">{total}</span></button>
+        <nav class="side-nav" aria-label="主题目录">
+          {chapters.map((chapter, index) => (
+            <a class="side-link" href={`#theme-${index + 1}`}><span>{String(index + 1).padStart(2, '0')}</span>{chapter.title}</a>
+          ))}
+        </nav>
+        <button class="side-link" type="button" id="show-saved" aria-pressed="false">我的收藏<span class="side-count" id="saved-count">0</span></button>
+        <div class="side-footer">
+          <div class="progress-label"><label for="progress">阅读进度</label><span id="progress-count">0 / {total}</span></div>
+          <progress id="progress" value="0" max={total}></progress>
+          <a href={video} target="_blank" rel="noopener noreferrer">观看完整访谈 ↗</a>
+        </div>
+      </aside>
+      <button class="backdrop" type="button" tabindex="-1" aria-label="关闭主题目录"></button>
+      <main class="main" id="top">
+        <header class="topbar">
+          <button class="menu-button" type="button" aria-controls="sidebar" aria-expanded="false">主题目录</button>
+          <b>专题文库 / 江学勤访谈</b>
+          <a href={`${siteBase}/tools/#ai-title`}>返回实用工具 ↗</a>
+        </header>
+        <section class="hero" aria-label="访谈介绍">
+          <a class="hero-cover" href={video} target="_blank" rel="noopener noreferrer" aria-label="观看完整访谈">
+            <img src={`${siteBase}/images/jiang-xueqin-interview.webp`} alt="访谈画面。江学勤与主持人 Robinson Erhardt" width="900" height="536" decoding="async" />
+          </a>
+          <div>
+            <p class="hero-label">Robinson Erhardt × 江学勤 · 第三次对谈</p>
+            <h1>他们想要 AI 崩盘</h1>
+            <p class="hero-intro">从硅谷的商业动机谈到 AI 风险，再回到一个反复争论的问题：我们凭什么相信一项说法？</p>
+            <p class="hero-meta"><span>{chapters.length} 个主题</span><span>{total} 条问答</span><span>原片 1 小时 41 分</span></p>
+          </div>
+        </section>
+        <section aria-label="访谈问答">
+          <div class="toolbar">
+            <div class="view" role="group" aria-label="阅读方式">
+              <button type="button" id="view-full" aria-pressed="true">全文</button>
+              <button type="button" id="view-list" aria-pressed="false">列表</button>
+            </div>
+            <input class="search" id="search" type="search" aria-label="搜索问答" placeholder="查找关键词或时间点" />
+            <span class="counter" id="visible-count" aria-live="polite">{total} 条问答</span>
+          </div>
+          {chapters.map((chapter, index) => (
+            <section class="chapter" id={`theme-${index + 1}`} aria-labelledby={`title-${index + 1}`}>
+              <header class="chapter-header">
+                <span class="chapter-number" data-color={chapter.color} aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+                <div><h2 id={`title-${index + 1}`}>{chapter.title}</h2><p class="chapter-label" lang="en">{chapter.english}</p></div>
+              </header>
+              {chapter.questions.map((question) => {
+                const [seconds, title, answer] = question as [number, string, string];
+                return (
+                  <article class="entry" id={`q-${seconds}`}>
+                    <div class="entry-head">
+                      <button class="question" aria-controls={`a-${seconds}`} aria-expanded="true" type="button"><span class="chevron" aria-hidden="true">›</span>{title}</button>
+                      <a class="time" href={`${video}&t=${seconds}s`} target="_blank" rel="noopener noreferrer" title="跳转到原视频此处">{timestamp(seconds)} ↗</a>
+                      <button class="icon-button save" type="button" aria-label="收藏此条问答" aria-pressed="false">☆</button>
+                      <button class="icon-button read" type="button" aria-label="标记此条已读" aria-pressed="false">✓</button>
+                    </div>
+                    <p class="answer" id={`a-${seconds}`}>{answer}</p>
+                  </article>
+                );
+              })}
+            </section>
+          ))}
+          <p class="empty" hidden>没有符合条件的问答。</p>
+        </section>
+        <footer class="footer">问答根据访谈整理，时间码可跳转至原片。收藏与已读保存在当前浏览器。</footer>
+      </main>
+    </div>
+    <script is:inline>
+      const stateKey = 'jiang-xueqin-interview-reading-v1';
+      const byId = (id) => document.getElementById(id);
+      const sidebar = byId('sidebar');
+      const menu = document.querySelector('.menu-button');
+      const search = byId('search');
+      const all = byId('show-all');
+      const collection = byId('show-saved');
+      const full = byId('view-full');
+      const list = byId('view-list');
+      const chapters = [...document.querySelectorAll('.chapter')];
+      const entries = [...document.querySelectorAll('.entry')].map((entry) => {
+        const question = entry.querySelector('.question');
+        const time = entry.querySelector('.time');
+        const answer = entry.querySelector('.answer');
+        return {
+          entry, question, answer, save: entry.querySelector('.save'), read: entry.querySelector('.read'),
+          content: [question.textContent, answer.textContent, time.textContent].join(' ').toLowerCase()
+        };
+      });
+      const ids = new Set(entries.map(({ entry }) => entry.id));
+      let stored = {};
+      try { stored = JSON.parse(localStorage.getItem(stateKey) || '{}') || {}; } catch {}
+      const known = (values) => new Set(Array.isArray(values) ? values.filter((id) => ids.has(id)) : []);
+      const saved = known(stored.saved);
+      const read = known(stored.read);
+      let savedOnly = false;
+
+      function update() {
+        const term = search.value.trim().toLowerCase();
+        let visible = 0;
+        for (const item of entries) {
+          const id = item.entry.id;
+          const isSaved = saved.has(id);
+          item.save.textContent = isSaved ? '★' : '☆';
+          item.save.setAttribute('aria-pressed', String(isSaved));
+          item.read.setAttribute('aria-pressed', String(read.has(id)));
+          item.entry.hidden = (savedOnly && !isSaved) || !item.content.includes(term);
+          if (!item.entry.hidden) visible++;
+        }
+        for (const chapter of chapters) chapter.hidden = !chapter.querySelector('.entry:not([hidden])');
+        byId('visible-count').textContent = `${visible} 条${savedOnly ? '收藏' : '问答'}`;
+        byId('saved-count').textContent = saved.size;
+        byId('progress').value = read.size;
+        byId('progress-count').textContent = `${read.size} / ${entries.length}`;
+        document.querySelector('.empty').hidden = visible !== 0;
+        all.setAttribute('aria-pressed', String(!savedOnly));
+        collection.setAttribute('aria-pressed', String(savedOnly));
+      }
+      function toggle(set, id) {
+        if (set.has(id)) set.delete(id);
+        else set.add(id);
+        try { localStorage.setItem(stateKey, JSON.stringify({ saved: [...saved], read: [...read] })); } catch {}
+        update();
+      }
+      function expand(item, expanded) {
+        item.answer.hidden = !expanded;
+        item.question.setAttribute('aria-expanded', String(expanded));
+      }
+      function view(expanded) {
+        full.setAttribute('aria-pressed', String(expanded));
+        list.setAttribute('aria-pressed', String(!expanded));
+        entries.forEach((item) => expand(item, expanded));
+      }
+      function setMenu(open, restoreFocus = false) {
+        sidebar.toggleAttribute('data-open', open);
+        menu.setAttribute('aria-expanded', String(open));
+        if (open) sidebar.querySelector('.brand').focus();
+        if (restoreFocus) menu.focus();
+      }
+      function filterSaved(onlySaved) {
+        savedOnly = onlySaved;
+        search.value = '';
+        update();
+        setMenu(false, menu.offsetWidth > 0);
+        document.querySelector('.toolbar').scrollIntoView();
+      }
+
+      entries.forEach((item) => {
+        item.question.addEventListener('click', () => expand(item, item.answer.hidden));
+        item.save.addEventListener('click', () => toggle(saved, item.entry.id));
+        item.read.addEventListener('click', () => toggle(read, item.entry.id));
+      });
+      all.addEventListener('click', () => filterSaved(false));
+      collection.addEventListener('click', () => filterSaved(true));
+      full.addEventListener('click', () => view(true));
+      list.addEventListener('click', () => view(false));
+      search.addEventListener('input', update);
+      menu.addEventListener('click', () => setMenu(menu.getAttribute('aria-expanded') === 'false'));
+      document.querySelector('.backdrop').addEventListener('click', () => setMenu(false, true));
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && sidebar.hasAttribute('data-open')) setMenu(false, true);
+      });
+      sidebar.querySelectorAll('a[href^="#"]').forEach((link) => link.addEventListener('click', () => {
+        search.value = '';
+        savedOnly = false;
+        update();
+        setMenu(false);
+      }));
+      update();
+    </script>
+  </body>
+</html>
