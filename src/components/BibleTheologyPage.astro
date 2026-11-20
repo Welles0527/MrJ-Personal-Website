@@ -489,6 +489,10 @@ const hymnCards = [
             </div>
             <button type="button" class="bible-theme-toggle" data-action="toggle-reading-theme" aria-pressed="false">深色阅读</button>
             <div class="bible-speech-actions" aria-label="章节朗读控制">
+              <select class="bible-speech-voice" data-speech-voice aria-label="朗读音色" title="朗读音色" hidden>
+                <option value="guoliang">男声 Guoliang</option>
+                <option value="shuxian">女声 Shuxian</option>
+              </select>
               <select class="bible-speech-rate" data-speech-rate aria-label="朗读倍速" title="朗读倍速">
                 <option value="1">1×</option>
                 <option value="1.2">1.2×</option>
@@ -1695,6 +1699,10 @@ const hymnCards = [
     font-size: clamp(1.55rem, 3vw, 2.45rem);
   }
 
+  .bible-reading-header > div:first-of-type {
+    flex-shrink: 0;
+  }
+
   .bible-reading-heading {
     flex-shrink: 0;
   }
@@ -1726,8 +1734,13 @@ const hymnCards = [
 
   .bible-speech-actions {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 0.32rem;
+  }
+
+  .bible-reading-actions .bible-speech-voice {
+    padding-right: 0.35rem;
   }
 
   .bible-reading-actions .bible-speech-rate {
@@ -3579,7 +3592,7 @@ const hymnCards = [
     }
 
     .bible-reading-header > div:last-of-type {
-      grid-column: 2;
+      grid-column: 1 / -1;
       justify-content: flex-start;
       gap: 0.28rem;
     }
