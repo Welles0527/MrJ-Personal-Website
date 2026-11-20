@@ -1,0 +1,120 @@
+---
+import dialogue from '../../data/jiang-xueqin-transcript.json';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const interview = `${base}/jiang-xueqin-interview/`;
+const video = 'https://www.youtube.com/watch?v=Gkq-BaA0-Pk';
+const labels: Record<string, string> = {
+  host: '主持人 · Robinson Erhardt',
+  guest: '江学勤',
+};
+---
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#272a2b" />
+    <meta name="description" content="江学勤与 Robinson Erhardt 第三次访谈的中文对话逐字稿，附原声播放。" />
+    <title>完整访谈（逐字稿） · 江学勤访谈</title>
+    <link rel="icon" href={`${base}/favicon.png`} />
+    <style is:inline>
+      :root {
+        color-scheme: dark;
+        --background: #272a2b;
+        --border: #505553;
+        --cream: #f2e8d8;
+        --muted: #b7c0bb;
+        --sage: #bbd2bf;
+      }
+      *, *::before, *::after { box-sizing: border-box; }
+      html { min-width: 320px; }
+      body { margin: 0; background: var(--background); color: var(--cream); font: 16px/1.85 "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif; }
+      [hidden] { display: none !important; }
+      a { color: var(--sage); text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      :focus-visible { outline: 2px solid #e4bb52; outline-offset: 3px; }
+      .shell { width: min(900px, calc(100% - 72px)); margin-inline: auto; }
+      .topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 68px; border-bottom: 1px solid var(--border); font-size: 14px; }
+      .listen {
+        display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+        flex-shrink: 0; min-height: 42px; padding: 5px 13px; border: 1px solid #72857a; border-radius: 8px;
+        background: #35423b; color: #e0eddf; cursor: pointer; font: inherit;
+      }
+      .listen:hover { background: #44534a; }
+      .listen svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.6; }
+      .intro { margin: 35px 0 25px; }
+      .interview { color: var(--sage); margin: 0; font-size: 13px; }
+      h1 { margin: 5px 0 8px; font-size: clamp(28px, 4vw, 48px); line-height: 1.3; letter-spacing: -.03em; }
+      .source-note { max-width: 53em; margin: 0; color: var(--muted); font-size: 14px; }
+      .search-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 15px; padding: 13px 0; border-block: 1px solid var(--border); }
+      #search { flex: 1 0 210px; min-width: 0; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: #222626; color: var(--cream); font: inherit; }
+      #search::placeholder { color: var(--muted); }
+      #count { color: var(--muted); font-size: 13px; }
+      #count:empty { display: none; }
+      .dialogue { margin: 0 0 58px; }
+      .turn { padding: 21px 0; border-bottom: 1px solid #414644; }
+      .turn h2 { margin: 0 0 4px; color: var(--sage); font-size: 14px; font-weight: 650; }
+      .turn[data-speaker="guest"] h2 { color: #e9c990; }
+      .turn p { margin: 0; overflow-wrap: anywhere; }
+      .turn p + p { margin-top: 9px; }
+      .empty { margin: 23px 0 60px; color: var(--muted); }
+      @media (max-width: 680px) {
+        .shell { width: calc(100% - 34px); }
+        .topbar { min-height: 60px; }
+        .listen { min-height: 38px; padding-inline: 9px; }
+        .intro { margin-top: 24px; }
+        .turn { padding: 16px 0; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <nav class="topbar" aria-label="访谈导航">
+        <a href={interview}>← 返回访谈问答</a>
+        <a class="listen" href={video} target="_blank" rel="noopener noreferrer" title="在 YouTube 播放原声">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h4l5 4V6l-5 4H4Zm12-1a4 4 0 0 1 0 6m2-9a8 8 0 0 1 0 12" /></svg>
+          <span>听访谈原声</span>
+        </a>
+      </nav>
+      <header class="intro">
+        <p class="interview">Robinson Erhardt × 江学勤 · 第三次对谈</p>
+        <h1>完整访谈（逐字稿）</h1>
+        <p class="source-note">按原片顺序排列的中文字幕。说话人依据原声区分，少量重叠发言及字幕可能有识别误差。</p>
+      </header>
+      <div class="search-row">
+        <input id="search" type="search" aria-label="搜索对话" placeholder="搜索对话内容" autocomplete="off" />
+        <output id="count" for="search" aria-live="polite"></output>
+      </div>
+      <p class="empty" id="empty" hidden>没有找到符合条件的对话。</p>
+      <div class="dialogue" aria-label="对话逐字稿">
+        {dialogue.map(({ speaker, paragraphs }) => (
+          <article class="turn" data-speaker={speaker}>
+            <h2>{labels[speaker]}</h2>
+            {paragraphs.map((paragraph) => <p>{paragraph}</p>)}
+          </article>
+        ))}
+      </div>
+    </main>
+    <script is:inline>
+      const search = document.getElementById('search');
+      const count = document.getElementById('count');
+      const empty = document.getElementById('empty');
+      const turns = [...document.querySelectorAll('.turn')].map((turn) => ({
+        turn,
+        text: turn.textContent.toLowerCase(),
+      }));
+      function filter() {
+        const term = search.value.trim().toLowerCase();
+        let visible = 0;
+        for (const { turn, text } of turns) {
+          turn.hidden = term !== '' && !text.includes(term);
+          if (!turn.hidden) visible++;
+        }
+        empty.hidden = visible !== 0;
+        count.textContent = term ? `${visible} 段匹配` : '';
+      }
+      search.addEventListener('input', filter);
+    </script>
+  </body>
+</html>

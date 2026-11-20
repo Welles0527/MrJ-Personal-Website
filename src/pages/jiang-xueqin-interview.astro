@@ -165,6 +165,7 @@ function timestamp(seconds: number) {
         <p class="side-title">访谈主题</p>
         <button class="side-link" type="button" id="show-all" aria-pressed="true">阅读全文<span class="side-count">{total}</span></button>
         <nav class="side-nav" aria-label="主题目录">
+          <a class="side-link" href={`${siteBase}/jiang-xueqin-interview/transcript/`}>完整访谈（逐字稿）</a>
           {chapters.map((chapter, index) => (
             <a class="side-link" href={`#theme-${index + 1}`}><span>{String(index + 1).padStart(2, '0')}</span>{chapter.title}</a>
           ))}
