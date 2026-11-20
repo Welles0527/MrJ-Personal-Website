@@ -6,7 +6,8 @@ import englishDialogue from '../../data/jiang-xueqin-transcript-en.json';
 const englishParagraphs: Record<string, string[]> = englishDialogue;
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const interview = `${base}/jiang-xueqin-interview/`;
-const video = 'https://www.youtube.com/watch?v=Gkq-BaA0-Pk';
+const videoId = 'Gkq-BaA0-Pk';
+const video = `https://www.youtube.com/watch?v=${videoId}`;
 // The host's recorded introduction follows the opening teaser.
 const formalOpening = dialogue.findIndex(({ id }) => id === 'turn-1494');
 const fullInterview = dialogue.slice(Math.max(0, formalOpening));
@@ -75,8 +76,16 @@ const labels: Record<string, string> = {
       .favorites-toggle:hover { background: #35423b; }
       .favorites-toggle[aria-pressed="true"] { color: #f0cc76; border-color: #9e824c; background: #403a2d; }
       .turn-actions { display: flex; flex: none; align-items: center; }
-      .turn-time { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
-      .turn-time:hover { color: var(--cream); }
+      .turn-language, .turn-time, #close-video {
+        min-height: 44px; padding: 0 6px; border: 0; border-radius: 6px;
+        background: transparent; color: var(--sage); cursor: pointer; font: inherit; font-size: 13px;
+      }
+      .turn-language { min-width: 44px; }
+      .turn-time { min-width: 44px; font-variant-numeric: tabular-nums; text-decoration: underline; text-underline-offset: 3px; }
+      .turn-language:hover, .turn-time:hover, #close-video:hover { background: #35423b; }
+      .turn-player { max-width: 640px; margin-bottom: 14px; }
+      .player-controls { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+      .turn-player iframe { display: block; width: 100%; aspect-ratio: 16 / 9; min-height: 200px; border: 0; background: #171a1a; }
       .star {
         display: grid; place-items: center; min-width: 44px; min-height: 44px;
         padding: 0; border: 0; border-radius: 6px; background: transparent;
@@ -144,13 +153,20 @@ const labels: Record<string, string> = {
         <button class="favorites-toggle" type="button" id="show-favorites" aria-pressed="false">我的收藏 <span id="favorites-count">0</span></button>
         <output id="count" for="search" aria-live="polite"></output>
       </div>
-      <p class="highlight-hint">搜索命中会显示为蓝色。选中文字可添加或取消黄色高亮。</p>
+      <p class="highlight-hint">搜索会匹配中英文，命中显示为蓝色。选中文字可添加或取消黄色高亮。</p>
       <div class="selection-actions" id="selection-actions" role="group" aria-label="文字高亮" hidden>
         <button id="add-highlight" type="button">高亮</button>
         <button id="remove-highlight" type="button">取消高亮</button>
       </div>
       <p class="visually-hidden" id="highlight-status" role="status"></p>
       <p class="empty" id="empty" hidden>没有找到符合条件的对话。</p>
+      <div class="turn-player" id="turn-player" data-embed={`https://www.youtube.com/embed/${videoId}`} role="region" aria-label="原视频播放器" hidden>
+        <div class="player-controls">
+          <a id="video-source" href={video} target="_blank" rel="noopener noreferrer">在 YouTube 打开</a>
+          <button id="close-video" type="button">关闭播放器</button>
+        </div>
+        <iframe id="interview-video" title="江学勤访谈原视频" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      </div>
       <div class="dialogue" aria-label="对话逐字稿">
         {fullInterview.map(({ id, speaker, paragraphs, startSeconds }) => (
           <article class="turn" id={id} data-speaker={speaker}>
@@ -160,9 +176,10 @@ const labels: Record<string, string> = {
                 <span data-version="en" lang="en" hidden>{speaker === 'host' ? 'Host · Robinson Erhardt' : 'Jiang Xueqin'}</span>
               </h2>
               <div class="turn-actions">
-                <a class="turn-time" href={`${video}&t=${startSeconds}s`} target="_blank" rel="noopener noreferrer" title="从此处播放原视频">
+                <button class="turn-language" type="button" lang="en" aria-label="本段切换为英文">EN</button>
+                <button class="turn-time" type="button" data-start={startSeconds} aria-controls="turn-player" aria-expanded="false" aria-label={`从 ${formatVideoTime(startSeconds)} 播放原视频`}>
                   {formatVideoTime(startSeconds)}
-                </a>
+                </button>
                 <button class="star" type="button" aria-label="收藏此段发言" aria-pressed="false">☆</button>
               </div>
             </header>
@@ -186,6 +203,12 @@ const labels: Record<string, string> = {
       const paragraphs = new Map();
       const languageButtons = document.querySelectorAll('.language-switch button');
       let language = 'zh';
+      const player = document.getElementById('turn-player');
+      const iframe = document.getElementById('interview-video');
+      const videoSource = document.getElementById('video-source');
+      const sourceUrl = new URL(videoSource.href);
+      const closeVideo = document.getElementById('close-video');
+      let playingButton = null;
 
       function indexVersion(turn, lang) {
         const [heading, body] = turn.querySelectorAll(`[data-version="${lang}"]`);
@@ -205,6 +228,9 @@ const labels: Record<string, string> = {
       }
       const turns = [...document.querySelectorAll('.turn')].map((turn) => ({
         turn, star: turn.querySelector('.star'),
+        languageButton: turn.querySelector('.turn-language'),
+        timeButton: turn.querySelector('.turn-time'),
+        preferredLanguage: null,
         zh: indexVersion(turn, 'zh'), en: indexVersion(turn, 'en'),
       }));
       const knownIds = new Set(turns.map(({ turn }) => turn.id));
@@ -295,18 +321,30 @@ const labels: Record<string, string> = {
         const term = search.value.trim().toLowerCase();
         let visible = 0;
         for (const entry of turns) {
-          const { turn, star } = entry;
-          const { text, blocks } = entry[language];
+          const { turn, star, languageButton, timeButton } = entry;
+          const zhMatches = matchesFor(entry.zh.text, term);
+          const enMatches = matchesFor(entry.en.text, term);
+          const matchLanguage = language === 'zh' && !zhMatches.length && enMatches.length ? 'en'
+            : language === 'en' && !enMatches.length && zhMatches.length ? 'zh' : language;
+          const shown = entry.preferredLanguage ?? matchLanguage;
+          const { blocks } = entry[shown];
           const saved = favorites.has(turn.id);
           const needsFocus = document.activeElement === star;
-          const matches = matchesFor(text, term);
-          turn.hidden = (onlyFavorites && !saved) || (term !== '' && !matches.length);
+          turn.hidden = (onlyFavorites && !saved) || (term !== '' && !zhMatches.length && !enMatches.length);
+          if (turn.hidden && playingButton === timeButton) stopVideo();
+          for (const version of ['zh', 'en']) {
+            entry[version].heading.hidden = entry[version].body.hidden = version !== shown;
+          }
+          entry.shownLanguage = shown;
+          languageButton.lang = shown === 'zh' ? 'en' : 'zh-CN';
+          languageButton.textContent = shown === 'zh' ? 'EN' : '中文';
+          languageButton.setAttribute('aria-label', shown === 'zh' ? '本段切换为英文' : '本段切换为中文');
           star.setAttribute('aria-pressed', String(saved));
           star.textContent = saved ? '★' : '☆';
           if (turn.hidden && needsFocus) favoritesToggle.focus({ preventScroll: true });
           if (!turn.hidden) {
             visible++;
-            for (const block of blocks) paint(block, matches);
+            for (const block of blocks) paint(block, shown === 'zh' ? zhMatches : enMatches);
           }
         }
         favoritesCount.textContent = favorites.size;
@@ -418,8 +456,46 @@ const labels: Record<string, string> = {
         filter();
       }
 
-      for (const { turn, star } of turns) {
+      function stopVideo() {
+        playingButton?.setAttribute('aria-expanded', 'false');
+        playingButton = null;
+        player.hidden = true;
+        iframe.removeAttribute('src');
+      }
+
+      function playVideo(turn, button) {
+        if (playingButton === button) {
+          stopVideo();
+          return;
+        }
+        stopVideo();
+        const { start } = button.dataset;
+        const url = new URL(player.dataset.embed);
+        url.search = new URLSearchParams({ start, autoplay: '1', playsinline: '1' });
+        sourceUrl.searchParams.set('t', `${start}s`);
+        videoSource.href = sourceUrl.href;
+        turn.querySelector('.turn-header').after(player);
+        iframe.src = url.href;
+        player.hidden = false;
+        playingButton = button;
+        button.setAttribute('aria-expanded', 'true');
+      }
+
+      closeVideo.addEventListener('click', () => {
+        const button = playingButton;
+        stopVideo();
+        button?.focus({ preventScroll: true });
+      });
+      for (const entry of turns) {
+        const { turn, star, languageButton, timeButton } = entry;
         star.addEventListener('click', () => toggleFavorite(turn.id));
+        timeButton.addEventListener('click', () => playVideo(turn, timeButton));
+        languageButton.addEventListener('click', () => {
+          window.getSelection()?.removeAllRanges();
+          closeActions();
+          entry.preferredLanguage = entry.shownLanguage === 'zh' ? 'en' : 'zh';
+          filter();
+        });
       }
       favoritesToggle.addEventListener('click', () => {
         onlyFavorites = !onlyFavorites;
@@ -455,17 +531,13 @@ const labels: Record<string, string> = {
         for (const button of languageButtons) {
           button.setAttribute('aria-pressed', String(button.dataset.lang === lang));
         }
-        for (const entry of turns) {
-          for (const version of ['zh', 'en']) {
-            entry[version].heading.hidden = entry[version].body.hidden = version !== lang;
-          }
-        }
+        for (const entry of turns) entry.preferredLanguage = null;
         filter();
       }
       for (const button of languageButtons) {
         button.addEventListener('click', () => {
           const lang = button.dataset.lang;
-          if (lang === language) return;
+          if (lang === language && !turns.some((entry) => entry.preferredLanguage)) return;
           const url = new URL(location.href);
           if (lang === 'en') url.searchParams.set('lang', 'en');
           else url.searchParams.delete('lang');
