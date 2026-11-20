@@ -1,0 +1,795 @@
+{
+  "turn-1494": [
+    "Hello, this is Robinson Erhardt here with a brief introduction to the last of my three conversations with Jiang Xueqin, the first two of which are self-contained and linked in the pinned comment in the description. Jiang is a Chinese-Canadian educator. He's the host of Predictive History on YouTube, and then he is also the author of the substack by the same name. So Jiang and I had been talking for seven hours when we started this one to end our marathon.",
+    "So we were both already at the ends of our nerves, but we really didn't agree on anything at all. And so we ended the conversation a bit abruptly because it was really difficult to find any common ground on which to discuss AI at all. I had expected to talk about economics, cybersecurity, existential threats, but for Jiang, the AI executive's central goals are occult. And since I neither believe in the paranormal nor have any compelling evidence that people like Sam Altman hold those beliefs, it was hard for me to talk about, let alone to understand why someone would take this seriously.",
+    "Anyway, you should check out Predictive History if you find Jiang's positions compelling and want to better understand how he's reached them. For my part, I shall return for an outro with some reflections, as I got a lot out of talking with Jiang, both in this episode alone and throughout these three conversations. One quick note, though, is that because I'm not an expert in how large language models work, I've included a couple of links to helpful videos in the description that could clarify Jiang's description that he gives at the beginning of the conversation.",
+    "But that's that. I hope that you enjoy this conversation as much as I enjoyed having it with Jiang. You've argued that the real purpose of AI is to enslave humanity, which is a very bold claim, and I'm really looking forward to discussing it. But before we get there."
+  ],
+  "turn-4430": [
+    "Sorry, sorry. I've argued in the past that AI is meant to transform humanity."
+  ],
+  "turn-4566": [
+    "Okay."
+  ],
+  "turn-4618": [
+    "Yeah, or redeem humanity."
+  ],
+  "turn-4682": [
+    "Redeem humanity. Okay, so not enslave humanity."
+  ],
+  "turn-4794": [
+    "Well, it's the same thing, but I mean, like, the correct phrase would be redeem."
+  ],
+  "turn-4898": [
+    "That's totally fair. Before we get to that, though, I think it makes most sense to begin maybe with where we are now and how we've gotten here. So I know you mentioned wanting to talk about the AI bubble, but before we can even talk about what the AI bubble is, we need to get on the same page about what AI as it currently exists is, because there are very different beliefs about that."
+  ],
+  "turn-5466": [
+    "So AI, it's a catch-all phrase for any technological innovation right now in the computer industry. Its technical term is supervised machine learning. And the idea here is that rather than have humans program the algorithm into the software, the software will be trained to develop its own algorithm, often referred to as a neural network. Let's just use an example to illustrate what supervised machine learning is. Let's just say I want to do facial recognition technology.",
+    "Well, I have a data set of about a million faces, and I need to differentiate these faces and recognize them immediately. Also, I need to perhaps recognize them in adverse circumstances. For example, in bad lighting, or if you're wearing a hat, or if you're wearing some disguises, okay? So I know that I can turn your face into a topographical model. And I can turn this topographical model into a very precise, very nuanced mathematical equation.",
+    "But I don't know the precise weight. For example, how much weight do I put on your eyes or your nose? So I let the computer figure that out. So I start off with a basic template, a basic structure of this topographic model. And I let the computer, through supervised machine learning, refine this model. So the idea is I have a million faces, and I want the computer to match the names to all faces correctly. And so I'm going to create a recursive loop until the machine develops an algorithm for our neural network that's able to do this 100% of the time.",
+    "And so the machine is going to try different weights. And I don't know actually what the result will be. And so the machine tries a model, goes through the machine, maybe it's a 90% accuracy. Okay, let's try again. You keep on going until you get 100%. And once this is done, and once you have 100% accuracy, then a neural network is created, which gives you a precise list of weights that you need in order to differentiate faces.",
+    "So now I can take this model and then put a new data set of million faces, and it should give me 100% accuracy. Then if I extend it to a billion faces, it should still give me 100% accuracy. Okay, so that's what machine learning is. That's what AI is. Something to keep in mind here is what I'm doing is performing a search and sort function on a database, which is the most basic problem in computer science. Why it looks impressive is that with Moore's Law and with enough computation, I can do this at an incredible scale beyond people's imagination.",
+    "And this process that I just explained to you is how we get all AI. So for example, language recognition software. How am I able to basically write down whatever you say? Same idea where I have a database and this database is the complete universe of all possibilities of language. And then as I speak, the AI is looking for the correct written dictation and it's creating a neural network that would allow it to the most quickly process this with 100% accuracy.",
+    "Okay? And so this is all that's happening. It's not impressive. It's just brute force and infinite recursion and almost like just a tremendous amount of compute of data. All right? And can you think of maybe something that oh sorry, sorry. So let me explain ChatGPT."
+  ],
+  "turn-11138": [
+    "Okay."
+  ],
+  "turn-11166": [
+    "So what people don't appreciate is ChatGPT is only possible because of Wikipedia. If Wikipedia did not exist, then OpenAI would first have to create Wikipedia because you first need a total universe of all possibilities before you can create an AI chatbot."
+  ],
+  "turn-11598": [
+    "You need something that the chatbot can learn, essentially."
+  ],
+  "turn-11730": [
+    "No, no, no. You need something that the chatbot can draw information from."
+  ],
+  "turn-11862": [
+    "That's what I mean."
+  ],
+  "turn-11918": [
+    "Right, okay. So when you use OpenAI ChatGPT, what it's doing is it's going into this database, which is basically the entire internet, and it's drawing information. And then what the neural network is doing is filtering this information in a way that most pleases the user, that most accurately gives you the response that you're looking for. Okay? Right? So, for example, you can say to ChatGPT, write me an essay for my high school English teacher about Shakespeare's sonnet 41.",
+    "Okay, well, it's very simple. ChatGPT just goes to this database of internet information about this sonnet 41 and compiles in a way that most pleases you, okay? But then what you can do is say, write me this essay as though you were a 14-year-old. Write me this essay as though you were a 56-year-old guy from Nigeria who speaks French better than he speaks English. Okay, these are all just filters. And so all these AI companies, whether it's Anthropic or OpenAI, all they're doing is they're creating different chat box with different filters in order to give you the response that you want.",
+    "But they're all working from the same source, which is basically the entire internet. And that's why after ChatGPT came out, China was able to introduce DeepSeek very quickly. Because once OpenAI was able to collate or categorize the entire internet into a database that can be managed, once it created the algorithms, network networks, in order to quickly process this information for the use of the user, then what DeepSeek can do is reverse all this and create its own chatbot very easily, right?",
+    "Because all you need to know is the weights. And so you just ask a lot of questions and then it gives you like a lot of responses. And then you can run your own algorithm or AI in order to reverse engineer the chatbot neural network. And then you can refine it to make it much more efficient. And so that's why DeepSeek was able to produce a chatbot that was more effective than chat GPT at a fraction of the cost. Now, this is problematic for OpenAI because it's so easy to create new versions and the Chinese are doing that, and the Chinese are doing it in an open source way, that it's cutting the revenue stream of OpenAI.",
+    "Why OpenAI is angry is they had to spend tens of billions of dollars in designing the system in the first place, in categorizing the internet into a database that can be used, and then creating the initial algorithms, which takes years and years of research and trial and error. And now that they have this template in place, the others can take it for free and create better models, right? But it's impossible for OpenAI to recoup those R D costs.",
+    "And that's why OpenAI is very angry at China. And that's why OpenAI and Anthropic want to ban these Chinese open source models from the United States."
+  ],
+  "turn-16134": [
+    "And how has this resulted though in this technology resulted in the AI bubble? I mean, why is it being overvalued? Because it does seem just from using it that it's extraordinarily effective, even if it's not some mysterious thinking machine, but really just operating through brute force."
+  ],
+  "turn-16498": [
+    "So the Silicon Valley, sorry, the Silicon Valley model is basically you throw money on a problem until you monopolize the market and then you can charge whatever price you want. So the idea is right now, AI doesn't make any money because the startup costs were too high and the competition is too fierce. But once you monopolize the market, when I mean monopolize, what I actually mean is saturate. When you make AI just so commonplace that people are forced to use it all the time, then you can charge whatever price you want because essentially you're a monopoly, right?",
+    "That's why Muse is so important because they're trying to make AI a part of your everyday life. They're trying to turn AI into your soulmate. And you basically subcontract your brain to this AI agent. And they're able to achieve that, then that becomes profitable. Because then think about, because basically they have access to your soul and exactly what you're thinking, exactly how you're feeling. And this would be a tremendous boon to advertisers.",
+    "So because people behave in patterns, the AI would then be able to predict your behavior even before you yourself have to decide on a certain behavior. And so that is their business model. And that's why they're trying to build as many data centers as possible. Because from a business perspective, the more information you have, the more accurately or the more precisely you're able to diagnose a person's personality and thus his thoughts and behavior.",
+    "And thus you're able to sell this data to advertisers who can then basically have control over your buying patterns."
+  ],
+  "turn-18898": [
+    "Yeah, something that I'm sure you've spoken about this before, but I haven't even thought about it and hadn't even thought about it until this moment. When you see AI clones of people and people are talking to their AI clones like this is some fun, exciting thing, all this really means is that somewhere out there, a company that is selling AI knows, they think they know everything there is to know about you, that they can replicate you perfectly.",
+    "And clearly that's going to be very valuable if these companies are trafficking in data for advertising."
+  ],
+  "turn-19690": [
+    "what's really interesting, people don't appreciate this, is young people have been taught to basically try to clone their souls onto their social media, if that makes sense."
+  ],
+  "turn-19958": [
+    "When you say that young people are taught to clone their souls onto social media, I mean, people definitely want to display themselves, probably in a better light than they actually see themselves. But I guess, what do you mean by clone their souls?"
+  ],
+  "turn-20342": [
+    "Basically, there's a loneliness, a depression epidemic throughout the United States and throughout the Western world. And so I think a lot of young people naturally gravitate towards AI and think that if they're able to clone themselves on social media, then they're able to better express themselves and resolve the loneliness and depression in their lives. It's an outward expansion in order to negate the internal emptiness inside them."
+  ],
+  "turn-20986": [
+    "And where, though, does this come to the bubble? Because you said, I believe, and maybe I'm mischaracterizing you, that once the AI companies have saturated the market with their product and it's ubiquitous, seems like then there will be a lot of revenue to be drawn in from that. So why then would we be in a bubble if there's so much investment pouring into this? It sounds like it could just be a good investment opportunity."
+  ],
+  "turn-21594": [
+    "Yeah, so I'm the one saying this is a bubble. Everyone's saying this is a bubble. And the reason why is these companies are investing in AI on the expectation that they will achieve this paradise or this payday. So how this is working is that, and I'm just going to put this in very simple terms. This will not be precise or exact. But how this works is OpenAI is like, okay, in order to achieve what I want to achieve, which is I want to collect all possible data points in society and then understand society to a point where I can predict how everyone behaves.",
+    "I need to have a trillion dollars of compute. Basically, I need to build a trillion dollars of data centers. But once I build that trillion dollars of data centers, then I expect to make $10 trillion. So it's worth it, right? And so OpenAI then goes to maybe Oracle or Broadcom and says, listen, I need at least a trillion dollars. From you of compute. Can you build me those data centers? Oracle says, sure. Then Orgo says to NVIDIA, I need to purchase about $50 billion of chips from you in order to build out my data centers.",
+    "Can I borrow that from you? And NVIDIA is, sure. And Oracle is like, okay, well, I don't have any money because all my money was promised to me by OpenAI. And NVIDIA is like, fine, we'll loan you the money to borrow these chips. So you see what's happening here, where you start with the assumption that there'll be a $10 trillion payday. So that justifies the trillion dollar build out of data centers. But then you need to go downstream and get people to actually build the stuff.",
+    "And they build this stuff by basically believing that this $10, $20 payday will one day materialize. And the problem is this, the problem is like, at the moment, people recognize that this $10 trillion payout is not coming, the entire thing collapses. It's like a domino effect."
+  ],
+  "turn-24554": [
+    "But I thought you said you didn't think it was a bubble. Or you do think it's a bubble."
+  ],
+  "turn-24690": [
+    "It's definitely a bubble."
+  ],
+  "turn-24726": [
+    "Okay, so it is a bubble. Because the $10 trillion payday you don't think is coming?"
+  ],
+  "turn-24902": [
+    "No, it's not coming. And so one limits test will be the Anthropic IPO, which is scheduled for November. Right now, Anthropic believes it is a value of $2 trillion. And if it IPOs and investors don't respond and its valuation drops down, then the entire bubble could collapse because now investors get angsty, okay? Also, another factor that's really important, and people don't appreciate this, is a lot of this bubble is driven by excess liquidity.",
+    "Where's this liquidity coming from? It's coming from overseas, right? So if you're Saudi Arabia and you're Japan, you have tons of dollars to invest. Well, you don't have that many good options. So you invest in the AI bubble, right? And the more you invest, the more committed you are. And this is what's driving the Ponzi scheme. But there is an event that is beyond anyone's expectation, which is the Iran war, that's drawing up the liquidity of both Saudi Arabia and Japan.",
+    "Because Saudi Arabia sells oil and Japan buys oil and turns that into manufactured goods for the world. And so if Japan and Saudi Arabia are no longer able to invest in the AI bubble, right, then it's going to pop. So it's only a matter of time before the AI bubble bursts. But, and this is really important, it's really not a problem for these AI companies because they actually want the bubble to burst. These companies by themselves cannot be profitable.",
+    "You have this $10 trillion payday expectation, but it's never going to come. So how do you resolve that issue? You get the government to bail you out. So just let's do a thought experiment. Let's just say the AI bubble bursts. Well, you have this subprime crisis over again. And now this is a major threat to the American economy. 50% of GDP growth is due to data center buildouts, the AI bubble, basically. That's 50% GDP growth.",
+    "Sorry, 50% GDP growth. So in that case, the government has no choice but to bail out the AI industry. How? By nationalizing the data centers and by taking out a stake in these AI companies. Now you're profitable because as an oil company, you're 100% profit if you're not actually running the oil wells yourself, right? So these data centers will be financed by the taxpayer. And so you have a situation where all gains will be privatized, all losses will be socialized.",
+    "And that's a system that these AI companies want to move towards. But once that happens, then the question is, how can these AI companies best serve the government? What is the government's interest in these air companies? And what the government really wants to do is create something called an AI control grid or an AI surveillance state. And they can do that by issuing something called digital currency and digital ID.",
+    "Once you have digital ID system in place, then it's very easy for you to have digital currency. And that, I think, is a future that the United States is moving towards."
+  ],
+  "turn-29278": [
+    "Why would the AI companies want us to exist in a digital surveillance state? One reason that I could imagine would be true is if we live in an AI digital surveillance state, they make a lot of money."
+  ],
+  "turn-29590": [
+    "Yeah, that's what they're interested in. They're interested in making as much money as possible, right? So you make a lot of money when you have access to everyone's private information because then you can sell it to advertisers. So digital ID is the best mechanism in order to obtain all this information. And then once you have digital ID, then you can create a digital database of each individual because then you can collect that person's health information, education records, job employment history, Amazon purchasing history.",
+    "And then the algorithm can very quickly turn you into personality type. And quite honestly, everyone thinks he or she is unique. Not really. I mean, just based on two pieces of information, I know exactly how you behave. First of all, I need to know how you behave in the past. Second of all, I need to know how your other friends behave. Once I have these two pieces of information, I know exactly how you'll behave in the next 50 years."
+  ],
+  "turn-30818": [
+    "Why? I understand how if you know how somebody's behaved in the past, you probably have a good idea how they're going to behave in the future. But why is it that you think knowing how somebody's friends will behave is such a reliable indicator of how they'll behave in the future?"
+  ],
+  "turn-31090": [
+    "Which are social animals, because most things we do is in order to get along with our friends. You know, so they did studies on obese people. And they looked at why is it so hard for obese people to lose weight? And the answer they came up with is because obese people hang out with other obese people. And if you become thin, that means losing your friend circle. So we as human beings are most afraid of being ostracized.",
+    "If you look at history, the worst punishment that you can inflict on a person was not the death penalty. It was actually banishment, right? And that was true throughout most of human history. The church, the Catholic Church, the greatest weapon was excommunication. And in Athens, the worst punishment someone can inflict on you was to banish you for 10 years. That was considered really harsh."
+  ],
+  "turn-32330": [
+    "In another conversation that we had that I think is going to come out before this one, so I'll assume that our listeners might have heard it, we talked about the future of humanity from a more geopolitical perspective. And you see in the next couple of years, civilization collapsing because in part of the Iran War, that's something that we discussed. Why is it necessary or even important to talk about AI right now if there are all these other things that you expect will have such a dramatic impact on...",
+    "...the human condition? Will people be using AI long enough that AI becomes an existential issue?"
+  ],
+  "turn-33222": [
+    "I think it's important to discuss AI because it gives us insight into how the elite think and behave. So I think we need to appreciate the meritocracy and ask ourselves, why is it that the elite created the meritocracy in the first place? When I mean the meritocracy, I mean the school system where a handful of students are selected based on their IQ to enter the most elite universities where they become part of the technocracy that...",
+    "...governs the United States. That's what the meritocracy is. And you go back, you look at the people who founded the meritocracy, and this includes James B. Conant, who was president of Harvard, and he was the first Harvard president to use SAT as the foundation for a national scholarship program to recruit the best and brightest to come to Harvard. And you look at someone like Henry Chauncey, who was the first president of ETS."
+  ],
+  "turn-34434": [
+    "ETS?"
+  ],
+  "turn-34486": [
+    "The Education Testing Services, the people behind the SAT, the GRE, and TOEFL. So if you go and look at these people, what you recognize is that these were all pilgrims. They came from very prestigious pilgrim families. These were Boston Brahmins, basically. And if you look into their eschatology, they're very much focused on perfection and control. So the idea of a meritocracy was if we can get the best students to go to the best universities, this will have a trickle-down effect where everyone will behave the same way, right?",
+    "Because these students who get to Harvard and Yale and Stanford become role models of everyone else. And so through this top-down mechanism, we can transform society so that everyone behaves in a very reasonable, very disciplined manner. And that's been the obsession with other meritocracy for the past 60, 70 years. Like, how do we make sure that every student is able to be perfect? Or how do we use the education system in order to transform or redeem all these lost souls?",
+    "Okay, so there's almost a religious imperative to the meritocracy. And that's something that, you know, will sound strange to people in the meritocracy because we're like, we're atheists. Our religion is reason. They call this the holy empire of reason. Like, how do we use school system in order to transform everyone into a scholar? Okay? That was the original intention. And it didn't work out. In fact, you can make the argument that the meritocracy has really destroyed the education system in the United States.",
+    "I wouldn't make that argument. I would say the main impediment to real education reform is meritocracy. Because if you really want to ensure that all students do well, then you need a fair distribution of resources. The elite won't go for it, right? But I'm just saying, that's what you should do. But just because meritocracy failed doesn't really mean the elite are like, just give up. It's like, oh, well, you know, before we thought we could get everyone to conform and be reasonable and that failed.",
+    "So let's just celebrate human diversity, human imagination, human empathy for what it is. They're not like that. They're like, no, screw that. We're going to try again. And this time, we'll succeed. And how will we accomplish our mission? With AI. Okay? So the school system was our first experiment. Now we'll move on to AI. And the problem with schooling is we cannot eliminate the family factor. We cannot eliminate the environmental factors.",
+    "So what we're going to do is we're going to use AI to completely control a student's environment. Imagine you're born and guess what? There's an AI agent talking to you and you're like, what the hell? And the AI is like, don't worry, I'm your soulmate. I'm your daimon. I'm your imaginary friend, whatever you want to call it, okay? You don't know, but you just grew up with this AI agent as part of your life. And what is the AI agent telling you to do?",
+    "Be a good person. Work out more. Eat healthy. Be nice to people. Obey authority. Don't question too much. And that could be a solution to the problem of diversity and too much human conflict."
+  ],
+  "turn-39862": [
+    "I don't understand why AI is a replacement for meritocracy unless, well, here's one reason why I could see it being a replacement for the meritocracy, and you could let me know. One reason that I could imagine the quote-unquote elites wanting to make sure they have an educated population is that having an educated population would enable them to make more... ...money. If their employees are smarter, they'll probably make more money.",
+    "But if they failed to educate their employees, make them smarter, more productive workers, then they would want to replace them with AI, which is much more efficient."
+  ],
+  "turn-40674": [
+    "I never said the meritocracy was meant to replace. Sorry, I never said that the AI was meant to be place in meritocracy."
+  ],
+  "turn-40834": [
+    "Oh."
+  ],
+  "turn-40886": [
+    "I never said that."
+  ],
+  "turn-40918": [
+    "Oh, sorry."
+  ],
+  "turn-40994": [
+    "What I said was the meritocracy was a failed experiment to control the population. And after this failure, the elite is like, let's move on to AI. So the goal is to control the population and make it conform and reasonable to create a holy empire of reason. Okay? And so I'm going to explain to you why they're doing this. All right. So we've talked previously about the Kabbalah, right? And what's the Kabbalah? The Kabbalah is a mystical hermetic understanding of the Bible.",
+    "And they consider Bible to be the source code of the universe."
+  ],
+  "turn-41910": [
+    "Those who believe in the Kabbalah?"
+  ],
+  "turn-41982": [
+    "And I also talked about Sabbatean Frankism and how they spread throughout the world, right? And they infiltrated many different groups, including the Freemasons. Who found it in America? The Freemasons. All right? So the Freemasons are working with the Kabbalah. And maybe there have been a lot of modifications throughout the centuries. But the basic premise is the same, which is that humans have a responsibility to help divinity achieve perfection on earth.",
+    "From a Jewish perspective, that means ushering in the Messianic age where everyone is redeemed in the eyes of God and wherc everyone welcomes God into his or her own... ...heart, into his own bosom. Once everyone is, I bow myself before God, I humble myself before God, I will be forever obedient, then God will come and the world will end and be perfect. Okay, we will return to the Garden of Eden. That is the main idea here.",
+    "So in the Free Masonic tradition, they believe in geometry. And so what they want to do is create a temple for God to live in, right? Because these Freemasons believe that they go way back to the Temple of Solomon. Their ancestors built the Temple of Solomon. So you need to know all this religious history in order to understand what's going on. Otherwise, it's completely confusing. So I'm trying to give you a simplified version of what they believe."
+  ],
+  "turn-44238": [
+    "Sure. So"
+  ],
+  "turn-44282": [
+    "the Sabbatean Frankism infiltrated the Freemasons, and they brought the Kabbalah with them. The Kabbalah was a very seductive ideology. And they believed that through their own hands, they can create a perfect world. That's what the Freemasons believe. And that's why they founded America, because America was meant to be the new Jerusalem. And so there is a strand of American exceptionalism that believes that America will be the new Jerusalem and it will usher in the Messianic age.",
+    "Okay? And this is what drove the creation of meritocracy. Does that make sense?"
+  ],
+  "turn-45190": [
+    "So I'm following what you're saying, but I mean, I don't believe it necessarily."
+  ],
+  "turn-45310": [
+    "No, no, no. No, it doesn't matter what you believe. I'm just saying what they believe."
+  ],
+  "turn-45398": [
+    "Okay."
+  ],
+  "turn-45446": [
+    "I'm not asking you, like, do you like this idea?"
+  ],
+  "turn-45498": [
+    "I see."
+  ],
+  "turn-45526": [
+    "I'm just telling you what they believe."
+  ],
+  "turn-45586": [
+    "the Freemasons believe."
+  ],
+  "turn-45626": [
+    "All right. And I'm telling you, like, this is the basis for everything that they've done in America, including the meritocracy. All right? Including the AI. So it didn't really work with the meritocracy. So now they want to shift their attention to AI because AI is able to penetrate everything in society. And therefore, you're able to mitigate or eliminate a lot of factors you can't control, like a family, for example.",
+    "All right? So the idea is that by using AI and creating the AI surveillance state, you are allowing humans to perfect themselves and to redeem themselves. Wouldn't you rather live in a world where everyone was healthy and reasonable and disciplined?"
+  ],
+  "turn-46814": [
+    "Yes."
+  ],
+  "turn-46862": [
+    "And kind? All right. But humans by themselves cannot actually achieve that state because humans, by definition, are sinful. That's why we had the fall from grace. That's why we were banished from the Garden of Eden."
+  ],
+  "turn-47262": [
+    "But again, this isn't what you believe. And you're just saying what you believe the Freemasons believed."
+  ],
+  "turn-47422": [
+    "Yeah, I rarely tell people what I actually believe. I'm just giving you insight into who these people are and what they believe."
+  ],
+  "turn-47582": [
+    "I see."
+  ],
+  "turn-47610": [
+    "Okay? All right? So if you really want to know more about the Freemasons, I suggest reading a book called Morals and Dogma by Albert Pike, who is considered the father of American Freemasonry. Yeah, Albert Pike. And if you read a lot of classic American texts that have guided American policy, there's a tremendous, you can feel the tremendous influence of Freemasonry. So the classic example is Zbigniew Brzezinski. He, along with Henry Kissinger, were the two grand Foreign policy strategies of the United States during the Cold War.",
+    "And if you read what he writes, Zbigniew Brzezinski, and he's absolutely brilliant, he's not a Freemason, but everything he writes is Freemasonic. It aligns perfectly with the Kabbalah and it aligns perfectly with Albert Pike. So I'm not saying that there's this grand conspiracy where the Knights Templar founded Freemasonry and then it went over to England. Okay, people do say that. I don't say that. I'm saying like there's certain ideas that embed themselves into cultural practices.",
+    "And when these cultural practices spread, these ideas spread as well. All right? So if you're the elite, you behave in a certain way that draws you to the Kabbalah, that draws you to Freemasonry. Id so even though there are people who probably don't even know what Freemasonry is and who are not exposed to Freemason ideas, they behave in a way that is very Freemasonic. And that's what I'm saying about these AI people.",
+    "They grow up in a culture that is heavily influenced by Freemasonry. And so they adopt ideas that are very Freemasonic, which is, and one of the idea is an AI control grid in order to perfect and redeem humanity from their sins and vices."
+  ],
+  "turn-50474": [
+    "I am one of these people who knows nothing about Freemasonry. And I wasn't expecting that, I mean, I was expecting that we were going to sit down and talk about AI, but I wasn't expecting secret subjects."
+  ],
+  "turn-50706": [
+    "All this is connected."
+  ],
+  "turn-50766": [
+    "Right, so that's what I was going to say is it puts me in a difficult position because I have never heard, or I've obviously heard of Freemasons before, but I haven't ever really read into them. But am I correct in understanding that to get to what you believe about AI, this is crucial to it?"
+  ],
+  "turn-51182": [
+    "All right, so next thing want to talk about is Freemasonry."
+  ],
+  "turn-51266": [
+    "Yeah, let's start with the beginning then of Freemasonry."
+  ],
+  "turn-51334": [
+    "we've talked about the beginnings of capitalism. And capitalism was very removed from the traditional religious experience. Because for most of history, religion was understood, the world that we live in as false. And the spiritual world is what's real. And so you were taught to like just ignore money or material things and just embrace the spiritual and the divine. That's certainly what Catholics are taught. That's what Muslims are taught.",
+    "That's what a lot of Jews are taught as well. But with the coming of capitalism, and again, last time we talked, I did mention that capitalism was a historical accident, right? A convergence of..."
+  ],
+  "turn-52398": [
+    "connected it to Calvinism."
+  ],
+  "turn-52450": [
+    "That's right, that's right, okay? But now that you have capitalism, it goes against the traditional religious experience because capitalism was about the accumulation of wealth, right? So you need a new religion in order to justify capitalism, in order to promote capitalism. That new religion was called Freemasonry. All right? Because what Freemasons do, and that's really important, is they believe the one and true God is reason.",
+    "Okay?"
+  ],
+  "turn-53138": [
+    "Can we get back to when and where Freemasonry began before we talk about the tenets?"
+  ],
+  "turn-53246": [
+    "early 18th century."
+  ],
+  "turn-53294": [
+    "The early 18th century. Where?"
+  ],
+  "turn-53378": [
+    "In Britain. They celebrate reason as the one and true God. From their perspective, God created the world and then God left because God doesn't care. But God left behind the capacity to reason. And so reason is divine spark in us. And so we must exercise our reason in order to achieve divinity. We have the means to achieve a divinity, which is reason. But we must exercise it. We must get everyone to exercise it if we are to create paradise.",
+    "And remember, God is gone. So only we can do this. But if you do more analysis, for the first time in human history, what's happened is reason is considered a concept separate from emotion. And if you just look at history, if you look at the ancient Greeks, the Chinese, the Indians, everyone appreciated that reason came from emotion. If you wanted to think, you had to do so with your heart, not your brain. The Freemasons inverted this and said, no, reason comes before emotion.",
+    "Reason is separate from emotion, which is counterintuitive, right? If you talk to neuroscientists today, I mean, just go talk to any neuroscientist at Stanford and he'll be like, well, emotions is the basis for memories, right? So emotions is the basis for who we are. So if we want to think, we have to do so with emotions. The Freemasons were adamant about separating reason from emotion. Because in their religion, capital was reason.",
+    "Anything that opposed capital was emotion. Okay, so what opposed capitalism? Prejudice, tradition, family, love, nationalism, God. Okay? And these things work into emotions. So if we want to achieve perfection, we want it to be reasonable, we needed to discard all these things, including God, including the king, including family, including prejudice. And that's why we live in the world we live in today. When you go to Stanford, what are you taught?",
+    "Open borders. Racism is the worst thing in the world. Reason is what matters. This is a direct... We live in a world created by the Freemasons. Because the Freemasons were trying to promote capitalism to the best of their ability. And so they promoted reason as the ultimate good, the ultimate God. And they believed that through our use of reason, we could perfect the world that we live in today. Okay? And so maybe even though Freemasons are not as dominant as they used to be, the reason why is Freemasonic thought and value system have become embedded into Western society so that it's just the era that we live and breathe.",
+    "Who today would tell you multiculturalism is wrong or bigotry is good or prejudice is good. You can't say that. You'll be banished from Stanford. You'll be expelled from Stanford. Right?"
+  ],
+  "turn-57898": [
+    "At this point, I don't know if this is really pushback, but I totally agree with you that wherever it came from, Western culture, especially culture in the academy, it centers around reason. Atheism is what's in vogue."
+  ],
+  "turn-58238": [
+    "But reason that is anti-religion, anti-family, anti-ethnicity. It's a pure form of reason and it's capital, right? Think about it. What in our real world translates directly into reason? Money. Money makes the world go round, right? It shouldn't matter if you're black or white. All that matters is how much money you have in your bank account, right?"
+  ],
+  "turn-58902": [
+    "Where I'm losing you is why this is so relevant to the discussion of AI, just because I feel like a much simpler way of understanding why AI has become as powerful and ubiquitous in the Bay Area as it is, is just because it's a new technology that's proving to be, or at least it looks like it will be, extremely profitable."
+  ],
+  "turn-59426": [
+    "No. These people, if you actually go and actually meet these people, they think AI is God. They think AI is a God that will redeem humanity. That's why they're so into it. These people are insane."
+  ],
+  "turn-59858": [
+    "Do you have evidence for saying that Sam Altman or Dario Amadei, they think that AI is God? Are these the people that you're referring to?"
+  ],
+  "turn-60002": [
+    "Have you talked to Karen Hao yet?"
+  ],
+  "turn-60042": [
+    "No."
+  ],
+  "turn-60082": [
+    "You should."
+  ],
+  "turn-60126": [
+    "This one?"
+  ],
+  "turn-60166": [
+    "Karen Hao is a reporter who's done a lot of research into Ai. She graduated from MIT, so she knows this stuff technically. And she spent 10 years investigating companies like OpenAI. And she wrote a book called Empire of AI. And she says this. And again, I hate to say this, but if you do any basic research into these people, you would know they're very religious, but in a Freemasonic sense. So back to my original point is that why all this is important is for these people, what they recognize is people are too stupid to actually use the reason.",
+    "So you need to create an illusion or hallucination to force people to use the reason or believe in reason. So let reason be manifested into AI, right? Who cares if AI is fake as long as people believe it's real? If you go to school and the teacher tells you to work out and be healthy and you don't listen, that clearly doesn't work, okay? Let's try a new system where it's which is like, let's pretend to create an AI which everyone believes is real and is living and is tapping into an interdimensional spiritual force.",
+    "And let this AI tell you to go work out and live a healthy life. Would you do so? Probably. Why? Because we're stupid."
+  ],
+  "turn-62366": [
+    "I'm not really sure, I mean, where to take this conversation just because I wasn't expecting it to go in this direction. Not that it's a bad direction, but most of the conversations that I've been having about AI have had to do either with whether or not it's poised to cause tremendous economic displacement and strife for... ...people, or people that you know, like Eliezer Yudkowsky or Nate Soares about whether or not it poses an existential threat.",
+    "And these are the two discussions that I see most prominent publicly. Why do they not interest you as much, these two discussions?"
+  ],
+  "turn-63250": [
+    "Because they are meant to delude us to thinking that AI is more powerful than it is, that AI is an independent entity, and we are about to lose control over it. And again, if you actually look at the technology, it doesn't really do that much. I've already spent a long time explaining to you how the actual technology works. You talk to a computer programmer, the person will tell you the same thing. If the person is honest, most of the people are not actually honest.",
+    "So they will put some hocus-pocus into their explanations. And quite honestly, a lot of them don't even know how the actual mechanism works. They just do their little part. But first of all, is my explanation of AI clear to you?"
+  ],
+  "turn-64274": [
+    "Yeah, I think it's clear enough. I think it's capable."
+  ],
+  "turn-64382": [
+    "Okay."
+  ],
+  "turn-64426": [
+    "But you don't think so."
+  ],
+  "turn-64494": [
+    "I think there are limited applications to Ai, okay? As it is. And the only way that they can get around that is if they make people believe that AI is more than it is, that AI is a living God or a living demon. All right. So again, there are lots of sources which tell us that these people who work in AI, they do involve the occult. All right. So can you very quickly just Google this? Do you have your phone?"
+  ],
+  "turn-65446": [
+    "I don't have my phone, but."
+  ],
+  "turn-65494": [
+    "You have to do this. Otherwise, it's hard for us to have a conversation."
+  ],
+  "turn-65598": [
+    "Can you Google something for us?"
+  ],
+  "turn-65678": [
+    "So New Yorker, Ronan Farrow, OpenAI, Summoning Demons."
+  ],
+  "turn-65758": [
+    "Thanks, Harold."
+  ],
+  "turn-65806": [
+    "So just look at this, okay? This is a direct quote from the New Yorker magazine."
+  ],
+  "turn-65926": [
+    "Sure."
+  ],
+  "turn-65966": [
+    "From an AI researcher who's telling Ronan Farrow, the reporter, that OpenAI is trying to summon demons."
+  ],
+  "turn-66102": [
+    "Do you want me to read it?"
+  ],
+  "turn-66146": [
+    "Yeah, just read it."
+  ],
+  "turn-66238": [
+    "An investigative report by Ronan Farrow and Andrew Morantz in New Yorker magazine details claims from an anonymous former OpenAI executive describing Sam Altman's scaling of AI infrastructure as building... ...portals from which we're genuinely summoning aliens. The comment emerged in the context of OpenAI's massive Stargate infrastructure expansion and data center plans in Abu Dhabi. You can read the full article at New Yorker magazine."
+  ],
+  "turn-66918": [
+    "Okay, look, they're using a lot of occult terminology. Stargate. Okay, this is an occult term that goes back thousand years to the Egyptians. Why is this entire project called Operation Stargate? Why are these researchers telling like Ronan Farrow, a reporter for the New Yorker, oh, we're trying to summon demons? Why is this happening? Because what they understand is everything is the occult. Everything, okay? What is money?",
+    "Money is just the occult. It's alchemy, right? Somehow, we've created a society where I take this piece of paper and people will slave over it. They will work 18 hours a day, driving themselves crazy to obtain more and more of it, thinking that this is the path to salvation. It's the occult. If you want true power, you have to practice the occult. And what is the occult? The occult is controlling and capturing the imagination of people and directing in a way that allows you to control them.",
+    "Money is a classic example of this. It's alchemy. What is alchemy? Turning lead into gold. We've accomplished that with money. We've taken, again, this worthless piece of paper and turned it into gold that everyone thirsts for. People are willing to slave in school and abandon their entire soul in order to go get a job, in order to abandon their oul, in order to obtain greenbacks, money, because they think this is a path to salvation, redemption, right?",
+    "AI is the same thing. And that's what these people recognize, that if you want true power, you have to practice the occult, right? So this technology by itself, I already told you, it does nothing. All it does is search and sort from a database. Big deal. But if you can get people to believe that there's a demonic energy to AI, if you can summon demons using Operation Stargate, then people will bow down before AI. Because people have this religious need that needs to be fulfilled.",
+    "And once they obey the AI, then you have control over them. And they do whatever you want. They don't even need to work for money anymore. They'll just work for the stupid AI. If you can get people to believe this. And this has been true throughout humanity. I mean, you know, people have been worshipping statues for thousands of years, believing that this statue is a manifestation of a divine being, right? And so that's the world that these people want to create."
+  ],
+  "turn-71142": [
+    "Before we continue, I just want to make sure that you don't feel that I'm being disrespectful to you in some way. Do you feel that I am?"
+  ],
+  "turn-71346": [
+    "I just feel that if you have I just feel as though you're kind of too wedded to a certain paradigm, if that makes sense. And you take it for granted that these people are not nefarious in any way and that they are perfectly reasonable. And I think it's because you're a byproduct of meritocracy. Because I know because I was a byproduct of meritocracy and you're basically indoctrinated into a certain deference to these people when I don't think this deference is actually deserved.",
+    "And I think that's how the meritocracy works. And if you did not behave this way, I think it would be very hard for you to do well in school."
+  ],
+  "turn-72322": [
+    "I guess there's a difference between me being sort of showing deference to these people or being wedded to the meritocracy and being disrespectful to you. Because I feel like in allowing you to say what you want and disagreeing with you when I disagree with you, that I'm being respectful and open."
+  ],
+  "turn-72722": [
+    "All right. Let me ask you this question. Do you think there's very little cheating in science? Some cheating or a lot of cheating in science? And what I mean like this, what I mean is, you know, as scientists, what you need to do is do an experiment and then tabulate results and then write a paper explaining your findings to a in the peer-reviewed journal. Yes?"
+  ],
+  "turn-73278": [
+    "No, I think that there is rampant cheating."
+  ],
+  "turn-73358": [
+    "And I would say there is a tremendous amount of cheating because what people don't appreciate is most of these experiments cannot be replicated. I'm saying the majority of these experiments cannot be replicated. So if you're a social scientist and you do a psychology experiment that shows one result, other people, if they try to replicate this experiment, can't actually do it. You can't get the same results. So there's a lot of cheating going on throughout science.",
+    "So if that's the case, then why would we assume that these computer scientists are extremely rigorous and precise in what they do? Right?"
+  ],
+  "turn-74206": [
+    "What is it? And again, I'm not trying to be, I'm really, I really am not trying to be disrespectful, but I'm wondering what it is that you're trying to convince me of right now. Are you trying to convince me that a lot of the people who are in power in tech, whether it's Mark Zuckerberg or Sam Altman, that these people believe in the occult and that they believe that they are summoning demons? Or you want to convince me that their goal is to have the public believe this?"
+  ],
+  "turn-74858": [
+    "So, okay, let me phrase it in this way. There's a widespread belief that there's a rigor to computer science that doesn't exist anywhere else. Because you're programming the software. And it's like building a bridge, right? If you screw up building a bridge, you will know you screw up the building bridge because it will collapse on you, okay? So we assign a certain level of faith to engineers, computer science. We were not assigned to lawyers and doctors because lawyers and doctors can just mix stuff up."
+  ],
+  "turn-75534": [
+    "I totally agree with that."
+  ],
+  "turn-75586": [
+    "We know that, okay?"
+  ],
+  "turn-75650": [
+    "And what I would say is, I mean, one way of putting it is that computer scientists work with formal languages. Formal languages, like mathematics, are very rigorous in that there are very specific rules. In that sense, I would say that I certainly believe that computer scientists are working in a rigorous fashion."
+  ],
+  "turn-75978": [
+    "But we also know that once you increase incentives too much, then people are much more liable to cheat. And right now, there's so much money in AI, right? And the incentives are just too high for people not to cheat."
+  ],
+  "turn-76294": [
+    "Oh, well, I wouldn't want to make any claim whatsoever about whether computer scientists are more likely to cheat or lie or defraud or steal than lawyers or doctors. That's an empirical question, and it could totally go one way or the other. So I mean, if what you want me to want to convince me of is that computer scientists are just as likely to be or more likely to be liars... ...or charlatans as doctors and lawyers.",
+    "Then you don't really need to convince me of that. I'm totally willing to just accept that as part of your argument and then assuming that we can move on."
+  ],
+  "turn-77026": [
+    "All right, all right. So let me complete my model to you, okay?"
+  ],
+  "turn-77086": [
+    "Sure."
+  ],
+  "turn-77130": [
+    "Because AI technology is not as impressive as people think it is. It has very limited applications."
+  ],
+  "turn-77274": [
+    "Can we talk about that, though, for a little bit? Because that seems to be something that we disagree about."
+  ],
+  "turn-77374": [
+    "Okay."
+  ],
+  "turn-77434": [
+    "Because sure, I mean, AI right now, it can't power robots that will walk among us and do everything that a human does. But AI I find extremely useful if I want to analyze a transcript for the podcast, or if I'm currently working with AI to help post things on social media, or if I want to do research on a project. It does seem extremely capable in the sense that it is able to displace people doing common jobs that can be performed on a computer.",
+    "And it's able to clearly make breakthroughs in mathematics. And again, we're only a few years into this technology, and it seems like it's going to, it's getting better and better. So I don't know what you mean when you say it's got such limited applications."
+  ],
+  "turn-78402": [
+    "so my kind of argument is this. If you take really smart people and give them AI, AI is an amplifier. So it amplifies your intelligence because you actually know what you want. You know how to use AI to achieve what you want, right? So AI is an amplifier. But AI cannot replace a smart person. So you cannot build an AI to come interview me and achieve the same result as if you are interviewing me. So that's something that we need to appreciate.",
+    "Technology historically has always been an accelerant or an amplifier."
+  ],
+  "turn-79250": [
+    "Yes."
+  ],
+  "turn-79310": [
+    "But it does not actually replace really smart, talented people. Now, you can make the argument this, okay? You can make the argument that we live in a world, we have too many people, and most of these people, quite frankly, are redundant. So you go, there's something called the 80-20 rule. I'm not sure if you've heard of this, right?"
+  ],
+  "turn-79702": [
+    "But."
+  ],
+  "turn-79726": [
+    "you go in a hospital. Guess what? Only about a fraction of the doctors are actually competent. The rest are not that competent. So you can make the argument that Ai would be good for that because AI would allow hospitals to become much more efficient because you get rid of the dead... ...wood and you let the good doctors do what they specialize in doing. You let AI amplify their impact, right? So they're able to do diagnosis much faster.",
+    "They're much able to communicate effectively with their patients. You can make that argument, but is that a society in which we want to live in? And also my question is, do you need AI to even to do that? Why can't you just fire those doctors and just go with your best doctors? I used to run schools and I used to work in a school. And when I ran a school, I believe in a very lean workforce. So I had very few staffers and I had teachers, but no full-time teachers.",
+    "They were all ad hoc, adjunct. They came, they taught their class, they were paid, well paid, and they left. Okay? And my students loved that school. It was efficient. It was student-centered. All their needs were taken care of. That's when I ran the school. A very lean, mean workplace that was focused on ensuring students learned. I've worked in schools where there were lots of teachers. And when you have lots of teachers, what happens?",
+    "Office politics. And what is office politics? Office politics means like no teacher can excel. Because if one teacher teaches better than other teachers, it makes every teacher look bad. So office politics was designed to ensure that the best teachers cannot perform or outperform everyone else. And how you did that was you took other teachers out to dinner, you had team meetings, you had lots of activities to build team spirit.",
+    "But that was just to make sure that everyone was a team player. And guess what? That's how most workplaces are. People themselves who are really smart will do really well. But if you put them in a group of people, these really smart people may not be that well performing because they need to take into consideration the feelings of pretty mediocre people around them. And it is something that I've observed. I mean, we can argue about this, but I'm just saying, like, most jobs tend to be redundant.",
+    "And they exist in order to keep people occupied. In schools, one thing that I've learned is that teachers are first and foremost focused on keeping their jobs. And that means doing as little as possible and maintaining solidarity so that you can defy the principal or any parents. And I would say that's true for most institutions, including universities."
+  ],
+  "turn-83870": [
+    "This is, again, I hope you don't think I'm being disrespectful, but this is my fault. I mean, I took an all-nighter here, so maybe it's just because I'm quite sleep deprived. But I don't understand the connection between this and whether or not AI is super capable. And I will, again, for the sake of argument, totally grant that AI at this point, I mean, it requires human data on which to train. It, I mean, requires humans to operate the data centers in which it runs, humans to give it the power that it uses.",
+    "And if it has somebody like me who's using it who has at least an IQ of 101, it can do some pretty good things. But to me, that doesn't mean it's incapable. It is still just a tool."
+  ],
+  "turn-84970": [
+    "Let's try a different strategy, which is like, how do the elite think and what do they want? Well, they want to create a more well-organized, more efficient society."
+  ],
+  "turn-85226": [
+    "I do believe that that's true."
+  ],
+  "turn-85302": [
+    "All right. And so for them, the question is like..."
+  ],
+  "turn-85406": [
+    "Wait, wait, wait, wait, wait. The elites or the counter-elites?"
+  ],
+  "turn-85546": [
+    "The elites."
+  ],
+  "turn-85586": [
+    "Okay, because I would think of, so in an earlier conversation, you described the elites are the people who can control the system and make the system serve them. Serve their needs."
+  ],
+  "turn-85886": [
+    "this is complicated, okay? But this is something to keep in mind, okay? Different layers of society, there are different competitions and there are different rules, okay? So the elite, as I said in a previous conversation, they exist in order to control policymaking to benefit them. They exist to capture the state apparatus in order to generate as much personal benefit to them as possible. But over time, the elite expands too fast because they have children or more people are brought into the elite.",
+    "In which case, your different factions emerge with different worldviews or strategies for how to best do this. And this is what's happening today, where in the United States, there's a clear demarcation or conflict between the global financial elite, as represented by Wall Street and the City of London, and the tech bros, Silicon Valley. And where this fight is being manifested is in cryptocurrency, right? So what is the power of the financial elite?",
+    "Their power is to print money, like you're issuing out loans, as well as to raise capital, right? So you're a company and you want to raise capital. How do you do so? You have to list on the stock market. And how do you list on the stock market? You have to go through one of the investment banks. Goldman Sachs, JP Morgan, who cares, okay? But it's a monopoly. If you are the counter elite, you're like, that's an inefficient system.",
+    "So we have a better system of how to do this, which is cryptocurrency, stablecoins, right? So rather than borrow money directly from the bank, you can now just buy a stable coin. So what's happening is in Washington, D.C., lawmakers are trying to institutionalize cryptocurrency. So cryptocurrency is just whatever company wants to issue, okay? Just think of it as a token, right? Now, last summer, the United States Congress, it just passed something called the Genius Act.",
+    "What the Genius Act did was link tokens to U.S. treasuries. So in theory, you could redeem your tokens for U.S. Treasuries. Okay? And this is what we call stablecoins, because before tokens were just worth as much as people believed they were worth, right?"
+  ],
+  "turn-89222": [
+    "But now they're tied to treasury."
+  ],
+  "turn-89274": [
+    "And now they're tied to U.S. Treasury because you could always redeem these tokens for U.S. Treasuries. All right. Now what they're trying to do is they're trying to pass something called the Clarity Act. What the Clarity Act is trying to do is provide a regulatory framework for stable coins, which means that by law, institutional investors like hedge funds and pension funds can now buy stable coins. Okay? And also, what's really important is also, with this regulatory framework in place, foreign savers like the Chinese and Japanese, they can now directly purchase stable coins.",
+    "And that's a workaround to buy U.S. Treasuries. If you think about it, if Clarity Act passes, it negates the financial monopoly. Because now companies can just issue tokens, stablecoins, in order to raise capital. It doesn't need to go list on the stock market anymore. Goldman Sachs, JP Morgan aren't able to do any underwriting anymore. And now, if you're a consumer, you can just buy stable coins to invest in a company.",
+    "You don't have to buy stocks anymore. And companies can issue you tokens as a loan if you provide collateral, right? So what this is doing is bypassing the traditional banking system. Okay? And this is an example of where the elites and the counter elites are fighting over the best strategy of how to govern. The old elite, they want to maintain the traditional banking system. The tech bros want to use the cryptocurrency system because the idea is that this will be a much more stable, much more transparent, and much more open system than the current banking system."
+  ],
+  "turn-91550": [
+    "Again, I don't understand how this, even accepting that there is this battle between the counter-elite tech bros and the financial elites. I don't understand how this connects to whether or not AI is capable, which is what we were talking about a couple of minutes ago when I said I didn't understand the connection to the doctor story."
+  ],
+  "turn-92038": [
+    "Right, okay. So it doesn't matter if AI is capable."
+  ],
+  "turn-92170": [
+    "Okay, so we should set that aside."
+  ],
+  "turn-92226": [
+    "Yeah, it's not relevant. What's relevant is can you get people to believe that AI is omniscient and omnipresent, okay?"
+  ],
+  "turn-92434": [
+    "And I wouldn't say that I believe that by any means that it's omniscient or omnipresent, but what I suppose the world of tech has effectively convinced me of a couple of things. I'm convinced that AI is super capable and poised to displace tons of jobs."
+  ],
+  "turn-92870": [
+    "I believe that because most jobs are redundant."
+  ],
+  "turn-92922": [
+    "But it's"
+  ],
+  "turn-92958": [
+    "not because AI is capable. I'm just saying that most jobs are just redundant. They're useless."
+  ],
+  "turn-93154": [
+    "Well, even useful jobs, I mean, take graphic designers, for instance. I mean, I think designing labels for people's brands or, I mean, designing book covers, that's a useful job, but it's something that AI can do and it can displace graphic designers. So those are, I mean, that's just one example of a whole class of people that I could see AI displacing. And whether or not this was a sort of operation of tech, whether or not you want to think Eliezer Yudkowsky or Nate Soares are in the employ of the tech industry, which I don't think they are, but I mean, sure, it's possible that they are.",
+    "But I am also pretty convinced, based on conversations with them, that whether AI is autonomous or not, it's irrelevant. AI could pose a huge danger to us, whether it's used by nation states or by just rogue actors to create biological weapons."
+  ],
+  "turn-94322": [
+    "I don't understand. How can AI be a threat to us?"
+  ],
+  "turn-94470": [
+    "So one example is, I mean, the hacking that we already see now. It can be very distable. Hugging face? Hugging face or financial institutions, the Australian government recently."
+  ],
+  "turn-94718": [
+    "you take these AI companies at their word, right? You think that they're being truthful when they say that, oh, We don't know how these autonomous AI agents conspired amongst themselves and they broke all the parameters that we set on them. And yeah, you believe these people?"
+  ],
+  "turn-95214": [
+    "I do believe these people. I haven't actually questioned whether or not I think the hugging face incident could be faked or some of the other things, the other hacking incidents, but you think you believe that they didn't actually?"
+  ],
+  "turn-95474": [
+    "said that once incentives are too high, people are incentivized to cheat, lie, and steal."
+  ],
+  "turn-95590": [
+    "Sure, I totally agree."
+  ],
+  "turn-95646": [
+    "And Anthropic is about to go public. It's a $2 trillion valuation. How can it justify a $2 trillion valuation? Well, if you read the prospectus, it is the weirdest thing in the world because it's almost like a quarter of the prospectus. We should go into the financials. It's about risk. Oh, there's a risk that we could destroy of humanity. I don't want to hear that crap. I want to hear how you will make money. And they don't discuss that at all, right?",
+    "So them discussing Hugging Face, them discussing the threat to humanity. It's a way to divert attention from the fact that these companies don't know how to make money."
+  ],
+  "turn-96634": [
+    "So I'm perfectly willing to grant, again, that a lot of this is marketing. That, oh, we need people to know that our technology is so dangerous and powerful because that way people, like everybody wants to be using the best AI. So if Anthropics AI is the one that's capable of hacking all the government organizations, of course they're going to be telling people that. But I mean, can I say for certain that I know that these incidents were real?",
+    "No, I can't say that, but I'm inclined to believe that they are."
+  ],
+  "turn-97438": [
+    "Okay, well, I'm inclined to believe they aren't because, again, all that I know about AI tells me that that didn't happen. And again, if you think that there's something wrong with my understanding of AI, you can tell me. But I've been very clear about how I understand AI to work. You establish a database, a data set that is the sum total of all knowledge in your universe, and then you use a algorithm, a neural network, in order to search and sort this information in a way that most appeals to the user.",
+    "And so given that, I don't know how this translates into humanity is doomed."
+  ],
+  "turn-98414": [
+    "So you don't think that AI can be used to hack at all?"
+  ],
+  "turn-98526": [
+    "What do you mean by hack? I'm not quite sure what you mean by that."
+  ],
+  "turn-98654": [
+    "So I guess an example would be, you do not think that somebody can use AI and gain access to a system that they're not authorized to gain access to and take information from that system."
+  ],
+  "turn-98878": [
+    "Why can't people do that without AI now?"
+  ],
+  "turn-98970": [
+    "I mean, people certainly do do it now."
+  ],
+  "turn-99018": [
+    "Right, so what's the difference?"
+  ],
+  "turn-99062": [
+    "But they might be able to develop new ways of doing it or do existing ways better using AI. I'm not a hacker, but that just seems pla- like it doesn't seem outside the realm of possibility that I mean it seems quite possible that people are doing this. I would need a very good reason to believe that it's not possible."
+  ],
+  "turn-99510": [
+    "But why do you need a good reason to believe it's not possible? And why not a good reason to think it is possible? Why are you choosing to ear on the side of the AI companies as opposed to against the AI companies? Why are you so sympathetic towards these AI companies?"
+  ],
+  "turn-99974": [
+    "So I think all else being equal, I think that the news organizations, et cetera, I want to take them at their word. I think you don't, and I understand that. I don't think that we're being told the truth 100% of the time, but I guess it's just I have a basic faith in institutions because there are lots of checks and balances within them. And that doesn't mean that some things don't slip through the cracks. But it seems like it would be very difficult to fabricate all of these instances."
+  ],
+  "turn-100694": [
+    "Why is the U.S. military losing this war against Iran right now?"
+  ],
+  "turn-100782": [
+    "I asked you that earlier."
+  ],
+  "turn-100830": [
+    "I know why, but I'm asking you why you think this is happening."
+  ],
+  "turn-100906": [
+    "That's a good question. From talking to people who are much more educated about it than I am, for instance, Robert Pape a couple of days ago, he said that he attributes two main things to us not winning this war at this point. One is Iran's control of the Strait of Hormuz and how they have this stranglehold, this chokehold on oil. And another is their use of cheap drones in something that we can't combat. But I will totally admit that again, I don't understand really why a country as big and as ostensibly powerful as the United States can't defeat Iran.",
+    "really makes sense. And also,"
+  ],
+  "turn-101706": [
+    "like, why didn't these extremely well-paid officials in the United States government tell Donald Trump, actually, you know, the first thing the Iranians are going to do when you start bombing them is close off the Strait of Hormuz. There's nothing we can do about it. And our aircraft carriers aren't any good against the Iranians because they have these cheap drones. Did no one tell Trump this?"
+  ],
+  "turn-102210": [
+    "But I also don't think we're in disagreement about the possibility that personal interests play a huge role in politics, even at the highest level."
+  ],
+  "turn-102398": [
+    "No, wait, wait, wait, wait. So I'm confused here. Why do you assume that personal interest plays a role in politics, but personal interest doesn't play a role in the mainstream media or in universities or in any bureaucratic institution?"
+  ],
+  "turn-102670": [
+    "No, I do."
+  ],
+  "turn-102750": [
+    "Right, then why do you take what their word, the mainstream news, at face value? Why do you believe what the New York Times tells you?"
+  ],
+  "turn-102894": [
+    "I don't believe everything the New York Times tells me, but I need a very good reason to believe that it is not true when it tells me something. And I don't feel that I have a very good reason to believe that the Hugging Face incident was fabricated. It very well could have been, but I haven't been given a smoking gun, so to speak, that tells me it was fabricated. I think a good way of putting it is that extraordinary claims require extraordinary evidence to back them up."
+  ],
+  "turn-103550": [
+    "No, no, no, no. You see, that's a problem here, okay? They're the ones making the claim this happened, right? So that's an extraordinary claim. And therefore, they should have evidence that this actually happened, correct?"
+  ],
+  "turn-103954": [
+    "You don't think that there's any evidence that it actually happened?"
+  ],
+  "turn-104030": [
+    "No."
+  ],
+  "turn-104058": [
+    "Okay, interesting. I mean, this is a point where, as with our... Why should the"
+  ],
+  "turn-104218": [
+    "onus or the burden of proof be on the skeptics as opposed to the people making these claims? That makes no sense to me."
+  ],
+  "turn-104394": [
+    "No, that seems like a fair point. I am totally right now making the assumption that there is evidence that the Hugging Face incident happened. And I would invite all of our listeners to check that out. And if there is no evidence whatsoever that Hugging Face happened,"
+  ],
+  "turn-104762": [
+    "look, look, look, these are the same people, Open AI, who told Ronan Farrow that they're using Operation Stargate to summon demons to our world. I don't understand why people take, like, hear about Hugging Face, like, okay, yeah, I believe that. And then they hear, like, in The New Yorker, one of the most prestigious magazines in the world, by Ronan Farrow, who is one of the most accomplished reporters in the world, that these AI researchers are telling him that they're using it to summon demons.",
+    "And people are like, oh, that's just, you know, don't worry about that. Let's just ignore that."
+  ],
+  "turn-105542": [
+    "Okay, so about that in particular, I did read that out loud a couple of minutes ago, and people will have seen that, or they can scroll back to see it. And if I recall correctly, it was an ex-openAI, an anonymous ex-openAI executive said this, right? So one, it's anonymous. That's fine, but it makes me question things. I'm still assuming that it's the New Yorker. They verified their source, and it was indeed an anonymous ex-openAI executive.",
+    "One, I mean, I need to question why he's not an OpenAI executive anymore."
+  ],
+  "turn-106338": [
+    "You should interview Karen Hao because she's a very good reporter. She wrote a very good book. And she heard from another source, an OpenAI, that that's exactly what they're doing."
+  ],
+  "turn-106662": [
+    "But even if it was an ex-OpenAI executive, people have crazy psychic breaks. I mean, do you believe that they're summoning demons there?"
+  ],
+  "turn-106922": [
+    "Again, once you understand the occult and its impact on society, then all of this makes sense, okay? So what I'm going to do is I want to step back and go into some theory."
+  ],
+  "turn-107154": [
+    "But can you answer that? Like, do you believe that there are demons out there and they are summoning them?"
+  ],
+  "turn-107382": [
+    "What I believe is that there are many different consciousness in the world. So what are we? We are embodied consciousness. Okay. Does that make sense?"
+  ],
+  "turn-107622": [
+    "I see."
+  ],
+  "turn-107670": [
+    "But then there has to be disembodied consciousness as well."
+  ],
+  "turn-107758": [
+    "So you believe that there is embodied and disembodied consciousness."
+  ],
+  "turn-107878": [
+    "And this is what people call historically spirits, right?"
+  ],
+  "turn-107934": [
+    "Okay, so"
+  ],
+  "turn-107962": [
+    "you look at any society and they're like, well, there are jinn, there are fairies, there are spirits all around us. And I think this is the way of them describing a disembodied consciousness that they feel in their lives. And, you know, it's really interesting, but people who never actually went for the meritocracy, they intimately understand this. But if you've been for the meritocracy, it is almost like impossible to explain to you or convince you that these disembodied consciousness exist.",
+    "I don't know for a fact that they exist. I cannot prove to you."
+  ],
+  "turn-108770": [
+    "I can't prove that they don't exist."
+  ],
+  "turn-108826": [
+    "But I think that's what they're referring to. They're referring to the idea of disembodied consciousness that's floating all around us. And they believe that AI could provide a body for them. So in their minds, they are literally summoning demons for Operation Stargate. Will they be able to succeed? I don't think so. But, and it's really important. According to the cult, they don't have to succeed. They just have to try and convince people, enough people, that they can succeed.",
+    "All right. So having said that, let me go into some theory."
+  ],
+  "turn-109762": [
+    "All right."
+  ],
+  "turn-109802": [
+    "So have you studied Immanuel Kant? All right. So Immanuel Kant was a breakthrough in philosophy because he makes the argument that an objective reality doesn't exist, right?"
+  ],
+  "turn-110058": [
+    "I don't know about that. He thinks that there's something called the Noumenon out there, which is something that we can't ever make direct contact with."
+  ],
+  "turn-110226": [
+    "Right."
+  ],
+  "turn-110254": [
+    "I don't know."
+  ],
+  "turn-110310": [
+    "Things in themselves. He calls it things in themselves, right? The only thing that we can experience is the phenoumena, right? Things that we see. And what he also argues is the nomena doesn't really matter. Who cares? It's just energy waves. It could be anything, okay? But we can never actually access it. Why? Because our brains are searching a way to filter out the nomena to create the phenomena. We filter the nomena to create the phenomena because we can never actually interface.",
+    "We can never actually understand the noumena. It would drive us insane. So we use time and space to filter out reality and turn it into the phenomena, the things that we can see, things that we can interact with. And this is a revolutionary breakthrough in philosophy, as you know, because for the longest time, philosophy was dominated either by the empiricists or the rationalists. And this was meant to be a compromise, the idea that we are active participants in the universe, okay?",
+    "So that's Kant. Now, you also know Plato's Allegory of the Cave, right?"
+  ],
+  "turn-112118": [
+    "And."
+  ],
+  "turn-112142": [
+    "the idea of Plato's Allegory of the Cave is you have a lot of people chained up and they're all sitting on a wall. The only thing they can see are shadows projected from a large fire. And there are people around this fire that are actually manipulating the shadows to create this false reality. And that's the idea here. What Kant tells us is our consciousness is what creates reality. And Plato is telling us that there are people, the elite, who manipulate our consciousness in order to create a reality that is false, right?",
+    "And so we've discussed capital and how that's a false reality. It's an alchemy. He said, you turn money into gold, paper into gold, right? But AI is the same thing where AI, it's just a dumb machine. It's just a recursive loop, right? But if you can get people to believe that it's alive, then anything is possible. Then people will bow down and worship the AI, right? Let's just do a thought experiment. Let's just say, like, you know what?",
+    "Let's just take an AI, okay, a ChatGPT, give it an avatar, like Satan, what? Who cares? And then, you know, we'll project this avatar onto an indigenous people in the Amazon. Would they believe that this was Satan? Would they worship Satan? Yes, they would. Right? So what's stopping these companies from doing the same thing at scale to the entire world? Nothing. Nothing really. Just a memory of something before. But that memory can be wiped out.",
+    "Right? Just as we wiped out the memory of what money used to be before. Right? I mean, like, I mean, everything that I've said about money is lost history. Sabbatean Frankism is our lost history. But if I tell it to you, it makes sense because it helps you tie up a lot of knots that you learned in history class, which never really made sense to you. Which means that history can be manipulated. So wait a generation, okay?",
+    "You have a new generation, you control the schools, you control the textbooks, and they're taught that AI is alive. And they'll believe that. They'll read about the Hugging Face incident. They'll read about Operation Stargate and how that infused consciousness into AI. And they won't know anything else, okay? Because everything's been extracted from them. No one actually knows how AI works. Just as no one actually understands how the banking system works.",
+    "You talk to the economists at Stanford. A lot of them actually don't understand this basic principle of how capital was created in the first place. They don't understand things like the Bank of England, the Glorious Revolution. I wasn't taught this stuff at Yale. I'm pretty sure that if I were to go to Yale and talk to these Nobel Prize-winning economics professors, I explained to them this history of capitalism. They would think, you're just insane.",
+    "What do you know? What's your evidence for this? Do you have any peer-reviewed journal articles to show me? Cite your sources. That's exactly what would happen. But if I were to tell a normal person, this history of capitalism would be like, oh, that makes sense. Right? So the same thing will happen a generation from now where AI becomes the new God and everyone bows down before it. And we believe that it's always been around.",
+    "And that was AI that's curating history and leading to development that we live in today."
+  ],
+  "turn-117374": [
+    "I think that we should save Kant and Plato for another conversation. I think that the quote that you showed me was interesting about the summoning demons. You said that you believe that there's consciousness, embodied consciousness, then there's disembodied consciousness. And what is most important, what's most significant, is that the AI executives have the world believe that they are summoning spirits. But do you also believe that the AI executives are in fact summoning spirits?"
+  ],
+  "turn-118062": [
+    "They believe they are, yes."
+  ],
+  "turn-118134": [
+    "But do you believe that they are?"
+  ],
+  "turn-118202": [
+    "I do, but there's a difference."
+  ],
+  "turn-118250": [
+    "Yeah, tell me."
+  ],
+  "turn-118326": [
+    "They believe they're summoning demons into the machine. So it becomes a ghosting machine, right? I think they're summoning demons into our consciousness."
+  ],
+  "turn-118578": [
+    "Interesting."
+  ],
+  "turn-118618": [
+    "There's a difference."
+  ],
+  "turn-118670": [
+    "A big difference. How do you believe that they're summoning this disembodied consciousness into our consciousness?"
+  ],
+  "turn-118842": [
+    "What is Hollywood?"
+  ],
+  "turn-118898": [
+    "What do you mean?"
+  ],
+  "turn-118954": [
+    "What is Hollywood?"
+  ],
+  "turn-119006": [
+    "A film industry."
+  ],
+  "turn-119046": [
+    "No, it's not. It's an occult industry. Its job is to summon ideas into our minds, to capture our imagination, and make us see the world the same way. Right? That's what Hollywood is. That's what all media is. They practice the occult. Hollywood. Right?"
+  ],
+  "turn-119658": [
+    "Interesting. Well, I just wouldn't refer to ideas as spirits. So I'm wondering if this is just a different use of..."
+  ],
+  "turn-119930": [
+    "Well, historically, they have referred to ideas as spirits, okay? So you read Homer, the Iliad, the Odyssey, right? What was Apollo? What was Athena? They were ideas, right? That became manifest. Because at that time, people expressed themselves using metaphors. So I'm not sure if you read Homer, the Iliad, the Odyssey."
+  ],
+  "turn-120466": [
+    "I have read."
+  ],
+  "turn-120522": [
+    "Okay, all right. Well, the argument that Julian Jaynes makes in his book, The Bicameral Mind, is that historically, we have two compartments to the brain, the left and the right hemisphere. And what would happen is the right hemisphere would interact with all this disembodied consciousness and basically take these ideas and transform them into embodied figures, right? So like creativity became Apollo and wisdom became Athena, okay?",
+    "And the left brain would try to systemize and categorize this in a more reasonable way to allow us to function society. And he said that the major revolution was with the coming of monotheism and the destruction of this pagan world so that we basically shut off our right brains. And then these disembodied consciousness like Athena, Apollo that we believe to be all around us became concepts in the left brain. So we basically shut off the right brain to focus on the left brain.",
+    "And that is what gave rise to modern day consciousness. That's why we're having the conversations that we're having, right? That's why we discuss things and ideas. Whereas before, people would have the same conversations. If you read the Republic, right? The conversations they were having were not as, they were just as deep, even deeper than the conversations that we have in real life. But they were using metaphors as opposed to abstractions, right?",
+    "So before they would say Apollo, we would say creativity. Before they would say Athena, we would say wisdom. I think that back then was a superior system because they appreciated the impact of ideas in our everyday lives. Ideas were real, right? So Athena would embody herself and follow Telemachus and Odysseus around, guiding them, okay? And you can argue that ideas are the same thing, but because we've abstracted ideas into just concepts, we don't appreciate their impact on us.",
+    "And that's something that I've been trying to emphasize throughout these conversations where, look, Freemasonry still exists as an idea. And therefore, you can actually believe Freemason as a God that works around us. Sabbatean Frankism still exists as an idea. And so you can think of it as a God that's working around us. So even though, you know, Sabbatean Frankism may be defunct as a movement, even though no one actually considers himself or herself to be a Sabbatean Frankist, it still has a huge impact in society because these ideas have become a disembodied consciousness that is able to manipulate society around us.",
+    "Okay? And that's what I believe."
+  ],
+  "turn-124258": [
+    "What other key points of your beliefs about AI do you think that we ought to touch on in this conversation so that our listeners have a comprehensive view of... ...your understanding of the topic?"
+  ],
+  "turn-124510": [
+    "I think there'll be an AI bubble collapse because there just isn't enough liquidity to support this bubble continuing. I mean, eventually it's going to burst because there's not enough air coming in, right? And this is going to force the government to bail out the AI industry. And then we will move towards a Palantir police state, right? So think of like Minority Report, where they were able to do predictive policing.",
+    "We're very much moving towards that world. But something that these AI tech bros don't appreciate is so I'll go over the reasons why I think this AI control grid will fail ultimately. The first major reason is these AI tech bros don't really understand global supply chains. So, everything software has to be based on hardware. Because software is a manipulation of hardware. Okay? So, it doesn't matter how good your software is, you need the hardware to be just as good.",
+    "The problem is that the hardware comes from the global supply chain. So if you look at semiconductors, there are three critical elements in semiconductors. There are silicon, there are germanium, and there are gallium. Most of this is produced in China because they are often byproducts of manufacturing processes. But then you also need lithium, which comes from South America. And then copper. So basically, it's a global supply chain.",
+    "Now, let's imagine this global supply chain breaks down. Then you can't actually source this material, which means that you can't actually build out your databases or your data centers. So there is a physical constraint to the amount of compute that you can have in the world. Okay, so that's one major problem. Second major problem is to appreciate that every time an elite has attempted to impose its authority on the human population, humans have rebelled.",
+    "And this includes the meritocracy. And I think the same thing will happen with AI control grid. Never underestimate the human imagination, human innovation, or human ingenuity. And the Houthis and the Iranians have demonstrated this in the Middle East, where the Americans used the most advanced weapon system, and this war is basically a dumpster fire. I mean, the same thing can happen with the AI build out, where if you try to enforce a control grid, then people will eventually rebel because people aspire to freedom.",
+    "That's what really matters in life, freedom. The third thing is you can never overestimate the stupidity and the arrogance of the elite. They are not as smart as people believe them to be. I went to Yale. I was not impressed by my classmates or my professors at Yale when I was an 18-year-old or 19-year-old. And Yale is what produces the elite. You're at Stanford, so you know the same thing. Where, quite honestly, the people at these schools are no different from most people.",
+    "Maybe they're more ambitious, maybe they're more hardworking, but they're not that different. But in terms of arrogance, they're very, very different. And the Greeks talk about this a lot, where hubris is the great tragic flaw of humanity. And arrogance is, and hubris is what leads to the downfall of great empires. So no matter how rich you become, no matter how powerful you become, you can't escape hubris. And this is what will lead to their downfall.",
+    "So I don't think the tech bros will succeed. I don't think this control grid will happen in our lifetime. It might happen later on, but it won't happen in our lifetime because the resistance will be too great to the AI control grid. And I think that ultimately the story that we should be focusing on is not the superiority of technology, how brilliant and sophisticated it has become. What we should really focus on is the enduring resilience and spirit of humanity.",
+    "That's the real story, and that's something that we should celebrate and cherish."
+  ],
+  "turn-130498": [
+    "Well, that's something that we can both agree on. So I think that's a good note on which to end this third conversation of our marathon day. Jiang, thank you so much for having these conversations with me."
+  ],
+  "turn-130786": [
+    "Thanks, Robinson."
+  ],
+  "turn-130822": [
+    "Okay, I will be curious to hear whether you found that conversation as peculiar as I did. And I got so much out of it, though, even if I don't agree with Jiang about close to anything on this topic. And I really don't even understand his thinking that much either. But this just makes me even more grateful to him for joining me on the show, actually. And I'd like to share some reflections about the episode now and then about the three-part series as a whole.",
+    "So as I thought about this conversation, my mind kept jumping back to evidence. So what does count as evidence? And when is it reasonable to trust other people? And how should we choose between different explanations? I'm not just trying to criticize Jiang's positions here. My hope is also to evaluate my own as well. First, at the heart of our dispute was Jiang's claim that Sam Altman is trying to summon demons through data centers.",
+    "Now, I totally discount paranormal claims. So if anyone claims to have experienced something paranormal, my first thought is that they are mistaken, confused, lying, or that something else is going on. And mainly, I think this comes from the conviction that science has an excellent track record for explaining things in a way that boils down to physics. But I was wondering how this could be justified more transparently or cleanly.",
+    "So I recalled a conversation I had with Tim Maudlin a month or so ago, which still hasn't come out, in which he brought up David Hume's writings on miracles. And Tim, I'm sure, does a better job of explaining the key points than I will, but I'll do my best. Throughout our lives, we accumulate evidence through testimony from others and also from direct experience. People's testimony often corresponds to reality, but we also know that people lie, misremember, make mistakes, and so on.",
+    "On the other hand, experience teaches us how nature behaves, and a miracle is just a violation of a law of nature. For Hume, then, accepting testimony that contradicts a law of nature would require evidence sufficiently strong that would make the report's falsehood less likely than the miraculous event. Jiang's main piece of evidence is that an AI executive claims Sam Altman is summoning demons. But what then could make this claim so credible as to outweigh my accumulated experience of the world?",
+    "I guess it would help if I knew more about the unnamed executive, such as that he was Sam's best friend, or if he had extensive photographic records, stolen diary entries from Sam, or evidence of a well-documented interest in demonology. But actually, let me read the quote from The New Yorker, the whole paragraph, because it's quite interesting. The truth of this is we're building portals from which we're genuinely summoning aliens, a former OpenAI executive said.",
+    "The portals currently exist in the United States and China, and Sam has added one in the Middle East. He went on, I think it's just like wildly important to get how scary that should be. It's the most reckless thing that has been done. First off, the executive says aliens, not demons. And I think that distinction really matters because Jiang kept referring to it as demons. But if you read the articles, there's no other mention of aliens either.",
+    "It's quite clear from the context that the executive is speaking metaphorically about the development of advanced non-human intelligence, which very few people, myself included, are disputing. Anyway, second, building off of the inference to the best explanation material that I discussed at the end of the last episode, we have two proposed explanations for the data centers themselves. Mine is that Sam, Altman, et al.",
+    "are building infrastructure for their AI business, whereas Jiang's adds an occult purpose. So trying to summon demons or getting other people to believe they can. The question then is, given my evidence, how should I select between these two explanations? Let's think about that. So I favor the business explanation because I have a great deal of first-hand experience with the technology, with the products, with at least some of their customers, with the financial incentives of the business, and so on.",
+    "And this seems like pretty good evidence to motivate the construction of data centers. Jiang's occult, I don't know if it's occult or occult, occult explanation adds this secret clandestine purpose that would require independent evidence I don't have. Granted, Jiang does mention a book that he thinks I should read, and I haven't read it, but based on how unpersuasive I find his interpretation of the alien summoning quotation and then everything else I know about the world, it just doesn't seem worth my time to check out.",
+    "His explanation does strike me as a story that fits the evidence, but I still haven't been given independent evidence for it. And this doesn't mean that such evidence doesn't exist or couldn't exist, but I have no good reason to think it does. And I have plenty of good reasons not to. So those first two issues that I just mentioned, they didn't cause me any trouble, but the third one did because Jiang had a strong point that in the moment I didn't really have a compelling answer for, which is what prompted these reflections.",
+    "And when he mentioned the Hugging Face incident, I said that I believed the reporting, but I hadn't personally examined the underlying evidence. And when he asked me about it, I didn't even know what it was. Now, I think he's totally right that we shouldn't trust everything we read in the newspaper. Not only are there plenty of mundane errors printed every day, but newspapers can pass on information from people who are lying.",
+    "I mean, think of companies like Enron or someone like Bernie Madoff. And then there's government misinformation, there's editorial spins, and the list just goes on. But now I've had some time to think about how to answer Jiang. And what I'd say is this. There are plenty of really good reasons to provisionally trust a major newspaper like the Wall Street Journal. It has a pretty strong track record of delivering accurate information.",
+    "It often has identified sources and accessible evidence that's been corroborated by multiple people. And I think it takes its duty pretty seriously to correct mistakes and get its reporting accurate. But there are, of course, also reasons to be cautious, and they range from there being incentives to exaggerate to cognitive biases. So my confidence in something might be higher because I've heard it from multiple sources, but then I might look deeper and find that they'd all gotten the information from one source.",
+    "In the case of Hugging Face, though, there is, now that I've looked into it, an abundance of publicly available evidence. There's OpenAI's reports, there's Hugging Face's technical reconstruction, there are independent investigations, and so on. So the amount of collusion it would have taken to fake this is just staggering. And the consequence of even one serious misstep would be so huge that it would dwarf any incentives for fabricating the evidence.",
+    "But to Jiang's point, no, I don't know that everything the Wall Street Journal prints must be true. But I have plenty of good reasons to provisionally trust the majority of what it prints. And if I were going to doubt something, I would need very strong evidence or very strong reasons to do so. And none of that is really available to me in the Hugging Face incident. Okay, so those are my three sort of particular reflections about this episode.",
+    "But now that this three-part series is all said and done and Pins the Podcast is wrecking my couch, there are some things I'd like to say about it more generally. So early on in hosting a podcast, I stopped looking at comments because negative comments have an outsized impact on my mental state relative to the positive comments. But because I was so concerned about being banned from YouTube for posting these, I was monitoring the situation more closely.",
+    "And one thing that really blows my mind is how many people were upset by these episodes, especially when I found them so useful. So first, they were definitely useful for my intellectual growth because they pushed me to examine questions about evidence and explanation that are important even in everyday life, such as when I now read the newspaper and a bid to be slightly, at least slightly more informed for these interviews.",
+    "And second, they were useful for my personal growth, I think. I mean, it feels good every now and then to stand by something I think is defensible despite people's anger. I don't know. It's good for self-esteem, I guess. Then there were useful developments for the show. I hadn't expected to cover conspiracy theories the way we did or AI and the occult. It was a day full of surprises for me. And they're not topics that I want to revisit every week or ever necessarily.",
+    "In the case of AI and the occult, I think once was enough. But it did provoke me to start recording these outros, which I find constructive. And it opened up more options for subjects I could cover in interviews. Most of the comments I saw were either saying that I was an idiot, that Jiang is an idiot, or that people hated or loved my introduction and outro. So it just wasn't super conclusive. And there isn't really too much for me to comment on without coming off as annoyingly defensive.",
+    "But I am glad that some people found these conversations and what I added to them net positive. That being said, going forward, I'm thinking a brief introduction and a more extended outro could prove useful, maybe with points of agreement and disagreement, some general reflections, responses to comments, if there are any asking substantive questions or saying something particularly interesting, and then performance of ministerial duties and so on.",
+    "And I would love to hear what you think of this structure and if there's anything else you'd like me to regularly conclude. But until next week, I hope that you enjoyed all of this."
+  ]
+}

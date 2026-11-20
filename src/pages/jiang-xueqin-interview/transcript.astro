@@ -1,6 +1,9 @@
 ---
 import dialogue from '../../data/jiang-xueqin-transcript.json';
 
+import englishDialogue from '../../data/jiang-xueqin-transcript-en.json';
+
+const englishParagraphs: Record<string, string[]> = englishDialogue;
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const interview = `${base}/jiang-xueqin-interview/`;
 const video = 'https://www.youtube.com/watch?v=Gkq-BaA0-Pk';
@@ -18,7 +21,7 @@ const labels: Record<string, string> = {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#272a2b" />
-    <meta name="description" content="江学勤与 Robinson Erhardt 第三次访谈的中文对话逐字稿，附原声播放。" />
+    <meta name="description" content="江学勤与 Robinson Erhardt 第三次访谈的中英文对话逐字稿，附原声播放。" />
     <title>完整访谈（逐字稿） · 江学勤访谈</title>
     <link rel="icon" href={`${base}/favicon.png`} />
     <style is:inline>
@@ -50,6 +53,9 @@ const labels: Record<string, string> = {
       .interview { color: var(--sage); margin: 0; font-size: 13px; }
       h1 { margin: 5px 0 8px; font-size: clamp(28px, 4vw, 48px); line-height: 1.3; letter-spacing: -.03em; }
       .source-note { max-width: 53em; margin: 0; color: var(--muted); font-size: 14px; }
+      .language-switch { display: inline-flex; gap: 2px; margin: 8px 0; padding: 2px; border: 1px solid var(--border); border-radius: 9px; }
+      .language-switch button { min-height: 44px; padding: 2px 15px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; font: inherit; font-size: 14px; }
+      .language-switch button[aria-pressed="true"] { background: #405047; color: #e0eddf; font-weight: 650; }
       .search-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 15px; padding: 13px 0; border-block: 1px solid var(--border); }
       #search { flex: 1 0 210px; min-width: 0; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: #222626; color: var(--cream); font: inherit; }
       #search::placeholder { color: var(--muted); }
@@ -111,7 +117,11 @@ const labels: Record<string, string> = {
       <header class="intro">
         <p class="interview">Robinson Erhardt × 江学勤 · 第三次对谈</p>
         <h1>完整访谈（逐字稿）</h1>
-        <p class="source-note">按原片顺序排列的中文字幕。说话人依据原声区分，少量重叠发言及字幕可能有识别误差。</p>
+        <div class="language-switch" role="group" aria-label="逐字稿语言">
+          <button type="button" data-lang="zh" aria-pressed="true">中文</button>
+          <button type="button" data-lang="en" lang="en" aria-pressed="false">English</button>
+        </div>
+        <p class="source-note">按原片字幕整理，少量重叠发言可能有识别误差。英文字幕未收录的简短应答按中文字幕译出。</p>
       </header>
       <div class="search-row">
         <input id="search" type="search" aria-label="搜索对话" placeholder="搜索对话内容" autocomplete="off" />
@@ -129,10 +139,14 @@ const labels: Record<string, string> = {
         {fullInterview.map(({ id, speaker, paragraphs }) => (
           <article class="turn" id={id} data-speaker={speaker}>
             <header class="turn-header">
-              <h2>{labels[speaker]}</h2>
+              <h2>
+                <span data-version="zh">{labels[speaker]}</span>
+                <span data-version="en" lang="en" hidden>{speaker === 'host' ? 'Host · Robinson Erhardt' : 'Jiang Xueqin'}</span>
+              </h2>
               <button class="star" type="button" aria-label="收藏此段发言" aria-pressed="false">☆</button>
             </header>
-            {paragraphs.map((paragraph) => <p>{paragraph}</p>)}
+            <div data-version="zh">{paragraphs.map((paragraph) => <p>{paragraph}</p>)}</div>
+            <div data-version="en" lang="en" hidden>{englishParagraphs[id].map((paragraph) => <p>{paragraph}</p>)}</div>
           </article>
         ))}
       </div>
@@ -149,21 +163,29 @@ const labels: Record<string, string> = {
       const highlightStatus = document.getElementById('highlight-status');
       const highlightKey = 'jiang-xueqin-transcript-highlights-v1';
       const paragraphs = new Map();
-      const turns = [...document.querySelectorAll('.turn')].map((turn) => {
+      const languageButtons = document.querySelectorAll('.language-switch button');
+      let language = 'zh';
+
+      function indexVersion(turn, lang) {
+        const [heading, body] = turn.querySelectorAll(`[data-version="${lang}"]`);
         const blocks = [];
         let text = '';
-        for (const [index, node] of [...turn.querySelectorAll('h2, p')].entries()) {
+        for (const [index, node] of [heading, ...body.querySelectorAll('p')].entries()) {
           if (index) text += ' ';
           const block = { node, text: node.textContent, offset: text.length, paintKey: '' };
           if (index) {
-            block.id = `${turn.id}:${index}`;
+            block.id = lang === 'zh' ? `${turn.id}:${index}` : `${turn.id}:en:${index}`;
             paragraphs.set(block.id, block);
           }
           blocks.push(block);
           text += block.text;
         }
-        return { turn, star: turn.querySelector('.star'), blocks, text: text.toLowerCase() };
-      });
+        return { heading, body, blocks, text: text.toLowerCase() };
+      }
+      const turns = [...document.querySelectorAll('.turn')].map((turn) => ({
+        turn, star: turn.querySelector('.star'),
+        zh: indexVersion(turn, 'zh'), en: indexVersion(turn, 'en'),
+      }));
       const knownIds = new Set(turns.map(({ turn }) => turn.id));
       const storageKey = 'jiang-xueqin-transcript-favorites-v1';
       let onlyFavorites = false;
@@ -251,7 +273,9 @@ const labels: Record<string, string> = {
       function filter() {
         const term = search.value.trim().toLowerCase();
         let visible = 0;
-        for (const { turn, star, text, blocks } of turns) {
+        for (const entry of turns) {
+          const { turn, star } = entry;
+          const { text, blocks } = entry[language];
           const saved = favorites.has(turn.id);
           const needsFocus = document.activeElement === star;
           const matches = matchesFor(text, term);
@@ -400,7 +424,35 @@ const labels: Record<string, string> = {
       addHighlight.addEventListener('click', () => changeHighlight(false));
       removeHighlight.addEventListener('click', () => changeHighlight(true));
       search.addEventListener('input', filter);
-      filter();
+
+      function showLanguage(lang) {
+        language = lang;
+        window.getSelection()?.removeAllRanges();
+        closeActions();
+        search.value = '';
+        search.placeholder = lang === 'en' ? 'Search transcript' : '搜索对话内容';
+        for (const button of languageButtons) {
+          button.setAttribute('aria-pressed', String(button.dataset.lang === lang));
+        }
+        for (const entry of turns) {
+          for (const version of ['zh', 'en']) {
+            entry[version].heading.hidden = entry[version].body.hidden = version !== lang;
+          }
+        }
+        filter();
+      }
+      for (const button of languageButtons) {
+        button.addEventListener('click', () => {
+          const lang = button.dataset.lang;
+          if (lang === language) return;
+          const url = new URL(location.href);
+          if (lang === 'en') url.searchParams.set('lang', 'en');
+          else url.searchParams.delete('lang');
+          history.replaceState(history.state, '', url);
+          showLanguage(lang);
+        });
+      }
+      showLanguage(new URL(location.href).searchParams.get('lang') === 'en' ? 'en' : 'zh');
     </script>
   </body>
 </html>
