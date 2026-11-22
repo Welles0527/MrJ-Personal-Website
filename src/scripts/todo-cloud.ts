@@ -175,16 +175,33 @@ export const signOut = async () => {
 };
 export type { CloudSession };
 
-export const loadCloudTodos = async (ownerId: string): Promise<CloudTodoLoadResult> => {
+type CreationRange = { from: string; until: string };
+
+const ownerTodos = (ownerId: string, created?: CreationRange) => {
+  const collection = db.collection(TODO_COLLECTION);
+  return created
+    ? collection.where({ ownerId, createdAt: { $gte: created.from, $lt: created.until } })
+    : collection.where({ ownerId });
+};
+
+export const loadCloudTodos = async (ownerId: string, created?: CreationRange): Promise<CloudTodoLoadResult> => {
   if (localTestAccountEnabled) return {
-    todos: ownerId === 'local-test-account' ? [...localTestTodos.values()] : [],
+    todos: ownerId === 'local-test-account' ? [...localTestTodos.values()].filter(todo =>
+      !created || (todo.createdAt >= created.from && todo.createdAt < created.until)) : [],
     requestId: 'local-test-load'
   };
-  const result = assertCloudResult(
-    await db.collection(TODO_COLLECTION).where({ ownerId }).limit(1000).get() as CloudResult<CloudTodoRecord[]>,
-    '读取云端待办失败。'
-  );
-  const todos = (result.data || [])
+  const pageSize = created ? TODO_WATCH_PAGE_SIZE : 1000;
+  const records: CloudTodoRecord[] = [];
+  let result: CloudResult<CloudTodoRecord[]>;
+  do {
+    const query = ownerTodos(ownerId, created);
+    result = assertCloudResult(
+      await (records.length ? query.skip(records.length) : query).limit(pageSize).get() as CloudResult<CloudTodoRecord[]>,
+      '读取云端待办失败。'
+    );
+    records.push(...(result.data || []));
+  } while (created && result.data?.length === pageSize);
+  const todos = records
     .filter((todo) => todo && typeof todo.id === 'string' && todo.ownerId === ownerId)
     .map(todoFromRecord)
     .sort((first, second) => String(first.date || '').localeCompare(String(second.date || '')) || String(first.createdAt || '').localeCompare(String(second.createdAt || '')));
@@ -223,7 +240,8 @@ export const watchCloudTodos = (
   ownerId: string,
   todoCount: number,
   onChange: (todos: CloudTodo[]) => void,
-  onError: (error: Error) => void
+  onError: (error: Error) => void,
+  created?: CreationRange
 ): CloudTodoWatcher => {
   if (localTestAccountEnabled) return {
     pageCount: 1,
@@ -242,8 +260,7 @@ export const watchCloudTodos = (
   };
 
   for (let pageIndex = 0; pageIndex < pageCount; pageIndex += 1) {
-    const watcher = db.collection(TODO_COLLECTION)
-      .where({ ownerId })
+    const watcher = ownerTodos(ownerId, created)
       .skip(pageIndex * TODO_WATCH_PAGE_SIZE)
       .limit(TODO_WATCH_PAGE_SIZE)
       .watch({
