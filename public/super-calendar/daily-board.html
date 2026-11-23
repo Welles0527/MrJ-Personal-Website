@@ -553,10 +553,10 @@ body.daily-board-page #mj-account { display:none; }
 #db-market .db-invest-events h3 { margin:0; color:inherit; font:600 13px/1.4 system-ui,"Microsoft YaHei",sans-serif; }
 #db-market :is(.db-watchlist,.db-invest-events) ul { list-style:none; padding:0; margin:4px 0 0; scrollbar-width:thin; }
 #db-market .db-watchlist ul { margin-top:0; max-block-size:9.5em; overflow:auto; }
-.db-watchlist li { display:flex; justify-content:space-between; align-items:baseline; gap:5px; padding-block:4px; line-height:1.25; }
+.db-watchlist li { display:flex; justify-content:flex-start; align-items:baseline; gap:5px; padding-block:4px; line-height:1.25; }
 .db-watchlist li + li { border-block-start:1px solid color-mix(in srgb,currentColor 12%,transparent); }
 .db-watchlist li span { min-width:0; font-size:13px; overflow-wrap:anywhere; }
-.db-watchlist li b { font:600 13px/1.25 system-ui,sans-serif; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.db-watchlist li b { font:400 13px/1.25 system-ui,sans-serif; font-variant-numeric:tabular-nums; white-space:nowrap; }
 .db-watchlist .up { color:#ffc0ac; }
 .db-watchlist .down { color:#c7e5ac; }
 .db-watchlist small:not([hidden]) { display:block; font-size:11px; opacity:.78; }
@@ -893,6 +893,7 @@ function linkCalendarPages(root) {
   const marketApi = '/api/stock-tracking-live?dashboard=';
   const defaults = fileData.codes;
   const numberFormat = new Intl.NumberFormat('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const watchlistChangeFormat = new Intl.NumberFormat('zh-CN', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   const price = n => Number.isFinite(n) ? numberFormat.format(n) : '—';
   const temp = n => Number.isFinite(n) ? `${Math.round(n)}°` : '—';
   const marketData = new Map();
@@ -1089,7 +1090,7 @@ function linkCalendarPages(root) {
       const change = stocks.get(code)?.change;
       const valid = Number.isFinite(change);
       const tone = !valid || change === 0 ? 'flat' : change > 0 ? 'up' : 'down';
-      const percent = valid ? (change > 0 ? '+' : change < 0 ? '−' : '') + price(Math.abs(change)) + '%' : '—';
+      const percent = valid ? (change > 0 ? '+' : change < 0 ? '−' : '') + watchlistChangeFormat.format(Math.abs(change)) + '%' : '—';
       return '<li data-watch-code="'+code+'"><span title="'+code+'">'+esc(stockName(code))+'</span><b class="'+tone+'"'+(valid?'':' aria-label="暂无报价"')+'>'+percent+'</b></li>';
     }).join('');
     const stamp = hasSnapshot && /^(\d{4})(\d{2})(\d{2})/.exec(fileData.market.quotes?.index?.time || '');
