@@ -400,6 +400,7 @@ html:has(.project-deck[open]) {
   outline-offset: -3px;
 }
 
+.project-deck-preview-name,
 .project-deck-intro,
 .project-deck-next-label { display: none; }
 
@@ -442,6 +443,31 @@ html:has(.project-deck[open]) {
   .project-deck:not(.is-intro) .project-deck-copy,
   .project-deck.is-intro:not(.is-full-project) .project-deck-live { display: none; }
 
+  .project-deck:not(:is(.is-intro, .is-full-project)) .project-deck-shell {
+    height: calc(var(--deck-height) - 2px);
+  }
+  .project-deck:not(:is(.is-intro, .is-full-project)) .project-deck-slide {
+    grid-template-rows: minmax(0, 1fr);
+    padding: 8px;
+  }
+  .project-deck:not(:is(.is-intro, .is-full-project)) .project-deck-live {
+    align-self: stretch;
+    height: 100%;
+  }
+  .project-deck:not(.is-intro) .project-deck-preview-name:not(:empty) {
+    display: block;
+    min-width: 0;
+    margin-left: auto;
+    overflow: hidden;
+    color: var(--deck-muted);
+    font-size: 12px;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .project-deck-preview-name:not(:empty) + .project-deck-count { margin-left: 0; }
+  .project-deck.is-intro .project-deck-count { margin-left: auto; }
+
   .project-deck-copy {
     display: block;
     width: min(100%, 620px);
@@ -453,7 +479,6 @@ html:has(.project-deck[open]) {
   .project-deck-description { margin-bottom: 12px; font-size: clamp(13px, 1.5vw, 14px); line-height: 1.65; }
   .project-deck-description dl > div { padding-block: 9px; }
   .project-deck-open-primary { font-size: 15px; }
-  .project-deck-screen { aspect-ratio: 1 / 1; height: auto; max-height: 52dvh; }
   .project-deck-screen iframe { width: 100%; height: 100%; transform: none; }
   .project-deck-navigation {
     grid-template-columns: repeat(2, minmax(0, 200px));

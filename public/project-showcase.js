@@ -10,6 +10,7 @@
   const subtitle = find('.project-deck-subtitle');
   const description = find('.project-deck-description');
   const count = find('.project-deck-count');
+  const previewName = find('.project-deck-preview-name');
   const openProject = find('.project-deck-open');
   const introToggle = find('.project-deck-intro');
   const compactLayout = matchMedia('(max-width: 760px), (max-width: 1366px) and (pointer: coarse)');
@@ -92,10 +93,28 @@
     nextFrame.allowFullscreen = true;
     nextFrame.src = openProject.getAttribute('href');
     nextFrame.addEventListener('load', () => {
-      if (frame === nextFrame) loading.hidden = true;
-    }, { once: true });
+      if (frame !== nextFrame) return;
+      loading.hidden = true;
+      updateTravelPreviewTitle();
+    });
     screen.prepend(nextFrame);
     frame = nextFrame;
+  }
+
+  function updateTravelPreviewTitle() {
+    if (projects[active]?.card.dataset.project !== 'travel') return;
+    const page = frame?.contentDocument;
+    if (!page?.querySelector('[data-atlas]')) return;
+    const style = page.getElementById('showcase-travel-preview-title');
+    if (!compactLayout.matches || !fullActions.hidden || !previewName) {
+      style?.remove();
+    } else if (!style) {
+      // The deck header already names the project in compact preview mode.
+      const compactTitle = page.createElement('style');
+      compactTitle.id = 'showcase-travel-preview-title';
+      compactTitle.textContent = '[data-atlas] .topbar > h1.brand, [data-atlas] :is(.topbar, .journal) > .mj-project-brand { display: none !important; }';
+      page.head.append(compactTitle);
+    }
   }
 
   function selectBoard(board) {
@@ -113,6 +132,7 @@
     const details = project.card.querySelector('.project-deck-details').content.cloneNode(true);
     icon.replaceChildren(details.querySelector('svg'));
     brand.textContent = project.brand || project.name;
+    if (previewName) previewName.textContent = brand.textContent;
     subtitle.textContent = project.brand ? project.name : '';
     subtitle.hidden = !project.brand;
     description.replaceChildren(details);
@@ -172,12 +192,14 @@
   });
   compactLayout.addEventListener('change', event => {
     if (!event.matches && dialog.open && dialog.classList.contains('is-intro')) showPreview();
+    updateTravelPreviewTitle();
   });
 
   function setFullProject(open) {
     dialog.classList.toggle('is-full-project', open);
     dialog.setAttribute('aria-labelledby', open ? 'project-deck-full-title' : 'project-deck-title');
     fullActions.hidden = !open;
+    updateTravelPreviewTitle();
   }
 
   function closeFullProject() {
