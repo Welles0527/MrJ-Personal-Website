@@ -523,9 +523,28 @@ body.daily-board-page #mj-account { display:none; }
 #db-sports .db-sport-type .db-upcoming, #db-sports .db-event-copy.db-upcoming, #db-sports .db-event.db-upcoming > * { opacity:.5; }
 #db-market { container:stock-market / inline-size; }
 .db-market-split {
-  display:grid; grid-template-columns:minmax(0,1fr) clamp(118px,34%,220px); gap:clamp(12px,3cqi,22px); align-items:start;
+  --chart-min:120px; --watch-min:96px; --divider-width:24px;
+  --chart-width:calc(100% - clamp(12px,3%,22px) - clamp(118px,34%,220px));
+  display:grid; align-items:start;
+  grid-template-columns:
+    clamp(var(--chart-min),var(--chart-width),calc(100% - var(--divider-width) - var(--watch-min)))
+    var(--divider-width) minmax(0,1fr);
 }
 .db-market-split:has(.db-watchlist[hidden]) { grid-template-columns:minmax(0,1fr); }
+.db-market-split:has(.db-watchlist[hidden]) .db-market-divider { display:none; }
+.db-market-main { min-width:0; container:stock-series / inline-size; }
+#db-market .db-market-divider {
+  position:relative; align-self:stretch; width:100%; min-height:24px; padding:0; border:0; border-radius:0;
+  color:inherit; background:transparent; cursor:col-resize; touch-action:none; user-select:none;
+}
+.db-market-divider::before {
+  content:""; position:absolute; inset-block:0; inset-inline-start:50%; width:1px; background:currentColor; opacity:.26;
+}
+.db-market-divider::after {
+  content:""; position:absolute; top:50%; left:50%; width:3px; height:18px; transform:translate(-1px,-50%); border-radius:3px; background:currentColor; opacity:.55;
+}
+.db-market-divider:is(:hover,:active,:focus-visible)::before { opacity:.78; }
+.db-market-divider:focus-visible { outline:1px solid currentColor; outline-offset:-2px; }
 .db-market-heading { display:flex; align-items:center; gap:7px; }
 #db-market .db-watch-toggle {
   display:inline-grid; place-items:center; flex:none; width:30px; height:30px; padding:0; border-radius:8px;
@@ -549,35 +568,38 @@ body.daily-board-page #mj-account { display:none; }
 .market .db-market-series .change { margin-inline-start:6px; padding:2px 6px; white-space:nowrap; }
 .market .db-market-series .plot { margin-top:7px; }
 .market:has(.db-invest-events:not([hidden])) .plot { height:clamp(48px,16cqi,76px); }
-.db-watchlist { min-width:0; border-inline-start:1px solid color-mix(in srgb,currentColor 24%,transparent); padding-inline-start:clamp(9px,2.8cqi,17px); }
-#db-market .db-invest-events h3 { margin:0; color:inherit; font:600 13px/1.4 system-ui,"Microsoft YaHei",sans-serif; }
-#db-market :is(.db-watchlist,.db-invest-events) ul { list-style:none; padding:0; margin:4px 0 0; scrollbar-width:thin; }
-#db-market .db-watchlist ul { margin-top:0; max-block-size:9.5em; overflow:auto; }
-.db-watchlist li { display:flex; justify-content:flex-start; align-items:baseline; gap:5px; padding-block:4px; line-height:1.25; }
+.db-watchlist { min-width:0; text-align:end; }
+#db-market .db-watchlist ul { list-style:none; margin:0; padding:0; max-block-size:10.5em; overflow:auto; scrollbar-width:thin; }
+.db-watchlist li { display:flex; justify-content:flex-end; align-items:baseline; gap:5px; padding-block:4px; line-height:1.25; }
 .db-watchlist li + li { border-block-start:1px solid color-mix(in srgb,currentColor 12%,transparent); }
 .db-watchlist li span { min-width:0; font-size:13px; overflow-wrap:anywhere; }
 .db-watchlist li b { font:400 13px/1.25 system-ui,sans-serif; font-variant-numeric:tabular-nums; white-space:nowrap; }
 .db-watchlist .up { color:#ffc0ac; }
 .db-watchlist .down { color:#c7e5ac; }
 .db-watchlist small:not([hidden]) { display:block; font-size:11px; opacity:.78; }
-.db-invest-events { margin:6px 0 12px; padding:3px 0 3px 10px; border-inline-start:2px solid #eabb8c; }
-.market .db-invest-events { margin:3px 0 9px; }
-.db-invest-events ul { max-block-size:6.3em; overflow:auto; }
+#db-market .db-invest-events { list-style:none; margin:8px 0 0; padding:2px 0 2px 8px; border-inline-start:2px solid #eabb8c; max-block-size:6.3em; overflow:auto; scrollbar-width:thin; }
 .db-invest-events li + li { margin-top:5px; }
 .db-invest-events a { display:block; color:inherit; text-decoration:none; font:13px/1.45 system-ui,"Microsoft YaHei",sans-serif; overflow-wrap:anywhere; }
 .db-invest-events a:hover,.db-invest-events a:focus-visible { text-decoration:underline; }
 .db-invest-events strong { margin-inline-end:.6em; }
-@container stock-market (max-width:380px) {
-  .db-market-series .quote { font-size:clamp(24px,7.7cqi,30px); }
-  .db-market-series .db-quote strong { font-size:clamp(24px,8.4cqi,32px); }
+@container stock-series (max-width:260px) {
+  .db-market-series .quote { font-size:clamp(24px,13cqi,30px); }
+  .db-market-series .db-quote strong { font-size:clamp(24px,14cqi,32px); }
+  .db-market-series .db-market-value { gap:4px 8px; }
+  .db-market-series .db-market-value > div { min-width:0; max-width:100%; }
+  .db-market-series .db-quote { gap:4px 8px; }
   .db-market-series .db-chart { gap:3px; }
   .db-market-series .db-chart-scale { width:40px; }
   .db-market-series .db-chart-times { margin-right:0; }
   .db-market-series .axis { font-size:10px; }
 }
+@container stock-series (max-width:150px) {
+  .db-market-series .db-market-value { flex-wrap:wrap; }
+}
 @container stock-market (max-width:255px) {
   .db-market-split { grid-template-columns:minmax(0,1fr); }
-  .db-watchlist { border-inline-start:0; padding:8px 0 0; border-block-start:1px solid color-mix(in srgb,currentColor 24%,transparent); }
+  #db-market .db-market-divider { display:none; }
+  .db-watchlist { margin-block-start:8px; padding-block-start:8px; border-block-start:1px solid color-mix(in srgb,currentColor 24%,transparent); }
 }
 .db-topbar .actions { min-width:0; justify-content:flex-end; }
 .db-topbar .actions #settings { flex:none; }
@@ -1104,7 +1126,7 @@ function linkCalendarPages(root) {
     const events = feed?.eventsOn?.(date) || [];
     board().querySelector('[data-part="investment"]').hidden = !events.length;
     const links = events.map(e => '<li><a href="#investment?view=month"><strong>'+esc(stockName(e.code))+'</strong>'+esc(e.title)+'</a></li>').join('');
-    updatePart('investment', links ? '<h3>今日投资事项</h3><ul>'+links+'</ul>' : '');
+    updatePart('investment', links);
   }
 
   function renderMarket(refresh = false) {
@@ -1513,10 +1535,14 @@ function linkCalendarPages(root) {
       else document.getElementById('app').innerHTML = shell();
       if (active()) {
         const market=board().querySelector('#db-market'), chartContents=[...market.children].slice(1);
-        market.firstElementChild.insertAdjacentHTML('afterend', `<div class="db-invest-events" data-part="investment" hidden></div>
-          <div class="db-market-split"><div class="db-market-series"></div>
+        market.firstElementChild.insertAdjacentHTML('afterend', `<div class="db-market-split">
+          <div class="db-market-main"><div class="db-market-series" id="db-market-series"></div>
+            <ul class="db-invest-events" data-part="investment" aria-label="投资日历事项" hidden></ul></div>
+          <div class="db-market-divider" role="separator" tabindex="0" aria-orientation="vertical" aria-label="调整走势图和自选股宽度" aria-controls="db-market-series" aria-valuenow="60"></div>
           <aside class="db-watchlist" id="db-watchlist" aria-label="自选股涨跌"><ul data-part="watchlist" aria-label="自选股涨跌幅"></ul><small data-watch-note hidden></small></aside></div>`);
-        market.querySelector('.db-market-series').append(...chartContents);
+        const series = market.querySelector('.db-market-series');
+        series.append(...chartContents);
+        series.querySelector('.quote')?.after(document.createElement('wbr'));
         const title = market.querySelector('h2'), heading = document.createElement('div');
         heading.className = 'db-market-heading';
         title.before(heading);
@@ -2248,6 +2274,7 @@ window.addEventListener("online",()=>{if (amberSample) return; weatherCache.clea
       frames.set(id,frame); fragment.append(frame);
     }
     grid.replaceChildren(fragment); grid.classList.add('db-layout');
+    applyMarketLayout();
     applyView();
   }
   function place(frame, r) {
@@ -2372,7 +2399,7 @@ window.addEventListener("online",()=>{if (amberSample) return; weatherCache.clea
   }
   grid.addEventListener('pointerdown',e => {
     const tool = e.target.closest('[data-tool]');
-    if (!editing || !tool || gesture || e.button !== 0) return;
+    if (!editing || !tool || gesture || marketDrag || e.button !== 0) return;
     e.preventDefault(); tool.focus({preventScroll:true}); tool.setPointerCapture(e.pointerId);
     gesture = {pointer:e.pointerId,tool,x:e.pageX,y:e.pageY,op:null};
   });
@@ -2458,7 +2485,7 @@ window.addEventListener("online",()=>{if (amberSample) return; weatherCache.clea
   }
   if (amberBoard) {
     grid.addEventListener('dblclick',e=>{
-      if (!editing || e.target.closest('button,input,label,select,a')) return;
+      if (!editing || e.target.closest('button,input,label,select,a,[role="separator"]')) return;
       const pane=e.target.closest('[data-pane]'), frame=pane?.closest('[data-frame]');
       if (!frame) return;
       const group=groupFor(frame.dataset.frame);
@@ -2519,19 +2546,73 @@ window.addEventListener("online",()=>{if (amberSample) return; weatherCache.clea
     return {...readCache(uid), uid, job:null, conflict:false};
   }
   let state=stateFor(null), identityCheck=0;
-  const watchToggle = nodes.get('market').querySelector('.db-watch-toggle');
-  function applyWatchlistVisibility() {
+  const marketPane = nodes.get('market'), watchToggle = marketPane.querySelector('.db-watch-toggle');
+  const marketSplit = marketPane.querySelector('.db-market-split'), marketDivider = marketPane.querySelector('.db-market-divider');
+  const marketChart = marketPane.querySelector('.db-market-main');
+  let marketDrag = null;
+  function applyMarketLayout() {
     if (!watchToggle) return;
+    if (marketDrag && marketDivider.hasPointerCapture(marketDrag.id)) marketDivider.releasePointerCapture(marketDrag.id);
+    marketDrag = null;
+    const share = model.marketChartPercent;
+    if (Number.isFinite(share) && share > 0 && share < 100) marketSplit.style.setProperty('--chart-width',share+'%');
+    else marketSplit.style.removeProperty('--chart-width');
     const collapsed = model.watchlistCollapsed === true;
-    document.getElementById('db-watchlist').hidden = collapsed;
+    marketPane.querySelector('.db-watchlist').hidden = collapsed;
     watchToggle.setAttribute('aria-expanded', String(!collapsed));
     watchToggle.setAttribute('aria-label', collapsed ? '展开自选股涨跌' : '收起自选股涨跌');
   }
   watchToggle?.addEventListener('click', () => {
     model.watchlistCollapsed = !model.watchlistCollapsed;
-    applyWatchlistVisibility();
+    applyMarketLayout();
     saveLayout();
   });
+  function updateMarketDivider(pixels, save = false) {
+    if (!marketDivider.offsetWidth) return;
+    const width = marketSplit.getBoundingClientRect().width, css = getComputedStyle(marketSplit);
+    const min = parseFloat(css.getPropertyValue('--chart-min'));
+    const max = width - marketDivider.offsetWidth - parseFloat(css.getPropertyValue('--watch-min'));
+    const current = clamp(pixels ?? marketChart.getBoundingClientRect().width,min,max);
+    const percent = +(current / width * 100).toFixed(3);
+    marketDivider.setAttribute('aria-valuemin',String(Math.round(min / width * 100)));
+    marketDivider.setAttribute('aria-valuemax',String(Math.round(max / width * 100)));
+    marketDivider.setAttribute('aria-valuenow',String(Math.round(percent)));
+    if (pixels !== undefined) marketSplit.style.setProperty('--chart-width',percent+'%');
+    if (save && model.marketChartPercent !== percent) {
+      model.marketChartPercent = percent;
+      saveLayout();
+    }
+  }
+  if (marketDivider) {
+    const observer = new ResizeObserver(() => updateMarketDivider());
+    observer.observe(marketSplit);
+    observer.observe(marketChart);
+    marketDivider.addEventListener('pointerdown', e => {
+      if (!e.isPrimary || e.button !== 0 || gesture || pendingDrop || marketDrag) return;
+      e.preventDefault();
+      marketDivider.focus({preventScroll:true});
+      marketDivider.setPointerCapture(e.pointerId);
+      marketDrag = {id:e.pointerId, startX:e.clientX, width:marketChart.getBoundingClientRect().width};
+    });
+    marketDivider.addEventListener('pointermove', e => {
+      if (marketDrag?.id === e.pointerId) updateMarketDivider(marketDrag.width + e.clientX - marketDrag.startX);
+    });
+    function endMarketDrag(e) {
+      if (marketDrag?.id !== e.pointerId) return;
+      const {startX,width} = marketDrag;
+      marketDrag = null;
+      if (e.type === 'pointerup' && startX !== e.clientX) updateMarketDivider(width + e.clientX - startX,true);
+      else applyMarketLayout();
+    }
+    for (const type of ['pointerup','pointercancel','lostpointercapture']) marketDivider.addEventListener(type,endMarketDrag);
+    marketDivider.addEventListener('keydown', e => {
+      const width = marketChart.getBoundingClientRect().width, step = e.shiftKey ? 32 : 8;
+      const next = {ArrowLeft:width-step, ArrowRight:width+step, Home:0, End:marketSplit.clientWidth}[e.key];
+      if (next === undefined || marketDrag) return;
+      e.preventDefault();
+      updateMarketDivider(next,true);
+    });
+  }
   function cached(s) {
     try {
       localStorage.setItem(storageKey(s.uid),JSON.stringify({layout:s.layout,revision:s.revision,dirty:s.dirty}));
@@ -2541,7 +2622,6 @@ window.addEventListener("online",()=>{if (amberSample) return; weatherCache.clea
   function display(layout) {
     gesture=null; pendingDrop=null; resetHighlight();
     model=copy(layout); render();
-    applyWatchlistVisibility();
     if (amberBoard) setEditing(!model.locked);
   }
   function switchOwner(uid, accountName) {
