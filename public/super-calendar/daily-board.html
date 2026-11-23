@@ -522,17 +522,20 @@ body.daily-board-page #mj-account { display:none; }
 #db-sports .db-event-copy { display:flex; align-items:baseline; gap:8px; min-width:0; overflow-wrap:anywhere; }
 #db-sports .db-sport-type .db-upcoming, #db-sports .db-event-copy.db-upcoming, #db-sports .db-event.db-upcoming > * { opacity:.5; }
 #db-market { container:stock-market / inline-size; }
+#db-market:has(> .db-market-split) { display:flex; flex-direction:column; }
 .db-market-split {
-  --chart-min:120px; --watch-min:96px; --divider-width:24px;
+  --chart-min:120px; --watch-min:124px; --divider-width:24px; --plot-min:80px;
   --chart-width:calc(100% - clamp(12px,3%,22px) - clamp(118px,34%,220px));
-  display:grid; align-items:start;
+  display:grid; flex:1 0 auto;
   grid-template-columns:
     clamp(var(--chart-min),var(--chart-width),calc(100% - var(--divider-width) - var(--watch-min)))
     var(--divider-width) minmax(0,1fr);
 }
 .db-market-split:has(.db-watchlist[hidden]) { grid-template-columns:minmax(0,1fr); }
 .db-market-split:has(.db-watchlist[hidden]) .db-market-divider { display:none; }
-.db-market-main { min-width:0; container:stock-series / inline-size; }
+.db-market-split:has(.db-invest-events:not([hidden])) { --plot-min:48px; }
+.db-layout:not([data-free]) .db-market .db-market-split { --plot-min:clamp(80px,7vw,105px); }
+.db-market-main { display:flex; flex-direction:column; min-width:0; container:stock-series / inline-size; }
 #db-market .db-market-divider {
   position:relative; align-self:stretch; width:100%; min-height:24px; padding:0; border:0; border-radius:0;
   color:inherit; background:transparent; cursor:col-resize; touch-action:none; user-select:none;
@@ -554,30 +557,39 @@ body.daily-board-page #mj-account { display:none; }
 .db-watch-toggle:focus-visible { outline:2px solid currentColor; outline-offset:2px; }
 .db-watch-toggle svg { width:19px; height:19px; }
 .db-watch-toggle[aria-expanded="true"] .door-closed, .db-watch-toggle[aria-expanded="false"] .door-open { display:none; }
-.db-market-series { position:relative; min-width:0; }
+.db-market-series, .db-market-series > [data-part="market"], .db-market-series .db-market-plot {
+  display:flex; flex-direction:column; flex:1 0 auto; min-width:0;
+}
+.db-market-series { position:relative; }
+.db-market-prices { display:flex; align-items:baseline; flex-wrap:wrap; gap:2px 7px; }
+.market .db-market-series .plot, .db-market-series .db-chart, .db-market-series .db-chart-empty {
+  flex:1 0 var(--plot-min); height:var(--plot-min); min-height:var(--plot-min);
+}
 .db-market-series .line { flex-wrap:wrap; gap:2px 8px; }
 .db-market-series .db-market-value { margin-top:0; }
 .db-market-series .db-market-meta { flex-wrap:wrap; gap:3px 8px; }
 .db-market-series .chart-message { left:0; right:0; bottom:30px; text-align:center; }
-#db-market.market:has(.db-watchlist) { padding-block:15px; }
+#db-market.market:has(.db-watchlist) { padding-block:15px; padding-inline:clamp(18px,6vw,28px); }
 #db-market.market .db-market-heading { margin-block-end:8px; padding-inline-end:90px; }
 #db-market.market .db-market-heading h2 { margin:0; }
 .market .db-market-series .line { justify-content:flex-start; align-items:baseline; font-size:13px; line-height:1.3; }
 .market .db-market-series .stock-name small,.market .db-market-series .market-refresh small { font-size:10px; }
 .market .db-market-series .market-refresh { white-space:nowrap; line-height:1.25; }
-.market .db-market-series .change { margin-inline-start:6px; padding:2px 6px; white-space:nowrap; }
+.market .db-market-series .change { margin-inline-start:0; padding:2px 6px; white-space:nowrap; }
 .market .db-market-series .plot { margin-top:7px; }
-.market:has(.db-invest-events:not([hidden])) .plot { height:clamp(48px,16cqi,76px); }
-.db-watchlist { min-width:0; text-align:end; }
-#db-market .db-watchlist ul { list-style:none; margin:0; padding:0; max-block-size:10.5em; overflow:auto; scrollbar-width:thin; }
-.db-watchlist li { display:flex; justify-content:flex-end; align-items:baseline; gap:5px; padding-block:4px; line-height:1.25; }
+.db-watchlist:not([hidden]) { display:flex; flex-direction:column; min-width:0; min-height:0; container:stock-list / size; text-align:end; }
+#db-market .db-watchlist ul { list-style:none; margin:0; padding:0; min-height:0; overflow:auto; scrollbar-width:thin; }
+.db-watchlist li {
+  display:flex; justify-content:flex-end; align-items:baseline; column-gap:clamp(12px,8cqi,22px);
+  padding-block:clamp(6px,2.8cqb,9px); padding-inline-end:clamp(4px,3cqi,9px); line-height:1.25;
+}
 .db-watchlist li + li { border-block-start:1px solid color-mix(in srgb,currentColor 12%,transparent); }
 .db-watchlist li span { min-width:0; font-size:13px; overflow-wrap:anywhere; }
 .db-watchlist li b { font:400 13px/1.25 system-ui,sans-serif; font-variant-numeric:tabular-nums; white-space:nowrap; }
 .db-watchlist .up { color:#ffc0ac; }
 .db-watchlist .down { color:#c7e5ac; }
 .db-watchlist small:not([hidden]) { display:block; font-size:11px; opacity:.78; }
-#db-market .db-invest-events { list-style:none; margin:8px 0 0; padding:2px 0 2px 8px; border-inline-start:2px solid #eabb8c; max-block-size:6.3em; overflow:auto; scrollbar-width:thin; }
+#db-market .db-invest-events { flex:none; list-style:none; margin:8px 0 0; padding:2px 0 2px 8px; border-inline-start:2px solid #eabb8c; max-block-size:6.3em; overflow:auto; scrollbar-width:thin; }
 .db-invest-events li + li { margin-top:5px; }
 .db-invest-events a { display:block; color:inherit; text-decoration:none; font:13px/1.45 system-ui,"Microsoft YaHei",sans-serif; overflow-wrap:anywhere; }
 .db-invest-events a:hover,.db-invest-events a:focus-visible { text-decoration:underline; }
@@ -593,13 +605,19 @@ body.daily-board-page #mj-account { display:none; }
   .db-market-series .db-chart-times { margin-right:0; }
   .db-market-series .axis { font-size:10px; }
 }
+@container stock-series (max-width:180px) {
+  .db-market-prices { column-gap:5px; }
+  .market .db-market-series .change { font-size:12px; padding-inline:4px; }
+}
 @container stock-series (max-width:150px) {
   .db-market-series .db-market-value { flex-wrap:wrap; }
 }
-@container stock-market (max-width:255px) {
+@container stock-market (width < 268px) {
   .db-market-split { grid-template-columns:minmax(0,1fr); }
   #db-market .db-market-divider { display:none; }
-  .db-watchlist { margin-block-start:8px; padding-block-start:8px; border-block-start:1px solid color-mix(in srgb,currentColor 24%,transparent); }
+  .db-watchlist { container-type:inline-size; margin-block-start:8px; padding-block-start:8px; border-block-start:1px solid color-mix(in srgb,currentColor 24%,transparent); }
+  #db-market .db-watchlist ul { max-block-size:12em; }
+  .db-watchlist li { padding-block:6px; }
 }
 .db-topbar .actions { min-width:0; justify-content:flex-end; }
 .db-topbar .actions #settings { flex:none; }
@@ -1542,7 +1560,12 @@ function linkCalendarPages(root) {
           <aside class="db-watchlist" id="db-watchlist" aria-label="自选股涨跌"><ul data-part="watchlist" aria-label="自选股涨跌幅"></ul><small data-watch-note hidden></small></aside></div>`);
         const series = market.querySelector('.db-market-series');
         series.append(...chartContents);
-        series.querySelector('.quote')?.after(document.createElement('wbr'));
+        if (amberBoard) {
+          const prices = document.createElement('div'), quote = series.querySelector('.quote');
+          prices.className = 'db-market-prices';
+          quote.before(prices);
+          prices.append(quote, series.querySelector('.change'));
+        }
         const title = market.querySelector('h2'), heading = document.createElement('div');
         heading.className = 'db-market-heading';
         title.before(heading);
