@@ -521,6 +521,64 @@ body.daily-board-page #mj-account { display:none; }
 #db-sports .row { gap:8px; }
 #db-sports .db-event-copy { display:flex; align-items:baseline; gap:8px; min-width:0; overflow-wrap:anywhere; }
 #db-sports .db-sport-type .db-upcoming, #db-sports .db-event-copy.db-upcoming, #db-sports .db-event.db-upcoming > * { opacity:.5; }
+#db-market { container:stock-market / inline-size; }
+.db-market-split {
+  display:grid; grid-template-columns:minmax(0,1fr) clamp(118px,34%,220px); gap:clamp(12px,3cqi,22px); align-items:start;
+}
+.db-market-split:has(.db-watchlist[hidden]) { grid-template-columns:minmax(0,1fr); }
+.db-market-heading { display:flex; align-items:center; gap:7px; }
+#db-market .db-watch-toggle {
+  display:inline-grid; place-items:center; flex:none; width:30px; height:30px; padding:0; border-radius:8px;
+  border:1px solid color-mix(in srgb,currentColor 26%,transparent); background:transparent; color:inherit; cursor:pointer;
+}
+#db-market .db-watch-toggle:hover { background:color-mix(in srgb,currentColor 10%,transparent); }
+.db-watch-toggle:focus-visible { outline:2px solid currentColor; outline-offset:2px; }
+.db-watch-toggle svg { width:19px; height:19px; }
+.db-watch-toggle[aria-expanded="true"] .door-closed, .db-watch-toggle[aria-expanded="false"] .door-open { display:none; }
+.db-market-series { position:relative; min-width:0; }
+.db-market-series .line { flex-wrap:wrap; gap:2px 8px; }
+.db-market-series .db-market-value { margin-top:0; }
+.db-market-series .db-market-meta { flex-wrap:wrap; gap:3px 8px; }
+.db-market-series .chart-message { left:0; right:0; bottom:30px; text-align:center; }
+#db-market.market:has(.db-watchlist) { padding-block:15px; }
+#db-market.market .db-market-heading { margin-block-end:8px; padding-inline-end:90px; }
+#db-market.market .db-market-heading h2 { margin:0; }
+.market .db-market-series .line { justify-content:flex-start; align-items:baseline; font-size:13px; line-height:1.3; }
+.market .db-market-series .stock-name small,.market .db-market-series .market-refresh small { font-size:10px; }
+.market .db-market-series .market-refresh { white-space:nowrap; line-height:1.25; }
+.market .db-market-series .change { margin-inline-start:6px; padding:2px 6px; white-space:nowrap; }
+.market .db-market-series .plot { margin-top:7px; }
+.market:has(.db-invest-events:not([hidden])) .plot { height:clamp(48px,16cqi,76px); }
+.db-watchlist { min-width:0; border-inline-start:1px solid color-mix(in srgb,currentColor 24%,transparent); padding-inline-start:clamp(9px,2.8cqi,17px); }
+#db-market .db-invest-events h3 { margin:0; color:inherit; font:600 13px/1.4 system-ui,"Microsoft YaHei",sans-serif; }
+#db-market :is(.db-watchlist,.db-invest-events) ul { list-style:none; padding:0; margin:4px 0 0; scrollbar-width:thin; }
+#db-market .db-watchlist ul { margin-top:0; max-block-size:9.5em; overflow:auto; }
+.db-watchlist li { display:flex; justify-content:space-between; align-items:baseline; gap:5px; padding-block:4px; line-height:1.25; }
+.db-watchlist li + li { border-block-start:1px solid color-mix(in srgb,currentColor 12%,transparent); }
+.db-watchlist li span { min-width:0; font-size:13px; overflow-wrap:anywhere; }
+.db-watchlist li b { font:600 13px/1.25 system-ui,sans-serif; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.db-watchlist .up { color:#ffc0ac; }
+.db-watchlist .down { color:#c7e5ac; }
+.db-watchlist small:not([hidden]) { display:block; font-size:11px; opacity:.78; }
+.db-invest-events { margin:6px 0 12px; padding:3px 0 3px 10px; border-inline-start:2px solid #eabb8c; }
+.market .db-invest-events { margin:3px 0 9px; }
+.db-invest-events ul { max-block-size:6.3em; overflow:auto; }
+.db-invest-events li + li { margin-top:5px; }
+.db-invest-events a { display:block; color:inherit; text-decoration:none; font:13px/1.45 system-ui,"Microsoft YaHei",sans-serif; overflow-wrap:anywhere; }
+.db-invest-events a:hover,.db-invest-events a:focus-visible { text-decoration:underline; }
+.db-invest-events strong { margin-inline-end:.6em; }
+@container stock-market (max-width:380px) {
+  .db-market-series .quote { font-size:clamp(24px,7.7cqi,30px); }
+  .db-market-series .db-quote strong { font-size:clamp(24px,8.4cqi,32px); }
+  .db-market-series .db-chart { gap:3px; }
+  .db-market-series .db-chart-scale { width:40px; }
+  .db-market-series .db-chart-times { margin-right:0; }
+  .db-market-series .axis { font-size:10px; }
+}
+@container stock-market (max-width:255px) {
+  .db-market-split { grid-template-columns:minmax(0,1fr); }
+  .db-watchlist { border-inline-start:0; padding:8px 0 0; border-block-start:1px solid color-mix(in srgb,currentColor 24%,transparent); }
+}
 .db-topbar .actions { min-width:0; justify-content:flex-end; }
 .db-topbar .actions #settings { flex:none; }
 .db-topbar .brand { flex-shrink:0; }
@@ -639,7 +697,7 @@ const AmberBoard = (() => {
     const g = canvas.getContext('2d');
     g.scale(d,d);
     g.strokeStyle = '#ffe7cd27';
-    for (const y of [8,35,63]) { g.beginPath(); g.moveTo(0,y); g.lineTo(w,y); g.stroke(); }
+    for (const y of [.1,.44,.79]) { g.beginPath(); g.moveTo(0,h*y); g.lineTo(w,h*y); g.stroke(); }
     g.beginPath();
     let firstX = 0, lastX = w;
     if (amberSample) {
@@ -1021,6 +1079,33 @@ function linkCalendarPages(root) {
     return time >= '14:57' ? '收盘集合竞价' : '交易时段';
   }
 
+  function renderMarketLists(codes, stocks, hasSnapshot, date) {
+    const feed = window.InvestmentCalendar;
+    const stockName = code => {
+      const name = stocks.get(code)?.name;
+      return name && name !== code ? name : feed?.stockName?.(code, code) || code;
+    };
+    const rows = codes.map(code => {
+      const change = stocks.get(code)?.change;
+      const valid = Number.isFinite(change);
+      const tone = !valid || change === 0 ? 'flat' : change > 0 ? 'up' : 'down';
+      const percent = valid ? (change > 0 ? '+' : change < 0 ? '−' : '') + price(Math.abs(change)) + '%' : '—';
+      return '<li data-watch-code="'+code+'"><span title="'+code+'">'+esc(stockName(code))+'</span><b class="'+tone+'"'+(valid?'':' aria-label="暂无报价"')+'>'+percent+'</b></li>';
+    }).join('');
+    const stamp = hasSnapshot && /^(\d{4})(\d{2})(\d{2})/.exec(fileData.market.quotes?.index?.time || '');
+    const side = board().querySelector('.db-watchlist'), list = side.querySelector('ul'), note = side.querySelector('[data-watch-note]');
+    list.hidden = !codes.length;
+    if (codes.length > 5) list.tabIndex=0; else list.removeAttribute('tabindex');
+    updatePart('watchlist', rows);
+    note.textContent = !codes.length ? '暂无自选股' : stamp ? '含'+Number(stamp[2])+'月'+Number(stamp[3])+'日快照' : '';
+    note.hidden = !note.textContent;
+
+    const events = feed?.eventsOn?.(date) || [];
+    board().querySelector('[data-part="investment"]').hidden = !events.length;
+    const links = events.map(e => '<li><a href="#investment?view=month"><strong>'+esc(stockName(e.code))+'</strong>'+esc(e.title)+'</a></li>').join('');
+    updatePart('investment', links ? '<h3>今日投资事项</h3><ul>'+links+'</ul>' : '');
+  }
+
   function renderMarket(refresh = false) {
     const node = board()?.querySelector('#db-stock');
     if (!node) return;
@@ -1031,10 +1116,23 @@ function linkCalendarPages(root) {
     if (accountKey !== scope) { marketData.clear(); selected = 'index'; accountKey = scope; }
     if (selected !== 'index' && !codes.includes(selected)) selected = 'index';
     watchlist = codes;
-    const quotes = getMarketData(`quotes|${codes.join(',')}`, 'quotes&codes=' + codes.join(','), refresh);
+    const quotePages = [], stocks = new Map();
+    let hasSnapshot = false;
+    // The dashboard quote endpoint accepts 200 symbols at a time. An empty watchlist still needs the index.
+    for (let i=0; i<Math.max(1,codes.length); i+=200) {
+      const batch=codes.slice(i,i+200), symbols=batch.join(',');
+      const page=getMarketData('quotes|'+symbols, 'quotes&codes='+symbols, refresh);
+      quotePages.push(page);
+      for (const stock of page.value?.stocks || []) {
+        if (!batch.includes(stock.id)) continue;
+        stocks.set(stock.id,stock);
+        if (page.saved && Number.isFinite(stock.change)) hasSnapshot = true;
+      }
+    }
+    const quotes = quotePages[Math.max(0, Math.floor(codes.indexOf(selected)/200))];
     const selectedCode = selected === 'index' ? '000001' : selected;
     const chart = getMarketData(`chart|${selected}`, `chart&code=${selectedCode}&period=minute${selected === 'index' ? '&index=1' : ''}`, refresh);
-    const stocks = new Map((quotes.value?.stocks || []).map(stock => [stock.id, stock]));
+    renderMarketLists(codes, stocks, hasSnapshot, date);
     const options = '<option value="index">大盘 · 上证指数</option>' + (codes.length
       ? `<optgroup label="我的自选股">${codes.map(code => `<option value="${code}">${esc(stocks.get(code)?.name && stocks.get(code).name !== code ? stocks.get(code).name + ' · ' : '')}${code}</option>`).join('')}</optgroup>`
       : '<option disabled>暂无自选股</option>');
@@ -1395,7 +1493,7 @@ function linkCalendarPages(root) {
           try { localStorage.setItem('super-calendar-verse-drawn', drawnOn); } catch {}
           updatePart('verse', verseMarkup(drawnOn));
           break;
-        case 'market-retry': renderMarket(true); break;
+        case 'market-retry': renderMarket(true); window.InvestmentCalendar?.refresh(true); break;
 
         case 'scores-retry': scoreDay = ''; loadScores(currentDay()); break;
         case 'weather-retry':
@@ -1412,6 +1510,23 @@ function linkCalendarPages(root) {
       document.querySelector('meta[name="theme-color"]').content = amberBoard ? '#39241f' : '#702d24';
       if (amberBoard) AmberBoard.mount(document.getElementById('app'));
       else document.getElementById('app').innerHTML = shell();
+      if (active()) {
+        const market=board().querySelector('#db-market'), chartContents=[...market.children].slice(1);
+        market.firstElementChild.insertAdjacentHTML('afterend', `<div class="db-invest-events" data-part="investment" hidden></div>
+          <div class="db-market-split"><div class="db-market-series"></div>
+          <aside class="db-watchlist" id="db-watchlist" aria-label="自选股涨跌"><ul data-part="watchlist" aria-label="自选股涨跌幅"></ul><small data-watch-note hidden></small></aside></div>`);
+        market.querySelector('.db-market-series').append(...chartContents);
+        const title = market.querySelector('h2'), heading = document.createElement('div');
+        heading.className = 'db-market-heading';
+        title.before(heading);
+        heading.append(title);
+        heading.insertAdjacentHTML('beforeend', `<button type="button" class="db-watch-toggle" aria-expanded="true" aria-controls="db-watchlist" aria-label="收起自选股涨跌">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 21h18"/>
+            <path class="door-open" d="M6 20V4l8-2v20l-8-2ZM14 4h4v17M11 11.5v1.5"/>
+            <path class="door-closed" d="M6 21V4h12v17M14 12h.8"/>
+          </svg></button>`);
+      }
       board().querySelector('.db-heading').prepend(document.getElementById('daily-board-cover').content.cloneNode(true));
       bindBoard(board());
       linkCalendarPages(board());
@@ -1444,7 +1559,7 @@ function linkCalendarPages(root) {
     ensureTravelWeather(date);
     loadScores(date);
     const session = !marketClosed(date) && ((time >= '09:15' && time <= '11:30') || (time >= '13:00' && time <= '15:01'));
-    const quotes = marketData.get(`quotes|${watchlist.join(',')}`);
+    const quotes = marketData.get(`quotes|${watchlist.slice(0,200).join(',')}`);
     const refresh = Boolean(session && quotes && !quotes.error && Date.now() - quotes.at >= 60000);
     if (refresh || minuteChanged) renderMarket(refresh);
     if (minuteChanged) refreshSports();
@@ -1454,6 +1569,9 @@ function linkCalendarPages(root) {
     if (event.key === 'super-calendar-verse-drawn') drawnOn = event.newValue || '';
     mount();
   });
+  for (const event of ['investment-calendar-update','stock-preferences-cloud-change']) {
+    window.addEventListener(event, () => { if (active()) renderMarket(); });
+  }
   window.DailyBoard = { active, mount, setTodoOwner };
 })();
 </script>
@@ -1951,6 +2069,11 @@ body.summary-page .summary-annual .calendar-holiday.has-summary-events::after{di
 })();
 </script>
 <script>window.DailyBoard.mount();
+if (hosted && !amberSample) {
+  const investmentFeed=document.createElement('script');
+  investmentFeed.src='./investment-calendar.js?v=20261123-board-market';
+  document.head.append(investmentFeed);
+}
 if (!amberSample) refreshPublicCalendars();
 window.addEventListener("online",()=>{if (amberSample) return; weatherCache.clear();window.DailyBoard.mount();document.querySelector("[data-daily-action=market-retry]")?.click();refreshPublicCalendars();});</script>
 
@@ -2395,6 +2518,19 @@ window.addEventListener("online",()=>{if (amberSample) return; weatherCache.clea
     return {...readCache(uid), uid, job:null, conflict:false};
   }
   let state=stateFor(null), identityCheck=0;
+  const watchToggle = nodes.get('market').querySelector('.db-watch-toggle');
+  function applyWatchlistVisibility() {
+    if (!watchToggle) return;
+    const collapsed = model.watchlistCollapsed === true;
+    document.getElementById('db-watchlist').hidden = collapsed;
+    watchToggle.setAttribute('aria-expanded', String(!collapsed));
+    watchToggle.setAttribute('aria-label', collapsed ? '展开自选股涨跌' : '收起自选股涨跌');
+  }
+  watchToggle?.addEventListener('click', () => {
+    model.watchlistCollapsed = !model.watchlistCollapsed;
+    applyWatchlistVisibility();
+    saveLayout();
+  });
   function cached(s) {
     try {
       localStorage.setItem(storageKey(s.uid),JSON.stringify({layout:s.layout,revision:s.revision,dirty:s.dirty}));
@@ -2404,6 +2540,7 @@ window.addEventListener("online",()=>{if (amberSample) return; weatherCache.clea
   function display(layout) {
     gesture=null; pendingDrop=null; resetHighlight();
     model=copy(layout); render();
+    applyWatchlistVisibility();
     if (amberBoard) setEditing(!model.locked);
   }
   function switchOwner(uid, accountName) {
