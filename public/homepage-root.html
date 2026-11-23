@@ -847,6 +847,7 @@ html:not(.dark) .mrj-featured .reading-book-pages{background:repeating-linear-gr
   'use strict';
   const q=(s,p=document)=>p.querySelector(s), qa=(s,p=document)=>[...p.querySelectorAll(s)];
   const paths={
+    family:'<path d="m2 10 10-8 10 8M5 9v12h14V9"/><path d="M12 17s-6-3.6-3.5-6q1.6-1.4 3.5.7 1.9-2.1 3.5-.7C18 13.4 12 17 12 17Z"/>',
     calendar:'<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v4m10-4v4M3 11h18m-13 4h1m4 0h1m3 0h1m-10 3h1m4 0h1"/>',
     tools:'<path d="m14 6 4 4M4 20l9-9a6 6 0 0 0 7-7l-4 4-3-3 4-4a6 6 0 0 0-7 7l-9 9Z"/>',
     book:'<path d="M12 6C9 3 5 3 2 4v15c4-1 7-1 10 2 3-3 6-3 10-2V4c-3-1-7-1-10 2Zm0 0v15"/>',
@@ -871,8 +872,9 @@ html:not(.dark) .mrj-featured .reading-book-pages{background:repeating-linear-gr
     {id:'travel',title:'3D 旅行相册 · 足印',en:'A WORLD OF MEMORIES',desc:'用AI打造的相册，把旅途印记点亮在 3D 地球之上',href:'/officialwebsite/topics/space/travel/travel-map/',cats:['life'],type:'paw'},
     {id:'bible',title:'阅读神器 · 知页',en:'READ & REFLECT',desc:'创建自己的AI书架，收藏所爱，记录所思，定义你的个性化阅读。',href:'/officialwebsite/ai-bookshelf.html',cats:['life','learn'],type:'book'},
     {id:'funds',title:'AI投资 · 观盈',en:'INVEST WITH INSIGHT',desc:'用AI设计的投资看板，实现个股/基金智能筛选，信息自动跟踪',href:'https://www.magicj.cn/officialwebsite/topics/space/investing/funds/index.html#kpi',cats:['work'],type:'chart'},
-    {id:'tools',title:'学咖啡 · 咖叙',en:'FROM BEAN TO CUP',desc:'用AI创建的咖啡学习空间，全方位了解咖啡知识',href:'/officialwebsite/coffee-field-guide-zh.html',cats:['tools','work'],type:'coffee'},
-    {id:'resume',title:'个性简历 · 职笺',en:'A DIFFERENT INTRODUCTION',desc:'用AI制作的个性化双语简历，以另一种方式，展现个性化的自己。',href:'https://www.magicj.cn/officialwebsite/resume/',cats:['work','venture'],type:'user'}
+    {id:'tools',title:'喝懂咖啡 · 咖叙',en:'FROM BEAN TO CUP',desc:'用AI创建的咖啡学习空间，全方位了解咖啡知识',href:'/officialwebsite/coffee-field-guide-zh.html',cats:['tools','work'],type:'coffee'},
+    {id:'resume',title:'个性简历 · 职笺',en:'A DIFFERENT INTRODUCTION',desc:'用AI制作的个性化双语简历，以另一种方式，展现个性化的自己。',href:'https://www.magicj.cn/officialwebsite/resume/',cats:['work','venture'],type:'user'},
+    {id:'family',title:'家庭健康档案 · 家安',desc:'把家人的就诊记录、用药和复诊安排收进同一份档案。',href:'/officialwebsite/family-health.html',cats:['life'],type:'family'}
   ];
   const nodes=[
     {title:'个人计划',desc:'安排每一天的优先事项',href:'https://www.magicj.cn/officialwebsite/super-calendar/index.html#life',cats:['life','work'],type:'plan'},
@@ -909,6 +911,33 @@ html:not(.dark) .mrj-featured .reading-book-pages{background:repeating-linear-gr
     </div>`;
   }
   function preview(p){
+    if(p.id==='family') return `<div class="family-demo project-motion" role="img" aria-label="就诊记录从家庭档案袋中展开，就诊、用药和复诊依次点亮。">
+      <svg viewBox="0 0 364 260" aria-hidden="true" focusable="false">
+        <rect width="364" height="260" rx="12" fill="#1b1c19"/>
+        <path d="M17 40h330M17 210h330" stroke="#49453c"/>
+        <g fill="#e2c8a3"><text x="18" y="27" font-size="15" font-weight="650">家安</text><text x="346" y="26" text-anchor="end" font-size="10" letter-spacing="1.6">FAMILY HEALTH</text></g>
+        <g transform="rotate(-5 182 143)">
+          <path d="M86 109q0-7 7-7h44l12 10h116q8 0 8 8v68q0 8-8 8H94q-8 0-8-8Z" fill="#876847"/>
+          <g class="family-record">
+            <rect x="114" y="68" width="138" height="110" rx="6" fill="#aeaa98" transform="rotate(8 180 125)"/>
+            <rect x="110" y="62" width="138" height="112" rx="6" fill="#f1e5cd"/>
+            <path d="M123 80h10m-5-5v10" stroke="#768665" stroke-width="3" stroke-linecap="round"/>
+            <text x="139" y="84" fill="#49473c" font-size="13" font-weight="700">就诊记录</text>
+            <path d="M123 94h108m-108 9h48m-48 6h32" stroke="#c4b59d" stroke-width="2"/>
+            <path class="family-pulse" d="M175 109h12l5-8 6 14 6-26 6 20h21" pathLength="1" fill="none" stroke="#768665" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </g>
+          <path d="M84 133q-1-7 7-7h54q5 0 9 4l8 6h111q6 0 5 7l-7 47q-1 7-8 7H99q-7 0-8-7Z" fill="#be9868" stroke="#dbb887"/>
+          <text x="106" y="165" font-size="16" font-weight="700" fill="#382c20">家庭健康档案</text>
+          <path d="M107 175h58m-58 5h34" stroke="#866b48" stroke-width="2"/>
+          <g transform="translate(232 151)" fill="none" stroke="#71573a" stroke-width="1.6" stroke-linejoin="round"><path d="m0 10 12-10 12 10m-21-1v14h18V9"/><path d="M12 18s-7-4-4-7q2-2 4 1 2-3 4-1c3 3-4 7-4 7Z"/></g>
+        </g>
+        <g transform="translate(0 236)" font-size="13" fill="#ddceb9">
+          <path d="M84-4h55m71 0h53" stroke="#504b40"/>
+          <circle class="family-step" cx="33" cy="-4" r="4"/><text x="45">就诊</text>
+          <circle class="family-step family-medication" cx="155" cy="-4" r="4"/><text x="167">用药</text>
+          <circle class="family-step family-followup" cx="278" cy="-4" r="4"/><text x="290">复诊</text>
+        </g>
+      </svg></div>`;
     if(p.id==='calendar')return calendarOverlay();
     if(p.id==='travel')return '<div class="travel-preview travel-preview-full"><canvas class="travel-globe" role="img" aria-label="可转动的旅行地球仪，标记去过的城市"></canvas><span class="travel-enter">点击进入3D世界 <span aria-hidden="true">↗</span></span></div>';
     if(p.id==='bible')return `<div class="reader-demo reader-annotation-demo project-motion" data-preview-motion="reading" data-reading-phase="reading" role="img" aria-label="今日阅读：信就是所望之事的实底，是未见之事的确据。希伯来书 11:1。书页高亮、收藏和语音播报的自动演示">
@@ -950,15 +979,55 @@ html:not(.dark) .mrj-featured .reading-book-pages{background:repeating-linear-gr
   }
   const calendarRobot = `<svg class="calendar-robot" viewBox="0 0 1254 1254" aria-hidden="true"><defs><clipPath id="calendar-robot-eye-left"><ellipse cx="342" cy="500" rx="57" ry="82" transform="rotate(15 342 500)"/></clipPath><clipPath id="calendar-robot-eye-right"><ellipse cx="685" cy="506" rx="73" ry="86" transform="rotate(9 685 506)"/></clipPath></defs><image href="/officialwebsite/images/calendar-robot-black-gold.png" width="1254" height="1254"/><g clip-path="url(#calendar-robot-eye-left)"><g class="calendar-robot-pupils"><image href="/officialwebsite/images/calendar-robot-black-gold.png" width="1254" height="1254" transform="translate(-61.56 -90) scale(1.18)"/></g></g><g clip-path="url(#calendar-robot-eye-right)"><g class="calendar-robot-pupils"><image href="/officialwebsite/images/calendar-robot-black-gold.png" width="1254" height="1254" transform="translate(-123.3 -91.08) scale(1.18)"/></g></g></svg>`;
   const projectDescriptions={
-    calendar:['每个人的生活都离不开日历。','打开超级日历，让你的生活更加井井有条。'],
-    travel:['把散落在世界的瞬间，连接成自己的地图。','用3D地图串起旅行照片和回忆，随时重温每一段旅程。'],
-    bible:['AI伴读，智能总结，个性笔记，知识关系图，没有做不到，只有想不到'],
-    funds:['基金看板：全方位筛选基金经理，多个维度辅助比较研究。','个股看板：财报跟踪，个股监控，深度解读；'],
-    tools:['咖啡知识 · 互动练习 · 冲煮计算，边浏览边学习'],
-    resume:['用AI书写自己的故事和作品，经历与能力被更清楚地看见，在竞争者中脱颖而出。']
+    travel:{
+      intro:'我用 3D 地球串起旅行足印和回忆，把去过的十多个国家和景点点亮在地图上。',
+      features:'点击地球上的国家或城市名称，就能重温那段旅程。',
+      highlight:'随时观看、分享和更新。'
+    },
+    calendar:{
+      intro:'我把生活、投资、出行、健康、比赛和 AI 等日历汇总到一个超级日历里。',
+      features:'在对应的日历里记下每天要做的事，超级日历会自动汇总并展示当天的安排。',
+      highlight:'用一个汇总日历，记录人生轨迹。'
+    },
+    family:{
+      intro:'为每位家庭成员建立健康档案，集中记录和保存健康信息。',
+      features:'记录就医经历和病史、管理用药、保存检查报告，还可以做健康打卡。',
+      highlight:'智能管理健康档案，方便与家人分享。'
+    },
+    funds:{
+      intro:'我把 20 多年投资经验积累下来的策略做成了 AI 看板。',
+      features:[
+        ['基金看板','全面对比 1,000 多位基金经理的各项指标，筛选优秀的基金经理。'],
+        ['个股看板','实时跟踪个股动态、财报和年报，智能分析并整理投资策略。']
+      ],
+      highlight:'用 AI 从大量数据中筛选专业指标，并辅助分析。'
+    },
+    bible:{
+      intro:'用 AI 打造自己的人生书架，收藏和分享喜欢的书。',
+      features:'语音伴读、收藏笔记、实时查看阅读进度，并拓展相关知识。',
+      highlight:'按自己的习惯，打造个性化的智能阅读体验。'
+    },
+    resume:{
+      intro:'用 AI 书写自己的经历和故事，展示自己的作品。',
+      features:'用能力图谱和分类展示技能，支持中英双语和主题切换。',
+      highlight:'用个性化简历呈现自己的特点，在求职中脱颖而出。'
+    },
+    tools:{
+      intro:'用 AI 制作的咖啡网站，带你了解咖啡从生产到制作的全过程。',
+      features:'咖啡知识、互动练习和冲煮计算。',
+      highlight:'边浏览边学习，动手练习冲煮。'
+    }
   };
-  const orderedProjects=[projects[1],projects[2],projects[5],projects[0],projects[4],projects[3]];
-  qa('[data-project-gallery]').forEach(g=>{g.innerHTML=orderedProjects.map((p,i)=>`<a class="feature-card glass" data-project="${p.id}" data-cats="${p.cats.join(' ')}" href="${p.href}" target="_blank" rel="noopener noreferrer"><div class="feature-top"><span class="feature-index">0${i+1}</span><span class="feature-actions"><button type="button" class="project-like" aria-label="喜欢${p.title}" aria-pressed="false"><span class="project-like-icon" aria-hidden="true">♡</span><span class="project-like-count">0</span></button></span></div><template class="project-deck-details">${icon(p.type)}${projectDescriptions[p.id].map(text=>`<p>${text}</p>`).join('')}</template><div class="feature-copy"><h3>${p.title}</h3><p>${p.desc}</p>${p.id==='calendar'?calendarRobot:''}</div><div class="product-preview">${preview(p)}</div></a>`).join('');});
+  function projectDetails({intro,features,highlight}){
+    const featureCopy = Array.isArray(features)
+      ? `<ul>${features.map(([name, text]) => `<li><strong>${name}</strong><p>${text}</p></li>`).join('')}</ul>`
+      : features;
+    return `<dl><div><dt>简介：</dt><dd>${intro}</dd></div>
+      <div><dt>功能：</dt><dd>${featureCopy}</dd></div>
+      <div><dt>特色：</dt><dd>${highlight}</dd></div></dl>`;
+  }
+  const orderedProjects=[projects[1],projects[0],projects[6],projects[3],projects[2],projects[5],projects[4]];
+  qa('[data-project-gallery]').forEach(g=>{g.innerHTML=orderedProjects.map((p,i)=>`<a class="feature-card glass" data-project="${p.id}" data-cats="${p.cats.join(' ')}" href="${p.href}" target="_blank" rel="noopener noreferrer"><div class="feature-top"><span class="feature-index">0${i+1}</span><span class="feature-actions"><button type="button" class="project-like" aria-label="喜欢${p.title}" aria-pressed="false"><span class="project-like-icon" aria-hidden="true">♡</span><span class="project-like-count">0</span></button></span></div><template class="project-deck-details">${icon(p.type)}${projectDetails(projectDescriptions[p.id])}</template><div class="feature-copy"><h3>${p.title}</h3><p>${p.desc}</p>${p.id==='calendar'?calendarRobot:''}</div><div class="product-preview">${preview(p)}</div></a>`).join('');});
   const projectSection = q('#projects');
   if (projectSection) {
     projectSection.classList.add('project-showcase-refined');
@@ -1081,7 +1150,7 @@ html:not(.dark) .mrj-featured .reading-book-pages{background:repeating-linear-gr
   const storageKey = 'mrj-project-likes';
   const pendingKey = 'mrj-project-like-pending';
   const endpoint = '/officialwebsite/api/home-visits?metric=project-likes';
-  const projectIds = ['calendar','travel','bible','funds','tools','resume'];
+  const projectIds = ['calendar','travel','bible','funds','tools','resume','family'];
   const buttons = [...document.querySelectorAll('.project-like')];
   const status = document.querySelector('.project-like-hint');
   if (status) { status.setAttribute('role','status'); status.setAttribute('aria-live','polite'); }
@@ -1161,19 +1230,27 @@ html:not(.dark) .mrj-featured .reading-book-pages{background:repeating-linear-gr
     </header>
     <div class="project-deck-slide">
       <div class="project-deck-copy">
-        <h2 id="project-deck-title"><span class="project-deck-icon" aria-hidden="true"></span><span class="project-deck-brand"></span></h2>
+        <h2 id="project-deck-title">
+          <span class="project-deck-icon" aria-hidden="true"></span>
+          <span class="project-deck-brand"></span>
+          <span class="project-deck-subtitle" hidden></span>
+        </h2>
         <div class="project-deck-description"></div>
         <div class="project-deck-boards" role="group" aria-label="选择投资看板" hidden>
           <button type="button" data-deck-board="funds" aria-pressed="true">基金看板</button>
           <button type="button" data-deck-board="stocks" data-url="/officialwebsite/stock-tracking/?view=dashboard&amp;stock=301026" aria-pressed="false">个股看板</button>
         </div>
+        <a class="project-deck-open project-deck-open-primary" target="_blank" rel="noopener noreferrer">打开完整项目 <span aria-hidden="true">↗</span></a>
       </div>
       <div class="project-deck-live">
+        <div class="project-deck-live-actions" hidden>
+          <span class="project-deck-full-title" id="project-deck-full-title"></span>
+          <button type="button" class="project-deck-return">关闭 <span aria-hidden="true">×</span></button>
+        </div>
         <div class="project-deck-screen">
           <p class="project-deck-loading" role="status" hidden>正在加载项目首页…</p>
         </div>
       </div>
-      <a class="project-deck-open" target="_blank" rel="noopener noreferrer">打开完整项目 <span aria-hidden="true">↗</span></a>
     </div>
     <nav class="project-deck-navigation" aria-label="切换 AI 项目">
       <button type="button" class="project-deck-control project-deck-prev" aria-label="上一个项目">‹</button>

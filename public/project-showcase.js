@@ -7,9 +7,13 @@
   const slide = find('.project-deck-slide');
   const icon = find('.project-deck-icon');
   const brand = find('.project-deck-brand');
+  const subtitle = find('.project-deck-subtitle');
   const description = find('.project-deck-description');
   const count = find('.project-deck-count');
   const openProject = find('.project-deck-open');
+  const fullActions = find('.project-deck-live-actions');
+  const fullTitle = find('.project-deck-full-title');
+  const returnToDeck = find('.project-deck-return');
   const close = find('.project-deck-close');
   const screen = find('.project-deck-screen');
   const loading = find('.project-deck-loading');
@@ -20,6 +24,7 @@
   let active = -1;
   let opener;
   let frame;
+  let previewScrollTop;
 
   const projects = cards.map((card, index) => {
     const title = card.querySelector('.feature-copy h3').textContent.trim();
@@ -67,6 +72,7 @@
       ? url.pathname + url.search + url.hash
       : url.href;
     openProject.href = href;
+    fullTitle.textContent = label;
     loading.hidden = false;
     frame?.remove();
     const nextFrame = document.createElement('iframe');
@@ -94,6 +100,8 @@
     const details = project.card.querySelector('.project-deck-details').content.cloneNode(true);
     icon.replaceChildren(details.querySelector('svg'));
     brand.textContent = project.brand || project.name;
+    subtitle.textContent = project.brand ? project.name : '';
+    subtitle.hidden = !project.brand;
     description.replaceChildren(details);
     count.textContent = (index + 1) + ' / ' + projects.length;
     boards.hidden = project.card.dataset.project !== 'funds';
@@ -126,6 +134,31 @@
     select((active + offset + projects.length) % projects.length);
   }
 
+  function setFullProject(open) {
+    dialog.classList.toggle('is-full-project', open);
+    dialog.setAttribute('aria-labelledby', open ? 'project-deck-full-title' : 'project-deck-title');
+    fullActions.hidden = !open;
+  }
+
+  function closeFullProject() {
+    setFullProject(false);
+    slide.scrollTop = previewScrollTop;
+    openProject.focus({ preventScroll: true });
+  }
+
+  openProject.addEventListener('click', event => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.defaultPrevented) return;
+    event.preventDefault();
+    previewScrollTop = slide.scrollTop;
+    setFullProject(true);
+    returnToDeck.focus();
+  });
+  returnToDeck.addEventListener('click', closeFullProject);
+  dialog.addEventListener('cancel', event => {
+    if (fullActions.hidden) return;
+    event.preventDefault();
+    closeFullProject();
+  });
   fundBoard.addEventListener('click', () => {
     if (fundBoard.getAttribute('aria-pressed') !== 'true') selectBoard(fundBoard);
   });
@@ -139,7 +172,7 @@
     if (event.target === dialog) dialog.close();
   });
   dialog.addEventListener('keydown', event => {
-    if (event.defaultPrevented || event.altKey || event.metaKey || event.ctrlKey ||
+    if (!fullActions.hidden || event.defaultPrevented || event.altKey || event.metaKey || event.ctrlKey ||
         (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')) return;
     event.preventDefault();
     move(event.key === 'ArrowLeft' ? -1 : 1);
@@ -147,6 +180,7 @@
   });
   dialog.addEventListener('close', () => {
     if (dialog.open) return;
+    if (!fullActions.hidden) setFullProject(false);
     frame?.remove();
     frame = undefined;
     projects.forEach(({ preview, placeholder }) => placeholder.replaceWith(preview));

@@ -1,6 +1,6 @@
 'use strict';
 const { createHash } = require('node:crypto');
-const projectIds = ['calendar', 'travel', 'bible', 'funds', 'tools', 'resume'];
+const projectIds = ['calendar', 'travel', 'bible', 'funds', 'tools', 'resume', 'family'];
 // Provision site_metrics/home with { count: 0 } before enabling the HTTP endpoint.
 // Deny direct client access to site_metrics; only this function updates it.
 exports.createHandler = db => async (event = {}) => {

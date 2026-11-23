@@ -490,6 +490,18 @@ html:not(.dark) .invest-factor>div{background:#6f503212}
   .resume-scan-line,.coffee-steam,.project-motion .coffee-pouring,.coffee-milk-pool{display:none}
 }
 /* Keep each outer card square while fitting its demonstration into the available space. */
+.family-demo svg{display:block;width:100%;height:100%}
+.family-step{fill:#dbb887}
+@media(prefers-reduced-motion:no-preference){
+  .family-record{animation:family-unfile 7.2s ease-in-out infinite}
+  .family-pulse{stroke-dasharray:1;animation:family-trace 7.2s ease-in-out infinite}
+  .family-step{animation:family-milestone 7.2s ease-in-out infinite}
+  .family-medication{animation-delay:-4.8s}
+  .family-followup{animation-delay:-2.4s}
+}
+@keyframes family-unfile{0%,100%{transform:translateY(17px)}28%,76%{transform:translateY(-4px)}}
+@keyframes family-trace{0%,16%,100%{stroke-dashoffset:1}44%,84%{stroke-dashoffset:0}}
+@keyframes family-milestone{0%,32%,100%{fill:#796e5a}8%,24%{fill:#ffc887}}
 .project-showcase-refined .project-gallery>.feature-card{aspect-ratio:1;height:auto;align-self:start;--demo-aspect:1.4}
 .project-showcase-refined .feature-card .feature-top,.project-showcase-refined .feature-card .feature-copy{flex-shrink:0}
 .project-showcase-refined .feature-card[data-project] .product-preview{flex:1;min-height:0;aspect-ratio:auto;container-type:size;display:grid;place-items:center;grid-template:minmax(0,1fr)/minmax(0,1fr)}

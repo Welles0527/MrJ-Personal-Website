@@ -98,7 +98,7 @@ html:has(.project-deck[open]) {
 
 .project-deck-copy {
   min-width: 0;
-  padding: 0 4px 0 10px;
+  padding-inline: clamp(12px, 1.6vw, 26px);
 }
 
 #project-deck-title {
@@ -125,42 +125,119 @@ html:has(.project-deck[open]) {
 .project-deck-icon svg { width: 100%; }
 
 .project-deck-brand {
+  flex: none;
   color: var(--deck-gold);
 }
 
-.project-deck-description {
-  margin: 0 0 28px;
+.project-deck-subtitle {
+  min-width: 0;
+  align-self: end;
+  margin-block-end: .32em;
   color: var(--deck-muted);
-  font-size: 16px;
-  line-height: 1.85;
-  overflow-wrap: anywhere;
+  font-size: clamp(12px, 1.05vw, 16px);
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: 0;
+  overflow-wrap: normal;
 }
 
-.project-deck-description p { margin: 0; }
-.project-deck-description p + p { margin-top: .75em; }
+.project-deck-description {
+  margin: 0 0 12px;
+  color: var(--deck-muted);
+  font-size: 16px;
+  line-height: 1.7;
+  overflow-wrap: break-word;
+}
 
-.project-deck-open {
+.project-deck-description dl,
+.project-deck-description dd,
+.project-deck-description p { margin: 0; }
+
+.project-deck-description dl > div {
+  display: grid;
+  grid-template-columns: 3em minmax(0, 1fr);
+  column-gap: 4px;
+  padding-block: 15px;
+  border-top: 1px solid var(--deck-line);
+}
+
+.project-deck-description dt {
+  color: var(--deck-gold);
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.project-deck-description ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.project-deck-description strong {
+  color: var(--deck-ink);
+  font-weight: 600;
+}
+
+.project-deck-open,
+.project-deck-return {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
-  min-height: 42px;
-  padding: 8px 14px;
+  justify-content: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 4px 12px;
   border: 1px solid #e6b68180;
   border-radius: 8px;
   background: #e6b68117;
   color: #f6d2aa;
-  font-size: 14px;
+  font: inherit;
+  font-size: 13px;
   font-weight: 600;
   text-decoration: none;
+  cursor: pointer;
 }
 
-.project-deck-open:hover {
+.project-deck-open:hover,
+.project-deck-return:hover {
   background: #e6b68129;
   color: #ffe7ca;
 }
 
-.project-deck-live {
+.project-deck-open-primary {
+  display: flex;
+  width: fit-content;
+  max-width: 100%;
+  min-height: 44px;
+  margin: 0 auto;
+  padding: 8px 18px;
+  font-size: 17px;
+  text-align: center;
+}
+
+.project-deck-live-actions:not([hidden]) {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--deck-line);
+  background: #181510;
+}
+
+.project-deck-full-title {
   min-width: 0;
+  margin-right: auto;
+  color: var(--deck-gold);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.project-deck-live {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  min-width: 0;
+  min-height: 0;
   align-self: start;
   overflow: hidden;
   border: .5px solid #cca17138;
@@ -171,6 +248,7 @@ html:has(.project-deck[open]) {
 .project-deck-boards:not([hidden]) {
   display: flex;
   gap: 4px;
+  justify-content: center;
   margin-bottom: 12px;
 }
 
@@ -324,21 +402,20 @@ html:has(.project-deck[open]) {
 
 @media (min-width: 761px) {
   .project-deck { inset-block-start: 24px; }
-  .project-deck-copy { margin-block-start: clamp(20px, 3dvh, 36px); }
+  .project-deck-copy {
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
+    margin-block-start: clamp(20px, 3dvh, 36px);
+  }
+  .project-deck-open-primary { margin-block: auto; }
   .project-deck-shell { height: calc(var(--deck-height) - 2px); }
   .project-deck-slide {
-    grid-template-rows: minmax(min-content, 1fr) auto;
-    row-gap: 0;
+    grid-template-rows: minmax(min-content, 1fr);
   }
   .project-deck-live {
-    grid-area: 1 / 2 / span 2;
     width: 100%;
     height: 100%;
-  }
-  .project-deck-open {
-    grid-area: 2 / 1;
-    place-self: end start;
-    margin-left: 10px;
   }
 }
 
@@ -352,28 +429,58 @@ html:has(.project-deck[open]) {
   .project-deck-header { padding: 8px 12px 8px 16px; }
   .project-deck-slide {
     grid-template-columns: minmax(0, 1fr);
-    gap: 0;
+    gap: 16px;
     padding: 10px 12px 16px;
   }
 
-  .project-deck-copy { padding: 0 3px; }
   #project-deck-title { margin-bottom: 8px; font-size: 28px; }
-  .project-deck-description { margin-bottom: 14px; font-size: 15px; line-height: 1.6; }
-  .project-deck-open {
-    justify-content: center;
-    min-height: 40px;
-    padding: 5px 10px;
-    border-top: 0;
-    border-radius: 0 0 10px 10px;
-    font-size: 13px;
-  }
-  .project-deck-live { border-radius: 10px 10px 0 0; }
+  .project-deck-description { margin-bottom: 14px; font-size: 15px; line-height: 1.65; }
+  .project-deck-description dl > div { padding-block: 11px; }
   .project-deck-screen { aspect-ratio: 1 / 1; height: auto; }
   .project-deck-screen iframe { width: 100%; height: 100%; transform: none; }
   .project-deck-navigation { padding: 4px 8px 7px; gap: 6px; }
   .project-deck-thumbnails { grid-auto-columns: 156px; gap: 7px; }
   .project-deck-control { width: 34px; height: 34px; }
 }
+
+.project-deck.is-full-project {
+  inset: 0;
+  width: 100%;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+.is-full-project .project-deck-shell,
+.is-full-project .project-deck-slide {
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+  height: 100%;
+  max-height: none;
+}
+
+.is-full-project .project-deck-header,
+.is-full-project .project-deck-copy,
+.is-full-project .project-deck-navigation { display: none; }
+
+.is-full-project .project-deck-slide {
+  padding: 0;
+  overflow: hidden;
+}
+
+.is-full-project .project-deck-live {
+  grid-template-rows: auto minmax(0, 1fr);
+  align-self: stretch;
+  border: 0;
+  border-radius: 0;
+}
+
+.is-full-project .project-deck-live-actions:not([hidden]) { padding-inline: 16px; }
+.is-full-project .project-deck-return { min-height: 40px; }
+.is-full-project .project-deck-screen { height: 100%; aspect-ratio: auto; }
+.is-full-project .project-deck-screen iframe { width: 100%; height: 100%; transform: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .project-deck[open] { animation: none; }
