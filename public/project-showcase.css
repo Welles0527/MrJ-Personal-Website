@@ -400,6 +400,9 @@ html:has(.project-deck[open]) {
   outline-offset: -3px;
 }
 
+.project-deck-intro,
+.project-deck-next-label { display: none; }
+
 @media (min-width: 761px) {
   .project-deck { inset-block-start: 24px; }
   .project-deck-copy {
@@ -428,14 +431,17 @@ html:has(.project-deck[open]) {
   }
 
   .project-deck-header { padding: 8px 12px 8px 16px; }
+  .project-deck-shell { height: auto; }
   .project-deck-slide {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: max-content max-content;
-    gap: 14px;
+    grid-template-rows: max-content;
     padding: 10px 12px 16px;
   }
 
   .project-deck-live { grid-row: 1; height: auto; }
+  .project-deck:not(.is-intro) .project-deck-copy,
+  .project-deck.is-intro:not(.is-full-project) .project-deck-live { display: none; }
+
   .project-deck-copy {
     display: block;
     width: min(100%, 620px);
@@ -449,9 +455,33 @@ html:has(.project-deck[open]) {
   .project-deck-open-primary { font-size: 15px; }
   .project-deck-screen { aspect-ratio: 1 / 1; height: auto; max-height: 52dvh; }
   .project-deck-screen iframe { width: 100%; height: 100%; transform: none; }
-  .project-deck-navigation { padding: 4px 8px 7px; gap: 6px; }
-  .project-deck-thumbnails { grid-auto-columns: 156px; gap: 7px; }
+  .project-deck-navigation {
+    grid-template-columns: repeat(2, minmax(0, 200px));
+    justify-content: center;
+    padding: 10px 12px;
+    gap: 10px;
+  }
+  .project-deck-thumbnails,
+  .project-deck-prev { display: none; }
   .project-deck-control { width: 34px; height: 34px; }
+  .project-deck-intro,
+  .project-deck-next {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    height: 44px;
+    padding: 4px 8px;
+    border: 1px solid var(--deck-line);
+    border-radius: 8px;
+    background: #f4c38a0a;
+    color: var(--deck-gold);
+    font: 600 14px/1.4 var(--u-font);
+    cursor: pointer;
+  }
+  .project-deck-intro[aria-expanded="true"] { background: #f4c38a18; }
+  .project-deck-next-label { display: inline; }
 }
 
 .project-deck.is-full-project {

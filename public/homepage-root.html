@@ -560,7 +560,7 @@ html:not(.dark) .mrj-featured .reading-book-pages{background:repeating-linear-gr
   .mrj-featured .tools-preview-featured strong{margin:5px 0;font-size:19px}
   .mrj-featured .tools-preview-featured p{font-size:11px}
 }
-</style><link rel="stylesheet" href="/officialwebsite/project-previews.css"><link rel="stylesheet" href="/officialwebsite/project-showcase.css"><style id="home-loader-style">
+</style><link rel="stylesheet" href="/officialwebsite/project-previews.css"><link rel="stylesheet" href="/officialwebsite/project-showcase.css?v=20261124-intro"><style id="home-loader-style">
 #home-loader{position:fixed;inset:0;z-index:2147483646;background:#030608;transition:opacity .38s ease;pointer-events:all}
 #home-loader.is-complete{opacity:0;pointer-events:none}
 #home-loader iframe{display:block;width:100%;height:100%;border:0;pointer-events:none}
@@ -1229,7 +1229,7 @@ html:not(.dark) .mrj-featured .reading-book-pages{background:repeating-linear-gr
       <button type="button" class="project-deck-control project-deck-close" aria-label="关闭项目展示" autofocus>×</button>
     </header>
     <div class="project-deck-slide">
-      <div class="project-deck-copy">
+      <div class="project-deck-copy" id="project-deck-introduction">
         <h2 id="project-deck-title">
           <span class="project-deck-icon" aria-hidden="true"></span>
           <span class="project-deck-brand"></span>
@@ -1255,9 +1255,12 @@ html:not(.dark) .mrj-featured .reading-book-pages{background:repeating-linear-gr
     <nav class="project-deck-navigation" aria-label="切换 AI 项目">
       <button type="button" class="project-deck-control project-deck-prev" aria-label="上一个项目">‹</button>
       <ul class="project-deck-thumbnails"></ul>
-      <button type="button" class="project-deck-control project-deck-next" aria-label="下一个项目">›</button>
+      <button type="button" class="project-deck-intro" aria-controls="project-deck-introduction" aria-expanded="false">项目介绍</button>
+      <button type="button" class="project-deck-control project-deck-next" aria-label="下一个项目">
+        <span class="project-deck-next-label">下一个项目</span><span aria-hidden="true">›</span>
+      </button>
     </nav>
   </div>
 </dialog>
-<script src="/officialwebsite/project-showcase.js" defer></script>
+<script src="/officialwebsite/project-showcase.js?v=20261124-intro" defer></script>
 </body></html>

@@ -11,6 +11,8 @@
   const description = find('.project-deck-description');
   const count = find('.project-deck-count');
   const openProject = find('.project-deck-open');
+  const introToggle = find('.project-deck-intro');
+  const compactLayout = matchMedia('(max-width: 760px), (max-width: 1366px) and (pointer: coarse)');
   const fullActions = find('.project-deck-live-actions');
   const fullTitle = find('.project-deck-full-title');
   const returnToDeck = find('.project-deck-return');
@@ -73,12 +75,22 @@
       : url.href;
     openProject.href = href;
     fullTitle.textContent = label;
-    loading.hidden = false;
+    unmountPreview();
+    if (!dialog.classList.contains('is-intro')) mountPreview();
+  }
+
+  function unmountPreview() {
     frame?.remove();
+    frame = undefined;
+    loading.hidden = true;
+  }
+
+  function mountPreview() {
+    loading.hidden = false;
     const nextFrame = document.createElement('iframe');
-    nextFrame.title = label + '首页预览';
+    nextFrame.title = fullTitle.textContent + '首页预览';
     nextFrame.allowFullscreen = true;
-    nextFrame.src = href;
+    nextFrame.src = openProject.getAttribute('href');
     nextFrame.addEventListener('load', () => {
       if (frame === nextFrame) loading.hidden = true;
     }, { once: true });
@@ -95,6 +107,7 @@
 
   function select(index) {
     if (active === index) return;
+    setIntro(false);
     active = index;
     const project = projects[index];
     const details = project.card.querySelector('.project-deck-details').content.cloneNode(true);
@@ -134,6 +147,33 @@
     select((active + offset + projects.length) % projects.length);
   }
 
+  function setIntro(open) {
+    dialog.classList.toggle('is-intro', open);
+    if (introToggle) {
+      introToggle.textContent = open ? '返回预览' : '项目介绍';
+      introToggle.setAttribute('aria-expanded', String(open));
+    }
+  }
+
+  function showPreview() {
+    setIntro(false);
+    slide.scrollTop = 0;
+    if (!frame) mountPreview();
+  }
+
+  introToggle?.addEventListener('click', () => {
+    if (dialog.classList.contains('is-intro')) {
+      showPreview();
+    } else {
+      setIntro(true);
+      slide.scrollTop = 0;
+      unmountPreview();
+    }
+  });
+  compactLayout.addEventListener('change', event => {
+    if (!event.matches && dialog.open && dialog.classList.contains('is-intro')) showPreview();
+  });
+
   function setFullProject(open) {
     dialog.classList.toggle('is-full-project', open);
     dialog.setAttribute('aria-labelledby', open ? 'project-deck-full-title' : 'project-deck-title');
@@ -142,6 +182,7 @@
 
   function closeFullProject() {
     setFullProject(false);
+    if (dialog.classList.contains('is-intro')) unmountPreview();
     slide.scrollTop = previewScrollTop;
     openProject.focus({ preventScroll: true });
   }
@@ -151,13 +192,19 @@
     event.preventDefault();
     previewScrollTop = slide.scrollTop;
     setFullProject(true);
+    if (!frame) mountPreview();
     returnToDeck.focus();
   });
   returnToDeck.addEventListener('click', closeFullProject);
   dialog.addEventListener('cancel', event => {
-    if (fullActions.hidden) return;
-    event.preventDefault();
-    closeFullProject();
+    if (!fullActions.hidden) {
+      event.preventDefault();
+      closeFullProject();
+    } else if (dialog.classList.contains('is-intro')) {
+      event.preventDefault();
+      showPreview();
+      introToggle.focus();
+    }
   });
   fundBoard.addEventListener('click', () => {
     if (fundBoard.getAttribute('aria-pressed') !== 'true') selectBoard(fundBoard);
@@ -181,8 +228,8 @@
   dialog.addEventListener('close', () => {
     if (dialog.open) return;
     if (!fullActions.hidden) setFullProject(false);
-    frame?.remove();
-    frame = undefined;
+    unmountPreview();
+    setIntro(false);
     projects.forEach(({ preview, placeholder }) => placeholder.replaceWith(preview));
     active = -1;
     opener?.focus({ preventScroll: true });
