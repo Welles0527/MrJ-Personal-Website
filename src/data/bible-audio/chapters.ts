@@ -1,5 +1,6 @@
 import guoliang from './gen-1-guoliang.mp3?url';
 import shuxian from './gen-1-shuxian.mp3?url';
+import catalog from './catalog.json';
 
 type ChapterRecording = { url: string; verseStarts: number[] };
 export const recordedBibleChapters: Partial<Record<string, Record<'guoliang' | 'shuxian', ChapterRecording>>> = {
@@ -14,3 +15,11 @@ export const recordedBibleChapters: Partial<Record<string, Record<'guoliang' | '
     }
   }
 };
+
+const mediaBase = import.meta.env.BASE_URL.replace(/\/$/, '') + '/data/bible/heygen/';
+for (const [chapter, { guoliang: male, shuxian: female }] of Object.entries(catalog)) {
+  recordedBibleChapters[chapter] = {
+    guoliang: { url: mediaBase + male.file, verseStarts: male.verseStarts },
+    shuxian: { url: mediaBase + female.file, verseStarts: female.verseStarts }
+  };
+}

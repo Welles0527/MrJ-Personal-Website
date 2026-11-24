@@ -28,3 +28,6 @@ tmp/
 
 # Generated Cesium runtime assets (prepared before dev/build)
 /public/cesium/
+
+# Chapter recordings are published as static media.
+/public/data/bible/heygen/**/*.mp3
