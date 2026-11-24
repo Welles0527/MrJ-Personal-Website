@@ -495,6 +495,11 @@ body.daily-board-page #mj-account { display:none; }
 </style>
 <style>
 .db-amber-content { display:contents; }
+.db-weather-details { display:flex; flex-wrap:wrap; gap:3px 10px; margin:5px 0 0; font-size:12px; line-height:1.45; }
+.db-weather-details > div { display:flex; gap:4px; white-space:nowrap; }
+.db-weather-details dt { opacity:.78; }
+.db-weather-details dd { margin:0; font-variant-numeric:tabular-nums; }
+.db-weather-details dd[data-unavailable] { opacity:.72; }
 .db-grid .db-frame .db-pane, .board > .card:not(.frame) { padding-block-start:36px; }
 .db-frame .db-cover-type { margin-block:auto; }
 /* The pendant cord sits one third of the image width from the right edge. */
@@ -794,7 +799,7 @@ const AmberBoard = (() => {
       const range=d ? temp(d.high).replace(/°$/,'')+'/'+temp(d.low) : '—';
       return `<span title="${esc(title(d))}">${i?'周'+weekday(key):'今天'}<b>${symbol(d)}</b>${esc(range)}</span>`;
     }).join('');
-    return `<h2><a href="#travel">${esc(weatherCity)} · 今日天气</a></h2><div class="conditions"><div class="dial"><span class="temp">${temp(item?.high)}</span></div><div>${esc(title(item)||'暂无预报')}<small>最高 ${temp(item?.high)} · 最低 ${temp(item?.low)}</small></div></div><div class="days">${days}</div>`;
+    return `<h2><a href="#travel">${esc(weatherCity)} · 今日天气</a></h2><div class="conditions"><div class="dial"><span class="temp">${temp(item?.high)}</span></div><div>${esc(title(item)||'暂无预报')}<small>最高 ${temp(item?.high)} · 最低 ${temp(item?.low)}</small>${weatherDetailsMarkup(entry?.details)}</div></div><div class="days">${days}</div>`;
   }
 
   function sports(date,cue,games,formatTime,shortDate) {
@@ -844,15 +849,23 @@ function savedQuote(request) {
   return fileData.market[query.has('index') ? 'index' : query.get('code')];
 }
 
+function weatherDetailsMarkup(details) {
+  const wind = details?.wind, air = details?.airQuality;
+  const windText = wind?.level ? [wind.direction,wind.level].filter(Boolean).join(' ') : '';
+  const airText = Number.isInteger(air?.aqi) && air.level ? `${air.level} · AQI ${air.aqi}` : '';
+  const metric = (name, value) => `<div><dt>${name}</dt><dd${value ? '' : ' data-unavailable'}>${esc(value || '暂无数据')}</dd></div>`;
+  return `<dl class="db-weather-details">${metric('风力',windText)}${metric('空气质量',airText)}</dl>`;
+}
+
 function ensureTravelWeather(date) {
   today = date;
   const key = weatherCity + '|week|' + date;
   const previous = weatherCache.get(key);
   if (previous && Date.now() - previous.fetchedAt < 30 * 60000) return;
-  const entry = {days:previous?.days || new Map(Object.entries(fileData.weather.days)), source:weatherSource, saved:previous?.saved ?? true, status:'ready', fetchedAt:Date.now()};
+  const entry = {days:previous?.days || new Map(Object.entries(fileData.weather.days)), details:previous?.details, source:weatherSource, saved:previous?.saved ?? true, status:'ready', fetchedAt:Date.now()};
   weatherCache.set(key, entry);
   if (!navigator.onLine) return;
-  publicRequest('/api/moji-weather?city='+encodeURIComponent(weatherCity), {cache:'no-store', signal:AbortSignal.timeout(12000)})
+  publicRequest('/api/moji-weather?details=today&city='+encodeURIComponent(weatherCity), {cache:'no-store', signal:AbortSignal.timeout(12000)})
     .then(async response => {
       if (!response.ok) throw Error('天气更新失败');
       const data = await response.json();
@@ -860,6 +873,7 @@ function ensureTravelWeather(date) {
       const days = data.days.filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d.date) && Object.hasOwn(weatherCodeLabels,d.code));
       if (!days.some(d => d.date===date)) throw Error('暂无当日天气');
       entry.days = new Map(days.map(d=>[d.date,d]));
+      entry.details = data.todayDetails?.date === date ? data.todayDetails : null;
       entry.saved = false;
     })
     .catch(() => {entry.error = !entry.days.has(date);})
@@ -1034,7 +1048,7 @@ function linkCalendarPages(root) {
     return `<div class="db-weather-hero">
       <div class="db-weather-copy"><div class="db-weather-head"><h2>今日天气</h2><span>${icon('pin')}${esc(weatherCity)}</span></div>
         <div class="db-weather-reading"><div class="db-weather-high"><small>最高</small><strong>${Number.isFinite(day?.high) ? Math.round(day.high) + '<sup>°</sup>' : '—'}</strong></div>
-          <div class="db-weather-low"><b>${esc(label(day) || (loading ? '读取预报中' : '预报暂缺'))}</b><small>最低 ${temp(day?.low)}</small></div></div></div>
+          <div class="db-weather-low"><b>${esc(label(day) || (loading ? '读取预报中' : '预报暂缺'))}</b><small>最低 ${temp(day?.low)}</small>${weatherDetailsMarkup(entry?.details)}</div></div></div>
       </div>
       <div class="db-week"><div class="db-week-heading"><h3>未来七天</h3><span>${esc(source)}</span></div><ol>${forecast}</ol>
       ${entry?.error ? '<p class="db-weather-error">天气数据未完整更新 <button type="button" data-daily-action="weather-retry">重试</button></p>' : ''}</div>`;

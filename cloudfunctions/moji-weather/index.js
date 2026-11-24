@@ -57,6 +57,23 @@ function parseForecast(html, sourceUrl, requestedCity) {
   return {source:'moji',city:requestedCity,place,sourceUrl,sourceDate,sourceUpdated:updated,fetchedAt:new Date().toISOString(),days:days.sort((a,b)=>a.date.localeCompare(b.date))};
 }
 
+function parseTodayDetails(html, date) {
+  const forecasts = html.matchAll(/<ul\b[^>]*class="[^"]*\bdays\b[^"]*"[^>]*>([\s\S]*?)<\/ul>/g);
+  const today = [...forecasts].find(([, forecast]) => /<a\b[^>]*href="[^"]*\/today\/china\/[^"]+"[^>]*>\s*今天\s*<\/a>/.test(forecast))?.[1];
+  if (!today) return null;
+
+  const wind = today.match(/<li\b[^>]*>\s*<em\b[^>]*>([\s\S]*?)<\/em>\s*<b\b[^>]*>([\s\S]*?)<\/b>\s*<\/li>/);
+  const direction = decode(wind?.[1]);
+  const level = decode(wind?.[2]).replace(/&lt;/g,'<');
+  const windInfo = /^(?:[<>≤≥]|小于|大于)?\s*\d{1,2}(?:\s*[-–~～至]\s*\d{1,2})?\s*级$/.test(level)
+    ? {direction,level} : null;
+
+  const air = decode(today.match(/<strong\b[^>]*class="[^"]*\blevel_[1-6]\b[^"]*"[^>]*>([\s\S]*?)<\/strong>/)?.[1]);
+  const aqi = air.match(/^(\d{1,3})\s*(优|良|(?:轻度|中度|重度|严重)(?:污染)?)$/);
+  const airQuality = aqi ? {aqi:Number(aqi[1]),level:aqi[2]} : null;
+  return windInfo || airQuality ? {date,wind:windInfo,airQuality} : null;
+}
+
 async function request(url, redirect='error') {
   const response = await fetch(url, {redirect,signal:AbortSignal.timeout(10000)});
   if (redirect==='manual' && response.status>=300 && response.status<400) return response;
@@ -84,26 +101,35 @@ async function cityPath(city) {
   return path;
 }
 
-async function collect(city) {
+async function collect(city, withTodayDetails) {
   const sourceUrl = ORIGIN+await cityPath(city);
-  const response = await request(sourceUrl);
-  const html = await response.text();
+  const forecast = request(sourceUrl).then(response=>response.text());
+  const details = withTodayDetails
+    ? request(sourceUrl.replace('/forecast15/','/weather/')).then(response=>response.text()).catch(()=>null)
+    : null;
+  const [html, detailsHtml] = await Promise.all([forecast, details]);
   if (html.length>1000000) throw new Error('墨迹天气响应异常');
-  return parseForecast(html,sourceUrl,city);
+  const data = parseForecast(html,sourceUrl,city);
+  if (detailsHtml && detailsHtml.length<=1000000 && data.sourceDate===beijingDate()) {
+    const todayDetails = parseTodayDetails(detailsHtml,data.sourceDate);
+    if (todayDetails) data.todayDetails = todayDetails;
+  }
+  return data;
 }
 
-async function getForecast(city) {
+async function getForecast(city, withTodayDetails=false) {
   if (typeof city!=='string'||!city.trim()||city.length>60||/[\x00-\x1f<>/\\?:#]/.test(city)) throw new Error('请输入有效城市名称');
   city=city.trim();
-  const saved=cache.get(city);
+  const key=(withTodayDetails ? 'today|' : 'forecast|')+city;
+  const saved=cache.get(key);
   if(saved&&Date.now()-saved.at<(saved.error?60000:TTL)&&saved.date===beijingDate()) {
     if(saved.error)throw new Error(saved.error);
     return saved.data;
   }
-  if(pending.has(city))return pending.get(city);
+  if(pending.has(key))return pending.get(key);
   if(pending.size>=8)throw new Error('天气查询繁忙，请稍后再试');
-  const job=collect(city).then(data=>{cache.set(city,{at:Date.now(),date:beijingDate(),data});return data;}).catch(error=>{cache.set(city,{at:Date.now(),date:beijingDate(),error:error.message});throw error;}).finally(()=>{pending.delete(city);if(cache.size>64)cache.delete(cache.keys().next().value);});
-  pending.set(city,job);return job;
+  const job=collect(city,withTodayDetails).then(data=>{cache.set(key,{at:Date.now(),date:beijingDate(),data});return data;}).catch(error=>{cache.set(key,{at:Date.now(),date:beijingDate(),error:error.message});throw error;}).finally(()=>{pending.delete(key);if(cache.size>64)cache.delete(cache.keys().next().value);});
+  pending.set(key,job);return job;
 }
 
 exports.main=async event=>{
@@ -111,7 +137,7 @@ exports.main=async event=>{
   const headers={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'};
   if(method!=='GET')return {statusCode:405,headers,body:JSON.stringify({error:'只支持GET查询'})};
   const query=event?.queryStringParameters||event?.queryString||{};
-  try {return {statusCode:200,headers,body:JSON.stringify(await getForecast(query.city||'上海'))};}
+  try {return {statusCode:200,headers,body:JSON.stringify(await getForecast(query.city||'上海',query.details==='today'))};}
   catch(error){return {statusCode:503,headers,body:JSON.stringify({source:'moji',error:error.message})};}
 };
 exports.parseForecast=parseForecast;
