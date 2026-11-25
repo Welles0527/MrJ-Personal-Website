@@ -118,6 +118,17 @@
     .prop-group-title .ui-icon{width:19px;height:19px}
     .prop-group-title span{margin-left:auto}
     .prop-item .prop-edit-input{flex:1;min-width:0;padding:6px 8px;border:1px solid #ad8959;border-radius:6px;background:#fff;color:#332722;font:inherit;font-size:16px}
+    .prop-item{display:grid;grid-template-columns:18px minmax(0,1fr) auto;align-items:start;gap:8px 10px}
+    .prop-item>input[type="checkbox"]{margin-top:3px}
+    .prop-details{min-width:0}.prop-main{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+    .prop-main strong{color:#3c2b2b;font-size:15px}.prop-main .prop-quantity{flex:none;color:#734b31;font-size:13px;white-space:nowrap}
+    .prop-description{grid-column:2/-1;margin:0;color:#654f45;font-size:13px;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere}
+    .prop-actions{display:flex;gap:5px}.prop-edit-fields{grid-column:2/-1;display:grid;grid-template-columns:minmax(0,1fr) 110px;gap:7px}
+    .prop-edit-fields textarea{grid-column:1/-1;width:100%;min-height:72px;resize:vertical}
+    .prop-edit-actions{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px}
+    .prop-item.is-done .prop-main strong,.prop-item.is-done .prop-description{text-decoration:line-through;color:#8b8079}
+    .prop-add-row{display:grid;grid-template-columns:minmax(0,1fr) 140px 70px;gap:8px}
+    #propQuantity,#propDescription{display:block;width:100%;margin-top:8px}
     @media(max-width:1050px){.role-list{grid-template-columns:repeat(4,minmax(0,1fr))}.working-area{grid-template-columns:220px minmax(0,1fr)}}
     @media(max-width:700px){.cast-panel{margin-bottom:20px;padding:16px 12px}.role-list{grid-template-columns:repeat(2,minmax(0,1fr))}.all-roles{width:100%}.working-area{display:block}.scene-index{position:static;max-height:none;overflow:visible;margin-bottom:24px}.scene-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.scene-link{min-height:75px}.role-option{grid-template-columns:5px minmax(0,1fr) auto}.role-count{grid-column:auto;justify-self:end}}
     @media(max-width:700px){.cast-heading{align-items:flex-start}.only-self{font-size:12px}.scene-title{margin-left:-4px;margin-right:-4px;padding-left:4px;padding-right:4px}}
@@ -198,7 +209,8 @@
       .mobile-entry-form button{padding:8px 7px;border:0;border-radius:8px;background:#692b39;color:#fff;font-size:12px;font-weight:700}
       #discussionForm button{margin-top:9px;padding:10px 14px}
       .mobile-list-group{margin-top:20px}.mobile-list-group h3{display:flex;justify-content:space-between;margin:0 0 9px;color:#4a2e36;font-size:16px}.mobile-list-group h3 span{font-size:13px;color:#826f65}
-      .prop-item{display:flex;align-items:center;gap:10px;padding:11px 12px}.prop-item input[type="checkbox"]{width:17px;height:17px;accent-color:#692b39}.prop-item span{flex:1;font-size:14px}.prop-item.is-done span{text-decoration:line-through;color:#8b8079}.prop-item button{border:0;background:none;color:#8c4a52;font-size:12px}
+      .prop-item{padding:11px 12px}.prop-item input[type="checkbox"]{width:17px;height:17px;accent-color:#692b39}.prop-item button{border:0;background:none;color:#8c4a52;font-size:12px}
+      .prop-item .prop-edit-input{width:100%}.prop-item .prop-edit-fields textarea{font-size:16px}
       .prop-list:empty::after,.discussion-list:empty::after{content:"暂无记录";padding:14px;color:#928078;font-size:13px}
       .discussion-item{padding:12px 14px}.discussion-item header{display:flex;justify-content:space-between;align-items:center;color:#9a887e;font-size:11px}.discussion-item header strong{color:#692b39;font-size:13px}.discussion-item p{margin:8px 0 2px;color:#433137;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
       .local-note{margin:12px 2px;color:#87756d;font-size:11px}
@@ -274,7 +286,7 @@
       <section class="mobile-view" id="mobileScheduleView" aria-labelledby="mobileScheduleTitle" hidden><h2 id="mobileScheduleTitle">排练时间</h2><div class="mobile-schedule-list"><div><span>第一场排练</span><strong>12月2日 · 周二</strong></div><div><span>第二场排练</span><strong>12月9日 · 周二</strong></div><div><span>第三场排练</span><strong>12月16日 · 周二</strong></div></div></section>
       <section class="mobile-view" id="mobilePropsView" aria-labelledby="mobilePropsTitle" hidden>
         <h2 id="mobilePropsTitle">道具准备</h2>
-        <form id="propForm" class="mobile-entry-form"><label for="propName">添加道具</label><div><input id="propName" maxlength="80" required placeholder="例如：服装、PPT"><select id="propCategory" aria-label="道具分类"><option value="physical">实物道具</option><option value="digital">数字道具</option></select><button type="submit">添加</button></div></form>
+        <form id="propForm" class="mobile-entry-form"><label for="propName">添加道具</label><div class="prop-add-row"><input id="propName" maxlength="80" required placeholder="道具名称"><select id="propCategory" aria-label="道具分类"><option value="physical">实物道具</option><option value="digital">数字道具</option></select><button type="submit">添加</button></div><input id="propQuantity" maxlength="30" placeholder="数量，例如：1 套" aria-label="道具数量"><textarea id="propDescription" maxlength="500" placeholder="准备与使用说明" aria-label="准备与使用说明"></textarea></form>
         <div class="mobile-list-group"><h3 class="prop-group-title physical"><svg class="ui-icon" aria-hidden="true"><use href="#icon-props"></use></svg>实物道具 <span id="physicalCount">0</span></h3><div id="physicalProps" class="prop-list"></div></div>
         <div class="mobile-list-group"><h3 class="prop-group-title digital"><svg class="ui-icon" aria-hidden="true"><use href="#icon-screen"></use></svg>数字道具 <span id="digitalCount">0</span></h3><div id="digitalProps" class="prop-list"></div></div>
         <p class="local-note">清单仅保存在当前浏览器。</p>
@@ -610,7 +622,41 @@
     const saveLocalList = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} };
     const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
     const propsKey = 'angel-night-props-v1';
+    const propsImportKey = 'angel-night-props-import-20261125-v1';
+    const propPresets = [
+      ['physical', '报信稿', '1 张', '用可展开的大纸。可爱天使说「我有带稿子」时递给活泼天使。'],
+      ['physical', '矮凳、灰布', '各 1 件', '先供约瑟坐着入梦；换场时罩上灰布，当作马利亚歇脚的石头。'],
+      ['physical', '客栈门', '1 套', '轻便门框配布帘和可敲响的木板，供约瑟敲门、老板娘关门。'],
+      ['physical', '可拆孕肚', '1 套', '软垫配腰带。马利亚去伯利恒前戴上，降生时在幕后取下。'],
+      ['physical', '白色毛绒小羊', '1 只', '建议长 35–45 厘米。活泼天使说到「师父你看！」时才亮出。'],
+      ['physical', '马槽', '1 个', '矮木箱或藤筐内铺麦秆色布条，保留到博士献礼。'],
+      ['physical', '婴儿玩偶、襁褓布', '各 1 件', '用浅色布包好玩偶，老板娘报喜后展示，献礼时放在马槽里。'],
+      ['physical', '牧羊杖', '2 根', '可选。两位牧羊人各持一根。'],
+      ['physical', '金色引路星、轻杆', '1 套', '与星星动画二选一。星宽建议 45–60 厘米，由可爱天使举星引路。'],
+      ['physical', '黄金、乳香、没药', '各 1 件', '分别用金色小盒、带盖小罐、深色小瓶，由三位博士捧上。'],
+      ['physical', '天使肩带或披肩', '3 条', '可选。三位天使各用一种颜色，方便观众辨认。'],
+      ['digital', '舞台背景 PPT', '1 套，建议 8 页', '依次为片头、马利亚家、约瑟家夜景、伯利恒客栈门口、马槽内景、旷野星空、博士抵达马槽、谢幕。老板娘喊「是一个男孩子」后再切马槽内景。'],
+      ['digital', '《我心尊主为大》', '1 首', '开场可用前奏；马利亚独自祷告、舞者上场时使用演出段落。'],
+      ['digital', '《小伯利恒歌》', '1 首', '约瑟梦中受告后转场，按剧本选用风琴版。'],
+      ['digital', '《马槽歌》', '1 首', '用于马槽段落。按合唱安排准备伴奏，标出起唱位置。'],
+      ['digital', '《普世欢腾》', '1 首', '全体演员上场齐唱时播放伴奏。'],
+      ['digital', '合唱歌词页', '1 组', '可并入背景 PPT，按实际演唱段落分页，含谢幕曲《普世欢腾》。'],
+      ['digital', '天使显现声', '1 段', '可选。活泼天使出现在马利亚面前时播放，可配灯光代替喷雾。'],
+      ['digital', '敲门声', '1 段', '备用。现场木板声不够响时，配合约瑟敲门动作播放。'],
+      ['digital', '引路星移动动画', '1 段', '与手举星二选一。博士说「它开始移动了」时启动，说「星星停在这」时停在马槽方向。'],
+      ['digital', '播放提示单', '1 份', '给播放人员使用，逐条列出触发台词、PPT 页码、音乐或音效文件名，以及何时播放、何时停止。']
+    ];
     let props = readLocalList(propsKey);
+    let propsImported = false;
+    try { propsImported = localStorage.getItem(propsImportKey) === '1'; } catch {}
+    if (!propsImported) {
+      const existing = new Set(props.map(item => item.category + ':' + item.name));
+      propPresets.forEach(([category, name, quantity, description], index) => {
+        if (!existing.has(category + ':' + name)) props.push({id: 'preset-' + (index + 1), category, name, quantity, description, done: false});
+      });
+      saveLocalList(propsKey, props);
+      try { localStorage.setItem(propsImportKey, '1'); } catch {}
+    }
     function renderProps() {
       for (const category of ['physical', 'digital']) {
         const container = document.getElementById(category + 'Props');
@@ -632,31 +678,56 @@
           edit.type = 'button';
           edit.setAttribute('aria-label', '编辑' + item.name);
           edit.addEventListener('click', () => {
-            const input = make('input', 'prop-edit-input');
-            input.type = 'text';
-            input.maxLength = 80;
-            input.value = item.name;
-            input.setAttribute('aria-label', '道具名称');
+            const fields = make('div', 'prop-edit-fields');
+            const nameInput = make('input', 'prop-edit-input');
+            nameInput.type = 'text';
+            nameInput.maxLength = 80;
+            nameInput.value = item.name;
+            nameInput.setAttribute('aria-label', '道具名称');
+            const quantityInput = make('input', 'prop-edit-input');
+            quantityInput.type = 'text';
+            quantityInput.maxLength = 30;
+            quantityInput.value = item.quantity || '';
+            quantityInput.placeholder = '数量';
+            quantityInput.setAttribute('aria-label', '道具数量');
+            const descriptionInput = make('textarea', 'prop-edit-input');
+            descriptionInput.maxLength = 500;
+            descriptionInput.value = item.description || '';
+            descriptionInput.placeholder = '准备与使用说明';
+            descriptionInput.setAttribute('aria-label', '准备与使用说明');
             const save = make('button', '', '保存');
             save.type = 'button';
             save.addEventListener('click', () => {
-              const name = input.value.trim();
-              if (!name) { input.focus(); return; }
+              const name = nameInput.value.trim();
+              if (!name) { nameInput.focus(); return; }
               item.name = name;
+              item.quantity = quantityInput.value.trim();
+              item.description = descriptionInput.value.trim();
               saveLocalList(propsKey, props);
               renderProps();
             });
             const cancel = make('button', '', '取消');
             cancel.type = 'button';
             cancel.addEventListener('click', renderProps);
-            input.addEventListener('keydown', event => {
-              if (event.key === 'Enter') save.click();
+            fields.addEventListener('keydown', event => {
+              if (event.key === 'Enter' && event.target !== descriptionInput) { event.preventDefault(); save.click(); }
               if (event.key === 'Escape') cancel.click();
             });
-            row.replaceChildren(check, input, save, cancel);
-            input.focus();
+            const actions = make('div', 'prop-edit-actions');
+            actions.append(save, cancel);
+            fields.append(nameInput, quantityInput, descriptionInput, actions);
+            row.replaceChildren(check, fields);
+            nameInput.focus();
           });
-          row.append(check, make('span', '', item.name), edit, remove);
+          const details = make('div', 'prop-details');
+          const main = make('div', 'prop-main');
+          main.append(make('strong', '', item.name));
+          if (item.quantity) main.append(make('span', 'prop-quantity', item.quantity));
+          details.append(main);
+          const actions = make('div', 'prop-actions');
+          actions.append(edit, remove);
+          row.append(check, details, actions);
+          if (item.description) row.append(make('p', 'prop-description', item.description));
           container.append(row);
         }
       }
@@ -666,9 +737,13 @@
       const input = document.getElementById('propName');
       const name = input.value.trim();
       if (!name) return;
-      props.push({id: newId(), name, category: document.getElementById('propCategory').value, done: false});
+      const quantityInput = document.getElementById('propQuantity');
+      const descriptionInput = document.getElementById('propDescription');
+      props.push({id: newId(), name, category: document.getElementById('propCategory').value, quantity: quantityInput.value.trim(), description: descriptionInput.value.trim(), done: false});
       saveLocalList(propsKey, props);
       input.value = '';
+      quantityInput.value = '';
+      descriptionInput.value = '';
       renderProps();
     });
     renderProps();
