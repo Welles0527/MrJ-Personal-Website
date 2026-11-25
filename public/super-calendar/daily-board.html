@@ -1249,7 +1249,10 @@ function linkCalendarPages(root) {
       } else if (!s.loadError) {
         content = '<p class="db-todo-note" role="status">正在读取今日待办…</p>';
       }
-      if (s.loadError) content += '<p class="db-todo-note" role="status">暂时无法读取待办。 <button type="button" class="db-todo-action" data-daily-action="todos-retry">重试</button></p>';
+      if (s.loadError) {
+        const stale = Boolean(s.items?.length);
+        content += `<p class="db-todo-note" role="status"${stale ? ' data-todo-stale' : ''}>${stale ? '显示上次同步的待办。' : '暂时无法读取待办。'} <button type="button" class="db-todo-action" data-daily-action="todos-retry">重试</button></p>`;
+      }
       if (s.saveError) content += '<p class="db-todo-note" role="status">'+esc(s.saveError)+'</p>';
     }
     const focusedId = document.activeElement?.dataset.boardTodo;
@@ -1261,14 +1264,16 @@ function linkCalendarPages(root) {
   }
 
   function closeTaskWatch(query) {
-    if (query.watcher) void Promise.resolve(query.watcher.close()).catch(()=>{});
+    const watcher = query.watcher;
     query.watcher = null;
+    if (watcher) void Promise.resolve().then(()=>watcher.close()).catch(()=>{});
   }
   async function refreshTasks(s = tasks) {
     if (!s.uid || s !== tasks) return;
     const read = ++s.read, api = window.MagicJDailyBoardAccount?.todos;
+    let lists;
     try {
-      const lists = await Promise.all(s.queries.map(query => api.load(s.uid, query.filter)));
+      lists = await Promise.all(s.queries.map(query => api.load(s.uid, query.filter)));
       if (s !== tasks || read !== s.read) return;
       const unique = new Map();
       for (const {todos} of lists) {
@@ -1288,20 +1293,26 @@ function linkCalendarPages(root) {
       }).sort((a,b) => Number(b.date === s.day) - Number(a.date === s.day) || order(a) - order(b)
         || String(a.createdAt || '').localeCompare(String(b.createdAt || '')) || a.id.localeCompare(b.id));
       s.loadError = false;
-      s.queries.forEach((query, index) => {
-        const count = lists[index].todos.length;
-        if (query.watcher && count >= query.watcher.capacity) closeTaskWatch(query);
-        if (query.watcher) return;
+    } catch {
+      if (s !== tasks || read !== s.read) return;
+      s.loadError = true;
+      renderTasks();
+      return;
+    }
+    renderTasks();
+    s.queries.forEach((query, index) => {
+      const count = lists[index].todos.length;
+      if (query.watcher && count >= query.watcher.capacity) closeTaskWatch(query);
+      if (query.watcher) return;
+      try {
         query.watcher = api.watch(s.uid, count+1, () => {
           clearTimeout(s.timer);
           s.timer = setTimeout(()=>refreshTasks(s),150);
         }, () => { if (s === tasks) closeTaskWatch(query); }, query.filter);
-      });
-    } catch {
-      if (s !== tasks || read !== s.read) return;
-      s.loadError = true;
-    }
-    renderTasks();
+      } catch {
+        closeTaskWatch(query);
+      }
+    });
   }
   function setTodoOwner(uid) {
     if (tasks.uid === uid && tasks.day === currentDay()) return;
