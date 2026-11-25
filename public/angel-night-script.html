@@ -61,6 +61,7 @@
     .cast-heading h2{margin-bottom:0}
     .only-self{display:inline-flex;align-items:center;gap:7px;color:#41282a;font-size:13px;white-space:nowrap;cursor:pointer}
     .only-self input{width:16px;height:16px;margin:0;accent-color:#662b37;cursor:pointer}
+    .scene-index .only-self{display:flex;margin-top:15px;padding-top:14px;border-top:1px solid #c8b08b}
     .all-roles{width:auto;display:inline-block;margin-bottom:12px}
     .role-list{grid-template-columns:repeat(7,minmax(0,1fr));gap:7px}
     .role-option{min-width:0;gap:6px;padding:6px;background:color-mix(in srgb,var(--role-ink) 12%,#f5ead4)}
@@ -215,7 +216,7 @@
       </div>
       <section class="cast-panel" aria-labelledby="castTitle">
           <p class="section-kicker">THE CAST</p>
-          <div class="cast-heading"><h2 id="castTitle">角色与台词</h2><label class="only-self"><input id="onlySelf" type="checkbox">仅显示本人台词</label></div>
+          <div class="cast-heading"><h2 id="castTitle">角色与台词</h2></div>
           <button class="all-roles" id="showAll" type="button" aria-pressed="true">查看全部</button>
           <div class="role-list" id="roleList"></div>
       </section>
@@ -224,6 +225,7 @@
           <p class="section-kicker">THE SCENES</p>
           <div class="section-heading"><h2 id="sceneIndexTitle">场景目录</h2></div>
           <nav class="scene-grid" id="sceneNav" aria-label="跳转到场景"></nav>
+          <label class="only-self"><input id="onlySelf" type="checkbox">仅显示本人台词</label>
         </aside>
         <main class="script-panel" id="scriptPanel">
           <div class="script-intro"><div><p class="section-kicker">THE SCRIPT</p><h2>逐场台词</h2></div></div>
