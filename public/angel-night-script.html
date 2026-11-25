@@ -142,8 +142,9 @@
       #mobileScenePanel{position:fixed;top:calc(var(--mobile-toolbar-bottom, 103px) + 8px);right:8px;z-index:19;width:clamp(98px,27vw,116px);max-height:calc(100dvh - var(--mobile-toolbar-bottom, 103px) - 86px);margin:0;padding:7px;overflow-y:auto;background:rgba(255,249,239,.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 6px 20px #40222a2b}
       .mobile-scene-options{display:flex;flex-direction:column;gap:7px}
       .mobile-scene-options label{display:block;position:relative;margin:0;padding:8px 5px;border:1px solid #decfc1;border-radius:8px;background:rgba(255,255,255,.68);color:#4b3540;font-size:10px;line-height:1.35;cursor:pointer}
-      .mobile-scene-options label.no-role-lines{background:rgba(220,220,220,.82);color:#717171}
+      .mobile-scene-options label.no-role-lines{background:#d6d6d6;color:#555}
       .mobile-scene-options label:has(input:checked){border-color:#692b39;background:#692b39;color:#fff;font-weight:700}
+      .mobile-scene-options label.no-role-lines:has(input:checked){background:#b8b8b8;color:#392b2f;box-shadow:inset 3px 0 #692b39}
       .mobile-scene-options label:focus-within{outline:2px solid #a77a3d;outline-offset:2px}
       .mobile-scene-options input{position:absolute;width:1px;height:1px;opacity:0}
       .mobile-only-self{display:flex;align-items:center;gap:7px;margin:9px 1px 0;color:#49333a;font-size:12px;cursor:pointer}
