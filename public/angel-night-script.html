@@ -481,11 +481,27 @@
     onlySelf.addEventListener('change', () => { mobileOnlySelf.checked = onlySelf.checked; setFocus(focusedRole, false); });
     mobileOnlySelf.addEventListener('change', () => { onlySelf.checked = mobileOnlySelf.checked; setFocus(focusedRole, false); });
     mobileRoleSelect.addEventListener('change', () => setFocus(mobileRoleSelect.value || null));
-    mobileSceneOptions.addEventListener('change', () => setFocus(focusedRole, false));
+    mobileSceneOptions.addEventListener('change', () => { setFocus(focusedRole, false); resetSceneFilterTimer(); });
     mobileSearchInput.addEventListener('input', () => setFocus(focusedRole, false));
     document.getElementById('desktopSearchInput').addEventListener('input', () => setFocus(focusedRole, false));
 
+    const mobileScenePanel = document.getElementById('mobileScenePanel');
+    const mobileSceneButton = document.getElementById('mobileSceneButton');
+    let sceneFilterTimer;
+    function closeSceneFilter() {
+      clearTimeout(sceneFilterTimer);
+      mobileScenePanel.hidden = true;
+      document.body.classList.remove('scene-filter-open');
+      mobileSceneButton.setAttribute('aria-expanded', 'false');
+    }
+    function resetSceneFilterTimer() {
+      clearTimeout(sceneFilterTimer);
+      if (!mobileScenePanel.hidden) sceneFilterTimer = setTimeout(closeSceneFilter, 2000);
+    }
+    mobileScenePanel.addEventListener('pointerdown', resetSceneFilterTimer);
+    mobileScenePanel.addEventListener('keydown', resetSceneFilterTimer);
     function closeMobileFilters() {
+      closeSceneFilter();
       document.getElementById('mobileSearchPanel').hidden = true;
       document.getElementById('mobileSearchButton').setAttribute('aria-expanded', 'false');
     }
@@ -523,10 +539,15 @@
         const wasOpen = !panel.hidden && document.body.dataset.view === 'script';
         navigateMobile('script');
         if (button.dataset.filter === 'scene') {
-          panel.hidden = false;
-          document.body.classList.add('scene-filter-open');
-          button.setAttribute('aria-expanded', 'true');
+          if (wasOpen) closeSceneFilter();
+          else {
+            panel.hidden = false;
+            document.body.classList.add('scene-filter-open');
+            button.setAttribute('aria-expanded', 'true');
+            resetSceneFilterTimer();
+          }
         } else {
+          closeSceneFilter();
           panel.hidden = wasOpen;
           button.setAttribute('aria-expanded', String(!wasOpen));
           if (!wasOpen) mobileSearchInput.focus();
