@@ -122,13 +122,16 @@
       .mobile-filter-panel[hidden]{display:none}
       .mobile-filter-panel label{display:block;margin-bottom:6px;color:#654b43;font-size:11px}
       .mobile-filter-panel select,.mobile-filter-panel input{width:100%;min-height:38px;padding:7px 9px;border:1px solid #c9b6a1;border-radius:8px;background:#fff;color:#332722;font-size:14px}
-      .mobile-scene-options{display:flex;gap:7px;overflow-x:auto;padding:2px 0 5px;scrollbar-width:thin}
-      .mobile-scene-options label{display:inline-flex;align-items:center;gap:5px;flex:none;margin:0;padding:7px 9px;border:1px solid #decfc1;border-radius:999px;background:#fff;color:#4b3540;font-size:12px;white-space:nowrap;cursor:pointer}
-      .mobile-scene-options label:has(input:checked){border-color:#692b39;background:#f2e3e5;color:#692b39;font-weight:700}
+      #mobileScenePanel{position:fixed;top:calc(var(--mobile-toolbar-bottom, 103px) + 8px);right:8px;z-index:19;width:clamp(100px,30vw,126px);max-height:calc(100dvh - var(--mobile-toolbar-bottom, 103px) - 86px);margin:0;padding:8px;overflow-y:auto;box-shadow:0 6px 20px #40222a2b}
+      .mobile-scene-options{display:flex;flex-direction:column;gap:7px}
+      .mobile-scene-options label{display:flex;align-items:flex-start;gap:5px;margin:0;padding:7px 5px;border:1px solid #decfc1;border-radius:8px;background:#fff;color:#4b3540;font-size:11px;line-height:1.35;cursor:pointer}
+      .mobile-scene-options label:has(input:checked){border-color:#692b39;color:#692b39;font-weight:700}
+      .mobile-scene-options label.no-role-lines{background:#e5e5e5;color:#717171}
       .mobile-scene-options input{width:14px;height:14px;margin:0;accent-color:#692b39}
       .mobile-only-self{display:flex;align-items:center;gap:7px;margin:9px 1px 0;color:#49333a;font-size:12px;cursor:pointer}
       .mobile-only-self input{width:16px;height:16px;margin:0;accent-color:#692b39}
       .working-area{display:block;padding:12px 12px 0}
+      body.scene-filter-open .working-area{padding-right:calc(clamp(100px,30vw,126px) + 20px)}
       body:not([data-view="script"]) .working-area{display:none}
       .script-intro{margin:0 2px 12px;padding:2px 0 0;border:0}
       .script-intro .section-kicker{display:none}
@@ -162,12 +165,13 @@
       .mobile-entry-form>div{display:grid;grid-template-columns:minmax(0,1fr) 97px 48px;gap:5px}
       .mobile-entry-form input,.mobile-entry-form select,.mobile-entry-form textarea{min-width:0;padding:9px 8px;border:1px solid #d7c7b9;border-radius:8px;background:#fff;color:#332722;font:inherit;font-size:12px}
       .mobile-entry-form textarea{display:block;width:100%;min-height:98px;resize:vertical;font-size:14px}
+      #discussionName{display:block;width:100%;margin-bottom:10px;font-size:14px}
       .mobile-entry-form button{padding:8px 7px;border:0;border-radius:8px;background:#692b39;color:#fff;font-size:12px;font-weight:700}
       #discussionForm button{margin-top:9px;padding:10px 14px}
       .mobile-list-group{margin-top:20px}.mobile-list-group h3{display:flex;justify-content:space-between;margin:0 0 9px;color:#4a2e36;font-size:16px}.mobile-list-group h3 span{font-size:13px;color:#826f65}
-      .prop-item{display:flex;align-items:center;gap:10px;padding:11px 12px}.prop-item input{width:17px;height:17px;accent-color:#692b39}.prop-item span{flex:1;font-size:14px}.prop-item.is-done span{text-decoration:line-through;color:#8b8079}.prop-item button,.discussion-item button{border:0;background:none;color:#8c4a52;font-size:12px}
+      .prop-item{display:flex;align-items:center;gap:10px;padding:11px 12px}.prop-item input{width:17px;height:17px;accent-color:#692b39}.prop-item span{flex:1;font-size:14px}.prop-item.is-done span{text-decoration:line-through;color:#8b8079}.prop-item button{border:0;background:none;color:#8c4a52;font-size:12px}
       .prop-list:empty::after,.discussion-list:empty::after{content:"暂无记录";padding:14px;color:#928078;font-size:13px}
-      .discussion-item{padding:12px 14px}.discussion-item header{display:flex;justify-content:space-between;align-items:center;color:#9a887e;font-size:11px}.discussion-item p{margin:8px 0 2px;color:#433137;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
+      .discussion-item{padding:12px 14px}.discussion-item header{display:flex;justify-content:space-between;align-items:center;color:#9a887e;font-size:11px}.discussion-item header strong{color:#692b39;font-size:13px}.discussion-item p{margin:8px 0 2px;color:#433137;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
       .local-note{margin:12px 2px;color:#87756d;font-size:11px}
       .mobile-bottom-nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;position:fixed;z-index:30;right:0;bottom:0;left:0;padding:7px 9px calc(7px + env(safe-area-inset-bottom));border-top:1px solid #e1d5c9;background:#fff;box-shadow:0 -5px 18px #38222b17;font-family:system-ui,-apple-system,"Microsoft YaHei",sans-serif}
       .mobile-bottom-nav button{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;padding:4px 2px;border:1px solid transparent;border-radius:10px;background:#fff;color:#74666b;font-size:10px;white-space:nowrap}
@@ -244,8 +248,8 @@
       </section>
       <section class="mobile-view" id="mobileDiscussionView" aria-labelledby="mobileDiscussionTitle" hidden>
         <h2 id="mobileDiscussionTitle">意见讨论</h2>
-        <form id="discussionForm" class="mobile-entry-form"><label for="discussionText">记录排练意见</label><textarea id="discussionText" maxlength="500" required placeholder="写下台词、走位或道具建议"></textarea><button type="submit">保存意见</button></form>
-        <p class="local-note">意见仅保存在当前浏览器，其他成员暂时看不到。</p><div id="discussionList" class="discussion-list"></div>
+        <form id="discussionForm" class="mobile-entry-form"><label for="discussionName">填写人姓名</label><input id="discussionName" maxlength="30" required autocomplete="name" placeholder="请输入您的名字"><label for="discussionText">记录排练意见</label><textarea id="discussionText" maxlength="500" required placeholder="写下台词、走位或道具建议"></textarea><button type="submit">发表意见</button></form>
+        <p id="discussionStatus" class="local-note" role="status">打开讨论后加载大家的意见。</p><div id="discussionList" class="discussion-list"></div>
       </section>
       <footer class="book-footer">天使之夜 · 排练台词本</footer>
     </div>
@@ -347,6 +351,10 @@
       mobileRoleSelect.value = role || '';
       const selectedPerson = SCRIPT.cast.find(person => person.role === role);
       document.getElementById('mobileRoleLabel').textContent = selectedPerson ? (selectedPerson.actor === '待分配' ? selectedPerson.role : selectedPerson.actor) : '角色筛选';
+      mobileSceneOptions.querySelectorAll('label').forEach(label => {
+        const scene = SCRIPT.scenes.find(item => item.id === label.querySelector('input').value);
+        label.classList.toggle('no-role-lines', role !== null && !scene.items.some(item => item.type === 'dialogue' && item.role === role));
+      });
       document.getElementById('showAll').setAttribute('aria-pressed', String(role === null));
       for (const [name, button] of roleButtons) button.setAttribute('aria-pressed', String(role === name));
       const mobile = matchMedia('(max-width:700px)').matches;
@@ -405,6 +413,7 @@
         navigateMobile('script');
         if (button.dataset.filter === 'scene') {
           panel.hidden = false;
+          document.body.classList.add('scene-filter-open');
           button.setAttribute('aria-expanded', 'true');
         } else {
           panel.hidden = wasOpen;
@@ -414,7 +423,14 @@
       });
     });
     const mobileToolbar = document.querySelector('.mobile-toolbar');
-    new ResizeObserver(() => document.documentElement.style.setProperty('--mobile-toolbar-height', mobileToolbar.getBoundingClientRect().height + 'px')).observe(mobileToolbar);
+    const updateMobileToolbarPosition = () => {
+      const bounds = mobileToolbar.getBoundingClientRect();
+      document.documentElement.style.setProperty('--mobile-toolbar-height', bounds.height + 'px');
+      document.documentElement.style.setProperty('--mobile-toolbar-bottom', bounds.bottom + 'px');
+    };
+    new ResizeObserver(updateMobileToolbarPosition).observe(mobileToolbar);
+    window.addEventListener('scroll', updateMobileToolbarPosition, {passive:true});
+    updateMobileToolbarPosition();
     document.getElementById('mobileHome').addEventListener('click', () => navigateMobile('script'));
     document.querySelectorAll('.mobile-bottom-nav button').forEach(button => {
       button.addEventListener('click', () => { closeMobileFilters(); navigateMobile(button.dataset.view); });
@@ -465,34 +481,82 @@
     });
     renderProps();
 
-    const discussionKey = 'angel-night-discussion-v1';
-    let discussions = readLocalList(discussionKey);
+    const discussionCollection = 'angelNightDiscussions';
+    const discussionStatus = document.getElementById('discussionStatus');
+    const discussionForm = document.getElementById('discussionForm');
+    let discussionDbPromise;
+    let discussions = [];
+    function connectDiscussions() {
+      if (!discussionDbPromise) discussionDbPromise = new Promise((resolve, reject) => {
+        if (window.cloudbase) { resolve(window.cloudbase); return; }
+        const script = document.createElement('script');
+        script.src = 'https://static.cloudbase.net/cloudbase-js-sdk/3.5.2/cloudbase.full.js';
+        script.onload = () => resolve(window.cloudbase);
+        script.onerror = () => { script.remove(); reject(new Error('CloudBase SDK unavailable')); };
+        document.head.append(script);
+      }).then(async cloudbase => {
+        if (!cloudbase) throw new Error('CloudBase SDK unavailable');
+        const app = cloudbase.init({env: 'magicj-web-d5g9yvowj6862f7a2'});
+        const auth = app.auth({persistence: 'local'});
+        const state = await auth.getLoginState();
+        if (!state?.user?.uid) {
+          const result = await auth.signInAnonymously();
+          if (result?.error) throw result.error;
+        }
+        return app.database();
+      }).catch(error => { discussionDbPromise = null; throw error; });
+      return discussionDbPromise;
+    }
     function renderDiscussions() {
       const container = document.getElementById('discussionList');
       container.replaceChildren();
       for (const item of discussions) {
         const card = make('article', 'discussion-item');
         const header = make('header');
-        const remove = make('button', '', '删除');
-        remove.type = 'button';
-        remove.setAttribute('aria-label', '删除这条意见');
-        remove.addEventListener('click', () => { discussions = discussions.filter(entry => entry.id !== item.id); saveLocalList(discussionKey, discussions); renderDiscussions(); });
-        header.append(make('time', '', item.time), remove);
+        header.append(make('strong', '', String(item.name).slice(0, 30)), make('time', '', new Date(item.createdAtIso).toLocaleString('zh-CN')));
         card.append(header, make('p', '', item.text));
         container.append(card);
       }
     }
-    document.getElementById('discussionForm').addEventListener('submit', event => {
+    async function refreshDiscussions() {
+      discussionStatus.textContent = '正在加载大家的意见…';
+      try {
+        const db = await connectDiscussions();
+        const result = await db.collection(discussionCollection).orderBy('createdAtIso', 'desc').limit(100).get();
+        discussions = (Array.isArray(result.data) ? result.data : []).filter(item => typeof item.name === 'string' && typeof item.text === 'string' && Number.isFinite(Date.parse(item.createdAtIso)));
+        renderDiscussions();
+        discussionStatus.textContent = '所有访客都可以填写，无需注册。';
+      } catch {
+        discussionStatus.textContent = '共享讨论暂时无法连接，请稍后重试。';
+      }
+    }
+    discussionForm.addEventListener('submit', async event => {
       event.preventDefault();
       const input = document.getElementById('discussionText');
+      const nameInput = document.getElementById('discussionName');
+      const name = nameInput.value.trim();
       const text = input.value.trim();
-      if (!text) return;
-      discussions.unshift({id: newId(), text, time: new Date().toLocaleString('zh-CN')});
-      saveLocalList(discussionKey, discussions);
-      input.value = '';
-      renderDiscussions();
+      if (!name) { discussionStatus.textContent = '请填写您的名字。'; nameInput.focus(); return; }
+      if (!text) { discussionStatus.textContent = '请填写排练意见。'; input.focus(); return; }
+      const button = discussionForm.querySelector('button[type="submit"]');
+      button.disabled = true;
+      discussionStatus.textContent = '正在发表意见…';
+      try {
+        const db = await connectDiscussions();
+        const newItem = {name, text, createdAtIso: new Date().toISOString()};
+        await db.collection(discussionCollection).add(newItem);
+        discussions.unshift(newItem);
+        renderDiscussions();
+        input.value = '';
+        await refreshDiscussions();
+      } catch {
+        discussionStatus.textContent = '发表失败，内容仍在输入框中，请稍后重试。';
+      } finally {
+        button.disabled = false;
+      }
     });
-    renderDiscussions();
+    window.addEventListener('hashchange', () => { if (location.hash === '#view-discussion') refreshDiscussions(); });
+    if (document.body.dataset.view === 'discussion') refreshDiscussions();
   </script>
 </body>
 </html>
