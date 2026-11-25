@@ -112,6 +112,12 @@
     .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
     .icon-defs{position:absolute;width:0;height:0;overflow:hidden}
     .ui-icon{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    .prop-group-title{display:flex;align-items:center;gap:8px}
+    .prop-group-title.physical{color:#8b532b}
+    .prop-group-title.digital{color:#2b6680}
+    .prop-group-title .ui-icon{width:19px;height:19px}
+    .prop-group-title span{margin-left:auto}
+    .prop-item .prop-edit-input{flex:1;min-width:0;padding:6px 8px;border:1px solid #ad8959;border-radius:6px;background:#fff;color:#332722;font:inherit;font-size:16px}
     @media(max-width:1050px){.role-list{grid-template-columns:repeat(4,minmax(0,1fr))}.working-area{grid-template-columns:220px minmax(0,1fr)}}
     @media(max-width:700px){.cast-panel{margin-bottom:20px;padding:16px 12px}.role-list{grid-template-columns:repeat(2,minmax(0,1fr))}.all-roles{width:100%}.working-area{display:block}.scene-index{position:static;max-height:none;overflow:visible;margin-bottom:24px}.scene-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.scene-link{min-height:75px}.role-option{grid-template-columns:5px minmax(0,1fr) auto}.role-count{grid-column:auto;justify-self:end}}
     @media(max-width:700px){.cast-heading{align-items:flex-start}.only-self{font-size:12px}.scene-title{margin-left:-4px;margin-right:-4px;padding-left:4px;padding-right:4px}}
@@ -192,7 +198,7 @@
       .mobile-entry-form button{padding:8px 7px;border:0;border-radius:8px;background:#692b39;color:#fff;font-size:12px;font-weight:700}
       #discussionForm button{margin-top:9px;padding:10px 14px}
       .mobile-list-group{margin-top:20px}.mobile-list-group h3{display:flex;justify-content:space-between;margin:0 0 9px;color:#4a2e36;font-size:16px}.mobile-list-group h3 span{font-size:13px;color:#826f65}
-      .prop-item{display:flex;align-items:center;gap:10px;padding:11px 12px}.prop-item input{width:17px;height:17px;accent-color:#692b39}.prop-item span{flex:1;font-size:14px}.prop-item.is-done span{text-decoration:line-through;color:#8b8079}.prop-item button{border:0;background:none;color:#8c4a52;font-size:12px}
+      .prop-item{display:flex;align-items:center;gap:10px;padding:11px 12px}.prop-item input[type="checkbox"]{width:17px;height:17px;accent-color:#692b39}.prop-item span{flex:1;font-size:14px}.prop-item.is-done span{text-decoration:line-through;color:#8b8079}.prop-item button{border:0;background:none;color:#8c4a52;font-size:12px}
       .prop-list:empty::after,.discussion-list:empty::after{content:"暂无记录";padding:14px;color:#928078;font-size:13px}
       .discussion-item{padding:12px 14px}.discussion-item header{display:flex;justify-content:space-between;align-items:center;color:#9a887e;font-size:11px}.discussion-item header strong{color:#692b39;font-size:13px}.discussion-item p{margin:8px 0 2px;color:#433137;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
       .local-note{margin:12px 2px;color:#87756d;font-size:11px}
@@ -216,6 +222,7 @@
     <symbol id="icon-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></symbol>
     <symbol id="icon-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></symbol>
     <symbol id="icon-props" viewBox="0 0 24 24"><path d="m12 2 9 5v10l-9 5-9-5V7zM3 7l9 5 9-5M12 12v10"/></symbol>
+    <symbol id="icon-screen" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M9 21h6M12 17v4M7 8h10M7 11h7"/></symbol>
     <symbol id="icon-chat" viewBox="0 0 24 24"><path d="M20 16a3 3 0 0 1-3 3H9l-5 3v-4a3 3 0 0 1-1-2V6a3 3 0 0 1 3-3h11a3 3 0 0 1 3 3zM7 9h9M7 13h6"/></symbol>
     <symbol id="icon-video" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m10 8 6 4-6 4z"/></symbol>
     <symbol id="icon-audio" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9zM16 9a5 5 0 0 1 0 6M18 6a9 9 0 0 1 0 12"/></symbol>
@@ -268,8 +275,8 @@
       <section class="mobile-view" id="mobilePropsView" aria-labelledby="mobilePropsTitle" hidden>
         <h2 id="mobilePropsTitle">道具准备</h2>
         <form id="propForm" class="mobile-entry-form"><label for="propName">添加道具</label><div><input id="propName" maxlength="80" required placeholder="例如：服装、PPT"><select id="propCategory" aria-label="道具分类"><option value="physical">实物道具</option><option value="digital">数字道具</option></select><button type="submit">添加</button></div></form>
-        <div class="mobile-list-group"><h3>实物道具 <span id="physicalCount">0</span></h3><div id="physicalProps" class="prop-list"></div></div>
-        <div class="mobile-list-group"><h3>数字道具 <span id="digitalCount">0</span></h3><div id="digitalProps" class="prop-list"></div></div>
+        <div class="mobile-list-group"><h3 class="prop-group-title physical"><svg class="ui-icon" aria-hidden="true"><use href="#icon-props"></use></svg>实物道具 <span id="physicalCount">0</span></h3><div id="physicalProps" class="prop-list"></div></div>
+        <div class="mobile-list-group"><h3 class="prop-group-title digital"><svg class="ui-icon" aria-hidden="true"><use href="#icon-screen"></use></svg>数字道具 <span id="digitalCount">0</span></h3><div id="digitalProps" class="prop-list"></div></div>
         <p class="local-note">清单仅保存在当前浏览器。</p>
       </section>
       <section class="mobile-view" id="mobileDiscussionView" aria-labelledby="mobileDiscussionTitle" hidden>
@@ -621,7 +628,35 @@
           remove.type = 'button';
           remove.setAttribute('aria-label', '删除' + item.name);
           remove.addEventListener('click', () => { props = props.filter(entry => entry.id !== item.id); saveLocalList(propsKey, props); renderProps(); });
-          row.append(check, make('span', '', item.name), remove);
+          const edit = make('button', '', '编辑');
+          edit.type = 'button';
+          edit.setAttribute('aria-label', '编辑' + item.name);
+          edit.addEventListener('click', () => {
+            const input = make('input', 'prop-edit-input');
+            input.type = 'text';
+            input.maxLength = 80;
+            input.value = item.name;
+            input.setAttribute('aria-label', '道具名称');
+            const save = make('button', '', '保存');
+            save.type = 'button';
+            save.addEventListener('click', () => {
+              const name = input.value.trim();
+              if (!name) { input.focus(); return; }
+              item.name = name;
+              saveLocalList(propsKey, props);
+              renderProps();
+            });
+            const cancel = make('button', '', '取消');
+            cancel.type = 'button';
+            cancel.addEventListener('click', renderProps);
+            input.addEventListener('keydown', event => {
+              if (event.key === 'Enter') save.click();
+              if (event.key === 'Escape') cancel.click();
+            });
+            row.replaceChildren(check, input, save, cancel);
+            input.focus();
+          });
+          row.append(check, make('span', '', item.name), edit, remove);
           container.append(row);
         }
       }
