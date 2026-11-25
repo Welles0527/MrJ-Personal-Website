@@ -83,11 +83,6 @@
     .scene-section{padding-top:14px;border-top:2px solid #a68756;scroll-margin-top:64px}
     #scenes>.scene-section:first-child{border-top:0}
     .scene-title{position:sticky;top:0;z-index:3;margin:0 -8px 13px;padding:9px 8px;background:#f5e7c9f5;border-bottom:1px solid #ad8959;box-shadow:0 5px 12px #6b4b2722}
-    .rehearsal-schedule{position:absolute;right:32px;bottom:24px;width:190px;text-align:left;color:#f2d8a1}
-    .rehearsal-schedule h3{margin:0 0 8px;color:#f2d8a1;font-size:15px}
-    .rehearsal-schedule ol{display:grid;gap:7px;margin:0;padding:0;list-style:none}
-    .rehearsal-schedule li{display:flex;justify-content:space-between;gap:8px;padding:5px 8px;border:1px solid #a77b3e;background:#51282c;color:#f2d8a1;font-size:12px}
-    .rehearsal-schedule li span{color:#e3bf78}
     .dialogue.is-focus{background:#f4d699;box-shadow:inset 4px 0 var(--role-ink),0 0 0 1px #ba8d51;border-radius:3px}
     .speaker small{display:block;margin-top:3px;color:#4f3c2d;font-size:11px;font-weight:400;line-height:1.35}
     .empty-state{margin:28px 0;padding:25px;text-align:center;color:#674f43;border:1px dashed #b99a6c;background:#f8edd7}
@@ -111,7 +106,6 @@
     .ui-icon{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
     @media(max-width:1050px){.role-list{grid-template-columns:repeat(4,minmax(0,1fr))}.working-area{grid-template-columns:220px minmax(0,1fr)}}
     @media(max-width:700px){.cast-panel{margin-bottom:20px;padding:16px 12px}.role-list{grid-template-columns:repeat(2,minmax(0,1fr))}.all-roles{width:100%}.working-area{display:block}.scene-index{position:static;max-height:none;overflow:visible;margin-bottom:24px}.scene-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.scene-link{min-height:75px}.role-option{grid-template-columns:5px minmax(0,1fr) auto}.role-count{grid-column:auto;justify-self:end}}
-    @media(max-width:700px){.rehearsal-schedule{position:static;width:auto;max-width:320px;margin:22px auto 0;text-align:center}.rehearsal-schedule ol{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.rehearsal-schedule li{display:block;padding:6px 3px;font-size:11px}.rehearsal-schedule li span{display:block;margin-top:2px}}
     @media(max-width:700px){.cast-heading{align-items:flex-start}.only-self{font-size:12px}.scene-title{margin-left:-4px;margin-right:-4px;padding-left:4px;padding-right:4px}}
     @media(max-width:700px){
       .workspace-nav,.script-actions,.title-angel{display:none}
@@ -121,7 +115,7 @@
       .masthead{min-height:0;padding:13px 18px 12px;text-align:left;border-bottom:0}
       .masthead h1{font-size:25px;letter-spacing:.04em;text-indent:0;text-shadow:none}
       .masthead .subtitle{margin:1px 0 0;font-size:10px;letter-spacing:.08em}
-      .eyebrow,.mast-rule,.credits,.rehearsal-schedule{display:none}
+      .eyebrow,.mast-rule,.credits{display:none}
       .paper{margin:0;padding:0 0 82px;border:0;box-shadow:none;background:#f3ede3}
       .paper::before,.paper::after{display:none}
       .cast-panel,.scene-index,.book-footer{display:none}
@@ -204,7 +198,7 @@
       .mobile-bottom-nav button[aria-current="page"] .nav-icon{background:#682c3c;color:#fff}
     }
     @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.dialogue,.role-option,.scene-link{transition:none}}
-    @media print{body{background:#fff}.book{width:100%;margin:0;border:0;box-shadow:none}.book::before,.corner,.cast-panel,.scene-index,.focus-status{display:none}.masthead{min-height:0;padding:18px;background:#fff;color:#222;border:0}h1,.subtitle,.credits,.credits b{color:#222;text-shadow:none}.rehearsal-schedule{position:static;width:auto;margin-top:12px;color:#222}.rehearsal-schedule h3,.rehearsal-schedule li,.rehearsal-schedule li span{color:#222}.paper{border:0;box-shadow:none;margin:0;padding:0;background:#fff}.working-area{display:block}.dialogue{break-inside:avoid}.scene-section{break-before:page}.source-notes{display:none}}
+    @media print{body{background:#fff}.book{width:100%;margin:0;border:0;box-shadow:none}.book::before,.corner,.cast-panel,.scene-index,.focus-status{display:none}.masthead{min-height:0;padding:18px;background:#fff;color:#222;border:0}h1,.subtitle,.credits,.credits b{color:#222;text-shadow:none}.paper{border:0;box-shadow:none;margin:0;padding:0;background:#fff}.working-area{display:block}.dialogue{break-inside:avoid}.scene-section{break-before:page}.source-notes{display:none}}
   </style>
 </head>
 <body>
@@ -226,10 +220,6 @@
       <p class="subtitle">排练台词本</p>
       <div class="mast-rule" aria-hidden="true">✦</div>
       <p class="credits"><span>总策划 <b>高志华</b></span><span>总导演 <b>Gloria</b></span><span>制片人 <b>Mark</b></span></p>
-      <section class="rehearsal-schedule" aria-labelledby="rehearsalTitle">
-        <h3 id="rehearsalTitle">排练时间</h3>
-        <ol><li>12月2日 <span>周二</span></li><li>12月9日 <span>周二</span></li><li>12月16日 <span>周二</span></li></ol>
-      </section>
     </header>
     <div class="paper">
       <div class="mobile-toolbar" aria-label="剧本筛选">
