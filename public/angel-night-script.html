@@ -43,7 +43,7 @@
     .role-list{display:grid;gap:5px}.role-option{width:100%;min-height:43px;display:grid;grid-template-columns:8px minmax(0,1fr) auto;align-items:center;gap:9px;border:1px solid transparent;background:#efe1c4;text-align:left;padding:6px 8px;color:#3b2a25;transition:background .15s,border-color .15s}.role-option:hover{background:#e5d3ae}.role-option[aria-pressed="true"]{border-color:var(--role-ink);background:#fff8e7}.role-swatch{height:25px;background:var(--role-ink)}.role-name{font-size:13px;font-weight:650;color:var(--role-ink)}.role-name small{display:block;margin-top:2px;color:#776b58;font-size:10px;font-weight:400}.role-count{font-family:Georgia,"Noto Serif SC",serif;color:#594736;font-size:12px;white-space:nowrap}
     .count-note{margin:12px 2px 0;font-size:10px;line-height:1.65;color:#76634c}
     .script-panel{min-width:0}.script-intro{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:7px;padding:1px 0 17px;border-bottom:2px double #a68756}.script-intro h2{margin:5px 0 0;color:#41282a;font-size:25px}.script-intro p{max-width:350px;margin:0;color:#715b44;line-height:1.7;font-size:12px}.focus-status{min-height:26px;margin:14px 0 6px;color:#6d5638;font-size:12px}
-    .scene-section{scroll-margin-top:20px;margin:0 0 42px}.scene-title{display:flex;align-items:center;gap:16px;margin:24px 0 9px;color:#44272a;font-size:24px;font-weight:600}.scene-title::after{content:"";height:1px;flex:1;background:linear-gradient(90deg,#a4824d,transparent)}.scene-title .scene-ordinal{display:inline-grid;place-items:center;width:41px;height:41px;flex:none;border-radius:50%;background:#57292d;border:1px solid #a77a3d;color:#efd9a8;font-family:Georgia,serif;font-size:17px}.scene-note{margin:0 0 19px 57px;color:#80694d;font-size:11px;line-height:1.6}
+    .scene-section{scroll-margin-top:20px;margin:0 0 42px}.scene-thumbnail{display:block;width:min(100%,260px);height:146px;object-fit:cover;object-position:center 42%;border-radius:9px}.scene-thumbnail+.scene-title{margin-top:10px}.scene-title{display:flex;align-items:center;gap:16px;margin:24px 0 9px;color:#44272a;font-size:24px;font-weight:600}.scene-title::after{content:"";height:1px;flex:1;background:linear-gradient(90deg,#a4824d,transparent)}.scene-title .scene-ordinal{display:inline-grid;place-items:center;width:41px;height:41px;flex:none;border-radius:50%;background:#57292d;border:1px solid #a77a3d;color:#efd9a8;font-family:Georgia,serif;font-size:17px}.scene-note{margin:0 0 19px 57px;color:#80694d;font-size:11px;line-height:1.6}
     .dialogue{display:grid;grid-template-columns:104px minmax(0,1fr);gap:14px;align-items:start;margin:0;padding:12px 8px;border-bottom:1px solid #b69f7b77;transition:opacity .18s,background .18s}.dialogue.is-focus{background:#fff8e680}.speaker{padding-top:3px;color:var(--role-ink);font-size:14px;font-weight:700;white-space:nowrap}.speech{margin:0;color:var(--role-ink);font-size:16px;line-height:1.88;white-space:pre-line;overflow-wrap:anywhere}.stage{margin:12px 0;padding:8px 16px;text-align:center;color:#816744;font-size:12px;font-style:italic;line-height:1.7}.stage::before,.stage::after{content:"✦";color:#a7804b;font-size:9px;padding:0 9px;vertical-align:2px}
     .source-notes{margin:38px 0 0;padding:17px 19px 14px;border-top:2px double #a68756;background:#ead8b34d}.source-notes h2{margin:0 0 8px;font-size:15px;color:#4d332c}.source-notes ul{margin:0;padding-left:20px;color:#6e5943;font-size:11px;line-height:1.8}
     .book-footer{text-align:center;margin:32px 0 0;color:#8c6d3e;font-size:12px;letter-spacing:.15em}.book-footer::before{content:"❧ ───── ✦ ───── ❧";display:block;margin-bottom:7px;color:#a27c43}
@@ -85,12 +85,22 @@
     .rehearsal-schedule ol{display:grid;gap:7px;margin:0;padding:0;list-style:none}
     .rehearsal-schedule li{display:flex;justify-content:space-between;gap:8px;padding:5px 8px;border:1px solid #a77b3e;background:#51282c;color:#f2d8a1;font-size:12px}
     .rehearsal-schedule li span{color:#e3bf78}
+    .masthead-links{position:absolute;right:240px;bottom:24px;display:flex;gap:8px}
+    .masthead-links button{padding:8px 11px;border:1px solid #a77b3e;background:#51282c;color:#f2d8a1;font:inherit;font-size:12px;cursor:pointer}
+    .masthead-links button[aria-current="page"]{background:#7a3d43}
     .dialogue.is-focus{background:#f4d699;box-shadow:inset 4px 0 var(--role-ink),0 0 0 1px #ba8d51;border-radius:3px}
     .speaker small{display:block;margin-top:3px;color:#4f3c2d;font-size:11px;font-weight:400;line-height:1.35}
     .empty-state{margin:28px 0;padding:25px;text-align:center;color:#674f43;border:1px dashed #b99a6c;background:#f8edd7}
     .empty-state[hidden]{display:none}
     .stage[hidden]{display:none}
     .mobile-toolbar,.mobile-view,.mobile-bottom-nav{display:none}
+    .desktop-tools{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 40px 22px;padding:11px 0;border-top:1px solid #c9ae80;border-bottom:1px solid #c9ae80}
+    .desktop-tools button,.script-actions button,.script-actions input{min-height:35px;padding:6px 10px;border:1px solid #ad8959;border-radius:4px;background:#f8edd7;color:#57292d;font:inherit;font-size:13px}
+    .script-actions{display:flex;align-items:center;gap:8px}.script-actions input{width:210px;background:#fff9eb}.script-actions button{display:grid;place-items:center;width:35px;padding:5px;cursor:pointer}.script-actions button .ui-icon{width:18px;height:18px}
+    .desktop-tools button[aria-current="page"],.script-actions button[aria-pressed="true"]{background:#57292d;color:#f8edd7}
+    .desktop-back{display:none}
+    @media(min-width:701px){body:not([data-view="script"]) .working-area{display:none}.mobile-view:not([hidden]){display:block;margin:0 40px 38px;padding:20px 24px;border:1px solid #c9ae80;background:#f8edd7}.mobile-view h2{margin:0 0 10px;color:#44272a}.mobile-view .desktop-back{display:inline-block;margin:0 0 16px;padding:7px 11px;border:1px solid #ad8959;background:#f8edd7;color:#57292d;font:inherit;cursor:pointer}.mobile-cast-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.mobile-cast-card,.mobile-schedule-list>div,.prop-item,.discussion-item{padding:9px 12px;border:1px solid #d9c4a0;background:#fff9ea}.mobile-cast-card{display:flex;justify-content:space-between}.mobile-cast-card strong{color:var(--role-ink)}.mobile-schedule-list,.prop-list,.discussion-list{display:grid;gap:8px}.mobile-entry-form{max-width:700px;margin-bottom:15px}.mobile-entry-form label{display:block;margin:10px 0 5px}.mobile-entry-form input,.mobile-entry-form select,.mobile-entry-form textarea{padding:8px;border:1px solid #ad8959;background:#fff9ea;color:#44272a}.mobile-entry-form textarea{display:block;width:100%;min-height:100px}.mobile-entry-form button,.prop-item button{padding:8px 12px;border:1px solid #ad8959;background:#57292d;color:#fff2d1}.prop-item{display:flex;gap:12px;align-items:center}.prop-item span{flex:1}.discussion-item header{display:flex;gap:12px}.discussion-item p{white-space:pre-wrap}.mobile-list-group{margin-top:20px}.video-preview{display:block;max-width:640px}.video-preview img{display:block;width:100%;height:auto}#discussionName{display:block;width:min(340px,100%)}.local-note{font-size:12px;color:#654b43}}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
     .icon-defs{position:absolute;width:0;height:0;overflow:hidden}
     .ui-icon{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
     @media(max-width:1050px){.role-list{grid-template-columns:repeat(4,minmax(0,1fr))}.working-area{grid-template-columns:220px minmax(0,1fr)}}
@@ -98,6 +108,7 @@
     @media(max-width:700px){.rehearsal-schedule{position:static;width:auto;max-width:320px;margin:22px auto 0;text-align:center}.rehearsal-schedule ol{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.rehearsal-schedule li{display:block;padding:6px 3px;font-size:11px}.rehearsal-schedule li span{display:block;margin-top:2px}}
     @media(max-width:700px){.cast-heading{align-items:flex-start}.only-self{font-size:12px}.scene-title{margin-left:-4px;margin-right:-4px;padding-left:4px;padding-right:4px}}
     @media(max-width:700px){
+      .desktop-tools,.masthead-links,.script-actions{display:none}
       body{background:#f3ede3;font-family:system-ui,-apple-system,"Microsoft YaHei",sans-serif}
       .book{width:100%;margin:0;border:0;box-shadow:none;background:#f3ede3}
       .book::before,.corner{display:none}
@@ -112,8 +123,8 @@
       .mobile-home{display:none;width:100%;margin:0 0 9px;padding:0;border:0;background:none;text-align:left;color:#612734;font-size:14px;font-weight:700}
       body:not([data-view="script"]) .mobile-home{display:block}
       body:not([data-view="script"]) .mobile-filter-tabs,body:not([data-view="script"]) .mobile-filter-panel,body:not([data-view="script"]) .mobile-only-self{display:none}
-      .mobile-filter-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
-      .mobile-filter-tabs button,.mobile-role-filter{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-width:0;padding:9px 3px;border:1px solid #decfc1;border-radius:999px;background:#fff;color:#4b3540;font-size:13px;font-weight:700;white-space:nowrap}
+      .mobile-filter-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+      .mobile-filter-tabs button,.mobile-role-filter{display:inline-flex;align-items:center;justify-content:center;gap:3px;min-width:0;padding:9px 2px;border:1px solid #decfc1;border-radius:999px;background:#fff;color:#4b3540;font-size:11px;font-weight:700;white-space:nowrap}
       .mobile-role-filter{position:relative;cursor:pointer}
       .mobile-role-filter select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
       .mobile-filter-tabs .ui-icon{width:16px;height:16px}
@@ -122,21 +133,24 @@
       .mobile-filter-panel[hidden]{display:none}
       .mobile-filter-panel label{display:block;margin-bottom:6px;color:#654b43;font-size:11px}
       .mobile-filter-panel select,.mobile-filter-panel input{width:100%;min-height:38px;padding:7px 9px;border:1px solid #c9b6a1;border-radius:8px;background:#fff;color:#332722;font-size:14px}
-      #mobileScenePanel{position:fixed;top:calc(var(--mobile-toolbar-bottom, 103px) + 8px);right:8px;z-index:19;width:clamp(100px,30vw,126px);max-height:calc(100dvh - var(--mobile-toolbar-bottom, 103px) - 86px);margin:0;padding:8px;overflow-y:auto;box-shadow:0 6px 20px #40222a2b}
+      #mobileScenePanel{position:fixed;top:calc(var(--mobile-toolbar-bottom, 103px) + 8px);right:8px;z-index:19;width:clamp(98px,27vw,116px);max-height:calc(100dvh - var(--mobile-toolbar-bottom, 103px) - 86px);margin:0;padding:7px;overflow-y:auto;background:rgba(255,249,239,.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 6px 20px #40222a2b}
       .mobile-scene-options{display:flex;flex-direction:column;gap:7px}
-      .mobile-scene-options label{display:flex;align-items:flex-start;gap:5px;margin:0;padding:7px 5px;border:1px solid #decfc1;border-radius:8px;background:#fff;color:#4b3540;font-size:11px;line-height:1.35;cursor:pointer}
-      .mobile-scene-options label:has(input:checked){border-color:#692b39;color:#692b39;font-weight:700}
-      .mobile-scene-options label.no-role-lines{background:#e5e5e5;color:#717171}
-      .mobile-scene-options input{width:14px;height:14px;margin:0;accent-color:#692b39}
+      .mobile-scene-options label{display:block;position:relative;margin:0;padding:8px 5px;border:1px solid #decfc1;border-radius:8px;background:rgba(255,255,255,.68);color:#4b3540;font-size:10px;line-height:1.35;cursor:pointer}
+      .mobile-scene-options label.no-role-lines{background:rgba(220,220,220,.82);color:#717171}
+      .mobile-scene-options label:has(input:checked){border-color:#692b39;background:#692b39;color:#fff;font-weight:700}
+      .mobile-scene-options label:focus-within{outline:2px solid #a77a3d;outline-offset:2px}
+      .mobile-scene-options input{position:absolute;width:1px;height:1px;opacity:0}
       .mobile-only-self{display:flex;align-items:center;gap:7px;margin:9px 1px 0;color:#49333a;font-size:12px;cursor:pointer}
       .mobile-only-self input{width:16px;height:16px;margin:0;accent-color:#692b39}
+      .read-status{display:block;margin:6px 1px 0;color:#6b5550;font-size:11px}
+      .read-status:empty{display:none}
       .working-area{display:block;padding:12px 12px 0}
-      body.scene-filter-open .working-area{padding-right:calc(clamp(100px,30vw,126px) + 20px)}
       body:not([data-view="script"]) .working-area{display:none}
       .script-intro{margin:0 2px 12px;padding:2px 0 0;border:0}
       .script-intro .section-kicker{display:none}
       .script-intro h2{font-size:19px}
       .scene-section{margin:0 0 14px;padding:0 11px 10px;border:1px solid #e3d4bf;border-radius:13px;background:#fffaf0;box-shadow:0 4px 14px #6a4d3120;scroll-margin-top:calc(var(--mobile-toolbar-height, 103px) + 12px)}
+      .scene-thumbnail{width:calc(100% + 22px);height:120px;margin:0 -11px;border-radius:12px 12px 0 0}
       .scene-title{top:var(--mobile-toolbar-height, 103px);z-index:4;margin:0 -11px 8px;padding:9px 11px;background:#fff8ea;border-bottom:1px solid #d9c5ab;border-radius:13px 13px 0 0;box-shadow:0 3px 8px #4a2b2210;font-size:17px}
       .scene-title .scene-ordinal{width:30px;height:30px;font-size:12px}
       .dialogue{display:block;margin:0;padding:10px 2px;border-color:#dfd2be;font-family:"Noto Serif SC","Songti SC",SimSun,serif;line-height:1.82}
@@ -173,7 +187,9 @@
       .prop-list:empty::after,.discussion-list:empty::after{content:"暂无记录";padding:14px;color:#928078;font-size:13px}
       .discussion-item{padding:12px 14px}.discussion-item header{display:flex;justify-content:space-between;align-items:center;color:#9a887e;font-size:11px}.discussion-item header strong{color:#692b39;font-size:13px}.discussion-item p{margin:8px 0 2px;color:#433137;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
       .local-note{margin:12px 2px;color:#87756d;font-size:11px}
-      .mobile-bottom-nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;position:fixed;z-index:30;right:0;bottom:0;left:0;padding:7px 9px calc(28px + env(safe-area-inset-bottom));border-top:1px solid #e1d5c9;background:#fff;box-shadow:0 -5px 18px #38222b17;font-family:system-ui,-apple-system,"Microsoft YaHei",sans-serif}
+      .mobile-bottom-nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;position:fixed;z-index:30;right:0;bottom:0;left:0;padding:7px 9px calc(28px + env(safe-area-inset-bottom));border-top:1px solid #e1d5c9;background:#fff;box-shadow:0 -5px 18px #38222b17;font-family:system-ui,-apple-system,"Microsoft YaHei",sans-serif}
+      .video-preview{display:block;max-width:640px;border:1px solid #d6c4aa;border-radius:13px;overflow:hidden;background:#281e22;box-shadow:0 5px 18px #38222b22}
+      .video-preview img{display:block;width:100%;height:auto}
       .mobile-bottom-nav button{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;padding:4px 2px;border:1px solid transparent;border-radius:10px;background:#fff;color:#74666b;font-size:10px;white-space:nowrap}
       .mobile-bottom-nav button .nav-icon{display:grid;place-items:center;width:29px;height:29px;border-radius:9px;background:#f1e9e3;color:#744354}
       .mobile-bottom-nav .ui-icon{width:18px;height:18px}
@@ -192,6 +208,8 @@
     <symbol id="icon-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></symbol>
     <symbol id="icon-props" viewBox="0 0 24 24"><path d="m12 2 9 5v10l-9 5-9-5V7zM3 7l9 5 9-5M12 12v10"/></symbol>
     <symbol id="icon-chat" viewBox="0 0 24 24"><path d="M20 16a3 3 0 0 1-3 3H9l-5 3v-4a3 3 0 0 1-1-2V6a3 3 0 0 1 3-3h11a3 3 0 0 1 3 3zM7 9h9M7 13h6"/></symbol>
+    <symbol id="icon-video" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m10 8 6 4-6 4z"/></symbol>
+    <symbol id="icon-audio" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9zM16 9a5 5 0 0 1 0 6M18 6a9 9 0 0 1 0 12"/></symbol>
   </svg>
   <div class="book">
     <span class="corner tl" aria-hidden="true">❦</span><span class="corner tr" aria-hidden="true">❦</span><span class="corner bl" aria-hidden="true">❦</span><span class="corner br" aria-hidden="true">❦</span>
@@ -201,6 +219,7 @@
       <p class="subtitle">排练台词本</p>
       <div class="mast-rule" aria-hidden="true">✦</div>
       <p class="credits"><span>总策划 <b>高志华</b></span><span>总导演 <b>Gloria</b></span><span>制片人 <b>Mark</b></span></p>
+      <nav class="masthead-links" aria-label="排练资料"><button type="button" data-view="video">视频参考</button><button type="button" data-view="cast">参演人员</button></nav>
       <section class="rehearsal-schedule" aria-labelledby="rehearsalTitle">
         <h3 id="rehearsalTitle">排练时间</h3>
         <ol><li>12月2日 <span>周二</span></li><li>12月9日 <span>周二</span></li><li>12月16日 <span>周二</span></li></ol>
@@ -213,10 +232,12 @@
           <label class="mobile-role-filter"><svg class="ui-icon" aria-hidden="true"><use href="#icon-people"></use></svg><span id="mobileRoleLabel">角色筛选</span><select id="mobileRoleSelect" aria-label="角色筛选"></select></label>
           <button type="button" id="mobileSceneButton" data-filter="scene" aria-expanded="false"><svg class="ui-icon" aria-hidden="true"><use href="#icon-scenes"></use></svg><span>场景筛选</span></button>
           <button type="button" id="mobileSearchButton" data-filter="search" aria-expanded="false"><svg class="ui-icon" aria-hidden="true"><use href="#icon-search"></use></svg><span>台词搜索</span></button>
+          <button type="button" id="mobileReadButton" aria-pressed="false"><svg class="ui-icon" aria-hidden="true"><use href="#icon-audio"></use></svg><span>语音朗读</span></button>
         </div>
         <div class="mobile-filter-panel" id="mobileScenePanel" hidden><div class="mobile-scene-options" id="mobileSceneOptions" aria-label="选择场景，可多选"></div></div>
         <div class="mobile-filter-panel" id="mobileSearchPanel" hidden><label for="mobileSearchInput">搜索台词</label><input id="mobileSearchInput" type="search" placeholder="输入台词关键词" autocomplete="off"></div>
         <label class="mobile-only-self"><input id="mobileOnlySelf" type="checkbox">仅显示本人台词</label>
+        <span id="mobileReadStatus" class="read-status" role="status"></span>
       </div>
       <section class="cast-panel" aria-labelledby="castTitle">
           <p class="section-kicker">THE CAST</p>
@@ -224,6 +245,7 @@
           <button class="all-roles" id="showAll" type="button" aria-pressed="true">查看全部</button>
           <div class="role-list" id="roleList"></div>
       </section>
+      <div class="desktop-tools" aria-label="排练工具"><button type="button" data-view="script">逐场台词</button><button type="button" data-view="schedule">排练时间</button><button type="button" data-view="props">道具准备</button><button type="button" data-view="discussion">意见讨论</button></div>
       <div class="working-area">
         <aside class="scene-index" aria-labelledby="sceneIndexTitle">
           <p class="section-kicker">THE SCENES</p>
@@ -232,7 +254,7 @@
           <label class="only-self"><input id="onlySelf" type="checkbox">仅显示本人台词</label>
         </aside>
         <main class="script-panel" id="scriptPanel">
-          <div class="script-intro"><div><p class="section-kicker">THE SCRIPT</p><h2>逐场台词</h2></div></div>
+          <div class="script-intro"><div><p class="section-kicker">THE SCRIPT</p><h2>逐场台词</h2></div><div class="script-actions"><button id="desktopReadButton" type="button" aria-label="语音朗读" title="语音朗读" aria-pressed="false"><svg class="ui-icon" aria-hidden="true"><use href="#icon-audio"></use></svg></button><input id="desktopSearchInput" type="search" placeholder="台词搜索" aria-label="台词搜索"></div></div>
           <p class="empty-state" id="emptyState" role="status" hidden>没有匹配的台词</p>
           <div id="scenes"></div>
         </main>
@@ -251,16 +273,20 @@
         <form id="discussionForm" class="mobile-entry-form"><label for="discussionName">填写人姓名</label><input id="discussionName" maxlength="30" required autocomplete="name" placeholder="请输入您的名字"><label for="discussionText">记录排练意见</label><textarea id="discussionText" maxlength="500" required placeholder="写下台词、走位或道具建议"></textarea><button type="submit">发表意见</button></form>
         <p id="discussionStatus" class="local-note" role="status">打开讨论后加载大家的意见。</p><div id="discussionList" class="discussion-list"></div>
       </section>
+      <section class="mobile-view" id="mobileVideoView" aria-labelledby="mobileVideoTitle" hidden><h2 id="mobileVideoTitle">视频参考</h2><a class="video-preview" href="https://www.magicj.cn/officialwebsite/tools/angel-night/angel-night.mp4" target="_blank" rel="noopener" aria-label="打开天使之夜视频参考"><img src="angel-night-video-preview.jpg" width="640" height="360" alt="天使之夜视频画面，点击观看完整视频"></a></section>
       <footer class="book-footer">天使之夜 · 排练台词本</footer>
     </div>
   </div>
   <nav class="mobile-bottom-nav" aria-label="排练工作台">
+    <button type="button" data-view="video"><span class="nav-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-video"></use></svg></span>视频参考</button>
     <button type="button" data-view="cast"><span class="nav-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-people"></use></svg></span>参演人员</button>
     <button type="button" data-view="schedule"><span class="nav-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-calendar"></use></svg></span>排练时间</button>
     <button type="button" data-view="props"><span class="nav-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-props"></use></svg></span>道具准备</button>
     <button type="button" data-view="discussion"><span class="nav-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-chat"></use></svg></span>意见讨论</button>
   </nav>
+  <script src="angel-night-audio-cues.js"></script>
   <script>
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
     const SCRIPT = {"title":"天使之夜","credits":{"总策划":"高志华","总导演":"Gloria","制片人":"Mark"},"cast":[{"role":"天使长","actor":"徐厚祥"},{"role":"可爱天使","actor":"刘然"},{"role":"活泼天使","actor":"凌洁"},{"role":"马利亚","actor":"Gloria"},{"role":"约瑟","actor":"Welles"},{"role":"老板娘","actor":"Sandy"},{"role":"牧羊人1","actor":"高志华"},{"role":"牧羊人2","actor":"阿亮"},{"role":"博士1","actor":"Mark"},{"role":"博士2","actor":"Tom"},{"role":"博士3","actor":"Jerry"},{"role":"博士4","actor":"待分配"},{"role":"博士5","actor":"待分配"},{"role":"旁白","actor":"Jenna"}],"scenes":[{"id":"scene-1","title":"马利亚家","sourceHeading":"第一景 马利亚家","inferred":false,"items":[{"type":"stage","text":"（背景音乐）：我心尊主为大"},{"type":"dialogue","role":"旁白","text":"2026年前上帝差遣天使加百列到加利利一个叫拿撒勒的城去，要传话给一个童女，名叫马利亚;这个童女已经跟大卫家族一个名叫约瑟的男子订了婚。瞧，天使们来了。。。"},{"type":"dialogue","role":"天使长","text":"快一点，等一下迟到了就有你们好看了！"},{"type":"dialogue","role":"可爱天使","text":"急什么！反正她又跑不掉！"},{"type":"dialogue","role":"活泼天使","text":"对啊！"},{"type":"dialogue","role":"天使长","text":"这一件事情可是关系到未来人类的整个发展与命运的！"},{"type":"dialogue","role":"可爱天使","text":"那关我们什么事?我们又不是人类！"},{"type":"dialogue","role":"天使长","text":"你知不知道我们是什么?"},{"type":"dialogue","role":"可爱天使","text":"是天使！"},{"type":"dialogue","role":"天使长","text":"天使是做什么用的?"},{"type":"dialogue","role":"可爱天使","text":"人类常认为我们天使就是有翅膀，长得很帅(美) ，供大家参观娱乐的！"},{"type":"dialogue","role":"活泼天使","text":"其实，天使是一个灵！他是超越肉体的，飞来飞去接CASE！"},{"type":"dialogue","role":"天使长","text":"天使都是服役的灵，是要服务人类的！所以人类要是过得很好，我们的生活就会很喜乐\n如果一天到晚都是纷争的话，那我们会很担忧的。"},{"type":"dialogue","role":"可爱天使","text":"对！所以这件事情一定要快一点办成！"},{"type":"dialogue","role":"活泼天使","text":"为了我们天使的未来！一刻都不能延迟！走，快点上路吧！"},{"type":"stage","text":"(可爱天使、活泼天使一起作一个准备飞翔的动作)"},{"type":"dialogue","role":"可爱天使","text":"到了！"},{"type":"dialogue","role":"活泼天使","text":"怎么这么快！"},{"type":"dialogue","role":"可爱天使","text":"你忘了我们是天使吗?"},{"type":"dialogue","role":"活泼天使","text":"对对对！"},{"type":"dialogue","role":"天使长","text":"那就是马利亚了！你们快一点把上头交代要说的话说一说！"},{"type":"dialogue","role":"可爱天使","text":"我有带稿子！来来来！好！你去念！"},{"type":"dialogue","role":"活泼天使","text":"不行，我每次和人类说话我就会害羞！"},{"type":"dialogue","role":"可爱天使","text":"没关系，一回生二回熟！多说几次就好了。"},{"type":"dialogue","role":"活泼天使","text":"我真的不行。"},{"type":"dialogue","role":"可爱天使","text":"没问题，我相信你。"},{"type":"dialogue","role":"天使长","text":"122117386号天使！也该是你操练的时候了！"},{"type":"dialogue","role":"可爱天使","text":"师父英明！师父英明！师父英明！"},{"type":"dialogue","role":"可爱天使","text":"（出于真心地）加油！我们会为你祷告的。"},{"type":"stage","text":"(活泼天使出现在马利亚面前，喷雾。)"},{"type":"dialogue","role":"马利亚","text":"是天使，有天使出现了！"},{"type":"dialogue","role":"活泼天使","text":"蒙……大……恩……的……女……子。"},{"type":"stage","text":"(因为紧张发出语焉不详的怪声音。)"},{"type":"dialogue","role":"马利亚","text":"这是什么声音，我听不太懂！莫非这就是天使的语言，真的是凡人不能了解?"},{"type":"dialogue","role":"天使长","text":"我来说好了！马利亚不要怕，你在主的面前已经蒙恩了。你将会怀孕并生下一个儿子，你要给他取名叫耶稣。"},{"type":"dialogue","role":"可爱天使","text":"一定要取这个名字，不能乱取。"},{"type":"dialogue","role":"天使长","text":"上帝要把他祖先大卫王的宝座给他，他要做王直到永远！他的国也没有穷尽！"},{"type":"dialogue","role":"马利亚","text":"我还没有出嫁怎么可以发生这种事情。"},{"type":"dialogue","role":"天使长","text":"帝所要做奇妙的工作，他的意念是高过我们的意念，他的道路是高过我们的道路！ (对马利亚)抱歉！圣灵要降临在你身上，至高者的能力要荫庇你。因此你所生的婴孩，必称为神的儿子。因为出于神的话，没有一句不带有能力！"},{"type":"dialogue","role":"马利亚","text":"我是上帝的使女，情愿照他的话成就在我的身上。"},{"type":"stage","text":"曲 目：我心尊主为大"},{"type":"stage","text":"(三位天使下，场上只留下一光区，马利亚独自一人安静的祷告，在旁有一位舞者以象征她心境的方式舞蹈。)"},{"type":"dialogue","role":"旁白","text":"于是天使离开了她。马利亚就由圣灵怀了孕。她的未婚夫约瑟为人正直，知道了此事，不愿意公开羞辱她，却有意要秘密解除婚约。他正在考虑这事，天使们又来向他显现了。。。"}]},{"id":"scene-2","title":"约瑟家","sourceHeading":"第二景：约瑟家","inferred":false,"items":[{"type":"dialogue","role":"天使长","text":"你看看你们干的好事，说什么休息一下就好，一休息就休息了十几天，结果重要的事情到现在都还没办好！"},{"type":"dialogue","role":"可爱天使","text":"这也是没有办法的事情?祷告的人实在太少了！我工作起来都没有动力！"},{"type":"dialogue","role":"天使长","text":"现在马利亚怀孕的事情传到她的未婚夫那里去了！听说他要把马利亚休掉！"},{"type":"dialogue","role":"可爱天使","text":"什么?"},{"type":"dialogue","role":"天使长","text":"所以还不快走！"},{"type":"dialogue","role":"活泼天使","text":"那我们要快一点走！"},{"type":"dialogue","role":"可爱天使","text":"到了！"},{"type":"dialogue","role":"活泼天使","text":"这么快！"},{"type":"dialogue","role":"可爱天使","text":"因为我们是天使，所以速度当然快！"},{"type":"dialogue","role":"天使长","text":"他就是约瑟！我要进入他的梦中告诉他这个好消息。”\n大卫的子孙，约瑟，不要怕，只管娶过你的妻子马利亚，因她所怀的孕是从圣灵而来的。你要给他取名叫耶稣。"},{"type":"dialogue","role":"可爱天使","text":"耶稣这个名字的意思就是『他要将他的百姓从罪恶中拯救出来！"},{"type":"dialogue","role":"活泼天使","text":"或是称他为\"以马内利\"，就是神与我们同在的意思！"},{"type":"stage","text":"曲 目：小伯利恒歌--organ"},{"type":"stage","text":"(舞台的前方用默剧的表现方式呈现出："}]},{"id":"scene-3","title":"伯利恒的店家门口","sourceHeading":"第三景：伯利恒的店家门口","inferred":false,"items":[{"type":"dialogue","role":"旁白","text":"约瑟听完话就醒来，娶了马利亚。那时候，罗马皇帝奥古斯都颁布命令，要罗马帝国的人民都办理户口登记，大家都回本乡去办理登记。约瑟就带着怀孕接近生产的马利亚，回伯利恒登记！他们来到一间客栈前，约瑟让马利亚坐在一颗石头上休息，随即便去敲门。)"},{"type":"dialogue","role":"老板娘","text":"来了。"},{"type":"dialogue","role":"约瑟","text":"请问一下你们还有没有住宿的地方。"},{"type":"dialogue","role":"老板娘","text":"没了。"},{"type":"dialogue","role":"约瑟","text":"等一下！等一下！请你帮帮忙！ ！我妻子快要生了！"},{"type":"dialogue","role":"老板娘","text":"没有！没有！大家为了要配合政府的人口统计，\n每个人都从外地赶回来，怎么可能有空房间。你去看看别家好了！"},{"type":"dialogue","role":"马利亚","text":"怎么样?"},{"type":"dialogue","role":"约瑟","text":"都客满了！你还好吧?"},{"type":"dialogue","role":"马利亚","text":"还好！"},{"type":"dialogue","role":"约瑟","text":"我们就在这里休息一下！"},{"type":"dialogue","role":"马利亚","text":"好！"},{"type":"stage","text":"(可爱天使、活泼天使上场)"},{"type":"dialogue","role":"可爱天使","text":"说时迟那时快！我们又来了！"},{"type":"dialogue","role":"活泼天使","text":"我们是要来见证万王之王万主之主的降临！"},{"type":"dialogue","role":"可爱天使","text":"不得了了，万王之王现在已经要出生了，居然连个降生的地方都没有。"},{"type":"dialogue","role":"活泼天使","text":"这是我们的时刻了！"},{"type":"dialogue","role":"可爱天使","text":"哇哈哈！马利亚！现场的观众你们想看我们俩变什么！"},{"type":"dialogue","role":"活泼天使","text":"要什么有什么！变什么是什么！"},{"type":"dialogue","role":"可爱天使","text":"那我先变一个瑞金医院妇产科……"},{"type":"dialogue","role":"活泼天使","text":"那时代有瑞金医院?"},{"type":"dialogue","role":"可爱天使","text":"外加总统病房！"},{"type":"dialogue","role":"活泼天使","text":"总统病房都出来了！"},{"type":"dialogue","role":"可爱天使","text":"200位当今最红牌的妇产科医生！"},{"type":"dialogue","role":"活泼天使","text":"红牌?你这样说，医生好像酒店的小姐！"},{"type":"dialogue","role":"可爱天使","text":"3000位年轻貌美的护士！"},{"type":"dialogue","role":"活泼天使","text":"这又不是在选嫔妃，而且生一个孩子哪用得到这么多医生护士?"},{"type":"dialogue","role":"可爱天使","text":"这是场面！有没有用不重要，重点是把场面作起来！"},{"type":"dialogue","role":"活泼天使","text":"把炒面作起来……炒面?"},{"type":"dialogue","role":"可爱天使","text":"是场面！不是炒面！以后跟著我多学着点！注意了！现在我要把瑞金医院变出来！看我的……"},{"type":"dialogue","role":"天使长","text":"(打可爱天使)你在做什么?"},{"type":"dialogue","role":"活泼天使","text":"报告师父！他在变魔术！"},{"type":"dialogue","role":"天使长","text":"变什么?"},{"type":"dialogue","role":"可爱天使","text":"师父我跟你说，我们看见耶稣快要降生了！你看看这里！居然连一个住的地方都没有！所以我打算帮马利亚和耶稣变一间妇产科医院，让他们舒服一点！然后再多变一些医生护士，我们就把这个场面给做起来了！"},{"type":"dialogue","role":"天使长","text":"那你以后一定很忙！"},{"type":"dialogue","role":"可爱天使","text":"为什么?"},{"type":"dialogue","role":"天使长","text":"以后你服事这个万王之王，是不是还要帮他变出贵族双语幼稚园、森林小学、明星学校，长大后还要变车子、房子、妻子、儿子、金子、鞋子、袜子、裤子、帽子、桃子、李子……最后再变一个总统府给他。"},{"type":"dialogue","role":"可爱天使","text":"(想一想)那我们真的是会很忙！"},{"type":"dialogue","role":"可爱天使","text":"耶稣是来世上享乐的吗?如果是，他待在天上就好了，下来做什么?"},{"type":"dialogue","role":"活泼天使","text":"“耶稣是为人类的罪而来受苦的，还有？（天使想不起来后面该说什么了，于是看看天使长，）"},{"type":"dialogue","role":"天使长","text":"是的，耶稣是为人类的罪而来受苦的，他要被钉十字架受死并三天后复活。"},{"type":"dialogue","role":"可爱天使","text":"是的，因此凡相信他的人，就必要得永生。"},{"type":"dialogue","role":"天使长","text":"“我们先回去吧看看事情的发展吧。”"},{"type":"dialogue","role":"约瑟","text":"你再忍一忍！"},{"type":"dialogue","role":"马利亚","text":"啊！我恐怕是快要生了！"},{"type":"dialogue","role":"约瑟","text":"这怎么办才好！ (回去找老板娘)求求你帮个忙！\n我的妻子快要生了！你可不可以空一个房间给我们！"},{"type":"dialogue","role":"老板娘","text":"我不是说过我已经没有空房间了吗！你快一点走开！"},{"type":"dialogue","role":"约瑟","text":"求求你！"},{"type":"stage","text":"(老板娘正要把门板上，天使长使了一个魔法)"},{"type":"dialogue","role":"老板娘","text":"好吧！可是只剩下马槽可以用！"},{"type":"dialogue","role":"约瑟","text":"没关系，有就好了！"},{"type":"stage","text":"(约瑟扶著马利亚入内)"},{"type":"dialogue","role":"天使长","text":"(对可爱天使)你先去通知一些该通知的人，准备迎接救世主的降临！"},{"type":"dialogue","role":"活泼天使","text":"好兴奋喔！这真的是历史性的一刻！"},{"type":"dialogue","role":"天使长","text":"是啊！你看看在旧约有多少处预言圣婴的降世，一直到现在终于要实现了！人类的历史终于要改变了！"},{"type":"dialogue","role":"活泼天使","text":"师父我想进去看看这历史性的一刻！"},{"type":"dialogue","role":"天使长","text":"进去吧！"},{"type":"stage","text":"曲 目：马槽歌--choir"},{"type":"dialogue","role":"活泼天使","text":"师父！师父！恭喜！恭喜！生了！生了！"},{"type":"dialogue","role":"天使长","text":"恭喜？（？ 表示惊喜质疑。）是男的吧！"},{"type":"dialogue","role":"活泼天使","text":"不是！是公的！"},{"type":"dialogue","role":"天使长","text":"什么公的！"},{"type":"dialogue","role":"活泼天使","text":"旁边有一只母羊生了一只小公羊。！师父你看！ (拿出一只道具小羊 )"},{"type":"stage","text":"老板娘的声音从后方传来。"},{"type":"dialogue","role":"老板娘","text":"生了！生了！是一个男孩子，好可爱！"},{"type":"dialogue","role":"活泼天使","text":"师父这次是真的生了，进去看看好不好！"},{"type":"dialogue","role":"天使长","text":"(犹豫一下)好！我们进去看！"},{"type":"stage","text":"(马槽歌演唱)"}]},{"id":"scene-4","title":"旷野报喜","sourceHeading":null,"inferred":true,"items":[{"type":"dialogue","role":"旁白","text":"在旷野中有一群牧羊人，天使向他们显现，报给他们大好的信息。"},{"type":"dialogue","role":"天使长","text":"我报给你们大喜的信息！是关乎万民的！因为在今天大卫的城里，为你们生了救主，就是主基督。你们要看见一个婴孩，包著布，卧在马槽里，那就是记号了！"},{"type":"dialogue","role":"活泼天使","text":"不是还有一群博士要见圣婴耶稣吗?"},{"type":"dialogue","role":"可爱天使","text":"我知道，可是我找了很久都没有找到他们。"},{"type":"dialogue","role":"天使长","text":"你把星星拿出来用了吗?"},{"type":"dialogue","role":"可爱天使","text":"对了！那个星星！很重要的星星。"}]},{"id":"scene-5","title":"博士循星而来","sourceHeading":null,"inferred":true,"items":[{"type":"stage","text":"（可爱天使在舞台上方拿出一颗星星，众博士从观众席走上舞台，沿路问观众是否知道救世主降生的地方，忽然看见那一颗星星。）"},{"type":"dialogue","role":"博士1","text":"你们看！那一颗星星！"},{"type":"dialogue","role":"博士1","text":"它开始移动了，我们快跟上！我们快去看看！"},{"type":"dialogue","role":"博士2","text":"我们快去看看！"},{"type":"dialogue","role":"博士1","text":"星星停在这，我想应该就是这里了！"},{"type":"dialogue","role":"博士2","text":"真的有一位婴孩。"},{"type":"dialogue","role":"博士3","text":"我想他一定就是救世主！"},{"type":"dialogue","role":"博士4","text":"我们还是问一下好了！"},{"type":"dialogue","role":"博士5","text":"请问这个婴孩的父亲是哪一位?"},{"type":"dialogue","role":"约瑟","text":"我就是。"},{"type":"dialogue","role":"博士1","text":"我们会来这是因为这孩子非常的特别！"},{"type":"dialogue","role":"约瑟","text":"我知道，因为这个婴孩是我的妻子接受圣灵怀孕而生的！"},{"type":"dialogue","role":"博士2","text":"真的！我们找他找好久了！"},{"type":"dialogue","role":"博士3","text":"太好了！快一点把礼物拿出来I"},{"type":"dialogue","role":"博士4","text":"这是我们要送给圣婴的礼物！"},{"type":"dialogue","role":"博士5","text":"这里有黄金、乳香、没药送给孩子做礼物！"},{"type":"dialogue","role":"天使长","text":"永生的耶和华，我主啊！我的眼睛已经看见你的救恩，就是你在万民前所预备的，是照亮外邦人的光，又是你民以色列的荣耀。(对约瑟、马利亚说)这孩子被立是要叫以色列中许多人跌倒，许多人兴起。"},{"type":"dialogue","role":"马利亚","text":"你的意思是说……"},{"type":"dialogue","role":"天使长","text":"时候到了你就会知道！他将会牺牲自己，成为世人的救赎！"},{"type":"dialogue","role":"可爱天使","text":"恩，不如我们把这天定作一个节日。全世界的人都为纪念他的降生欢呼庆祝.因为这是圣婴降生的日子."},{"type":"dialogue","role":"活泼天使","text":"对,那么就叫”Christmas，圣诞节”吧！"},{"type":"dialogue","role":"可爱天使","text":"好啊，好啊！那就让我们一起庆祝吧！我们一起说：哈利路亚！！！圣诞快乐！！！"},{"type":"stage","text":"全剧演员都上来一起谢幕。"},{"type":"stage","text":"[剧终]齐唱普世欢腾"}]}],"sourceNotes":["原稿明确标出前三景；“旷野报喜”和“博士循星而来”是为阅读整理的分段。","演员表列出三位博士，台词另有博士4、博士5，暂标为待分配。","原稿注明“缺牧羊人戏份”；牧羊人1、牧羊人2保留在演员表，字数为零。","演员表写“旁边：Jenna”，正文写“解说”；本页按旁白统计，排练前请核对。","剧情摘要提及圣殿，正文没有单列圣殿场景。"]};
     const ROLE_COLORS = {
       '天使长':'#802653','可爱天使':'#844609','活泼天使':'#075a81','马利亚':'#12603e',
@@ -303,11 +329,17 @@
 
       const section = make('section', 'scene-section');
       section.id = scene.id;
+      const thumbnail = make('img', 'scene-thumbnail');
+      thumbnail.src = 'angel-night-scene-' + (index + 1) + '.jpg';
+      thumbnail.alt = scene.title + '的视频背景参考画面';
+      thumbnail.width = 640;
+      thumbnail.height = 360;
+      thumbnail.loading = 'lazy';
       const heading = make('h2', 'scene-title');
       heading.id = scene.id + '-title';
       heading.append(make('span', 'scene-ordinal', number), document.createTextNode(scene.title));
       section.setAttribute('aria-labelledby', heading.id);
-      section.append(heading);
+      section.append(thumbnail, heading);
       scene.items.forEach(item => {
         if (item.type === 'stage') {
           if (/舞台|上场|下场|入内|门板|声音从后方|谢幕|剧终|准备飞翔|出现在/.test(item.text)) section.append(make('p', 'stage', item.text));
@@ -346,7 +378,67 @@
       roleButtons.set(person.role, button);
     });
 
+    const readButton = document.getElementById('mobileReadButton');
+    const desktopReadButton = document.getElementById('desktopReadButton');
+    const readStatus = document.getElementById('mobileReadStatus');
+    const originalAudio = new Audio('angel-night-original-audio.mp3');
+    originalAudio.preload = 'auto';
+    const sceneAudioRanges = [[0, 181], [181, 230], [230, 420], [420, 464], [464, 544]];
+    let readingRanges = [];
+    let readingIndex = 0;
+    function stopReading() {
+      originalAudio.pause();
+      readingRanges = [];
+      readButton.setAttribute('aria-pressed', 'false');
+      readButton.querySelector('span').textContent = '语音朗读';
+      desktopReadButton.setAttribute('aria-pressed', 'false');
+      desktopReadButton.setAttribute('aria-label', '语音朗读');
+      desktopReadButton.title = '语音朗读';
+      readStatus.textContent = '';
+    }
+    function playReadingRange() {
+      const range = readingRanges[readingIndex];
+      if (!range) { stopReading(); readStatus.textContent = '原声播放结束'; return; }
+      originalAudio.currentTime = range[0];
+      originalAudio.play().catch(() => {
+        if (readButton.getAttribute('aria-pressed') !== 'true') return;
+        stopReading();
+        readStatus.textContent = '原声播放失败，请重试';
+      });
+    }
+    originalAudio.addEventListener('timeupdate', () => {
+      if (readingRanges[readingIndex] && originalAudio.currentTime >= readingRanges[readingIndex][1] - 0.08) {
+        readingIndex++;
+        playReadingRange();
+      }
+    });
+    originalAudio.addEventListener('ended', () => { stopReading(); readStatus.textContent = '原声播放结束'; });
+    readButton.addEventListener('click', () => {
+      if (readButton.getAttribute('aria-pressed') === 'true') { stopReading(); return; }
+      const selectedScenes = [...mobileSceneOptions.querySelectorAll('input:checked')].map(input => SCRIPT.scenes.findIndex(scene => scene.id === input.value));
+      const indexes = selectedScenes.length ? selectedScenes : SCRIPT.scenes.map((_, index) => index);
+      if (focusedRole) {
+        readingRanges = indexes.flatMap(index => (window.ANGEL_AUDIO_CUES[index] || [])
+          .filter(cue => cue[0] === focusedRole).map(cue => [cue[1], cue[2]]));
+        readStatus.textContent = readingRanges.length ? '播放视频原声中，未匹配的台词会跳过' : '当前角色在所选场景中没有可匹配的原声';
+      } else {
+        readingRanges = indexes.map(index => sceneAudioRanges[index]);
+        if (!selectedScenes.length) readingRanges = [[0, originalAudio.duration || 544]];
+        readStatus.textContent = '播放视频原声中';
+      }
+      if (!readingRanges.length) return;
+      readingIndex = 0;
+      readButton.setAttribute('aria-pressed', 'true');
+      readButton.querySelector('span').textContent = '停止朗读';
+      desktopReadButton.setAttribute('aria-pressed', 'true');
+      desktopReadButton.setAttribute('aria-label', '停止朗读');
+      desktopReadButton.title = '停止朗读';
+      playReadingRange();
+    });
+    desktopReadButton.addEventListener('click', () => readButton.click());
+
     function setFocus(role, scrollToLine = true) {
+      if (readButton.getAttribute('aria-pressed') === 'true') stopReading();
       focusedRole = role;
       mobileRoleSelect.value = role || '';
       const selectedPerson = SCRIPT.cast.find(person => person.role === role);
@@ -358,7 +450,7 @@
       document.getElementById('showAll').setAttribute('aria-pressed', String(role === null));
       for (const [name, button] of roleButtons) button.setAttribute('aria-pressed', String(role === name));
       const mobile = matchMedia('(max-width:700px)').matches;
-      const query = mobile ? mobileSearchInput.value.trim().toLocaleLowerCase() : '';
+      const query = (mobile ? mobileSearchInput : document.getElementById('desktopSearchInput')).value.trim().toLocaleLowerCase();
       const selectedScenes = mobile ? new Set([...mobileSceneOptions.querySelectorAll('input:checked')].map(input => input.value)) : new Set();
       let firstLine = null;
       document.querySelectorAll('.dialogue').forEach(line => {
@@ -386,17 +478,22 @@
     mobileRoleSelect.addEventListener('change', () => setFocus(mobileRoleSelect.value || null));
     mobileSceneOptions.addEventListener('change', () => setFocus(focusedRole, false));
     mobileSearchInput.addEventListener('input', () => setFocus(focusedRole, false));
+    document.getElementById('desktopSearchInput').addEventListener('input', () => setFocus(focusedRole, false));
 
     function closeMobileFilters() {
       document.getElementById('mobileSearchPanel').hidden = true;
       document.getElementById('mobileSearchButton').setAttribute('aria-expanded', 'false');
     }
     function showMobileView(view, scrollTop = true) {
-      const valid = ['script', 'cast', 'schedule', 'props', 'discussion'];
+      const valid = ['script', 'video', 'cast', 'schedule', 'props', 'discussion'];
       if (!valid.includes(view)) view = 'script';
       document.body.dataset.view = view;
       for (const name of valid.slice(1)) document.getElementById('mobile' + name[0].toUpperCase() + name.slice(1) + 'View').hidden = name !== view;
       document.querySelectorAll('.mobile-bottom-nav button').forEach(button => {
+        if (button.dataset.view === view) button.setAttribute('aria-current', 'page');
+        else button.removeAttribute('aria-current');
+      });
+      document.querySelectorAll('.desktop-tools button[data-view],.masthead-links button[data-view]').forEach(button => {
         if (button.dataset.view === view) button.setAttribute('aria-current', 'page');
         else button.removeAttribute('aria-current');
       });
@@ -406,7 +503,16 @@
       showMobileView(view);
       location.hash = 'view-' + view;
     }
-    document.querySelectorAll('.mobile-filter-tabs button').forEach(button => {
+    document.querySelectorAll('.mobile-view h2').forEach(title => {
+      const back = make('button', 'desktop-back', '← 返回逐场台词');
+      back.type = 'button';
+      back.addEventListener('click', () => {
+        navigateMobile('script');
+        document.querySelector('.working-area').scrollIntoView({block:'start'});
+      });
+      title.after(back);
+    });
+    document.querySelectorAll('.mobile-filter-tabs button[data-filter]').forEach(button => {
       button.addEventListener('click', () => {
         const panel = document.getElementById('mobile' + button.dataset.filter[0].toUpperCase() + button.dataset.filter.slice(1) + 'Panel');
         const wasOpen = !panel.hidden && document.body.dataset.view === 'script';
@@ -435,9 +541,15 @@
     document.querySelectorAll('.mobile-bottom-nav button').forEach(button => {
       button.addEventListener('click', () => { closeMobileFilters(); navigateMobile(button.dataset.view); });
     });
+    document.querySelectorAll('.desktop-tools button[data-view],.masthead-links button[data-view]').forEach(button => {
+      button.addEventListener('click', () => navigateMobile(button.dataset.view));
+    });
     window.addEventListener('hashchange', () => showMobileView(location.hash.startsWith('#view-') ? location.hash.slice(6) : 'script'));
     matchMedia('(max-width:700px)').addEventListener('change', () => setFocus(focusedRole, false));
     showMobileView(location.hash.startsWith('#view-') ? location.hash.slice(6) : 'script', false);
+    window.addEventListener('pageshow', () => {
+      if (!location.hash || location.hash === '#view-script') window.scrollTo(0, 0);
+    });
 
     const readLocalList = key => {
       try { const value = JSON.parse(localStorage.getItem(key) || '[]'); return Array.isArray(value) ? value : []; }
